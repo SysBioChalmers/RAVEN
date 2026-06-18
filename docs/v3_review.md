@@ -19,19 +19,38 @@ This document is a proposal and a prioritized to-do list, not a record of work a
   find capabilities **not** already in COBRA or RAVEN.
 - Guard-rails taken from the brief: **don't reimplement COBRA**; interoperability with the
   **COBRA Toolbox (MATLAB)** is wanted; **MetaNetX mapping** is explicitly wanted (an old
-  stale branch exists); **FSEOF** is explicitly flagged for a refactor with nicer output;
-  new file formats are *not* a priority.
+  stale branch exists); new file formats are *not* a priority.
 
-### Already done in `develop3` (not re-proposed here)
+### Already done in `develop3`
 
-So the review doesn't repeat completed work: v3 already removed MetaCyc reconstruction, a
-visualization stub, `importExcelModel`, legacy SBML import, Apache POI Excel I/O (replaced
-by a dependency-free OOXML writer), `solveQP`, and `combnk`; dropped the Statistics,
-Bioinformatics and Text Analytics toolbox dependencies; moved KEGG HMM libraries and the
-external binaries out of git to on-demand fetch from the `raven-data` release; reorganized
-the repo into functional folders; reformatted docstrings to NumPy style; and added
-`progressReport`, `parseRAVENargs` (positional-or-named arguments) and a `matlab.unittest`
-suite.
+So the review does not repeat completed work. v3 already:
+
+- Removed MetaCyc reconstruction, a visualization stub, `importExcelModel`, legacy SBML
+  import, Apache POI Excel I/O (replaced by a dependency-free OOXML writer), `solveQP`,
+  and `combnk`.
+- Dropped the Statistics, Bioinformatics and Text Analytics toolbox dependencies.
+- Moved KEGG HMM libraries and external binaries out of git to on-demand fetch from the
+  `raven-data` release.
+- Reorganized the repo into functional folders; reformatted docstrings to NumPy style.
+- Added `progressReport`, `parseRAVENargs` (positional-or-named arguments), and a
+  `matlab.unittest` suite.
+- Fixed verified bugs: `permuteModel` comps remap, `randomSampling` undefined variable,
+  `optimizeProb` dead no-op block.
+- Backported from raven-toolbox: FSEOF regression-based target selection with knockdown /
+  knockout classification (FS1/FS2/FS4); `randomSampling` FVA-based goodRxns and
+  reproducible seed (SAMP1/SAMP2/SAMP4); `reporterMetabolites` exact closed-form background
+  correction (RM1); ftINIT per-reaction big-M, essential clamping, tree-based gene removal
+  (FT3/FT8/FT9); `runINIT` per-reaction big-M (I4); `getModelFromHomology` bidirectional /
+  bestHitsOnly / bitscore default / token-based GPR rewrite (H1/H2/H4); KEGG flat-file
+  EQUATION-field parsing, undefined-stoichiometry flagging, structured rxn_flags, K15
+  cutoff recalibration (K1/K2/K3/K15); `getIndexes` hash-map and islogical fix (G1/G5);
+  `getElementalBalance` empty-reaction fix (B2); `checkModelStruct` struct-array issues
+  output (V2); `findPotentialErrors` public return + parse-tree detection (S1/S2);
+  `addRxns` string keyword for metsBy (A1).
+- Removed dead/orphaned I/O helpers: `exportModelToSIF`, `getFullPath`, `getMD5Hash`
+  (replaced by inline Java MD5 in `getBlast`).
+- Made `dispEM` calls native: replaced all 317 call sites across 67 files with
+  `warning()`/`error()` and added `ravenList` for formatted item lists.
 
 ---
 
@@ -46,33 +65,31 @@ reconstruction / strain-design audience.
 | # | Item | Lens | Effort | Impact |
 |---|------|------|--------|--------|
 | 1 | **MetaNetX / MNXref ID mapping** — revive & refactor the stale `feat/add_MetaNetX` branch into v3 (§1.1) | (b) | M–L | high |
-| 2 | **FSEOF redesign** — regression-based target selection, table output, full trajectories (§2) | (c) | M | med–high |
-| 3 | **Remove COBRA-duplicate analysis functions** (`runDynamicFBA`, `runPhenotypePhasePlane`, `runProductionEnvelope`, `runRobustnessAnalysis`, `findGeneDeletions`+`qMOMA`) (§4.1) | (a) | S–M | med |
-| 4 | **Remove dead/orphaned helpers** (`exportModelToSIF`, `getFullPath`, `getMD5Hash`, `findDuplicateRxns`, `getMetsInComp`, `parseRxnEqu`, `deleteUnusedGenes`) (§4.2–4.3) | (a) | S | med |
-| 5 | **Harden RAVEN↔COBRA interop** — round-trip field-loss validator; split `ravenCobraWrapper` (§3) | (b)(d) | M | high |
-| 6 | **Central model-field registry** — one declarative table driving add/remove/permute/sort (§5.1) | (d) | L | high |
-| 7 | **Verified bug fixes** — `permuteModel` comps, `randomSampling` `showProgress`, others (§7) | — | S | med (correctness) |
+| 2 | **Remove COBRA-duplicate analysis functions** (`runDynamicFBA`, `runPhenotypePhasePlane`, `runProductionEnvelope`, `runRobustnessAnalysis`, `findGeneDeletions`+`qMOMA`) (§4.1) | (a) | S–M | med |
+| 3 | **Harden RAVEN↔COBRA interop** — round-trip field-loss validator; split `ravenCobraWrapper` (§3) | (b)(d) | M | high |
+| 4 | **Central model-field registry** — one declarative table driving add/remove/permute/sort (§5.1) | (d) | L | high |
+| 5 | **Redundant query / manipulation helpers** — remove or fold `findDuplicateRxns`, `getMetsInComp`, `parseRxnEqu`, `deleteUnusedGenes` (§4.3) | (a) | S | med |
 
 ### Tier 2 — high-value new capabilities (ambitious; pick a few)
 
 | # | Item | Lens | Effort | Impact |
 |---|------|------|--------|--------|
-| 8 | **Heterologous pathway prediction** over a universal reaction DB (synergizes with #1) (§1.2) | (b) | L | high |
-| 9 | **Strain-design upgrade** — EA multi-objective optimization to replace `runSimpleOptKnock` (§1.3) | (b) | M–L | high |
-| 10 | **Annotation-coverage / QC report** (MEMOTE-style) (§6.1) | (b) | M | med–high |
-| 11 | **Gapfilling family consolidation** (`makeSomething`/`consumeSomething`/`can*`/`checkProduction`) (§5.2) | (d) | M | med |
-| 12 | **Deprecate the original INIT path** (`getINITModel`/`runINIT`) in favour of `ftINIT` (§4.4) | (a) | S | med |
-| 13 | **Fix HPA omics parsers** broken on current Human Protein Atlas dumps (§6.2) | (c) | M | med |
+| 6 | **Heterologous pathway prediction** over a universal reaction DB (synergizes with #1) (§1.2) | (b) | L | high |
+| 7 | **Strain-design upgrade** — EA multi-objective optimization to replace `runSimpleOptKnock` (§1.3) | (b) | M–L | high |
+| 8 | **Annotation-coverage / QC report** (MEMOTE-style) (§6.1) | (b) | M | med–high |
+| 9 | **Gapfilling family consolidation** (`makeSomething`/`consumeSomething`/`can*`/`checkProduction`) (§5.2) | (d) | M | med |
+| 10 | **Deprecate the original INIT path** (`getINITModel`/`runINIT`) in favour of `ftINIT` (§4.4) | (a) | S | med |
+| 11 | **Fix HPA omics parsers** broken on current Human Protein Atlas dumps (§6.2) | (c) | M | med |
 
 ### Tier 3 — new domains and cheap extras (optional, opportunistic)
 
 | # | Item | Lens | Effort | Impact |
 |---|------|------|--------|--------|
-| 14 | **OptCouple** — joint knockout + insertion + medium growth-coupling design (§1.3) | (b) | M | med–high |
-| 15 | **Regulatory integration** — PROM / CoRegFlux (new application domain) (§1.4) | (b) | M each | med |
-| 16 | **Community modeling** — SteadyCom (new application domain) (§1.5) | (b) | M | med |
-| 17 | **ROOM / lMOMA** next to `qMOMA`; **E-Flux** next to ftINIT (§1.6) | (b)(c) | S each | low–med |
-| 18 | **Smaller consolidations** — deltaG CSV pair, `parseHPA` duplication, WoLF/`parseScores`, KEGG cache plumbing (§5.3–5.5) | (d) | S–L | low–med |
+| 12 | **OptCouple** — joint knockout + insertion + medium growth-coupling design (§1.3) | (b) | M | med–high |
+| 13 | **Regulatory integration** — PROM / CoRegFlux (new application domain) (§1.4) | (b) | M each | med |
+| 14 | **Community modeling** — SteadyCom (new application domain) (§1.5) | (b) | M | med |
+| 15 | **ROOM / lMOMA** next to `qMOMA`; **E-Flux** next to ftINIT (§1.6) | (b)(c) | S each | low–med |
+| 16 | **Smaller consolidations** — deltaG CSV pair, `parseHPA` duplication, WoLF/`parseScores`, KEGG cache plumbing (§5.3–5.5) | (d) | S–L | low–med |
 
 ---
 
@@ -84,7 +101,7 @@ reconstruction / strain-design audience.
 namespaces (BiGG ↔ KEGG ↔ ChEBI ↔ MetaCyc ↔ Rhea ↔ SEED ↔ MNX). `editMiriam`/`extractMiriam`
 can *store* any namespace but cannot *map* between them. This is the natural hub for
 cross-database interoperability (and a prerequisite for cross-namespace model comparison and
-for pathway prediction, #8).
+for pathway prediction, #6).
 
 **The asset.** The stale branch `origin/feat/add_MetaNetX` (RAVEN 2.8.3 era) already
 implements a full MNXref pipeline in `external/MetaNetX/`: `mapToMNX` (entry point) →
@@ -152,10 +169,10 @@ knockouts). The ecosystem has moved well past this:
   **Effort M–L, impact high.** Replaces/extends `runSimpleOptKnock`.
 - **OptCouple** (CAMEO) — a single MILP co-designing knockouts + heterologous insertions +
   medium changes for strong growth-coupling. Growth-coupling is the central modern design
-  objective; pairs naturally with #8 (insertion candidates come from the pathway DB).
+  objective; pairs naturally with #6 (insertion candidates come from the pathway DB).
   **Effort M, impact med–high.**
 
-### 1.4 Regulatory–metabolic integration *(new application domain — optional)*
+### 1.4 Regulatory-metabolic integration *(new application domain — optional)*
 
 MEWpy's GERM family couples a transcriptional regulatory network to the GEM: **PROM**
 (probabilistic) and **CoRegFlux** (regression-based) are the highest-value, lowest-effort
@@ -167,7 +184,7 @@ this opens an entirely new class of predictions (TF/regulator perturbation pheno
 
 **SteadyCom** (ReFramed) predicts steady-state species abundances in a stable community; it's
 an iterative-LP reformulation that scales well. Optionally add SMETANA-style interaction
-scores (MIP/MRO). Community GEMs are a fast-growing area RAVEN can't touch today. **Effort M,
+scores (MIP/MRO). Community GEMs are a fast-growing area RAVEN cannot touch today. **Effort M,
 impact med.** Pick this if the target users lean microbiome.
 
 ### 1.6 Cheap "while you're in there" additions
@@ -178,7 +195,7 @@ impact med.** Pick this if the target users lean microbiome.
 - **E-Flux** — continuous expression-scaled bounds for per-condition flux prediction on the
   *full* model, complementing ftINIT's *subnetwork-extraction* approach. **Effort S.**
 
-> **Deliberately excluded:** CAFBA, TFA/TVA (needs a large ΔG dataset), GIMME/iMAT (in
+> **Deliberately excluded:** CAFBA, TFA/TVA (needs a large deltaG dataset), GIMME/iMAT (in
 > COBRApy; conceptually covered by RAVEN's INIT family), DifferentialFVA (thin layer over
 > FVA). **GECKO-style enzyme constraints are excluded as a *new* capability** because GECKO is
 > a sister MATLAB tool in the same ecosystem — the right move is integration, not
@@ -186,49 +203,11 @@ impact med.** Pick this if the target users lean microbiome.
 
 ---
 
-## 2. FSEOF redesign  *(explicit ask)*
-
-`analysis/FSEOF.m` works but is crude. Concrete problems:
-
-1. **Wrong baseline.** Direction/target classification keys off `fseof.results(:,1)`, but
-   iteration 1 already enforces `lb = targetMax/iterations` — an already-perturbed state, not
-   zero enforcement. There is no true unconstrained baseline.
-2. **All-or-nothing, resurrectable monotonicity.** A target is dropped the moment one step is
-   non-monotonic, but the flag can be revived in a later iteration — so the computed predicate
-   isn't the intended "monotone across the whole scan".
-3. **2-point slope.** The slope is a secant between the first and last columns, ignoring all
-   intermediate points; noisy and divided by an awkward denominator.
-4. **Hand-rolled output.** A 7-column tab-delimited table built with `fopen`/`fprintf`,
-   columns mislabeled "Enzyme ID/Name" for reactions, the slope string recomputed twice, and a
-   `targets` struct that carries only `.logical`/`.slope` (no trajectories, no direction, no
-   fit quality).
-
-**Redesign sketch:**
-- Compute an explicit **baseline** at `lb = 0`, then scan `k = 1..iterations` enforcing
-  `lb = k/iterations · targetMax`. Store the full `rxns × (iterations+1)` flux matrix `F`
-  (baseline in column 1).
-- **Target selection via regression**, not step flags: fit each reaction's flux vs. enforced
-  target flux (`polyfit` degree 1) over the whole scan. A reaction is a target if its slope is
-  significantly non-zero and monotone in one sign (`all(diff(F(j,:)) >= -tol)` or `<= tol`) — a
-  single clear predicate. Report **slope = the regression coefficient** plus **R²** so targets
-  can be ranked by fit quality.
-- Classify and report **amplification, knock-down and knock-out** targets as first-class
-  outputs (knock-down/knock-out — reactions driven toward zero — are arguably the most
-  actionable and are silently dropped today).
-- **Output a MATLAB `table`** (`targetRxn`, `rxnName`, `slope`, `R2`, `direction`,
-  `subSystem`, `grRule`), sortable/filterable, with optional `writetable` for the text file.
-  Return the full `F` trajectory in the struct for plotting/post-processing.
-
-This overlaps with the already-catalogued back-port notes **FS1/FS2/FS4** (see §8) — fold
-them in.
-
----
-
 ## 3. COBRA Toolbox interoperability
 
-`conversion/ravenCobraWrapper.m` converts RAVEN↔COBRA but:
+`conversion/ravenCobraWrapper.m` converts RAVEN to COBRA and back, but:
 
-- **No round-trip validator.** The help text *lists* the fields lost in a `raven→cobra→raven`
+- **No round-trip validator.** The help text *lists* the fields lost in a `raven->cobra->raven`
   (and the reverse) cycle, but nothing *checks* them. A `compareModelStructFields`-style diff
   that reports which fields/values diverge after a round trip would be high-value, is not COBRA
   duplication, and underwrites the Tier-1 removals in §4.1 (if users are told "convert to COBRA
@@ -269,27 +248,12 @@ COBRA ports:
   a toolbox dependency.
 
 **Proposal:** remove all five (+ `qMOMA`), with their test/tutorial references. If any one is
-considered teaching-valuable, demote it and strip the destructive plotting. **Effort S–M,
+considered teaching-valuable, demote it and strip the destructive plotting. **Effort S-M,
 impact med** (meaningful leanness; aligns with "don't replicate COBRA").
-
-### 4.2 Dead / orphaned I/O helpers
-
-Each has callers only in its own test:
-
-- **`io/exportModelToSIF.m`** — Cytoscape SIF export; niche legacy network format.
-- **`io/getFullPath.m`** — 345-line third-party Windows long-path canonicalizer (MATLAB-6.5-era
-  fallbacks). Base MATLAB covers any real need.
-- **`io/getMD5Hash.m`** — per-OS shell-out (`certutil`/`md5sum`/`md5`); the only production use
-  is `getBlast.m` caching DB hashes, and it has a bug (a stray trailing `"` in the `certutil`
-  command). Replace that one call site with base-MATLAB `Simulink.getFileChecksum(f,'MD5')` and
-  delete the wrapper.
-
-**Verified still needed (keep):** `cleanSheet` (used by `parseTaskList`/`writeExcel`/
-`exportToExcelFormat`), `checkFileExistence` (used widely), `makeFakeBlastStructure`.
 
 ### 4.3 Redundant query / manipulation helpers
 
-- **`manipulation/findDuplicateRxns.m`** — O(n²) reimplementation of duplicate detection that
+- **`manipulation/findDuplicateRxns.m`** — O(n^2) reimplementation of duplicate detection that
   `contractModel` / `simplifyModel(deleteDuplicates)` already do via `unique(S','rows')`. No
   internal callers. Remove; point users to `contractModel`.
 - **`queries/getMetsInComp.m`** — thin one-liner used only by tests; has a latent
@@ -301,7 +265,7 @@ Each has callers only in its own test:
 
 ### 4.4 Deprecate the original INIT path
 
-`getINITModel` → `runINIT` → `fitTasks` is the original tINIT implementation. **`ftINIT` is a
+`getINITModel` -> `runINIT` -> `fitTasks` is the original tINIT implementation. **`ftINIT` is a
 fully separate, faster reimplementation that does not call `runINIT` at all.** The old path is
 referenced only by tests/docs — no production caller. Maintaining both means two MILP
 formulations, two gap-fill stacks, two scoring entry points. **Do not hard-remove now**
@@ -319,9 +283,9 @@ The dominant smell across `manipulation/` is **hand-maintained model-field ladde
 functions (`removeReactions`, `permuteModel`, `changeRxns`, `addRxns`, `addMets`,
 `addExchangeRxns`, `addTransport`) each carry a near-identical but subtly **divergent** list of
 the ~25 rxn / ~14 met / gene / comp fields, copied and drifting apart (e.g. `removeReactions`
-handles `spontaneous`/`rxnScores`; `permuteModel` doesn't; `changeRxns` copies `pwys` that
-`addRxns` doesn't recognize). The drift has already produced at least one silent correctness
-bug (§7, `permuteModel` comps).
+handles `spontaneous`/`rxnScores`; `permuteModel` does not; `changeRxns` copies `pwys` that
+`addRxns` does not recognize). The drift has already produced at least one silent correctness
+bug (`permuteModel` comps, now fixed).
 
 **Proposal:** a single declarative field-registry (each field tagged rxn-/met-/gene-/comp-
 indexed) consumed by all add/remove/permute/sort/convert operations. This removes the most
@@ -335,8 +299,8 @@ highest-leverage refactor for v3.
 (`addExchangeRxns` + `haveFlux`); `checkProduction` and `checkRxn` re-implement the same
 "add exchange + solve"; **`makeSomething` and `consumeSomething` are ~190-line near-twins**
 differing only in the sign of a fake exchange. **Proposal:** one internal
-`canExchangeMets(model, direction, mets, …)` behind `canProduce`/`canConsume`/`checkRxn`, and
-merge `makeSomething`/`consumeSomething` into one `findGratuitousFlux(model, direction, …)`.
+`canExchangeMets(model, direction, mets, ...)` behind `canProduce`/`canConsume`/`checkRxn`, and
+merge `makeSomething`/`consumeSomething` into one `findGratuitousFlux(model, direction, ...)`.
 Removes ~250 duplicated lines. The duplicated annotation-field padding both twins use to keep
 `solveLP`/`getMinNrFluxes` happy should move into the solver layer (make `solveLP` tolerant of
 missing annotation fields) rather than living in callers. **Effort M, impact med.**
@@ -355,12 +319,12 @@ impact med — lower priority** (core reconstruction, higher risk).
 ### 5.5 Other small consolidations
 
 - **`annotation/loadDeltaGfromCSV.m` + `saveDeltaGtoCSV.m`** — mirrored load/save pair, four
-  near-identical met/rxn blocks; collapse to one `deltaGCSV(model, direction, …)`. **S.**
+  near-identical met/rxn blocks; collapse to one `deltaGCSV(model, direction, ...)`. **S.**
 - **`omics/parseHPA.m` vs `parseHPArna.m`** — extract the shared file-read + header-validation
   into a private helper (combine with the §6.2 fix — same code region). **M.**
 - **`localization/getWoLFScores.m` vs `parseScores.m`** — score normalization is reimplemented
   in both; have `getWoLFScores` delegate parsing to `parseScores(file,'wolf')`. Also reconsider
-  whether the Linux+Perl-only WoLF runner still earns its place. **S–M.**
+  whether the Linux+Perl-only WoLF runner still earns its place. **S-M.**
 
 ---
 
@@ -372,11 +336,7 @@ impact med — lower priority** (core reconstruction, higher risk).
 `getAnnotationCoverage` summarizing per-field namespace coverage (what fraction of
 mets/rxns/genes carry which namespaces) and flagging unannotated/duplicate-ID entities —
 MEMOTE-style, cheap given `extractMiriam` already unpacks the data. Pairs with the MNX mapper
-(#1) as the cross-DB annotation hub. **Effort M, impact med–high.**
-
-Relatedly, the catalogued **V2** back-port (see §8) — have `checkModelStruct` return a struct
-array of issues (`category`/`target`/`message`) instead of only printing/throwing — would make
-model QC programmatically consumable.
+(#1) as the cross-DB annotation hub. **Effort M, impact med-high.**
 
 ### 6.2 Fix HPA omics parsers (currently broken)
 
@@ -392,58 +352,16 @@ impact med.**
 - **`queries/getExchangeRxns.m`** — add an optional output of the exchanged metabolite per
   reaction (callers like `setExchangeBounds` re-derive it from `S`). **S.**
 - **`curation/getGeneData.m`** — also surface UniProt/RefSeq xrefs already present in the GFF
-  `Dbxref`, so the table can feed the MNX/MIRIAM annotation path. **S–M.**
-
----
-
-## 7. Bug fixes found during the review (do regardless of tiering)
-
-- **`manipulation/permuteModel.m:166–172` (verified).** The `'comps'` case writes remapped
-  `rxnComps`/`geneComps` to `model.*` (the input) instead of `newModel.*` (the output); since
-  `newModel` was copied earlier, the remap is **silently discarded** — only `metComps`
-  survives. One-line fix per field. *Correctness.*
-- **`analysis/randomSampling.m:110` (verified).** References `showProgress`, which is never
-  defined; errors whenever `sol.f == 0`. Replace with a real flag or drop the branch.
-- **`io/getMD5Hash.m` (if kept).** Stray trailing `"` in the `certutil` command string.
-- **`analysis/runPhenotypePhasePlane.m:45` (if kept).** `close all force` destroys the user's
-  unrelated figures — remove.
-- **`optimizeProb.m`** has a dead `if isfield(res,{'dual','rcost'})` block that assigns fields
-  to themselves — no-op, remove.
-- **Local stray:** `solver/optimizeProb.asv` exists in the working tree but is **not**
-  git-tracked — a local autosave artifact; add `*.asv` to `.gitignore` and delete locally.
-
----
-
-## 8. Relationship to the existing back-port notes
-
-Many granular bug/improvement items are **already catalogued** in the raven-toolbox planning
-docs (`docs/reference/matlab_raven_backports.md`, `improvements.md`), targeted at MATLAB RAVEN
-from the Python port. Several findings above overlap and should simply be folded into the v3
-work rather than re-derived:
-
-- **FSEOF** §2 ⇄ **FS1/FS2/FS4** (regression slope, knockdown/knockout outputs).
-- **`randomSampling`** ⇄ **SAMP1/SAMP2/SAMP4** (FVA-based `goodRxns`, `seed`/`nObjectives`
-  params, run goodRxns before the inf-bound replacement — the docstring's "3 objectives"
-  claim is a known transcription bug).
-- **`reporterMetabolites`** ⇄ **RM1** (exact closed-form background correction replacing the
-  100k-sample Monte Carlo — faster *and* deterministic).
-- **INIT/ftINIT** ⇄ **I4 / FT3 / FT9 / FT8** (per-reaction big-M instead of hard-coded 1000;
-  clamp essential forcing to bounds; tree-based `removeLowScoreGenes`).
-- **`getModelFromHomology`** ⇄ **H1/H2/H4**; **KEGG pipeline** ⇄ **K1/K2/K3/K15**;
-  **`getIndexes`** ⇄ **G1/G5**; **`getElementalBalance`** ⇄ **B2**; **`checkModelStruct`** ⇄
-  **V2**; **`addRxns`** ⇄ **A1** (string keyword instead of `eqnType 1/2/3`).
-
-This review was done independently of the Python port (per the brief), but the overlap is
-worth exploiting: those notes already contain concrete MATLAB patch shapes.
+  `Dbxref`, so the table can feed the MNX/MIRIAM annotation path. **S-M.**
 
 ---
 
 ## Open questions for the maintainer
 
 1. **Which Tier-2/Tier-3 capabilities are in scope for v3?** The "ambitious" appetite supports
-   several, but #8 (pathway prediction), #9 (EA strain design) and the new-domain items
-   (#15 regulatory, #16 community) are each substantial. A reasonable headline set:
-   **#1 MetaNetX + #8 pathway prediction + #9 strain design** (one coherent reconstruction →
+   several, but #6 (pathway prediction), #7 (EA strain design) and the new-domain items
+   (#13 regulatory, #14 community) are each substantial. A reasonable headline set:
+   **#1 MetaNetX + #6 pathway prediction + #7 strain design** (one coherent reconstruction ->
    design story), with regulatory/community deferred unless they match the target users.
 2. **Removal appetite for the COBRA-duplicate analysis functions (§4.1).** Remove outright, or
    keep one or two for teaching and just fix their hygiene? This decision sets whether the §3

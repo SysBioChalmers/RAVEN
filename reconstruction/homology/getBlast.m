@@ -123,10 +123,10 @@ cores = cores{1};
 %against it
 [status, message]=system(['"' fullfile(ravenPath,'software','blast+',['makeblastdb' binEnd]) '" -in "' fastaFile{1} '" -out "' fullfile(tmpDB, 'tmpDB') '" -dbtype prot']);
 if developMode
-    blastReport.dbHashes.phr{numel(blastReport.dbHashes.phr)+1}=getMD5Hash(fullfile(tmpDB, 'tmpDB.phr'));
-    blastReport.dbHashes.pot{numel(blastReport.dbHashes.pot)+1}=getMD5Hash(fullfile(tmpDB, 'tmpDB.pot'));
-    blastReport.dbHashes.psq{numel(blastReport.dbHashes.psq)+1}=getMD5Hash(fullfile(tmpDB, 'tmpDB.psq'));
-    blastReport.dbHashes.pto{numel(blastReport.dbHashes.pto)+1}=getMD5Hash(fullfile(tmpDB, 'tmpDB.pto'));
+    blastReport.dbHashes.phr{numel(blastReport.dbHashes.phr)+1}=filemd5(fullfile(tmpDB, 'tmpDB.phr'));
+    blastReport.dbHashes.pot{numel(blastReport.dbHashes.pot)+1}=filemd5(fullfile(tmpDB, 'tmpDB.pot'));
+    blastReport.dbHashes.psq{numel(blastReport.dbHashes.psq)+1}=filemd5(fullfile(tmpDB, 'tmpDB.psq'));
+    blastReport.dbHashes.pto{numel(blastReport.dbHashes.pto)+1}=filemd5(fullfile(tmpDB, 'tmpDB.pto'));
 end
 if status~=0
     error('makeblastdb did not run successfully, error:\n%s',strip(message))
@@ -158,10 +158,10 @@ for i=1:numel(refFastaFiles)
     end
     [status, message]=system(['"' fullfile(ravenPath,'software','blast+',['blastp' binEnd]) '" -query "' fastaFile{1} '" -out "' outFile '_r' num2str(i) '" -db "' fullfile(tmpDB, 'tmpDB') '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads "' cores '"']);
     if developMode
-        blastReport.dbHashes.phr{numel(blastReport.dbHashes.phr)+1}=getMD5Hash(fullfile(tmpDB, 'tmpDB.phr'));
-        blastReport.dbHashes.pot{numel(blastReport.dbHashes.pot)+1}=getMD5Hash(fullfile(tmpDB, 'tmpDB.pot'));
-        blastReport.dbHashes.psq{numel(blastReport.dbHashes.psq)+1}=getMD5Hash(fullfile(tmpDB, 'tmpDB.psq'));
-        blastReport.dbHashes.pto{numel(blastReport.dbHashes.pto)+1}=getMD5Hash(fullfile(tmpDB, 'tmpDB.pto'));
+        blastReport.dbHashes.phr{numel(blastReport.dbHashes.phr)+1}=filemd5(fullfile(tmpDB, 'tmpDB.phr'));
+        blastReport.dbHashes.pot{numel(blastReport.dbHashes.pot)+1}=filemd5(fullfile(tmpDB, 'tmpDB.pot'));
+        blastReport.dbHashes.psq{numel(blastReport.dbHashes.psq)+1}=filemd5(fullfile(tmpDB, 'tmpDB.psq'));
+        blastReport.dbHashes.pto{numel(blastReport.dbHashes.pto)+1}=filemd5(fullfile(tmpDB, 'tmpDB.pto'));
         blastReport.blastTxtOutput{numel(blastReport.blastTxtOutput)+1}=importdata([outFile '_r' num2str(i)]);
     end    
     if status~=0
@@ -196,4 +196,19 @@ end
 delete([outFile '*']);
 %Remove the temp fasta files
 delete(files{:})
+end
+
+function hash = filemd5(path)
+%Compute MD5 of a file via the Java MessageDigest API (no toolbox required).
+md  = java.security.MessageDigest.getInstance('MD5');
+fis = java.io.FileInputStream(java.io.File(path));
+buf = javaArray('byte', 65536);
+while true
+    n = fis.read(buf);
+    if n < 0; break; end
+    md.update(buf, 0, n);
+end
+fis.close();
+bytes = typecast(md.digest(), 'uint8');
+hash  = lower(sprintf('%02x', bytes));
 end
