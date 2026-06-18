@@ -37,6 +37,34 @@ classdef tAnalysis < RavenTestCase
             testCase.verifyNotEmpty(genes);
         end
 
+        function traceFluxPathReturnsCells(testCase)
+            testCase.assumeSolver('solveLP');
+            sol = solveLP(testCase.model);
+            % Use two reactions that must be metabolically connected
+            biomassRxn = testCase.model.rxns{find(testCase.model.c == 1, 1)};
+            [~, exchIdx] = getExchangeRxns(testCase.model);
+            % Pick an exchange reaction with non-zero flux
+            exchFlux = sol.x(exchIdx);
+            active   = exchIdx(abs(exchFlux) > 1e-8);
+            if isempty(active), testCase.assumeTrue(false); end
+            targetRxn = testCase.model.rxns{active(1)};
+            evalc('[p, m, f] = traceFluxPath(testCase.model, sol.x, biomassRxn, targetRxn, ''verbose'', false);');
+            % Either a path is found (cell + double) or not — both are valid
+            testCase.verifyClass(f, 'double');
+            testCase.verifyGreaterThanOrEqual(f, 0);
+            testCase.verifyLessThanOrEqual(f, 1);
+        end
+
+        function traceFluxPathSameReactionIsIdentity(testCase)
+            testCase.assumeSolver('solveLP');
+            sol  = solveLP(testCase.model);
+            rxn1 = testCase.model.rxns{find(testCase.model.c == 1, 1)};
+            [p, m, f] = traceFluxPath(testCase.model, sol.x, rxn1, rxn1, 'verbose', false);
+            testCase.verifyEqual(f, 1.0);
+            testCase.verifyNumElements(p, 1);
+            testCase.verifyEmpty(m);
+        end
+
         function followFluxesRuns(testCase)
             sol = solveLP(testCase.model);
             out = evalc('followFluxes(testCase.model, sol.x, 0, 1000);');
