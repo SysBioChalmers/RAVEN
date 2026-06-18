@@ -108,12 +108,12 @@ result.changed.relChange = relChange;
 result.changed.type      = changedTypes;
 
 if verbose
-    printTable_(result, nMax, nRxns);
+    printTable_(model, result, nMax, nRxns);
 end
 end
 
 %--------------------------------------------------------------------------
-function printTable_(r, nMax, nTotal)
+function printTable_(model, r, nMax, nTotal)
     W   = 72;
     bar = repmat('=', 1, W);
     sep = repmat('-', 1, W);
@@ -133,12 +133,15 @@ function printTable_(r, nMax, nTotal)
         return
     end
 
+    nShow    = min(nC, nMax);
+    showRxns = r.changed.rxn(1:nShow);
+    eqns     = constructEquations(model, showRxns);
+
     fprintf('%s\n', sep);
-    fprintf('  %-20s  %10s  %10s  %10s  %7s  %s\n', ...
-        'Reaction', 'Cond.1', 'Cond.2', '|dflux|', 'drel%', 'Type');
+    fprintf('  %-20s  %10s  %10s  %10s  %7s  %-5s  %-25s  %s\n', ...
+        'Reaction', 'Cond.1', 'Cond.2', '|dflux|', 'drel%', 'Type', 'Name', 'Equation');
     fprintf('  %s\n', sep);
 
-    nShow = min(nC, nMax);
     for i = 1:nShow
         rel = r.changed.relChange(i);
         if isnan(rel)
@@ -146,9 +149,15 @@ function printTable_(r, nMax, nTotal)
         else
             relStr = sprintf('%+6.0f%%', rel * 100);
         end
-        fprintf('  %-20s  %+10.4g  %+10.4g  %10.4g  %7s  %s\n', ...
-            r.changed.rxn{i}, r.changed.flux1(i), r.changed.flux2(i), ...
-            r.changed.absDelta(i), relStr, r.changed.type{i});
+        ri = find(strcmp(model.rxns, showRxns{i}), 1);
+        nm = '';
+        if isfield(model,'rxnNames') && ri <= numel(model.rxnNames)
+            nm = char(model.rxnNames{ri});
+        end
+        if numel(nm) > 25, nm = [nm(1:22) '...']; end
+        fprintf('  %-20s  %+10.4g  %+10.4g  %10.4g  %7s  %-5s  %-25s  %s\n', ...
+            showRxns{i}, r.changed.flux1(i), r.changed.flux2(i), ...
+            r.changed.absDelta(i), relStr, r.changed.type{i}, nm, eqns{i});
     end
     if nC > nMax
         fprintf('  ... (%d more, use nMax to show all)\n', nC - nMax);
