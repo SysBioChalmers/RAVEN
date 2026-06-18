@@ -199,53 +199,162 @@ end
 
 
 function updatedRule = processComplexRule(rule,genes,gScores,isozymeScoring,complexScoring)
-% Update reactions containing both AND and OR expressions.
+% Update reactions containing both AND and OR expressions via recursive descent.
 %
-% Negative-score genes will be removed if they are isozymic, whereas they
-% will not be removed if they are part of an enzyme complex. However, if
-% the enzyme complex has a negative score, the entire complex will be
-% removed, as long as it is not the only remaining element in the rule.
+% Walks the boolean parse tree: OR nodes (isozymes) prune negative-score
+% branches while keeping at least one; AND nodes (complexes) are scored as
+% a unit and may be removed at the enclosing OR level. Nested isozyme groups
+% within a complex are simplified in place.
+updatedRule = evalGPR(rule, genes, gScores, isozymeScoring, complexScoring);
+end
 
 
-% Specify phrases to search for in the grRule. These phrases will find
-% genes grouped by all ANDs (first phrase) or all ORs (second phrase).
-search_phrases = {'\([^&|\(\) ]+( & [^&|\(\) ]+)+\)', '\([^&|\(\) ]+( \| [^&|\(\) ]+)+\)'};
 
-% initialize some variables
-subsets = {};  % subsets are groups of genes grouped by all ANDs or all ORs
-c = 1;  % counter to keep track of the group (subset) number
-r_orig = rule;  % record original rule to determine when it stops changing
-for k = 1:100  % iterate some arbitrarily high number of times
-    for j = 1:length(search_phrases)
-        new_subset = regexp(rule,search_phrases{j},'match')';  % extract subsets
-        if ~isempty(new_subset)
-            subsets = [subsets; new_subset];  % append to list of subsets
-            subset_nums = arrayfun(@num2str,(c:length(subsets))','UniformOutput',false);  % get group numbers to be assigned to the new subsets, and convert to strings
-            rule = regexprep(rule,search_phrases{j},strcat('#',subset_nums,'#'),'once');  % replace the subsets in the expression with their group numbers (enclosed by "#"s)
-            c = c + length(new_subset);
+function [rule, score] = evalGPR(expr, genes, gScores, isozymeScoring, complexScoring)
+% Recursively evaluate and simplify a GPR expression.
+% NaN-scored genes/complexes are not pruned (treated as non-negative).
+
+expr = strtrim(expr);
+
+% Strip redundant outer parentheses
+while numel(expr) >= 2 && expr(1) == '('
+    closePos = findMatchingClose(expr, 1);
+    if closePos == numel(expr)
+        expr = strtrim(expr(2:end-1));
+    else
+        break
+    end
+end
+
+% OR split: isozyme level
+orTerms = splitDepth0(expr, '|');
+if numel(orTerms) > 1
+    termScores = nan(1, numel(orTerms));
+    termRules  = cell(1,  numel(orTerms));
+    for k = 1:numel(orTerms)
+        [termRules{k}, termScores(k)] = evalGPR(orTerms{k}, genes, gScores, isozymeScoring, complexScoring);
+    end
+    % NaN-scored terms are kept; negatives pruned when alternatives exist
+    negIdx = termScores < 0;  % NaN -> false, so NaN terms are retained
+    if all(negIdx)
+        % All terms negative: keep the least-negative (deterministic)
+        [~, ord] = sort(termScores, 'descend');
+        keepIdx  = ord(1);
+    else
+        keepIdx = find(~negIdx);
+    end
+    termRules  = termRules(keepIdx);
+    termScores = termScores(keepIdx);
+    rule  = joinOR(termRules);
+    score = applyScoring(termScores, isozymeScoring);
+    return
+end
+
+% AND split: complex level
+andTerms = splitDepth0(expr, '&');
+if numel(andTerms) > 1
+    termScores = nan(1, numel(andTerms));
+    termRules  = cell(1,  numel(andTerms));
+    for k = 1:numel(andTerms)
+        [termRules{k}, termScores(k)] = evalGPR(andTerms{k}, genes, gScores, isozymeScoring, complexScoring);
+    end
+    score = applyScoring(termScores, complexScoring);
+    rule  = joinAND(termRules);
+    return
+end
+
+% Leaf: single gene
+geneIdx = find(strcmp(genes, expr), 1);
+if ~isempty(geneIdx)
+    score = gScores(geneIdx);
+else
+    score = NaN;
+end
+rule = expr;
+end
+
+
+
+function terms = splitDepth0(expr, sep)
+% Split expr on ' sep ' at bracket depth 0.
+terms = {};
+depth = 0;
+start = 1;
+n     = numel(expr);
+i     = 1;
+while i <= n
+    c = expr(i);
+    if c == '('
+        depth = depth + 1;
+        i = i + 1;
+    elseif c == ')'
+        depth = depth - 1;
+        i = i + 1;
+    elseif c == sep && depth == 0 && i >= 2 && i <= n-1 && expr(i-1) == ' ' && expr(i+1) == ' '
+        terms{end+1} = strtrim(expr(start:i-2));  %#ok<AGROW>
+        start = i + 2;
+        i     = i + 2;
+    else
+        i = i + 1;
+    end
+end
+terms{end+1} = strtrim(expr(start:end));
+end
+
+
+
+function pos = findMatchingClose(expr, openPos)
+% Return position of ')' matching '(' at openPos.
+depth = 0;
+for i = openPos:numel(expr)
+    if     expr(i) == '('; depth = depth + 1;
+    elseif expr(i) == ')'; depth = depth - 1;
+        if depth == 0; pos = i; return; end
+    end
+end
+pos = numel(expr);
+end
+
+
+
+function rule = joinOR(rules)
+% Join rules with ' | '; wrap AND-containing subterms in parens.
+n = numel(rules);
+if n > 1
+    for k = 1:n
+        if contains(rules{k}, '&')
+            rules{k} = ['(' rules{k} ')'];
         end
     end
-    if isequal(rule,r_orig)
-        break;  % stop iterating when rule stops changing
-    else
-        r_orig = rule;
+end
+rule = strjoin(rules, ' | ');
+end
+
+
+
+function rule = joinAND(rules)
+% Join rules with ' & '; wrap OR-containing subterms in parens.
+n = numel(rules);
+if n > 1
+    for k = 1:n
+        if contains(rules{k}, '|')
+            rules{k} = ['(' rules{k} ')'];
+        end
     end
 end
-subsets{end+1} = rule;  % add final state of rule as the last subset
-
-% score and update each subset, and append to gene list and gene scores
-for i = 1:numel(subsets)
-    [subsets{i},subset_score] = processSimpleRule(subsets{i},genes,gScores,isozymeScoring,complexScoring);
-    gScores = [gScores; subset_score];
-    genes = [genes; {strcat('#',num2str(i),'#')}];
+rule = strjoin(rules, ' & ');
 end
 
-% reconstruct the rule from its updated subsets
-updatedRule = subsets{end};
-for i = c-1:-1:1
-    updatedRule = regexprep(updatedRule,strcat('#',num2str(i),'#'),subsets{i});
-end
 
+
+function s = applyScoring(scores, method)
+switch lower(method)
+    case 'min';     s = min(scores, [], 'omitnan');
+    case 'max';     s = max(scores, [], 'omitnan');
+    case 'median';  s = median(scores, 'omitnan');
+    case 'average'; s = mean(scores, 'omitnan');
+    otherwise;      s = max(scores, [], 'omitnan');
+end
 end
 
 
