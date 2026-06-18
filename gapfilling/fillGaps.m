@@ -2,7 +2,7 @@ function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(m
 % fillGaps  Use template model(s) to fill gaps in a model.
 %
 % This method works by merging the model with the reference model(s) and
-% checking which reactions can carry flux. All reactions that can't carry
+% checking which reactions can carry flux. All reactions that cannot carry
 % flux are removed (cannotConnect). If useModelConstraints is false it
 % then solves the MILP problem of minimizing the number of active
 % reactions from the reference models that are required to have flux in
@@ -34,7 +34,7 @@ function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(m
 % allowNetProduction : logical
 %     true if net production of all metabolites is allowed. A reaction can
 %     be unable to carry flux because one of the reactants is unavailable
-%     or because one of the products can't be further processed. If true,
+%     or because one of the products cannot be further processed. If true,
 %     only the first type of unconnectivity is considered (default false).
 % useModelConstraints : logical
 %     true if the constraints specified in the model structure should be
@@ -113,7 +113,7 @@ rxnScores=rxnScores(:);
 if supressWarnings==false
     if isfield(model,'unconstrained')
         EM='This algorithm is meant to function on a model with exchange reactions for uptake and excretion of metabolites. The current model still has the "unconstrained" field';
-        dispEM(EM,false);
+        warning('RAVEN:warning', '%s', EM);
     else
         if isempty(getExchangeRxns(model,'both'))
             fprintf('NOTE: This algorithm is meant to function on a model with exchange reactions for uptake and excretion of metabolites. The current model does not seem to contain any such reactions.\n');
@@ -122,18 +122,18 @@ if supressWarnings==false
 end
 
 %Simplify the template models to remove constrained rxns. At the same time,
-%check that the id of the template models isn't the same as the model. That
+%check that the id of the template models is not the same as the model. That
 %would cause an error further down
 for i=1:numel(models)
     models{i}.rxnScores=rxnScores{i};
     models{i}=simplifyModel(models{i},false,false,true);
     if strcmpi(models{i}.id,model.id)
         EM='The reference model(s) cannot have the same id as the model';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
 end
 
-%This is a rather ugly solution to the issue that it's a bit tricky to keep
+%This is a rather ugly solution to the issue that it is a bit tricky to keep
 %track of which scores belong to which reactions. This requires that
 %removeReactions and mergeModels are modified to check for the new field.
 model.rxnScores=zeros(numel(model.rxns),1);
@@ -153,7 +153,7 @@ if useModelConstraints==true
     newConnected={};
     cannotConnect={};
     
-    %Check that the input model isn't solveable without any input
+    %Check that the input model is not solveable without any input
     sol=solveLP(model);
     if ~isempty(sol.f)
         addedRxns={};
@@ -166,7 +166,7 @@ if useModelConstraints==true
     sol=solveLP(allModels);
     if isempty(sol.f)
         EM='There are no reactions in the template model(s) that can make the model constraints satisfied';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
     
     %Remove dead ends for speed reasons. This has to be done here and
@@ -179,13 +179,13 @@ else
     allModels=simplifyModel(allModels,false,false,false,true,false,false,false,[],true);
     allModels.c(:)=0;
     
-    %If model constraints shouldn't be used, then determine which reactions
+    %If model constraints should not be used, then determine which reactions
     %to force to have flux
     
     %Get the reactions that can carry flux in the original model
     originalFlux=haveFlux(model,1);
     
-    %For the ones that can't carry flux, see if they can do so in the
+    %For the ones that cannot carry flux, see if they can do so in the
     %merged model
     toCheck=intersect(allModels.rxns(strcmp(allModels.rxnFrom,model.id)),model.rxns(~originalFlux));
     
@@ -196,7 +196,7 @@ else
         K=toCheck;
     else
         I=haveFlux(allModels,1,toCheck);
-        %Get the reactions that can't carry flux in the original model, but can
+        %Get the reactions that cannot carry flux in the original model, but can
         %in the merged one
         K=toCheck(I);
     end
@@ -215,7 +215,7 @@ else
     cannotConnect=setdiff(model.rxns(~originalFlux),newConnected);
 end
 
-%Then minimize for the number of fluxes used. The fixed rxns doesn't need
+%Then minimize for the number of fluxes used. The fixed rxns do not need
 %to participate
 templateRxns=find(~strcmp(allModels.rxnFrom,model.id));
 [~, J, exitFlag]=getMinNrFluxes(allModels,templateRxns,params,allModels.rxnScores(templateRxns));

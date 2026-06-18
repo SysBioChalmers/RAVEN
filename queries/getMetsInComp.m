@@ -25,7 +25,7 @@ J=find(ismember(upper(model.comps),upper(comp)));
 
 if numel(J)~=1
     EM=['No unique match to compartment "' comp{1} '"'];
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 I=model.metComps==J;

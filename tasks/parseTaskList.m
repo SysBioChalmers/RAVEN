@@ -91,8 +91,8 @@ function taskStruct=parseTaskList(inputFile)
 % The general metabolites "ALLMETS" and "ALLMETSIN[comps]" can be used as
 % inputs or outputs in the similar manner to normal metabolites. This is a
 % convenient way to, for example, allow excretion of all metabolites to
-% check whether it's the synthesis of some metabolite that is limiting or
-% whether it's the degradation of some byproduct. One important difference
+% check whether it is the synthesis of some metabolite that is limiting or
+% whether it is the degradation of some byproduct. One important difference
 % is that only the upper bounds are used for these general metabolites.
 % That is, you can only say that uptake or excretion is allowed, not that
 % it is required. This is to avoid conflicts where the constraints for the
@@ -123,7 +123,7 @@ else
     try
         raw=readcell(inputFile,'Sheet','TASKS');
     catch
-        dispEM(['Could not load sheet "TASKS" from ' inputFile]);
+        error('RAVEN:badInput', '%s', ['Could not load sheet "TASKS" from ' inputFile]);
     end
     %Normalise blank cells (which readcell returns as "missing") to [], as
     %expected by the downstream cleanSheet/parsing.
@@ -155,7 +155,7 @@ end
 %Check that the ID field is present
 if I(1)==0
     EM='The TASKS sheet must have a column named ID';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %make sure numerical fields are converted from strings

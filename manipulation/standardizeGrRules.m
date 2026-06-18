@@ -5,7 +5,7 @@ function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,varargin)
 %
 % - No overall containing brackets
 % - Just enzyme complexes are enclosed into brackets
-% - ' and ' and ' or ' strings are strictly set to lowercase
+% - " and " and " or " strings are strictly set to lowercase
 %
 % A rxnGeneMat matrix consistent with the standardized grRules is created.
 %

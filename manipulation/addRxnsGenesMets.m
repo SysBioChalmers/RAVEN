@@ -34,7 +34,7 @@ function model=addRxnsGenesMets(model,sourceModel,rxns,varargin)
 %     strings explaining why reactions were copied to the model, to be
 %     included as newModel.rxnNotes. Can also be a string if the same
 %     rxnNotes should be added for each new reaction, or only one reaction
-%     is to be added (default 'Added via addRxnsAndMets()').
+%     is to be added (default "Added via addRxnsAndMets()").
 % confidence : double
 %     integer specifying confidence score for all reactions, following
 %     doi:10.1038/nprot.2009.203 (default 0):
@@ -84,8 +84,7 @@ end
 
 [~, rxnIdx]=ismember(rxns,sourceModel.rxns); % Get rxnIDs
 if any(rxnIdx==0)
-    dispEM('The following reaction IDs could not be found in the source model:',true,...
-        rxns(rxnIdx==0));
+    error('RAVEN:badInput', '%s', ravenList('The following reaction IDs could not be found in the source model:', rxns(rxnIdx==0)));
 end
 
 % Add new metabolites
@@ -175,7 +174,7 @@ rxnToAdd.rxnNotes(:)=rxnNote(~notNewRxn);
 rxnToAdd.rxnConfidenceScores=NaN(1,numel(rxnToAdd.rxns));
 if ~isnumeric(confidence)
     EM='confidence score must be numeric';
-    dispEM(EM, true);
+    error('RAVEN:badInput', '%s', EM);
 end
 rxnToAdd.rxnConfidenceScores(:)=confidence;
 if isfield(sourceModel,'rxnDeltaG')

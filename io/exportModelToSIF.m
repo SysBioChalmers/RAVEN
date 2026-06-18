@@ -11,11 +11,11 @@ function exportModelToSIF(model,fileName,varargin)
 % Name-Value Arguments
 % --------------------
 % graphType : char
-%     the type of graph to export to (default 'rc'):
+%     the type of graph to export to (default "rc"):
 %
-%     - 'rc' : reaction-compound
-%     - 'rr' : reaction-reaction
-%     - 'cc' : compound-compound
+%     - "rc" : reaction-compound
+%     - "rr" : reaction-reaction
+%     - "cc" : compound-compound
 % rxnLabels : cell
 %     cell array with labels for reactions (default model.rxns).
 % metLabels : cell
@@ -46,16 +46,16 @@ end
 
 if ~strcmpi(graphType,'rc') && ~strcmpi(graphType,'rr') && ~strcmpi(graphType,'cc')
     EM='The graph type is incorrect';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 if numel(rxnLabels)~=numel(unique(rxnLabels))
     EM='Not all reaction labels are unique';
-    dispEM(EM,false);
+    warning('RAVEN:warning', '%s', EM);
 end
 if numel(metLabels)~=numel(unique(metLabels))
     EM='Not all metabolite labels are unique';
-    dispEM(EM,false);
+    warning('RAVEN:warning', '%s', EM);
 end
 
 if strcmpi(graphType,'rc')

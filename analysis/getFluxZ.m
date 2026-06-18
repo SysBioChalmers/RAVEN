@@ -30,7 +30,7 @@ nRxns=size(solutionsA,1);
 %Check that the number of reactions is the same in both cases
 if nRxns~=size(solutionsB,1)
     EM='The number of reactions must be the same in solutionsA as in solutionsB';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 Z=zeros(nRxns,1);

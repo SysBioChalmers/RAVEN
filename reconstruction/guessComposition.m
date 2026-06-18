@@ -113,18 +113,8 @@ while predicted==true
                                 metStatus=-2;
                                 break;
                                 
-                                %%Check if there is an inconcistency
-                                %if any(currentComp~=comp)
-                                %    dispEM(['Could not predict composition
-                                %    of ' model.metNames{mets(i)} ],false);
-                                %end
                             end
                         else
-                            %Check if there is an inconcistency if
-                            %any(currentComp~=comp)
-                            %    dispEM(['Could not predict composition of
-                            %    ' model.metNames{loopThrough(i)} ],false);
-                            %end
                             metStatus=-2;
                             break;
                         end
@@ -136,7 +126,7 @@ while predicted==true
                     break;
                 end
             else
-                %The metabolite doesn't participate, no composition can be
+                %The metabolite does not participate, no composition can be
                 %calculated
                 metStatus=-1;
             end
@@ -145,7 +135,7 @@ while predicted==true
         switch metStatus
             case -2
                 EM=['Could not predict composition for "' metNames{i} '" due to inconsistencies'];
-                dispEM(EM,false);
+                warning('RAVEN:warning', '%s', EM);
             case 1
                 %Calculate and add the composition
                 str=getCompString(elements,comp);

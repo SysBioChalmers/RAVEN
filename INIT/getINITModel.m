@@ -139,7 +139,7 @@ end
 %Check that the model is in the closed form
 if ~isfield(refModel,'unconstrained')
     EM='Exchange metabolites should normally not be removed from the model when using getINITModel. Use importModel(file,false) to import a model with exchange metabolites remaining (see the documentation for details)';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %Create the task structure if not supplied
@@ -153,10 +153,10 @@ if ~isempty(arrayData) && isfield(arrayData,'singleCells')
     if arrayData.singleCells == 1
         % Check to ensure cell type is defined
         if ~isfield(arrayData,'celltypes')
-            dispEM('arrayData must contain cell type information if sc-tINIT is to be used','false');   
+            warning('RAVEN:warning', '%s', 'arrayData must contain cell type information if sc-tINIT is to be used');
         end
         if ~ismember(upper(celltype),upper(arrayData.celltypes))
-            dispEM('The cell type name does not match');   
+            error('RAVEN:badInput', '%s', 'The cell type name does not match');
         end
         
         % Analyze only cell type of interest
@@ -221,7 +221,7 @@ if ~isempty(arrayData) && isfield(arrayData,'singleCells')
 
         % Replace hpaData with singleCellData
         if printReport==true
-            dispEM('Single cell data is not currently compatible with HPA data. \n         Replacing hpaData with single cell-based scoring.',false);
+            warning('RAVEN:warning', '%s', 'Single cell data is not currently compatible with HPA data. \n         Replacing hpaData with single cell-based scoring.');
         end
         hpaData.genes = arrayData.genes;
         hpaData.tissues = arrayData.tissues;
@@ -294,7 +294,7 @@ end
 [rxnScores, geneScores]=scoreModel(cModel,hpaData,arrayData,tissue,celltype);
 
 %Run the INIT algorithm. The exchange reactions that are used in the final
-%reactions will be open, which doesn't fit with the last step. Therefore
+%reactions will be open, which does not fit with the last step. Therefore
 %delete reactions from the original model instead of taking the output. The
 %default implementation does not constrain reversible reactions to only
 %carry flux in one direction. Runs without the constraints on reversibility

@@ -20,14 +20,14 @@ function newModel=addRxns(model,rxnsToAdd,varargin)
 %       are expressed as "1.2". Reversibility is indicated by "<=>" or "=>"
 %     - mets : (alternative to equations) cell array with the metabolites
 %       involved in each reaction as nested arrays. E.g.:
-%       {{'met1','met2'},{'met1','met3','met4'}}. In the case of one single
-%       reaction added, it can be a string array: {'met1','met2'}
+%       {{"met1","met2"},{"met1","met3","met4"}}. In the case of one single
+%       reaction added, it can be a string array: {"met1","met2"}
 %     - stoichCoeffs : (alternative to equations) cell array with the
 %       corresponding stoichiometries as nested vectors. E.g.:
 %       {[-1,+2],[-1,-1,+1]}. In the case of one single reaction added, it
 %       can be a vector: [-1,+2]
 %     - rxnNames : cell array with the names of each reaction (optional,
-%       default '')
+%       default "")
 %     - lb : vector with the lower bounds (optional, default
 %       model.annotations.defaultLB or -inf for reversible reactions and 0
 %       for irreversible when "equations" is used. When "mets" and
@@ -38,24 +38,24 @@ function newModel=addRxns(model,rxnsToAdd,varargin)
 %     - c : vector with the objective function coefficients (optional,
 %       default 0)
 %     - eccodes : cell array with the EC-numbers for each reaction. Delimit
-%       several EC-numbers with ";" (optional, default '')
+%       several EC-numbers with ";" (optional, default "")
 %     - subSystems : cell array with the subsystems for each reaction
-%       (optional, default '')
+%       (optional, default "")
 %     - grRules : cell array with the gene-reaction relationship for each
 %       reaction. E.g. "(A and B) or (C)" means that the reaction could be
 %       catalyzed by a complex between A & B or by C on its own. All the
 %       genes have to be present in model.genes. Add genes with
 %       addGenesRaven before calling this function if needed (optional,
-%       default '')
+%       default "")
 %     - rxnMiriams : cell array with Miriam structures (optional,
 %       default [])
 %     - rxnComps : cell array with compartments (as in model.comps)
 %       (optional, default {})
-%     - rxnNotes : cell array with reaction notes (optional, default '')
+%     - rxnNotes : cell array with reaction notes (optional, default "")
 %     - rxnDeltaG : Gibbs free energy at biochemical standard condition in
 %       kJ/mole (optional, default NaN)
 %     - rxnReferences : cell array with reaction references (optional,
-%       default '')
+%       default "")
 %     - rxnConfidenceScores : vector with reaction confidence scores
 %       (optional, default NaN)
 %
@@ -63,17 +63,17 @@ function newModel=addRxns(model,rxnsToAdd,varargin)
 % --------------------
 % eqnType : double or char
 %     describes how the equation string should be interpreted (default 1).
-%     Accepts integer values 1/2/3 or the string aliases 'id', 'name',
-%     'name[comp]':
+%     Accepts integer values 1/2/3 or the string aliases "id", "name",
+%     "name[comp]":
 %
-%     - 1 / 'id' : the metabolites are matched to model.mets. New
+%     - 1 / "id" : the metabolites are matched to model.mets. New
 %       metabolites (if allowed) are added to "compartment"
-%     - 2 / 'name' : the metabolites are matched to model.metNames and all
+%     - 2 / "name" : the metabolites are matched to model.metNames and all
 %       metabolites are assigned to "compartment". Any new metabolites that
 %       are added will be assigned IDs "m1", "m2"... If IDs on the same
 %       form are already used in the model then the numbering will start
 %       from the highest used integer+1
-%     - 3 / 'name[comp]' : the metabolites are written as "metNames[comps]".
+%     - 3 / "name[comp]" : the metabolites are written as "metNames[comps]".
 %       Only compartments in model.comps are allowed. Any new metabolites
 %       that are added will be assigned IDs "m1", "m2"... If IDs on the
 %       same form are already used in the model then the numbering will
@@ -114,15 +114,15 @@ if ischar(eqnType) || isstring(eqnType)
         case 'name[comp]'
             eqnType=3;
         otherwise
-            dispEM(['Unknown eqnType string "' char(eqnType) '". Use ''id'', ''name'', or ''name[comp]''.']);
+            error('RAVEN:badInput', '%s', ['Unknown eqnType string "' char(eqnType) '". Use ''id'', ''name'', or ''name[comp]''.']);
     end
 end
 if ~isnumeric(eqnType)
     EM='eqnType must be numeric or one of the string aliases ''id'', ''name'', ''name[comp]''';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 elseif ~ismember(eqnType,[1 2 3])
     EM='eqnType must be 1, 2, or 3';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 compartment=p.compartment;
 if ~isempty(compartment)
@@ -162,13 +162,13 @@ if eqnType==2 || (eqnType==1 && allowNewMets==true)
     compartment=char(compartment);
     if ~ismember(compartment,model.comps)
         EM='compartment must match one of the compartments in model.comps';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
 end
 
 if ~isfield(rxnsToAdd,'rxns')
     EM='rxns is a required field in rxnsToAdd';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 else
     rxnsToAdd.rxns=convertCharArray(rxnsToAdd.rxns);
     %To fit with some later printing
@@ -176,12 +176,12 @@ else
 end
 if ~(isfield(rxnsToAdd,'equations') || (isfield(rxnsToAdd,'mets') && isfield(rxnsToAdd,'stoichCoeffs')))
     EM='Either "equations" or "mets"+"stoichCoeffs" are required fields in rxnsToAdd';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 if any(ismember(rxnsToAdd.rxns,model.rxns))
     EM='One or more reaction id was already present in the model. Use changeRxns or remove the existing reactions before adding new ones';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %Normal case: equations provided
@@ -202,21 +202,21 @@ else
     %arrays & of the same size:
     if ~iscell(rxnsToAdd.mets) || ~iscell(rxnsToAdd.stoichCoeffs)
         EM='rxnsToAdd.mets & rxnsToAdd.stoichCoeffs must be cell arrays';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     elseif length(rxnsToAdd.stoichCoeffs) ~= length(rxnsToAdd.mets)
         EM = 'rxnsToAdd.stoichCoeffs must have the same number of elements as rxnsToAdd.mets';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
     %In this case we need lb to decide if the reaction is reversible or not:
     if ~isfield(rxnsToAdd,'lb')
-        %Fill with standard if it doesn't exist
+        %Fill with standard if it does not exist
         rxnsToAdd.lb=-inf(size(rxnsToAdd.mets));
     elseif ~isnumeric(rxnsToAdd.lb)
         EM = 'rxnsToAdd.lb must be a vector';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     elseif length(rxnsToAdd.lb) ~= length(rxnsToAdd.mets)
         EM = 'rxnsToAdd.lb must have the same number of elements as rxnsToAdd.mets';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
     %Now we construct equations, to comply with the rest of the script:
     rxnsToAdd.equations = cell(size(rxnsToAdd.mets));
@@ -246,14 +246,14 @@ largeCellFiller(:)={{''}};
 %***Add everything to the model except for the equations.
 if numel(rxnsToAdd.equations)~=nRxns
     EM='rxnsToAdd.equations must have the same number of elements as rxnsToAdd.rxns';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %Parse the equations. This is done at this early stage since I need the
 %reversibility info
 [S, mets, badRxns, reversible]=constructS(rxnsToAdd.equations);
 EM='The following equations have one or more metabolites both as substrate and product. Only the net equations will be added:';
-dispEM(EM,false,rxnsToAdd.rxns(badRxns));
+warning('RAVEN:warning', '%s', ravenList(EM, rxnsToAdd.rxns(badRxns)));
 
 newModel.rev=[newModel.rev;reversible];
 newModel.rxns=[newModel.rxns;rxnsToAdd.rxns(:)];
@@ -262,15 +262,15 @@ if isfield(rxnsToAdd,'rxnNames')
     rxnsToAdd.rxnNames=convertCharArray(rxnsToAdd.rxnNames);
     if numel(rxnsToAdd.rxnNames)~=nRxns
         EM='rxnsToAdd.rxnNames must have the same number of elements as rxnsToAdd.rxns';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
-    %Fill with standard if it doesn't exist
+    %Fill with standard if it does not exist
     if ~isfield(newModel,'rxnNames')
         newModel.rxnNames=largeFiller;
     end
     newModel.rxnNames=[newModel.rxnNames;rxnsToAdd.rxnNames(:)];
 else
-    %Fill with standard if it doesn't exist
+    %Fill with standard if it does not exist
     if isfield(newModel,'rxnNames')
         newModel.rxnNames=[newModel.rxnNames;filler];
     end
@@ -285,16 +285,16 @@ end
 if isfield(rxnsToAdd,'lb')
     if numel(rxnsToAdd.lb)~=nRxns
         EM='rxnsToAdd.lb must have the same number of elements as rxnsToAdd.rxns';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
-    %Fill with standard if it doesn't exist
+    %Fill with standard if it does not exist
     if ~isfield(newModel,'lb')
         newModel.lb=zeros(nOldRxns,1);
         newModel.lb(newModel.rev~=0)=newLb;
     end
     newModel.lb=[newModel.lb;rxnsToAdd.lb(:)];
 else
-    %Fill with standard if it doesn't exist
+    %Fill with standard if it does not exist
     if isfield(newModel,'lb')
         I=zeros(nRxns,1);
         I(reversible~=0)=newLb;
@@ -311,15 +311,15 @@ end
 if isfield(rxnsToAdd,'ub')
     if numel(rxnsToAdd.ub)~=nRxns
         EM='rxnsToAdd.ub must have the same number of elements as rxnsToAdd.rxns';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
-    %Fill with standard if it doesn't exist
+    %Fill with standard if it does not exist
     if ~isfield(newModel,'ub')
         newModel.ub=repmat(newUb,nOldRxns,1);
     end
     newModel.ub=[newModel.ub;rxnsToAdd.ub(:)];
 else
-    %Fill with standard if it doesn't exist
+    %Fill with standard if it does not exist
     if isfield(newModel,'ub')
         newModel.ub=[newModel.ub;repmat(newUb,nRxns,1)];
     end
@@ -328,15 +328,15 @@ end
 if isfield(rxnsToAdd,'c')
     if numel(rxnsToAdd.c)~=nRxns
         EM='rxnsToAdd.c must have the same number of elements as rxnsToAdd.rxns';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
-    %Fill with standard if it doesn't exist
+    %Fill with standard if it does not exist
     if ~isfield(newModel,'c')
         newModel.c=zeros(nOldRxns,1);
     end
     newModel.c=[newModel.c;rxnsToAdd.c(:)];
 else
-    %Fill with standard if it doesn't exist
+    %Fill with standard if it does not exist
     if isfield(newModel,'c')
         newModel.c=[newModel.c;zeros(nRxns,1)];
     end
@@ -346,15 +346,15 @@ if isfield(rxnsToAdd,'eccodes')
     rxnsToAdd.eccodes=convertCharArray(rxnsToAdd.eccodes);
     if numel(rxnsToAdd.eccodes)~=nRxns
         EM='rxnsToAdd.eccodes must have the same number of elements as rxnsToAdd.rxns';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
-    %Fill with standard if it doesn't exist
+    %Fill with standard if it does not exist
     if ~isfield(newModel,'eccodes')
         newModel.eccodes=largeFiller;
     end
     newModel.eccodes=[newModel.eccodes;rxnsToAdd.eccodes(:)];
 else
-    %Fill with standard if it doesn't exist
+    %Fill with standard if it does not exist
     if isfield(newModel,'eccodes')
         newModel.eccodes=[newModel.eccodes;filler];
     end
@@ -389,7 +389,7 @@ if isfield(rxnsToAdd,'subSystems')
     end
     if numel(rxnsToAdd.subSystems)~=nRxns
         EM='rxnsToAdd.subSystems must have the same number of elements as rxnsToAdd.rxns';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
     newModel.subSystems=[newModel.subSystems;rxnsToAdd.subSystems(:)];
 else
@@ -405,15 +405,15 @@ end
 if isfield(rxnsToAdd,'rxnMiriams')
     if numel(rxnsToAdd.rxnMiriams)~=nRxns
         EM='rxnsToAdd.rxnMiriams must have the same number of elements as rxnsToAdd.rxns';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
-    %Fill with standard if it doesn't exist
+    %Fill with standard if it does not exist
     if ~isfield(newModel,'rxnMiriams')
         newModel.rxnMiriams=cell(nOldRxns,1);
     end
     newModel.rxnMiriams=[newModel.rxnMiriams;rxnsToAdd.rxnMiriams(:)];
 else
-    %Fill with standard if it doesn't exist
+    %Fill with standard if it does not exist
     if isfield(newModel,'rxnMiriams')
         newModel.rxnMiriams=[newModel.rxnMiriams;cell(nRxns,1)];
     end
@@ -421,36 +421,36 @@ end
 if isfield(rxnsToAdd,'rxnComps')
     if numel(rxnsToAdd.rxnComps)~=nRxns
         EM='rxnsToAdd.rxnComps must have the same number of elements as rxnsToAdd.rxns';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
-    %Fill with standard if it doesn't exist
+    %Fill with standard if it does not exist
     if ~isfield(newModel,'rxnComps')
         newModel.rxnComps=ones(nOldRxns,1);
         EM='Adding reactions with compartment information to a model without such information. All existing reactions will be assigned to the first compartment';
-        dispEM(EM,false);
+        warning('RAVEN:warning', '%s', EM);
     end
     newModel.rxnComps=[newModel.rxnComps;rxnsToAdd.rxnComps(:)];
 else
-    %Fill with standard if it doesn't exist
+    %Fill with standard if it does not exist
     if isfield(newModel,'rxnComps')
         newModel.rxnComps=[newModel.rxnComps;ones(nRxns,1)];
-        %fprintf('NOTE: The added reactions will be assigned to the first
-        %compartment\n');
+        %fprintf("NOTE: The added reactions will be assigned to the first
+        %compartment\n");
     end
 end
 if isfield(rxnsToAdd,'grRules')
     rxnsToAdd.grRules=convertCharArray(rxnsToAdd.grRules);
     if numel(rxnsToAdd.grRules)~=nRxns
         EM='rxnsToAdd.grRules must have the same number of elements as rxnsToAdd.rxns';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
-    %Fill with standard if it doesn't exist
+    %Fill with standard if it does not exist
     if ~isfield(newModel,'grRules')
         newModel.grRules=largeFiller;
     end
     newModel.grRules=[newModel.grRules;rxnsToAdd.grRules(:)];
 else
-    %Fill with standard if it doesn't exist
+    %Fill with standard if it does not exist
     if isfield(newModel,'grRules')
         newModel.grRules=[newModel.grRules;filler];
     end
@@ -460,15 +460,15 @@ if isfield(rxnsToAdd,'rxnFrom')
     rxnsToAdd.rxnFrom=convertCharArray(rxnsToAdd.rxnFrom);
     if numel(rxnsToAdd.rxnFrom)~=nRxns
         EM='rxnsToAdd.rxnFrom must have the same number of elements as rxnsToAdd.rxns';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
-    %Fill with standard if it doesn't exist
+    %Fill with standard if it does not exist
     if ~isfield(newModel,'rxnFrom')
         newModel.rxnFrom=largeFiller;
     end
     newModel.rxnFrom=[newModel.rxnFrom;rxnsToAdd.rxnFrom(:)];
 else
-    %Fill with standard if it doesn't exist
+    %Fill with standard if it does not exist
     if isfield(newModel,'rxnFrom')
         newModel.rxnFrom=[newModel.rxnFrom;filler];
     end
@@ -478,15 +478,15 @@ if isfield(rxnsToAdd,'rxnNotes')
     rxnsToAdd.rxnNotes=convertCharArray(rxnsToAdd.rxnNotes);
     if numel(rxnsToAdd.rxnNotes)~=nRxns
         EM='rxnsToAdd.rxnNotes must have the same number of elements as rxnsToAdd.rxns';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
-    %Fill with standard if it doesn't exist
+    %Fill with standard if it does not exist
     if ~isfield(newModel,'rxnNotes')
         newModel.rxnNotes=largeFiller;
     end
     newModel.rxnNotes=[newModel.rxnNotes;rxnsToAdd.rxnNotes(:)];
 else
-    %Fill with standard if it doesn't exist
+    %Fill with standard if it does not exist
     if isfield(newModel,'rxnNotes')
         newModel.rxnNotes=[newModel.rxnNotes;filler];
     end
@@ -496,15 +496,15 @@ if isfield(rxnsToAdd,'rxnReferences')
     rxnsToAdd.rxnReferences=convertCharArray(rxnsToAdd.rxnReferences);
     if numel(rxnsToAdd.rxnReferences)~=nRxns
         EM='rxnsToAdd.rxnReferences must have the same number of elements as rxnsToAdd.rxns';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
-    %Fill with standard if it doesn't exist
+    %Fill with standard if it does not exist
     if ~isfield(newModel,'rxnReferences')
         newModel.rxnReferences=largeFiller;
     end
     newModel.rxnReferences=[newModel.rxnReferences;rxnsToAdd.rxnReferences(:)];
 else
-    %Fill with standard if it doesn't exist
+    %Fill with standard if it does not exist
     if isfield(newModel,'rxnReferences')
         newModel.rxnReferences=[newModel.rxnReferences;filler];
     end
@@ -514,15 +514,15 @@ if isfield(rxnsToAdd,'pwys')
     rxnsToAdd.pwys=convertCharArray(rxnsToAdd.pwys);
     if numel(rxnsToAdd.pwys)~=nRxns
         EM='rxnsToAdd.pwys must have the same number of elements as rxnsToAdd.rxns';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
-    %Fill with standard if it doesn't exist
+    %Fill with standard if it does not exist
     if ~isfield(newModel,'pwys')
         newModel.pwys=largeFiller;
     end
     newModel.pwys=[newModel.pwys;rxnsToAdd.pwys(:)];
 else
-    %Fill with standard if it doesn't exist
+    %Fill with standard if it does not exist
     if isfield(newModel,'pwys')
         newModel.pwys=[newModel.pwys;filler];
     end
@@ -531,15 +531,15 @@ end
 if isfield(rxnsToAdd,'rxnConfidenceScores')
     if numel(rxnsToAdd.rxnConfidenceScores)~=nRxns
         EM='rxnsToAdd.rxnConfidenceScores must have the same number of elements as rxnsToAdd.rxns';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
-    %Fill with standard if it doesn't exist
+    %Fill with standard if it does not exist
     if ~isfield(newModel,'rxnConfidenceScores')
         newModel.rxnConfidenceScores=NaN(nOldRxns,1);
     end
     newModel.rxnConfidenceScores=[newModel.rxnConfidenceScores;rxnsToAdd.rxnConfidenceScores(:)];
 else
-    %Fill with standard if it doesn't exist
+    %Fill with standard if it does not exist
     if isfield(newModel,'rxnConfidenceScores')
         newModel.rxnConfidenceScores=[newModel.rxnConfidenceScores;NaN(nRxns,1)];
     end
@@ -548,15 +548,15 @@ end
 if isfield(rxnsToAdd,'rxnDeltaG')
     if numel(rxnsToAdd.rxnDeltaG)~=nRxns
         EM='rxnsToAdd.rxnDeltaG must have the same number of elements as rxnsToAdd.rxns';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
-    %Fill with standard if it doesn't exist
+    %Fill with standard if it does not exist
     if ~isfield(newModel,'rxnDeltaG')
         newModel.rxnDeltaG=NaN(nOldRxns,1);
     end
     newModel.rxnDeltaG=[newModel.rxnDeltaG;rxnsToAdd.rxnDeltaG(:)];
 else
-    %Fill with standard if it doesn't exist
+    %Fill with standard if it does not exist
     if isfield(newModel,'rxnDeltaG')
         newModel.rxnDeltaG=[newModel.rxnDeltaG;NaN(nRxns,1)];
     end
@@ -580,7 +580,7 @@ if eqnType==1
             end
         else
             EM='One or more equations contain metabolites that are not in model.mets. Set allowNewMets to true to allow this function to add metabolites or use addMets to add them before calling this function. Are you sure that eqnType=1?';
-            dispEM(EM);
+            error('RAVEN:badInput', '%s', EM);
         end
     end
     %Calculate the indexes of the metabolites and add the info
@@ -596,7 +596,7 @@ end
 
 %The mets are matched to model.metNames and assigned to "compartment"
 if eqnType==2
-    %%Check that the metabolite names aren't present in the same
+    %%Check that the metabolite names are not present in the same
     %%compartment.
     %Not the neatest way maybe..
     t1=strcat(mets,'***',compartment);
@@ -614,7 +614,7 @@ if eqnType==2
             end
         else
             EM='One or more equations contain metabolites that are not in model.mets. Set allowNewMets to true to allow this function to add metabolites or use addMets to add them before calling this function';
-            dispEM(EM);
+            error('RAVEN:badInput', '%s', EM);
         end
     end
     
@@ -635,7 +635,7 @@ if eqnType==3
         %Check that the formatting is correct
         if isempty(starts) || isempty(ends) || ends<numel(mets{i})
             EM=['The metabolite ' mets{i} ' is not correctly formatted for eqnType=3'];
-            dispEM(EM);
+            error('RAVEN:badInput', '%s', EM);
         end
         
         %Check that the compartment is correct
@@ -643,7 +643,7 @@ if eqnType==3
         I=ismember(compartments(i),newModel.comps);
         if ~I
             EM=['The metabolite ' mets{i} ' has a compartment that is not in model.comps'];
-            dispEM(EM);
+            error('RAVEN:badInput', '%s', EM);
         end
         metNames{i}=mets{i}(1:starts-1);
     end
@@ -664,7 +664,7 @@ if eqnType==3
             end
         else
             EM='One or more equations contain metabolites that are not in model.metNames. Set allowNewMets to true to allow this function to add metabolites or use addMets to add them before calling this function';
-            dispEM(EM);
+            error('RAVEN:badInput', '%s', EM);
         end
     end
     
@@ -690,7 +690,7 @@ for i=1:nRxns
         [I, J]=ismember(genes,newModel.genes);
         if ~all(I) && any(rule)
             EM=['Not all genes for reaction ' rxnsToAdd.rxns{i} ' were found in model.genes. If needed, add genes with addGenesRaven before calling this function, or set the ''allowNewGenes'' flag to true'];
-            dispEM(EM);
+            error('RAVEN:badInput', '%s', EM);
         end
     end
 end

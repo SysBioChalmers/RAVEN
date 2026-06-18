@@ -39,7 +39,7 @@ verbose=p.verbose;
 global RAVENSOLVER;
 if isempty(RAVENSOLVER)
     if(~ispref('RAVEN','solver'))
-        dispEM('RAVEN solver not defined or unknown. Try using setRavenSolver(''solver'').');
+        error('RAVEN:badInput', '%s', 'RAVEN solver not defined or unknown. Try using setRavenSolver(''solver'').');
     else
         RAVENSOLVER = getpref('RAVEN','solver');
     end
@@ -225,7 +225,7 @@ switch solver
         %       ru - linear constraint rhs
         %       lb - decision variable lower bounds
         %       ub - decision variable upper bounds
-        %       xtype - string of variable integrality ('c' continuous, 'i' integer, 'b' binary)
+        %       xtype - string of variable integrality ("c" continuous, "i" integer, "b" binary)
         %       sos - SOS structure with fields type, index and weight (see below)
         %       qc - Quadratic Constraints structure with fields Q, l, qrl and qru (see below)
         %       nl - Nonlinear Objective and Constraints structure (see below)

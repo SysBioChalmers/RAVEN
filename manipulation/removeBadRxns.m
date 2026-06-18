@@ -7,9 +7,9 @@ function [newModel, removedRxns]=removeBadRxns(model,varargin)
 % Parameters
 % ----------
 % model : struct
-%     a model structure. For the intended function, the model shouldn't
+%     a model structure. For the intended function, the model should not
 %     allow for any uptake/excretion. The easiest way to achieve this is to
-%     import the model using importModel('filename', false).
+%     import the model using importModel("filename", false).
 %
 % Name-Value Arguments
 % --------------------
@@ -17,7 +17,7 @@ function [newModel, removedRxns]=removeBadRxns(model,varargin)
 %     which reactions may be removed (default 1):
 %
 %     - 1 : only remove reactions which are unbalanced
-%     - 2 : also remove reactions which couldn't be checked for mass
+%     - 2 : also remove reactions which could not be checked for mass
 %       balancing
 %     - 3 : all reactions can be removed
 % ignoreMets : cell or logical or double
@@ -32,14 +32,14 @@ function [newModel, removedRxns]=removeBadRxns(model,varargin)
 % balanceElements : cell
 %     a cell array with the elements for which to balance the reactions. May
 %     contain any combination of the elements defined in parseFormulas
-%     (default {'C';'P';'S';'N';'O'}).
+%     (default {"C";"P";"S";"N";"O"}).
 % refModel : struct
 %     a reference model which can be used to ensure that the resulting model
 %     is still functional. The intended use is that the reference model is a
 %     copy of model, but with uptake/excretion allowed and some objectives
 %     (such as production of biomass) constrained to a non-zero flux. Before
 %     a reaction is removed from "model" the function first checks that the
-%     same deletion in "refModel" doesn't render the problem unfeasible.
+%     same deletion in "refModel" does not render the problem unfeasible.
 % ignoreIntBounds : logical
 %     true if internal bounds (including reversibility) should be ignored.
 %     Exchange reactions are not affected. This can be used to find
@@ -58,7 +58,7 @@ function [newModel, removedRxns]=removeBadRxns(model,varargin)
 % Notes
 % -----
 % The purpose of this function is to remove reactions which enable
-% production/consumption of metabolites even when exchange reactions aren't
+% production/consumption of metabolites even when exchange reactions are not
 % used. Many models, especially if they are automatically inferred from
 % databases, will have unbalanced reactions which allow for
 % net-production/consumption of metabolites without any consumption or
@@ -95,7 +95,7 @@ balanceElements=convertCharArray(p.balanceElements);
 refModel=p.refModel;
 if ~isempty(refModel)
     EM='The feature to supply a reference model is currently not supported';
-    dispEM(EM,false);
+    warning('RAVEN:warning', '%s', EM);
 end
 ignoreIntBounds=p.ignoreIntBounds;
 printReport=p.printReport;
@@ -107,7 +107,7 @@ if ~isfield(model,'unconstrained')
     if any(I)
         if any(model.lb(I)~=0) || any(model.ub(I)~=0)
             EM='The model contains open exchange reactions. This is not the intended use of this function. Consider importing your model using importModel(filename,false)';
-            dispEM(EM,false);
+            warning('RAVEN:warning', '%s', EM);
         end
     end
 end
@@ -116,7 +116,7 @@ end
 sol=solveLP(model);
 if isempty(sol.f)
     EM='The model is not feasible. Consider removing lower bounds (such as ATP maintenance)';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %Check that the reference model is feasible
@@ -124,7 +124,7 @@ if any(refModel)
     sol=solveLP(refModel);
     if isempty(sol.f)
         EM='The reference model is not feasible';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
 end
 
@@ -135,7 +135,7 @@ balanceStructure=getElementalBalance(model);
 %Check which elements to balance for
 if ~isempty(setdiff(balanceElements,balanceStructure.elements.abbrevs))
     EM='Could not recognize all elements to balance for';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 bal=ismember(balanceStructure.elements.abbrevs,balanceElements);
 
@@ -177,10 +177,10 @@ for i=1:2
             if rxnRules==1
                 if i==1
                     EM=['No unbalanced reactions were found in the solution, but the model can still make "' model.metNames{metabolite} '". Aborting search. Consider setting rxnRules to 2 or 3 for a more exhaustive search'];
-                    dispEM(EM,false);
+                    warning('RAVEN:warning', '%s', EM);
                 else
                     EM=['No unbalanced reactions were found in the solution, but the model can still consume "' model.metNames{metabolite} '". Aborting search. Consider setting rxnRules to 2 or 3 for a more exhaustive search'];
-                    dispEM(EM,false);
+                    warning('RAVEN:warning', '%s', EM);
                 end
                 break;
             else
@@ -201,23 +201,23 @@ for i=1:2
                         %with flux
                         if i==1
                             EM=['No unbalanced or unparsable reactions were found in the solution, but the model can still make "' model.metNames{metabolite} '". Aborting search. Consider setting rxnRules to 3 for a more exhaustive search'];
-                            dispEM(EM,false);
+                            warning('RAVEN:warning', '%s', EM);
                         else
                             EM=['No unbalanced or unparsable reactions were found in the solution, but the model can still consume "' model.metNames{metabolite} '". Aborting search. Consider setting rxnRules to 3 for a more exhaustive search'];
-                            dispEM(EM,false);
+                            warning('RAVEN:warning', '%s', EM);
                         end
                         break;
                     else
                         if i==1
                             if warned(1)==false
                                 EM=['No unbalanced or unparsable reactions were found in the solution, but the model can still make "' model.metNames{metabolite} '". This indicates some error in the metabolite formulas. Removing random reactions in the solution'];
-                                dispEM(EM,false);
+                                warning('RAVEN:warning', '%s', EM);
                                 warned(1)=true;
                             end
                         else
                             if warned(2)==false
                                 EM=['No unbalanced or unparsable reactions were found in the solution, but the model can still consume "' model.metNames{metabolite} '". This indicates some error in the metabolite formulas. Removing random reactions in the solution'];
-                                dispEM(EM,false);
+                                warning('RAVEN:warning', '%s', EM);
                                 warned(2)=true;
                             end
                         end

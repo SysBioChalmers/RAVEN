@@ -9,7 +9,7 @@ function [model, deletedRxns, duplicateRxns]=mergeCompartments(model,varargin)
 % Name-Value Arguments
 % --------------------
 % keepUnconstrained : logical
-%     keep metabolites that are unconstrained in a 'unconstrained'
+%     keep metabolites that are unconstrained in a "unconstrained"
 %     compartment. If these are merged the exchange reactions will most often
 %     be deleted (default false).
 % deleteRxnsWithOneMet : logical
@@ -38,7 +38,7 @@ function [model, deletedRxns, duplicateRxns]=mergeCompartments(model,varargin)
 %
 % Notes
 % -----
-% Merges all compartments into one 's' compartment (for 'System'). This can
+% Merges all compartments into one "s" compartment (for "System"). This can
 % be useful for example to ensure that there are metabolic capabilities to
 % synthesize all metabolites.
 %
@@ -62,7 +62,7 @@ if deleteRxnsWithOneMet==true
         %If there is no unconstrained field these reactions are probably
         %exchange reactions and shall be kept. If not then print a warning
         EM='There are reactions with only one metabolite. Cannot determine whether they are exchange reactions since there is no unconstrained field';
-        dispEM(EM,false);
+        warning('RAVEN:warning', '%s', EM);
     end
 end
 

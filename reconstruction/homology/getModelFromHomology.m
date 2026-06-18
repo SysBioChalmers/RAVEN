@@ -15,7 +15,7 @@ function [draftModel, hitGenes]=getModelFromHomology(models,blastStructure,...
 % getModelFor : char
 %     a three-four letter abbreviation of the organism to build a model
 %     for. Must have BLASTP hits in both directions to the organisms in
-%     'models'.
+%     "models".
 %
 % Name-Value Arguments
 % --------------------
@@ -34,9 +34,9 @@ function [draftModel, hitGenes]=getModelFromHomology(models,blastStructure,...
 %     and many-to-one mappings (default false).
 % scoreBy : char
 %     criterion used by bestHitsOnly to select the best hit per query
-%     gene. 'bitscore' selects the hit with the highest bitscore
-%     (database-size-independent). 'evalue' selects the hit with the
-%     lowest E-value. (default 'bitscore').
+%     gene. "bitscore" selects the hit with the highest bitscore
+%     (database-size-independent). "evalue" selects the hit with the
+%     lowest E-value. (default "bitscore").
 % strictness : double
 %     legacy integer alias for bidirectional/bestHitsOnly (default 1):
 %
@@ -74,14 +74,14 @@ function [draftModel, hitGenes]=getModelFromHomology(models,blastStructure,...
 %
 % Notes
 % -----
-% The models in the 'models' structure should have named the metabolites in
+% The models in the "models" structure should have named the metabolites in
 % the same manner, have their reversible reactions in the same direction
 % (run sortModel), and use the same compartment names. To avoid keeping
-% unneccesary old genes, the models should not have 'or'-relations in their
+% unneccesary old genes, the models should not have "or"-relations in their
 % grRules (use expandModel).
 %
 % The resulting draft model contains only reactions associated with
-% orthologous genes. The old (original) genes involved in 'and' relations
+% orthologous genes. The old (original) genes involved in "and" relations
 % in grRules without any orthologs are still included in the draft model as
 % OLD_MODELID_geneName.
 %
@@ -162,7 +162,7 @@ for i=1:numel(blastStructure)
     end
 end
 
-%Assume for now that all information is there and that it's correct. This
+%Assume for now that all information is there and that it is correct. This
 %is important to fix since no further checks are being made!
 
 %Check whether provided fasta files use the same gene identifiers as
@@ -207,7 +207,7 @@ for i=1:numel(blastStructure)
 end
 
 %Remove all reactions from the models that have no genes encoding for them.
-%Also remove all genes that encode for no reactions. There shouldn't be any
+%Also remove all genes that encode for no reactions. There should not be any
 %but there might be mistakes
 for i=1:numel(models)
     [hasGenes, ~]=find(models{i}.rxnGeneMat);
@@ -217,10 +217,10 @@ for i=1:numel(models)
 end
 
 %Create a structure that contains all genes used in the blasts in any
-%direction for each of the models in 'models' and for the new organism. The
+%direction for each of the models in "models" and for the new organism. The
 %first cell is for the new organism and then according to the preferred
 %order. If no such order is supplied, then according to the order in
-%'models'
+%"models"
 allGenes=cell(numel(models)+1,1);
 if isempty(preferredOrder)
     useOrder=modelNames;
@@ -228,7 +228,7 @@ else
     useOrder=preferredOrder;
 end
 
-%Get the corresponding indexes for those models in the 'models' structure
+%Get the corresponding indexes for those models in the "models" structure
 useOrderIndexes=zeros(numel(models),1);
 for i=1:numel(models)
     [~, index]=ismember(models{i}.id,useOrder);
@@ -260,7 +260,7 @@ if onlyGenesInModels==true
         %no genes in the models are present in the corresponding sheet
         if isempty(blastStructure(i).fromGenes)
             EM=['No genes in matching from ' blastStructure(i).fromId ' to ' blastStructure(i).toId ' are present in the corresponding model'];
-            dispEM(EM);
+            error('RAVEN:badInput', '%s', EM);
         end
     end
 end
@@ -341,7 +341,7 @@ end
 %Fill the matches to other species
 for i=1:numel(blastStructure)
     if strcmp(blastStructure(i).toId,getModelFor)
-        %This was 'to' the new organism. They should all match so no checks
+        %This was "to" the new organism. They should all match so no checks
         %are being made
         [~, a]=ismember(blastStructure(i).toGenes,allGenes{1});
         [~, fromModel]=ismember(blastStructure(i).fromId,useOrder);
@@ -349,7 +349,7 @@ for i=1:numel(blastStructure)
         idx = sub2ind(size(allTo{fromModel-1}), a, b);
         allTo{fromModel-1}(idx)=1;
     else
-        %This was 'from' the new organism
+        %This was "from" the new organism
         [~, a]=ismember(blastStructure(i).fromGenes,allGenes{1});
         [~, toModel]=ismember(blastStructure(i).toId,useOrder);
         [~, b]=ismember(blastStructure(i).toGenes,allGenes{toModel});
@@ -377,7 +377,7 @@ else
     end
 end
 
-%Remove all genes from the mapping that are not in the models. This doesn't
+%Remove all genes from the mapping that are not in the models. This does not
 %do much if only genes in the models were used for the original mapping.
 %Also simplify the finalMapping and allGenes structures so that they only
 %contain mappings that exist
@@ -458,7 +458,7 @@ if ~isempty(preferredOrder) && numel(models)>1
 end
 
 %Now loop through the models and update the gene associations. Genes not
-%belonging to the new organism will be renamed as 'OLD_MODELID_gene'
+%belonging to the new organism will be renamed as "OLD_MODELID_gene"
 for i=1:numel(models)
     %Find all the new genes that should be used for this model
     [newGenes, oldGenes]=find(finalMappings{i});
@@ -491,8 +491,8 @@ for i=1:numel(models)
         %with several new ones if there were several matches
         for k=1:numel(oldGeneIds)
             %Match the gene to one in the gene list. This is done as a text
-            %match. Could probably be done better, but I'm a little lost in
-            %the indexing
+            %match. Could probably be done better, but the indexing is
+            %complex
 
             geneName=models{useOrderIndexes(i)}.genes(oldGeneIds(k));
 
@@ -556,7 +556,7 @@ for i=1:numel(models)
     end
 end
 
-%Now merge the models. All information should be correct except for 'or'
+%Now merge the models. All information should be correct except for "or"
 %complexes
 draftModel=mergeModels(models,'metNames');
 
@@ -609,7 +609,7 @@ end
 
 
 function tokens=gprTokenize(rule)
-% Split a GPR rule into tokens: gene IDs, 'and', 'or', '(', ')'.
+% Split a GPR rule into tokens: gene IDs, "and", "or", "(", ")".
 % Brackets are separated from adjacent text by whitespace before splitting.
 if isempty(rule)
     tokens={};
@@ -637,7 +637,7 @@ end
 function tokens=gprReplaceToken(tokens,oldGene,newGenes)
 % Replace each occurrence of token oldGene with the gene(s) in newGenes.
 % newGenes is a cell array; multiple genes are wrapped in parentheses and
-% joined with ' or '.
+% joined with " or ".
 k=1;
 while k<=numel(tokens)
     if strcmp(tokens{k},oldGene)

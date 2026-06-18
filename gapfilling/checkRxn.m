@@ -53,7 +53,7 @@ end
 
 if ~I
     EM='Reaction ID not found';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 if revDir==false

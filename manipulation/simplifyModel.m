@@ -107,12 +107,12 @@ if deleteZeroInterval==true
 end
 
 if deleteInaccessible==true
-    %Print a warning if exchange metabolites haven't been deleted yet. This
+    %Print a warning if exchange metabolites have not been deleted yet. This
     %often means that the only allowed products are the metabolites that
     %are taken up be the system
     if isfield(reducedModel,'unconstrained') && suppressWarnings==false
         EM='Removing dead-end reactions before removing exchange metabolites';
-        dispEM(EM,false);
+        warning('RAVEN:warning', '%s', EM);
     end
     
     while true
@@ -134,7 +134,7 @@ if deleteInaccessible==true
         onlyReactants=sum(revS'<0) == metUsage;
         
         %Also remove metabolites that only participate in one reversible
-        %reaction Don't remove the ones in one reversible reaction if is
+        %reaction Do not remove the ones in one reversible reaction if is
         %also has a non-zero coefficient in model.b
         notInUse=onlyProducts | onlyReactants | (sum(abs(reducedModel.S')>0)<=1 & (~in & ~out)');
         deletedRxn=false;
@@ -168,7 +168,7 @@ if deleteInaccessible==true
 end
 
 if deleteMinMax==true
-    %Get reactions that can't carry fluxes. This should be done
+    %Get reactions that cannot carry fluxes. This should be done
     %algebraically if possible
     I=~haveFlux(reducedModel);
     
@@ -238,7 +238,7 @@ if groupLinear==true
     %Loop through and iteratively group linear reactions
     while 1
         %Get the banned reaction indexes. Note that the indexes will change
-        %in each iteration, but the names will not as they won't be merged
+        %in each iteration, but the names will not as they will not be merged
         %with any other reaction
         bannedIndexes=getIndexes(irrevModel,reservedRxns,'rxns');
         
@@ -257,7 +257,7 @@ if groupLinear==true
         for i=1:numel(common)
             involvedRxns=find(irrevModel.S(common(i),:));
             
-            %Check so that one or both of the reactions haven't been merged
+            %Check so that one or both of the reactions have not been merged
             %already
             if numel(involvedRxns)==2 && isempty(intersect(bannedIndexes,involvedRxns))
                 %Calculate how many times the second reaction has to be

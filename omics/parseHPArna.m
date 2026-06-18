@@ -57,7 +57,7 @@ fclose(fid);
 for i=1:numel(headers)
     if ~strcmpi(headers(i),hpa{i}(1))
         EM=['Could not find the header "' headers{i} '". Make sure that the input file matches the format specified at http://www.proteinatlas.org/about/download'];
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
     %Remove the header line here
     hpa{i}(1)=[];

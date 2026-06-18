@@ -11,7 +11,7 @@ function args = parseRAVENargs(rawArgs, spec)
 % Parameters
 % ----------
 % rawArgs : cell
-%     the function's varargin, i.e. whatever was supplied after the required
+%     the varargin of the function, i.e. whatever was supplied after the required
 %     positional arguments.
 % spec : cell
 %     an N-by-2 or N-by-3 cell array describing the optional parameters, one
@@ -45,8 +45,8 @@ function args = parseRAVENargs(rawArgs, spec)
 % This means three styles are accepted interchangeably:
 %
 %     f(model, v1, v2)                   % purely positional
-%     f(model, 'p1', v1, 'p2', v2)       % purely named
-%     f(model, v1, 'p2', v2, 'p3', v3)   % hybrid: v1 positional, rest named
+%     f(model, "p1", v1, "p2", v2)       % purely named
+%     f(model, v1, "p2", v2, "p3", v3)   % hybrid: v1 positional, rest named
 %
 % When a positional value could itself be a string that equals a parameter
 % name, use the explicit name-value form for that argument to avoid
@@ -56,15 +56,15 @@ function args = parseRAVENargs(rawArgs, spec)
 % --------
 %     % inside exportToExcelFormat(model, varargin):
 %     p = parseRAVENargs(varargin, { ...
-%         'fileName', []; ...
-%         'sortIds',  false});
+%         "fileName", []; ...
+%         "sortIds",  false});
 %     fileName = p.fileName;
 %     sortIds  = p.sortIds;
 %
 %     % the caller may use any of these:
-%     exportToExcelFormat(model, 'model.xlsx', true)              % positional
-%     exportToExcelFormat(model, 'sortIds', true)                 % named
-%     exportToExcelFormat(model, 'model.xlsx', 'sortIds', true)   % hybrid
+%     exportToExcelFormat(model, "model.xlsx", true)              % positional
+%     exportToExcelFormat(model, "sortIds", true)                 % named
+%     exportToExcelFormat(model, "model.xlsx", "sortIds", true)   % hybrid
 
 if nargin < 2 || isempty(spec)
     error('parseRAVENargs:noSpec', 'A parameter specification is required.');

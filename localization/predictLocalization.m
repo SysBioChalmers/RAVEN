@@ -91,7 +91,7 @@ transportCost=transportCost(:);
 
 if numel(transportCost)~=numel(model.mets)
     EM='The vector of transport costs must have the same dimension as model.mets';
-    dispEM(EM,true);
+    error('RAVEN:badInput', '%s', EM);
 end
 if isempty(maxTime)
     maxTime=15;
@@ -103,31 +103,31 @@ end
 if isfield(model,'rxnComps')
     model=rmfield(model,'rxnComps');
     EM='The model structure contains information about reaction compartmentalization. This is not supported by this function. The rxnComps field has been deleted';
-    dispEM(EM,false);
+    warning('RAVEN:warning', '%s', EM);
 end
 if isfield(model,'geneComps')
     model=rmfield(model,'geneComps');
     EM='The model structure contains information about gene compartmentalization. This is not supported by this function. The geneComps field has been deleted';
-    dispEM(EM,false);
+    warning('RAVEN:warning', '%s', EM);
 end
 
 defaultCompartment=char(defaultCompartment);
 I=ismember(defaultCompartment,GSS.compartments);
 if I==false
     EM='defaultCompartment not found in GSS';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 if numel(model.comps)>1
     EM='The model has several compartments. All compartments will be merged';
-    dispEM(EM,false);
+    warning('RAVEN:warning', '%s', EM);
     model=mergeCompartments(model,true,true);
 end
 
 noGenes = ismember(model.genes,GSS.genes);
 if ~all(noGenes)
     EM=['For ' num2str(numel(find(~noGenes))) ' of ' num2str(numel(model.genes)) ' model genes no data was found in GSS'];
-    dispEM(EM,false);
+    warning('RAVEN:warning', '%s', EM);
 end
 
 %***Begin formating the data structures
@@ -244,7 +244,7 @@ GSS.scores=[GSS.scores;ones(numel(I),numel(GSS.compartments))*0.5];
 genes=unique(model.grRules);
 nGenes=strrep(genes,'(','');
 nGenes=strrep(nGenes,')','');
-%nGenes=strrep(nGenes,' and ','_and_');
+%nGenes=strrep(nGenes," and ","_and_");
 complexes=setdiff(nGenes,model.genes);
 if ~isempty(complexes)
     if isempty(complexes{1}) %Empty grRules also come up here
@@ -267,7 +267,7 @@ for i=1:numel(complexes)
         mScores=(mScores.*sum(I)+(numel(genesInComplex)-sum(I))*0.5)/numel(genesInComplex);
     else
         EM=['Could not parse grRule "' complexes{i} '". Assigning score 0.0 in all compartments'];
-        dispEM(EM,false);
+        warning('RAVEN:warning', '%s', EM);
         mScores=ones(1,numel(genesInComplex))*0.5;
     end
     cScores(i,:)=mScores;
@@ -771,7 +771,7 @@ for i=1:numel(I)
     end
 end
 
-%Then remove all reactions and metabolites that aren't used in the final
+%Then remove all reactions and metabolites that are not used in the final
 %solution from the optimization
 [~, J]=find(bestS(:,1:nER+nComps*nRxns));
 K=true(numel(outModel.rxns),1);
@@ -1018,7 +1018,7 @@ comps=ceil((mets-nEM)/((size(S,1)-nEM)/nComps));
 
 if sum(comps==1)~=1
     EM='Tried to create a transport reaction from a non-default compartment';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %Calculate the reaction index
@@ -1059,7 +1059,7 @@ function y = randsample(n, k, replace, w)
 %   Example:  Generate a random sequence of the characters ACGT, with
 %   replacement, according to specified probabilities.
 %
-%      R = randsample('ACGT',48,true,[0.15 0.35 0.35 0.15])
+%      R = randsample("ACGT",48,true,[0.15 0.35 0.35 0.15])
 %
 %   See also RAND, RANDPERM.
 

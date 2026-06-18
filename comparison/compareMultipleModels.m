@@ -77,11 +77,11 @@ if ~isempty(taskFile)
 end
 if numel(models) <= 1
     EM = 'Cannot compare only one model. Use printModelStats if you want a summary of a model';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 if isempty(taskFile) && funcCompare
     EM = 'Cannot perform the functional comparison without a task file. Specify taskFile or set funcCompare to FALSE.';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %% Set up model ID structure
@@ -313,26 +313,26 @@ function h = genHeatMap(data,colnames,rownames,clust_dim,clust_dist,col_map,col_
 % 
 % rownames    Cell array of data row names.
 %
-% clust_dim   'none' - the data will be plotted as provided (DEFAULT)
-%             'rows' - cluster/rearrange the rows based on distance
-%             'cols' - cluster/rearrange the columns based on distance
-%             'both' - cluster/rearrange rows and columns based on distance
+% clust_dim   "none" - the data will be plotted as provided (DEFAULT)
+%             "rows" - cluster/rearrange the rows based on distance
+%             "cols" - cluster/rearrange the columns based on distance
+%             "both" - cluster/rearrange rows and columns based on distance
 %
 % clust_dist  Distance metric to be used for clustering, ignored if
-%             clust_dim is 'none'. Options are the same as those for
-%             distance in, e.g., PDIST ('euclidean', 'hamming', etc.).
-%             (DEFAULT = 'euclidean')
+%             clust_dim is "none". Options are the same as those for
+%             distance in, e.g., PDIST ("euclidean", "hamming", etc.).
+%             (DEFAULT = "euclidean")
 %
-% col_map     Colormap, provided as string (e.g., 'parula', 'hot', 'etc.')
+% col_map     Colormap, provided as string (e.g., "parula", "hot", "etc.")
 %             or an Nx3 RGB matrix of N colors.
-%             (DEFAULT = 'hot')
+%             (DEFAULT = "hot")
 %
 % col_bounds  A 2-element vector with min and max values, to manually set
 %             the bounds of the colormap.
 %             (DEFAULT = min/max of data).
 %
 % grid_color  Color of the grid surrounding the heatmap cells.
-%             (DEFAULT = 'none')
+%             (DEFAULT = "none")
 %
 %
 
@@ -420,7 +420,7 @@ function c = redblue(m)
 %   REDBLUE(M), is an M-by-3 matrix that defines a colormap.
 %   The colors begin with bright blue, range through shades of
 %   blue to white, and then through shades of red to bright red.
-%   REDBLUE, by itself, is the same length as the current figure's
+%   REDBLUE, by itself, is the same length as the current figure
 %   colormap. If no figure exists, MATLAB creates one.
 %
 %   For example, to reset the colormap of the current figure:

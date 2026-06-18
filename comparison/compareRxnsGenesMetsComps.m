@@ -21,7 +21,7 @@ function compStruct=compareRxnsGenesMetsComps(models,varargin)
 %
 %     - modelIDs : cell array of model ids
 %     - rxns, mets, genes, eccodes, metNames, equ, uEqu : the comparison for
-%       each field. 'equ' are the equations after sorting and 'uEqu' are the
+%       each field. "equ" are the equations after sorting and "uEqu" are the
 %       equations when not taking compartmentalization into account. Each of
 %       these contains the sub-fields:
 %
@@ -39,7 +39,7 @@ printResults=p.printResults;
 
 if numel(models)<=1
     EM='Cannot compare only one model. Use printModelStats if you want a summary of a model';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 compStruct.modelIDs={};
@@ -166,7 +166,7 @@ end
 
 function nElements=checkStuff(A,toCheck)
 %Now loop through the toCheck matrix, starting with the combination with
-%the most models. Only elements that weren't in iteration n are considered
+%the most models. Only elements that were not in iteration n are considered
 %in iteration n+1.
 nElements=zeros(size(toCheck,1),1);
 alreadyChecked=[];

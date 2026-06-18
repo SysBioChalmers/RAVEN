@@ -11,7 +11,7 @@ function GSS = getWoLFScores(inputFile, kingdom)
 % inputFile : char
 %     a FASTA file with protein sequences.
 % kingdom : char
-%     the kingdom of the organism, 'animal', 'fungi' or 'plant'.
+%     the kingdom of the organism, "animal", "fungi" or "plant".
 %
 % Returns
 % -------
@@ -33,12 +33,12 @@ end
 kingdom=char(kingdom);
 if ~any(strcmp(kingdom,{'animal','fungi','plant'}))
     EM='Allowed kingdoms are "animal", "fungi", and "plant"';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 if ispc || ismac
     EM='This function currently runs only on Linux. Use parseScores if you want to use another predictor';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %Get the directory for RAVEN Toolbox

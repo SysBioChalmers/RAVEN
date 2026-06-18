@@ -65,7 +65,7 @@ if sortReactionOrder==true
     %Check if the model has sub-systems, otherwise throw an error
     if ~isfield(model,'subSystems')
         EM='The model must contain a subSystems field in order to sort reaction order';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
     
     subsystemsUnique='';
@@ -151,14 +151,14 @@ if sortReactionOrder==true
             %produced/consumed
             s=tempS(:,newRxnOrder);
             
-            %Remove mets that aren't used in both directions
+            %Remove mets that are not used in both directions
             s=s(any(s,2),:);
             
             %Add so that all mets are produced and consumed in the end
             s=[s ones(size(s,1),1) ones(size(s,1),1)*-1];
             
-            %For each metabolite, find the reaction where it's first
-            %produced and the reaction where it's first consumed
+            %For each metabolite, find the reaction where it is first
+            %produced and the reaction where it is first consumed
             s1=s>0;
             r1=arrayfun(@(x) find(s1(x,:),1,'first'),1:size(s1,1));
             s2=s<0;

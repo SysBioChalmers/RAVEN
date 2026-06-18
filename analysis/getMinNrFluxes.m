@@ -72,7 +72,7 @@ if isempty(scores)
 else
     if numel(scores)~=numel(toMinimize)
         EM='The number of scores must be the same as the number of reactions to minimize';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
     
     %Change positive scores to have a small negative weight. This is a
@@ -113,7 +113,7 @@ scores=scores(I(indexes));
 %feasible start solution.
 sol=solveLP(irrevModel,1);
 
-%Return an empty solution if the non-constrained problem couldn't be solved
+%Return an empty solution if the non-constrained problem could not be solved
 if isempty(sol.x)
     x=[];
     I=[];
@@ -121,7 +121,7 @@ if isempty(sol.x)
     return;
 end
 
-%Take the maximal times 5 to have a safe margin. If it's smaller than 1000,
+%Take the maximal times 5 to have a safe margin. If it is smaller than 1000,
 %then use 1000 instead.
 maxFlux=max(max(sol.x)*5,1000);
 
@@ -155,7 +155,7 @@ prob.sol.int.xx(prob.ints.sub(sol.x(indexes)>10^-12))=1;
 prob.x0=[];
 prob.vartype=repmat('C', size(prob.A,2), 1);
 prob.vartype(prob.ints.sub) = 'I'; % with .lb = 0 and .ub = 1, they are binary
-% integers (glpk in octave only allows 'continuous' or '', not 'binary')
+% integers (glpk in octave only allows "continuous" or "", not "binary")
 prob=rmfield(prob,{'blx','bux','blc','buc'});
 
 % Optimize the problem
@@ -174,7 +174,7 @@ I=res.full(numel(xx)+1:end);
 
 %Check if Mosek aborted because it reached the time limit
 %TODO: modify for cobra/gurobi
-% if strcmp('MSK_RES_TRM_MAX_TIME',res.rcode)
+% if strcmp("MSK_RES_TRM_MAX_TIME",res.rcode)
 %     exitFlag=-2;
 % end
 

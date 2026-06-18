@@ -57,7 +57,7 @@ pR=zeros(nRxns,1);
 %Check that the number of reactions is the same in both expression and flux
 if nRxns~=size(solutionsA,1)
     EM='The number of reactions must be the same in Tex as in solutionsA';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %Get the Z-score and mean for the solutions
@@ -69,7 +69,7 @@ Zf=getFluxZ(solutionsA, solutionsB);
 I=isnan(Tex) | isinf(Tex);
 if any(I)
     EM='There are t-scores that are NaN or +/- Inf. These values are changed to 0.0';
-    dispEM(EM,false);
+    warning('RAVEN:warning', '%s', EM);
 end
 Tex(I)=0;
 
@@ -129,13 +129,13 @@ end
 end
 
 function p = tcdf(t,v,uflag)
-% TCDF Student's T cumulative distribution function (cdf).
+% TCDF Student T cumulative distribution function (cdf).
 %
-% P = TCDF(X,V) computes the cdf for Student's T distribution
+% P = TCDF(X,V) computes the cdf for Student T distribution
 % with V degrees of freedom, at the values in X. V must be a
 % scalar or have the same size as T.
 %
-% P = TCDF(X,V,'upper') computes it for the upper tail instead
+% P = TCDF(X,V,"upper") computes it for the upper tail instead
 % of the lower tail.
 %
 % This is an alternative to the TCDF function that is implemented
@@ -166,7 +166,7 @@ if all(size(v)==1)
     v = ones(size(t))*v;
 end
 
-%check for NaN's - don't do calculations on them, give those out as NaNs
+%check for NaNs - do not do calculations on them, give those out as NaNs
 if any( not(isfinite(t(:))) | not(isfinite(v(:))) )
     sel = find(isfinite(t) & isfinite(v));
     x=nan(size(t));

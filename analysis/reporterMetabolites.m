@@ -31,7 +31,7 @@ function repMets=reporterMetabolites(model,genes,genePValues,varargin)
 %     an array of structures with the following fields:
 %
 %     - test : a string that describes the genes used to calculate the
-%       Reporter Metabolites ('all', 'only up', or 'only down'). The two
+%       Reporter Metabolites ("all", "only up", or "only down"). The two
 %       latter structures are only calculated if geneFoldChanges are
 %       supplied.
 %     - mets : a cell array of metabolite IDs for the metabolites for which
@@ -67,11 +67,11 @@ geneFoldChanges=p.geneFoldChanges;
 %Check some stuff
 if numel(genes)~=numel(genePValues)
     EM='The number of genes and the number of Z-scores must be the same';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 if ~isfield(model,'rxnGeneMat')
     EM='The model structure must have a rxnGeneMat field';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %Remove the genes which are not in the model

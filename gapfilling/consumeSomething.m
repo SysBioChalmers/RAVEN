@@ -78,7 +78,7 @@ if isNames==true && ~isempty(ignoreMets)
     %Check that metsToRemove is a cell array
     if iscellstr(ignoreMets)==false
         EM='Must supply a cell array of strings if isNames=true';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
 end
 

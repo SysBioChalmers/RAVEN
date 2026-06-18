@@ -12,7 +12,7 @@ function model=getKEGGModelForOrganism(organismID,varargin)
 % organismID : char
 %     three or four letter abbreviation of the organism (as used in KEGG).
 %     If not available, use a closely related species. This is used for
-%     determing the phylogenetic distance. Use 'eukaryotes' or 'prokaryotes'
+%     determing the phylogenetic distance. Use "eukaryotes" or "prokaryotes"
 %     to get a model for the whole domain. Only applicable if fastaFile is
 %     empty, i.e. no homology search should be performed.
 %
@@ -93,7 +93,7 @@ function model=getKEGGModelForOrganism(organismID,varargin)
 %
 %   1. From KEGG annotations (no fastaFile supplied). The reactions
 %      associated with organismID in the local KEGG database are kept;
-%      maxPhylDist controls which organisms' annotations are considered.
+%      maxPhylDist controls which organism annotations are considered.
 %   2. From protein homology (fastaFile supplied). The query proteome is
 %      searched, in a single hmmsearch, against a prebuilt KEGG-version- and
 %      domain-specific concatenated KO HMM library (e.g. kegg118_eukaryotes),
@@ -239,7 +239,7 @@ if ~isempty(dataDir)
     end
 end
 
-%Check if the fasta-file contains '/' or'\'. If not then it's probably just
+%Check if the fasta-file contains "/" or "\". If not then it is probably just
 %a file name. Expand to full path.
 if any(fastaFile)
     if ~any(strfind(fastaFile,'\')) && ~any(strfind(fastaFile,'/'))
@@ -326,7 +326,7 @@ if isempty(fastaFile)
     fprintf('Constructing GPR associations and annotations for the model... ');
     model.grRules=cell(numel(model.rxns),1);
     model.grRules(:)={''};
-    %Add the gene associations as 'or'
+    %Add the gene associations as "or"
     for i=1:numel(model.rxns)
         %Find the involved genes
         I=find(model.rxnGeneMat(i,:));
@@ -366,7 +366,7 @@ end
 %Query the whole proteome against the concatenated KO HMM library in a
 %single hmmsearch. With the profile library as the query and the
 %proteome as the target sequence database, the reported per-hit
-%E-values match RAVEN's historical per-KO hmmsearch (same search
+%E-values match the RAVEN historical per-KO hmmsearch (same search
 %direction, same effective database size), so the downstream scoring is
 %unchanged - thousands of hmmsearch calls simply collapse into one, and
 %no per-organism phylogenetic-distance subsampling is needed because the
@@ -387,7 +387,7 @@ fprintf('Querying the user-specified FASTA file against the KEGG Orthology speci
 [status, output]=system(['"' fullfile(ravenPath,'software','hmmer',['hmmsearch' binEnd]) '" --cpu "' num2str(cores) '" --tblout "' tblFile '" "' libraryFile '" "' fastaFile '"']);
 if status~=0
     EM=['Error when querying the concatenated HMM library:\n' output];
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 fprintf('COMPLETE\n');
 
@@ -526,7 +526,7 @@ end
 fprintf('COMPLETE\n');
 
 fprintf('Constructing GPR rules and finalizing the model... ');
-%Add the gene associations as 'or'
+%Add the gene associations as "or"
 for i=1:numel(model.rxns)
     %Find the involved genes
     I=find(model.rxnGeneMat(i,:));

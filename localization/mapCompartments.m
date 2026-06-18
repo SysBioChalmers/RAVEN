@@ -14,16 +14,16 @@ function geneScoreStructure=mapCompartments(geneScoreStructure,varargin)
 %     any number of rules, defined as consecutive strings or in a cell
 %     array:
 %
-%     - 'comp1' : comp1 should be kept in the structure.
-%     - 'comp1=comp2' : The scores in comp2 are merged to comp1 and comp2 is
+%     - "comp1" : comp1 should be kept in the structure.
+%     - "comp1=comp2" : The scores in comp2 are merged to comp1 and comp2 is
 %       removed from the structure. This automatically keeps comp1 in the
 %       structure.
-%     - 'comp1=comp2 comp3' : The scores in comp2 and comp3 are merged to
+%     - "comp1=comp2 comp3" : The scores in comp2 and comp3 are merged to
 %       comp1 and comp2 & comp3 are removed from the structure. This
 %       automatically keeps comp1 in the structure.
-%     - 'comp1 comp2=comp3' : The scores in comp3 are split between comp1 and
+%     - "comp1 comp2=comp3" : The scores in comp3 are split between comp1 and
 %       comp2. This automatically keeps comp1 and comp2 in the structure.
-%     - 'comp1=other' : The scores in any compartment not included are merged
+%     - "comp1=other" : The scores in any compartment not included are merged
 %       to comp1. This is applied after all other rules.
 %
 % Returns
@@ -39,8 +39,8 @@ function geneScoreStructure=mapCompartments(geneScoreStructure,varargin)
 % Lysosome is merged with Peroxisome and all other compartments are merged
 % to the Cytosol:
 %
-%     GSS = mapCompartments(GSS, 'Extracellular', 'Mitochondria', ...
-%         'Peroxisome=Lysosome', 'Cytosol=other');
+%     GSS = mapCompartments(GSS, "Extracellular", "Mitochondria", ...
+%         "Peroxisome=Lysosome", "Cytosol=other");
 %
 % Notes
 % -----
@@ -49,19 +49,19 @@ function geneScoreStructure=mapCompartments(geneScoreStructure,varargin)
 % compartment is split among several, the scores for the compartment to be
 % merged is weighted with the number of compartments to split to.
 
-%   'comp1=comp2'       The scores in comp2 are merged to comp1 and comp2 is
+%   "comp1=comp2"       The scores in comp2 are merged to comp1 and comp2 is
 %                       removed from the structure. This automatically
 %                       keeps comp1 in the structure
 
-%   'comp1=comp2 comp3' The scores in comp2 and comp3 are merged to comp1
+%   "comp1=comp2 comp3" The scores in comp2 and comp3 are merged to comp1
 %                       and comp2 & comp2 are removed from the structure.
 %                       This automatically keeps comp1 in the structure
 
-%   'comp1 comp2=comp3' The scores in comp3 are split between comp1 and
+%   "comp1 comp2=comp3" The scores in comp3 are split between comp1 and
 %                       comp2. This automatically keeps comp1 and comp2 in
 %                       the structure
 
-%   'comp1=other'       The scores in any compartment not included are
+%   "comp1=other"       The scores in any compartment not included are
 %                       merged to comp1. This is applied after all other
 %                       rules.
 %
@@ -76,8 +76,8 @@ function geneScoreStructure=mapCompartments(geneScoreStructure,varargin)
 %   where Lysosome is merged with Peroxisome and all other compartments
 %   are merged to the Cytosol.
 %
-%   GSS=mapCompartments(GSS,'Extracellular','Mitochondria','Peroxisome=Lyso
-%   some','Cytosol=other');
+%   GSS=mapCompartments(GSS,"Extracellular","Mitochondria","Peroxisome=Lyso
+%   some","Cytosol=other");
 %
 %   geneScoreStructure  a structure to be used in predictLocalization
 %
@@ -86,7 +86,7 @@ function geneScoreStructure=mapCompartments(geneScoreStructure,varargin)
 varargin=upper(varargin);
 
 %First find the compartment that will end up in the final structure. They
-%are the ones that stand alone or are to the left of some '='
+%are the ones that stand alone or are to the left of some "="
 toKeep={};
 toMerge={};
 I=regexp(varargin,'=','split');
@@ -104,7 +104,7 @@ end
 %Check that there are no compartment that should both be merged and kept
 if ~isempty(intersect(toKeep,toMerge))
     EM='There are inconsistencies where one or more compartment(s) should be both kept and merged to another';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %Check that there are no compartments in the rules that are not in the
@@ -114,7 +114,7 @@ J=[uComps,{'OTHER'}];
 
 if ~isempty(setdiff([toKeep;toMerge],J))
     EM='There are compartment in the rules that are not in geneScoreStructure.compartments';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %Loop through it again and do the mapping
@@ -134,15 +134,15 @@ for i=1:numel(I)
         J=regexp(I{i}(1),' ','split');
         [l, L]=ismember(J{1},uComps);
         
-        %It's not allowed to have rules like A B=C D
+        %It is not allowed to have rules like A B=C D
         if numel(K)>1 && numel(L)>1
             EM='It is not allowed to have rules like "A B=C D" (map more than one compartment to more than one compartment)';
-            dispEM(EM);
+            error('RAVEN:badInput', '%s', EM);
         end
         
         if ~all(k) || ~all(l)
             EM='Error in mapping. This most likely means that some compartment(s) are mapped to different compartments in different rules. Use A B=C if you want to map C to several compartments';
-            dispEM(EM);
+            error('RAVEN:badInput', '%s', EM);
         end
         
         %Get the sum of the scores for the compartments that should be
@@ -162,7 +162,7 @@ for i=1:numel(I)
 end
 
 %Then check if there are remaining compartments that should be removed or
-%mapped as 'other'
+%mapped as "other"
 J=find(~ismember(uComps,toKeep));
 if any(J)
     if any(otherIndex)
@@ -173,11 +173,11 @@ if any(J)
             geneScoreStructure.scores(:,L)=max(geneScoreStructure.scores(:,L),S);
         else
             EM='Could not map "other" to more than one compartment';
-            dispEM(EM);
+            error('RAVEN:badInput', '%s', EM);
         end
     else
         EM='There are compartments that are not defined if they should be kept or removed. Use "A=other" or define more rules if you do not want them to be deleted';
-        dispEM(EM,false);
+        warning('RAVEN:warning', '%s', EM);
     end
     
     %Remove the comparement that were merged
@@ -194,7 +194,7 @@ geneScoreStructure.scores=bsxfun(@times, geneScoreStructure.scores, 1./I);
 I=find(isnan(geneScoreStructure.scores(:,1))); %Only looks a the first colum as it will be the same for the other ones
 if any(I)
     EM='The following genes had score 0.0 in all compartments. They have been removed from the structure. Consider using more rules or "A=other" in order to prevent this:';
-    dispEM(EM,false,geneScoreStructure.genes(I));
+    warning('RAVEN:warning', '%s', ravenList(EM, geneScoreStructure.genes(I)));
     geneScoreStructure.scores(I,:)=[];
     geneScoreStructure.genes(I)=[];
 end

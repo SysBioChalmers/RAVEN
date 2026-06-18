@@ -14,8 +14,8 @@ function model=mergeModels(models,varargin)
 % Name-Value Arguments
 % --------------------
 % metParam : char
-%     string, metabolite name ('metNames') or ID ('mets') are used for
-%     matching (default 'metNames').
+%     string, metabolite name ("metNames") or ID ("mets") are used for
+%     matching (default "metNames").
 % supressWarnings : logical
 %     whether warnings should be supressed (default false).
 % copyToComps : logical
@@ -25,9 +25,9 @@ function model=mergeModels(models,varargin)
 % -------
 % model : struct
 %     a model structure with the merged model. Follows the structure of
-%     normal models but also has 'rxnFrom/metFrom/geneFrom' fields to
+%     normal models but also has "rxnFrom/metFrom/geneFrom" fields to
 %     indicate from which model each reaction/metabolite/gene was taken. If
-%     the model already has 'rxnFrom/metFrom/geneFrom' fields, then these
+%     the model already has "rxnFrom/metFrom/geneFrom" fields, then these
 %     fields are not modified.
 %
 % Examples
@@ -97,7 +97,7 @@ for i=1:numel(models)
 end
 for i=2:numel(models)
     %Add the model id to the rxn id id it already exists in the model (id
-    %have to be unique) This is because it makes a '[]' string if no new
+    %have to be unique) This is because it makes a "[]" string if no new
     %reactions
     if ~isempty(models{i}.rxns)
         I=ismember(models{i}.rxns,model.rxns);
@@ -115,7 +115,7 @@ for i=2:numel(models)
         end
         if supressWarnings==false
             EM=['The following reaction IDs in ' models{i}.id ' are already present in the model and were renamed:'];
-            dispEM(EM,false,printString);
+            warning('RAVEN:warning', '%s', ravenList(EM, printString));
             fprintf('\n');
         end
     end
@@ -280,7 +280,7 @@ for i=2:numel(models)
         
         oldMetComps=model.comps(model.metComps);
         oldMets=strcat(model.metNames,'[',oldMetComps,']');
-        %This is because it makes a '[]' string if no new metabolites
+        %This is because it makes a "[]" string if no new metabolites
         if ~isempty(models{i}.metNames)
             newMetComps=models{i}.comps(models{i}.metComps);
             newMets=strcat(models{i}.metNames,'[',newMetComps,']');
@@ -324,7 +324,7 @@ for i=2:numel(models)
         end
         if supressWarnings==false
             EM=['The following metabolite IDs in ' models{i}.id ' are already present in the model and were renamed:'];
-            dispEM(EM,false,printString);
+            warning('RAVEN:warning', '%s', ravenList(EM, printString));
         end
     end
     
@@ -348,7 +348,7 @@ for i=2:numel(models)
         end
     end
     
-    %Only add extra info on new metabolites since it's a little tricky to
+    %Only add extra info on new metabolites since it is a little tricky to
     %chose what to keep otherwise. Should change in the future
 
     if ~isempty(metsToAdd)
@@ -459,10 +459,10 @@ for i=2:numel(models)
         [~, conflicting]=ismember(models{i}.compNames(compIndexes),model.compNames);
         if any(conflicting)
             EM=['The following compartment IDs in ' models{i}.id ' are already present in the model but with another name. They have to be renamed'];
-            dispEM(EM,true,model.comps(conflicting));
+            error('RAVEN:badInput', '%s', ravenList(EM, model.comps(conflicting)));
         end
         
-        %It's ok to add duplicate name, but not duplicate IDs
+        %It is ok to add duplicate name, but not duplicate IDs
         model.compNames=[model.compNames; models{i}.compNames(compIndexes)];
         model.comps=[model.comps; models{i}.comps(compIndexes)];
         if isfield(model,'compOutside')
@@ -491,7 +491,7 @@ for i=2:numel(models)
     %Just a check
     if ~all(I)
         EM='There was an unexpected error in matching compartments';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
     model.metComps=[model.metComps;J];
      
@@ -612,14 +612,14 @@ for i=2:numel(models)
                         emptyGeneMir=ones(numel(model.genes)-numel(genesToAdd),1);
                         model.geneComps=[emptyGeneMir;models{i}.geneComps(genesToAdd)];
                         EM='Adding genes with compartment information to a model without such information. All existing genes will be assigned to the first compartment';
-                        dispEM(EM,false);
+                        warning('RAVEN:warning', '%s', EM);
                     end
                 else
                     if isfield(model,'geneComps')
                         emptyGeneMir=ones(numel(genesToAdd),1);
                         model.geneComps=[model.geneComps;emptyGeneMir];
                         EM='Adding genes with compartment information to a model without such information. All existing genes will be assigned to the first compartment';
-                        dispEM(EM,false);
+                        warning('RAVEN:warning', '%s', EM);
                     end
                 end
             end
@@ -632,7 +632,7 @@ for i=2:numel(models)
             %Just a check
             if ~all(a)
                 EM='There was an unexpected error in matching genes';
-                dispEM(EM);
+                error('RAVEN:badInput', '%s', EM);
             end
             model.grRules=[model.grRules;models{i}.grRules];
         end

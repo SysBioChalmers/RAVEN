@@ -32,7 +32,7 @@ function hpaData=parseHPA(fileName, varargin)
 %       in cell type j
 %     - gene2Type : gene-to-evidence type mapping in sparse matrix form. The
 %       value for element i,j is the index in hpaData.types of gene i in
-%       cell type j. Doesn't exist in version >=18.
+%       cell type j. Does not exist in version >=18.
 %     - gene2Reliability : gene-to-reliability level mapping in sparse
 %       matrix form. The value for element i,j is the index in
 %       hpaData.reliabilities of gene i in cell type j
@@ -59,7 +59,7 @@ if (version >= 17)
     for i=1:numel(headers)
         if ~strcmpi(headers(i),hpa{i}(1))
             EM=['Could not find the header "' headers{i} '". Make sure that the input file matches the format specified at http://www.proteinatlas.org/about/download'];
-            dispEM(EM);
+            error('RAVEN:badInput', '%s', EM);
         end
         %Remove the header line here
         hpa{i}(1)=[];
@@ -87,7 +87,7 @@ else
     for i=1:numel(headers)
         if ~strcmpi(headers(i),hpa{i}(1))
             EM=['Could not find the header "' headers{i} '". Make sure that the input file matches the format specified at http://www.proteinatlas.org/about/download'];
-            dispEM(EM);
+            error('RAVEN:badInput', '%s', EM);
         end
         %Remove the header line here
         hpa{i}(1)=[];

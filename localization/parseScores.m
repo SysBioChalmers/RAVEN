@@ -12,8 +12,8 @@ function GSS = parseScores(inputFile, varargin)
 % Name-Value Arguments
 % --------------------
 % predictor : char
-%     the predictor that was used. 'wolf' for WoLF PSORT, 'cello' for
-%     CELLO, 'deeploc' for DeepLoc (default 'wolf').
+%     the predictor that was used. "wolf" for WoLF PSORT, "cello" for
+%     CELLO, "deeploc" for DeepLoc (default "wolf").
 %
 % Returns
 % -------
@@ -41,14 +41,14 @@ fid=fopen(inputFile,'r');
 
 if fid<1
     EM='Could not open file';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 if strcmpi(predictor,'wolf')
     A=textscan(fid,'%s','Delimiter','\n','CommentStyle','#');
     
     %Each element should be for one gene, but some of them are on the form
-    %"Pc20g11350: treating 9 X's as Glycines". Those should be removed
+    %"Pc20g11350: treating 9 Xs as Glycines". Those should be removed
     I=~cellfun(@any,strfind(A{1},'treating'));
     
     B=regexp(A{1}(I),' ','split');
@@ -58,8 +58,8 @@ if strcmpi(predictor,'wolf')
     GSS.scores=[]; %Do not know number of comps yet
     GSS.genes=cell(numel(B),1);
     
-    %Parsing is a bit cumbersome as ', ' is used as a delimiter in some
-    %cases and ' ' in others. Use strrep to get rid of ','
+    %Parsing is a bit cumbersome as ", " is used as a delimiter in some
+    %cases and " " in others. Use strrep to get rid of ","
     for i=1:numel(B)
         b=strrep(B{i},',','');
         GSS.genes{i}=b{1};
@@ -131,7 +131,7 @@ end
 
 if numel(J)~=numel(K)
     EM='There are duplicate genes in the input file';
-    dispEM(EM,false);
+    warning('RAVEN:warning', '%s', EM);
     GSS.genes=GSS.genes(J);
     GSS.scores=GSS.scores(J,:);
 end

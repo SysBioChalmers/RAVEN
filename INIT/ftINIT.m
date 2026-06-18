@@ -121,19 +121,19 @@ if isempty(useScoresForTasks)
 end
 %Handle detected mets:
 %Previously, this was handled by giving a bonus for secreting those metabolites,
-%but that doesn't work since the metabolite secretion and uptake can be lost when 
+%but that does not work since the metabolite secretion and uptake can be lost when
 %we merge linearly dependent reactions.
 %Instead, we need to figure out which reactions either produce or take up the mets.
 %We then give a bonus if any of them carry flux.
 %To simplify things, we focus on reactions that produce the metabolite (since there must be one such reaction). 
 %It is still a bit complicated though. In this step, we focus on identifying
-%producer reactions. We further reason that the direction doesn't matter - 
+%producer reactions. We further reason that the direction does not matter -
 %we can force one of these reactions in any direction - if it becomes a consumer, it will
-%automatically force another producer on as well (otherwise we'll have a net consumption).
+%automatically force another producer on as well (otherwise we will have a net consumption).
 
 if (~isempty(metabolomicsData))
     if length(unique(upper(metabolomicsData))) ~= length(metabolomicsData)
-        dispEM('Metabolomics contains the same metabolite multiple times');
+        error('RAVEN:badInput', '%s', 'Metabolomics contains the same metabolite multiple times');
     end
     metData = false(numel(metabolomicsData), length(prepData.minModel.rxns)); %one row per metabolite that is a boolean vector
     for i=1:numel(metabolomicsData)
@@ -181,7 +181,7 @@ for initStep = 1:length(INITSteps)
     stp = INITSteps{initStep};
     
     if any ((rxnsToIgnoreLastStep - stp.RxnsToIgnoreMask) < 0)
-        dispEM('RxnsToIgnoreMask may not cover rxns not covered in previous steps, but the other way around is fine.');
+        error('RAVEN:badInput', '%s', 'RxnsToIgnoreMask may not cover rxns not covered in previous steps, but the other way around is fine.');
     end
     rxnsToIgnoreLastStep = stp.RxnsToIgnoreMask;
     
@@ -205,7 +205,7 @@ for initStep = 1:length(INITSteps)
 
     essentialRxns = prepData.essentialRxns;
     toRev = false(numel(mm.rxns),1);
-    %Handle the results from previous steps ('ignore', 'exclude', 'essential')
+    %Handle the results from previous steps ("ignore", "exclude", "essential")
     if strcmp(stp.HowToUsePrevResults, 'exclude')
         rxnScores(rxnsTurnedOn) = 0; %This is not used anymore in any step setup.
     elseif strcmp(stp.HowToUsePrevResults, 'essential')
@@ -281,7 +281,7 @@ for initStep = 1:length(INITSteps)
     end
     
     if ~success
-        dispEM(['Failed to find good enough solution within the time frame. MIPGap: ' num2str(mipGap)]);
+        error('RAVEN:badInput', '%s', ['Failed to find good enough solution within the time frame. MIPGap: ' num2str(mipGap)]);
     end
     
     %save the reactions turned on and their fluxes for the next step
@@ -295,13 +295,6 @@ for initStep = 1:length(INITSteps)
     %This could in theory cause problems, but seems to work well practically
     fluxesOld = fluxes;
     fluxes = fluxes1;
-    %make sure that all reactions that are on actually has a flux - otherwise
-    %things could go bad, since the flux will be set to essential in a random direction
-    %This sometimes happens for rxns with negative score - let's just accept that.
-    %if (sum(abs(fluxes1) < 10^-7 & rxnsTurnedOn))
-    %    dispEM('There are rxns turned on without flux - this might cause problems');
-    %end
-    %fluxes(abs(fluxes1) < 10^-7) = fluxesOld(abs(fluxes1) < 10^-9);
 end
 
 
@@ -326,8 +319,8 @@ unusedMets = initModel.mets(all(initModel.S == 0,2));
 initModel = removeMets(initModel, setdiff(unusedMets, prepData.essentialMetsForTasks));
 
 %if printReport == true
-%    printScores(initModel,'INIT model statistics',hpaData,transcrData,tissue,celltype);
-%    printScores(removeReactions(cModel,setdiff(cModel.rxns,rxnsToRem),true,true),'Reactions deleted by INIT',hpaData,transcrData,tissue,celltype);
+%    printScores(initModel,"INIT model statistics",hpaData,transcrData,tissue,celltype);
+%    printScores(removeReactions(cModel,setdiff(cModel.rxns,rxnsToRem),true,true),"Reactions deleted by INIT",hpaData,transcrData,tissue,celltype);
 %end
 
 %The full model has exchange reactions in it. ftINITFillGapsForAllTasks calls 
@@ -344,7 +337,7 @@ if ~isempty(prepData.taskStruct)
     %model
     %We changed strategy and instead include all rxns except the exchange rxns in the ref model
     %But we do keep the exchange rxns that are essential.
-    %Let's test to remove all, that should work
+    %Testing removal of all, which should work
     
     %At this stage the model is fully connected and most of the genes with
     %good scores should have been included. The final gap-filling should
@@ -369,8 +362,8 @@ if ~isempty(prepData.taskStruct)
         [outModel,addedRxnMat] = ftINITFillGapsForAllTasks(initModelNoExc,refModelNoExc,[],true,[],prepData.taskStruct,paramsFT,verbose);
     end
     %if printReport == true
-    %    printScores(outModel,'Functional model statistics',hpaData,transcrData,tissue,celltype);
-    %    printScores(removeReactions(outModel,intersect(outModel.rxns,initModel.rxns),true,true),'Reactions added to perform the tasks',hpaData,transcrData,tissue,celltype);
+    %    printScores(outModel,"Functional model statistics",hpaData,transcrData,tissue,celltype);
+    %    printScores(removeReactions(outModel,intersect(outModel.rxns,initModel.rxns),true,true),"Reactions added to perform the tasks",hpaData,transcrData,tissue,celltype);
     %end
     
     addedRxnsForTasks = refModelNoExc.rxns(any(addedRxnMat,2));
@@ -390,7 +383,7 @@ model = outModel;
 % involve metabolites that are not in the model.
 
 %Start from the original model, and just remove the reactions that are no longer there (and keep exchange rxns). The model we got out
-%from the problem is not complete, it doesn't have GRPs etc.
+%from the problem is not complete, it does not have GRPs etc.
 %The logic below is a bit complicated. We identify the reactions that should be removed from the full model as 
 %reactions that have been removed in the init model except the ones that were added back. In addition, we make 
 %sure that no exchange rxns are removed - they can be removed in the init model if they were linearly merged with other

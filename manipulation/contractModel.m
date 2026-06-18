@@ -3,7 +3,7 @@ function [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,v
 %
 % Similar to the deleteDuplicates part in simplifyModel but more care is
 % taken here when it comes to gene associations. If the duplicated reactions
-% have '_EXP_*' suffixes (where * is a digit), then the model is assumed to
+% have "_EXP_*" suffixes (where * is a digit), then the model is assumed to
 % have been passed through expandModel, and these suffixes are removed here.
 %
 % Parameters
@@ -38,7 +38,7 @@ function [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,v
 % Notes
 % -----
 % This code might not work for advanced grRules strings that involve nested
-% expressions of 'and' and 'or'.
+% expressions of "and" and "or".
 
 p=parseRAVENargs(varargin, {'distReverse',true; 'mets',[]});
 distReverse=p.distReverse;
@@ -79,17 +79,17 @@ for i=1:numel(mergedRxns)
     duplRxn=transpose([mergedRxns(i),duplicateRxns(mergeTo==mergedRxns(i))]);
     if numel(unique(model.lb(duplRxn)))>1
         EM=['Duplicates of reaction ' model.rxns{mergedRxns(i)} ' have different lower bound. Uses the most negative/smallest lower bound'];
-        dispEM(EM,false);
+        warning('RAVEN:warning', '%s', EM);
         model.lb(mergedRxns(i))=min(model.lb(duplRxn));
     end
     if numel(unique(model.ub(duplRxn)))>1
         EM=['Duplicates of reaction ' model.rxns{mergedRxns(i)} ' have different upper bound. Uses the most positive/largest upper bound'];
-        dispEM(EM,false);
+        warning('RAVEN:warning', '%s', EM);
         model.ub(mergedRxns(i))=max(model.ub(duplRxn));
     end
     if numel(unique(model.c(duplRxn)))>1
         EM=['Duplicates of reaction ' model.rxns{mergedRxns(i)} ' has a different objective function coefficient. Uses the largest coefficient'];
-        dispEM(EM,false);
+        warning('RAVEN:warning', '%s', EM);
         model.c(mergedRxns(i))=max(model.c(duplRxn));
     end
     if isfield(model,'grRules') && any(~isempty(model.grRules(duplRxn)))
