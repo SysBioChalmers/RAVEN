@@ -65,6 +65,34 @@ classdef tAnalysis < RavenTestCase
             testCase.verifyEmpty(m);
         end
 
+        function compareFluxesReturnsResult(testCase)
+            testCase.assumeSolver('solveLP');
+            solA = solveLP(testCase.model);
+            o2exch = find(strcmp(testCase.model.rxnNames, 'O2 exchange'), 1);
+            modelAna = setParam(testCase.model, 'eq', testCase.model.rxns(o2exch), 0);
+            solB = solveLP(modelAna);
+            result = compareFluxes(testCase.model, solA.x, solB.x, 'verbose', false);
+            testCase.verifyTrue(isfield(result, 'turnedOn'));
+            testCase.verifyTrue(isfield(result, 'turnedOff'));
+            testCase.verifyTrue(isfield(result, 'flipped'));
+            testCase.verifyTrue(isfield(result, 'changed'));
+            testCase.verifyClass(result.changed.rxn, 'cell');
+            testCase.verifyNotEmpty(result.changed.rxn);
+            testCase.verifyEqual(numel(result.changed.flux1), numel(result.changed.rxn));
+            testCase.verifyEqual(numel(result.changed.absDelta), numel(result.changed.rxn));
+            % sorted descending
+            testCase.verifyTrue(all(diff(result.changed.absDelta) <= 0));
+        end
+
+        function compareFluxesIdenticalIsEmpty(testCase)
+            testCase.assumeSolver('solveLP');
+            sol = solveLP(testCase.model);
+            result = compareFluxes(testCase.model, sol.x, sol.x, 'verbose', false);
+            testCase.verifyEmpty(result.changed.rxn);
+            testCase.verifyEmpty(result.turnedOn);
+            testCase.verifyEmpty(result.turnedOff);
+        end
+
         function followFluxesRuns(testCase)
             sol = solveLP(testCase.model);
             out = evalc('followFluxes(testCase.model, sol.x, 0, 1000);');
