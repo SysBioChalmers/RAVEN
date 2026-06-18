@@ -295,9 +295,6 @@ for initStep = 1:length(INITSteps)
     %This could in theory cause problems, but seems to work well practically
     fluxesOld = fluxes;
     fluxes = fluxes1;
-    %make sure that all reactions that are on actually has a flux - otherwise
-    %things could go bad, since the flux will be set to essential in a random direction
-    %This sometimes happens for rxns with negative score - let's just accept that.
 end
 
 
