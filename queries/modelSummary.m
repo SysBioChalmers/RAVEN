@@ -91,7 +91,7 @@ for i = 1:numel(exchIdx)
     col = model.S(:, exchIdx(i));
     m = find(col, 1);           % exchange reactions have exactly one metabolite
     if isempty(m), continue; end
-    netProd = col(m) * f;       % positive = metabolite secreted
+    netProd = full(col(m)) * f; % positive = metabolite secreted; full() avoids sparse scalar in cell
     mLabel  = metLabel_(model, m);
     rID     = model.rxns{exchIdx(i)};
     if netProd > 0
