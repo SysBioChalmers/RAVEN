@@ -114,11 +114,6 @@ classdef tQueries < RavenTestCase
             testCase.verifyEqual(idx, (1:nR)');
         end
 
-        function getMetsInCompCount(testCase)
-            I = getMetsInComp(testCase.model, 'c');
-            testCase.verifyEqual(nnz(I), sum(testCase.model.metComps == 1));
-        end
-
         function getRxnsInCompType(testCase)
             I = getRxnsInComp(testCase.model, 'c');
             testCase.verifyNotEmpty(I);

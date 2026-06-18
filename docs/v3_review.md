@@ -51,6 +51,14 @@ So the review does not repeat completed work. v3 already:
   (replaced by inline Java MD5 in `getBlast`).
 - Made `dispEM` calls native: replaced all 317 call sites across 67 files with
   `warning()`/`error()` and added `ravenList` for formatted item lists.
+- Central model-field registry `ravenModelFields()` implemented (§5.1);
+  `permuteModel` and `removeReactions` refactored to use it; `addExchangeRxns`
+  and `addTransport` patched for `pwys`/`spontaneous` drift and wrong defaults.
+- Removed `getMetsInComp` (thin; callers can use `model.metComps == J` directly);
+  collapsed `loadDeltaGfromCSV`/`saveDeltaGtoCSV` into `deltaGCSV(model,direction,…)`;
+  rewrote `findDuplicateRxns` with `unique(…,'rows')` (O(n log n) vs O(n²));
+  made `deleteUnusedGenes` a thin wrapper over `removeReactions`.
+- `getWoLFScores` already delegates to `parseScores` — no change needed.
 
 ---
 
@@ -65,10 +73,7 @@ reconstruction / strain-design audience.
 | # | Item | Lens | Effort | Impact |
 |---|------|------|--------|--------|
 | 1 | **MetaNetX / MNXref ID mapping** — revive & refactor the stale `feat/add_MetaNetX` branch into v3 (§1.1) | (b) | M–L | high |
-| 2 | **Remove COBRA-duplicate analysis functions** (`runDynamicFBA`, `runPhenotypePhasePlane`, `runProductionEnvelope`, `runRobustnessAnalysis`, `findGeneDeletions`+`qMOMA`) (§4.1) | (a) | S–M | med |
-| 3 | **Harden RAVEN↔COBRA interop** — round-trip field-loss validator; split `ravenCobraWrapper` (§3) | (b)(d) | M | high |
-| 4 | **Central model-field registry** — one declarative table driving add/remove/permute/sort (§5.1) | (d) | L | high |
-| 5 | **Redundant query / manipulation helpers** — remove or fold `findDuplicateRxns`, `getMetsInComp`, `parseRxnEqu`, `deleteUnusedGenes` (§4.3) | (a) | S | med |
+| 2 | **Harden RAVEN↔COBRA interop** — round-trip field-loss validator; split `ravenCobraWrapper` (§3) | (b)(d) | M | high |
 
 ### Tier 2 — high-value new capabilities (ambitious; pick a few)
 
@@ -89,7 +94,7 @@ reconstruction / strain-design audience.
 | 13 | **Regulatory integration** — PROM / CoRegFlux (new application domain) (§1.4) | (b) | M each | med |
 | 14 | **Community modeling** — SteadyCom (new application domain) (§1.5) | (b) | M | med |
 | 15 | **ROOM / lMOMA** next to `qMOMA`; **E-Flux** next to ftINIT (§1.6) | (b)(c) | S each | low–med |
-| 16 | **Smaller consolidations** — deltaG CSV pair, `parseHPA` duplication, WoLF/`parseScores`, KEGG cache plumbing (§5.3–5.5) | (d) | S–L | low–med |
+| 14 | **HPA omics parser consolidation** — extract shared file-read + header-validation into `omics/private/` helper; combine with §6.2 column-name fix (§5.5) | (d) | M | low–med |
 
 ---
 
@@ -224,44 +229,34 @@ impact med.** Pick this if the target users lean microbiome.
 
 ## 4. Leaner code — removals
 
-> v3 already breaks backward compatibility, so breaking removals are acceptable. The one
-> caveat: several §4.1 functions operate directly on RAVEN structs; removing them tells users
-> to convert to COBRA for that analysis, which makes the §3 round-trip validator a soft
-> prerequisite. **Confirm appetite** (open question Q2).
+> v3 already breaks backward compatibility, so breaking removals are acceptable.
 
-### 4.1 COBRA-duplicate analysis functions
+### 4.1 COBRA-duplicate analysis functions *(kept for teaching)*
 
 All five have **no internal callers** (only tutorials/tests) and are labeled or structured as
-COBRA ports:
+COBRA ports. **Decision: keep all five.** These are simple, self-contained implementations
+used for teaching; removing them would require users to install COBRA for basic analyses.
+Hygiene items to address instead:
 
-- **`analysis/runDynamicFBA.m`** — direct port of COBRA `dynamicFBA` (static-optimization
-  dFBA); header says "Modified from COBRA Toolbox". No RAVEN-specific value, hard-coded plot.
-- **`analysis/runPhenotypePhasePlane.m`** — port of COBRA `phenotypePhasePlane`; calls
-  `close all force` (destroys the user's unrelated figures), opens 3 hard-coded figures,
-  swallows all errors in a bare `try/end`.
-- **`analysis/runProductionEnvelope.m`** + **`runRobustnessAnalysis.m`** — both "Modified from
-  COBRA Toolbox"; thin single/double-axis scans over `solveLP`.
-- **`analysis/findGeneDeletions.m`** + **`solver/qMOMA.m`** — duplicate COBRA single/double
-  gene deletion; the over-expression modes depend entirely on `qMOMA`, which pulls in the
-  **Optimization Toolbox** (`quadprog`) the v3 solver layer otherwise avoids and whose own
-  comment admits it "never converges good enough" (it hard-codes success). Removing both drops
-  a toolbox dependency.
+- **`analysis/runPhenotypePhasePlane.m`** — calls `close all force` (destroys unrelated
+  figures) and swallows all errors in a bare `try/end`. Strip the destructive figure
+  management.
+- **`analysis/findGeneDeletions.m`** + **`solver/qMOMA.m`** — `qMOMA` pulls in the
+  **Optimization Toolbox** (`quadprog`) and its own comment admits it "never converges good
+  enough". Consider a warning that `qMOMA` results are unreliable, or replace with an LP
+  approximation (`lMOMA`).
 
-**Proposal:** remove all five (+ `qMOMA`), with their test/tutorial references. If any one is
-considered teaching-valuable, demote it and strip the destructive plotting. **Effort S-M,
-impact med** (meaningful leanness; aligns with "don't replicate COBRA").
+### 4.3 Redundant query / manipulation helpers *(done)*
 
-### 4.3 Redundant query / manipulation helpers
-
-- **`manipulation/findDuplicateRxns.m`** — O(n^2) reimplementation of duplicate detection that
-  `contractModel` / `simplifyModel(deleteDuplicates)` already do via `unique(S','rows')`. No
-  internal callers. Remove; point users to `contractModel`.
-- **`queries/getMetsInComp.m`** — thin one-liner used only by tests; has a latent
-  error-on-error in its error path. Fold into `getIndexes` (add a `'comps'` type) or remove.
-- **`queries/parseRxnEqu.m`** — duplicates parsing already inside `constructS` (its only
-  caller), which already returns `mets`.
-- **`manipulation/deleteUnusedGenes.m`** — byte-for-byte the same field-trimming as
-  `removeReactions(model, [], false, true)` plus a print. Make it a 3-line wrapper or remove.
+- **`manipulation/findDuplicateRxns.m`** — kept; rewritten with `unique(S','rows')` for
+  O(n log n) instead of the original O(n²) nested loop.
+- **`queries/getMetsInComp.m`** — removed. The one-liner `model.metComps == J` (where J is
+  from `ismember`) is trivial to write inline; the function had a latent error-on-error bug
+  and was only called by tests.
+- **`queries/parseRxnEqu.m`** — kept. The doc claimed `constructS` was its only caller, but
+  `prepINITModel` also calls it. Remove is deferred until the INIT path is cleaned up (§4.4).
+- **`manipulation/deleteUnusedGenes.m`** — refactored to a thin wrapper over
+  `removeReactions(model, [], 'removeUnusedGenes', true)`; verbose output retained.
 
 ### 4.4 Deprecate the original INIT path
 
@@ -277,21 +272,22 @@ removal for v3.x. **Effort S to deprecate.**
 
 ## 5. Simplifications & internal refactors
 
-### 5.1 Central model-field registry  *(biggest leanness win)*
+### 5.1 Central model-field registry  *(done)*
 
-The dominant smell across `manipulation/` is **hand-maintained model-field ladders**: ~6
-functions (`removeReactions`, `permuteModel`, `changeRxns`, `addRxns`, `addMets`,
-`addExchangeRxns`, `addTransport`) each carry a near-identical but subtly **divergent** list of
-the ~25 rxn / ~14 met / gene / comp fields, copied and drifting apart (e.g. `removeReactions`
-handles `spontaneous`/`rxnScores`; `permuteModel` does not; `changeRxns` copies `pwys` that
-`addRxns` does not recognize). The drift has already produced at least one silent correctness
-bug (`permuteModel` comps, now fixed).
+`utils/ravenModelFields()` returns a 42-element struct array declaring every 1-D RAVEN model
+field with its entity type (`'rxn'/'met'/'gene'/'comp'`) and default value. Fields requiring
+2-D indexing (`S`, `rxnGeneMat`, `b`) or compartment-index value-remapping are excluded and
+handled explicitly by callers.
 
-**Proposal:** a single declarative field-registry (each field tagged rxn-/met-/gene-/comp-
-indexed) consumed by all add/remove/permute/sort/convert operations. This removes the most
-code in the repo, fixes the drift bugs structurally, and makes `changeRxns` /
-`addRxnsGenesMets` thin wrappers over a shared core. **Effort L, impact high.** The single
-highest-leverage refactor for v3.
+Consumers refactored: `permuteModel` (replaced ~80 individual `isfield` blocks with a generic
+loop + 4-case switch for 2-D fields, fixing silent drift for `pwys`, `spontaneous`, `metNotes`,
+`geneFrom`); `removeReactions` (same for ~22 rxn-field and ~5 gene-field blocks).
+`addExchangeRxns` and `addTransport` patched for the `pwys`/`spontaneous` gap; `addTransport`
+default for `rxnConfidenceScores` corrected (1→NaN) and `rxnDeltaG` (0→NaN).
+
+Remaining consumers to refactor against the registry: `changeRxns`, `addRxns`, `addMets`,
+`addRxnsGenesMets`, `ravenCobraWrapper`. The drift bugs in those functions are low-priority
+because the registry now exists as the reference — callers that skip it are visibly incomplete.
 
 ### 5.2 Gapfilling family consolidation
 
@@ -309,22 +305,17 @@ missing annotation fields) rather than living in callers. **Effort M, impact med
 
 See §3 — split the monolith into directional internals.
 
-### 5.4 KEGG `get*FromKEGG` cache plumbing
-
-`getMetsFromKEGG` (288 lines), `getRxnsFromKEGG` (516), `getGenesFromKEGG` (409) triplicate the
-"load `kegg*.mat` cache, else parse raw flat files" plumbing. Factor the load-or-build wrapper
-into one helper parameterized by entity type; leave the entity-specific parsers. **Effort L,
-impact med — lower priority** (core reconstruction, higher risk).
-
 ### 5.5 Other small consolidations
 
-- **`annotation/loadDeltaGfromCSV.m` + `saveDeltaGtoCSV.m`** — mirrored load/save pair, four
-  near-identical met/rxn blocks; collapse to one `deltaGCSV(model, direction, ...)`. **S.**
-- **`omics/parseHPA.m` vs `parseHPArna.m`** — extract the shared file-read + header-validation
-  into a private helper (combine with the §6.2 fix — same code region). **M.**
-- **`localization/getWoLFScores.m` vs `parseScores.m`** — score normalization is reimplemented
-  in both; have `getWoLFScores` delegate parsing to `parseScores(file,'wolf')`. Also reconsider
-  whether the Linux+Perl-only WoLF runner still earns its place. **S-M.**
+- **`annotation/loadDeltaGfromCSV.m` + `saveDeltaGtoCSV.m`** *(done)* — collapsed into
+  `deltaGCSV(model, direction, metCsv, rxnCsv)`. The four near-identical met/rxn blocks are
+  handled by two shared local functions (`loadField`/`saveField`).
+- **`omics/parseHPA.m` vs `parseHPArna.m`** — shared file-open + header-validation loop
+  should be extracted into a private helper in `omics/private/`. Address together with the §6.2
+  column-name fix (same code region). **M.**
+- **`localization/getWoLFScores.m` vs `parseScores.m`** *(already done)* — `getWoLFScores`
+  already delegates to `parseScores(file,'wolf')`; no normalization duplication exists.
+  Remaining question: whether the Linux+Perl-only WoLF runner still earns its place.
 
 ---
 
@@ -363,10 +354,7 @@ impact med.**
    (#13 regulatory, #14 community) are each substantial. A reasonable headline set:
    **#1 MetaNetX + #6 pathway prediction + #7 strain design** (one coherent reconstruction ->
    design story), with regulatory/community deferred unless they match the target users.
-2. **Removal appetite for the COBRA-duplicate analysis functions (§4.1).** Remove outright, or
-   keep one or two for teaching and just fix their hygiene? This decision sets whether the §3
-   round-trip validator is a hard prerequisite.
-3. **Where should new strain-design / community code that needs metaheuristics live**, given
+2. **Where should new strain-design / community code that needs metaheuristics live**, given
    the dependency question — lean on the Global Optimization Toolbox (`gamultiobj`), or keep
    v3's "minimize toolbox dependencies" stance and ship a self-contained EA?
 4. **MNXref data hosting** — confirm the `raven-data` release is the right home for the MNXref
