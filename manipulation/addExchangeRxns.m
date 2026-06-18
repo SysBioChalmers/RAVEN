@@ -112,4 +112,10 @@ end
 if isfield(model,'rxnDeltaG')
     model.rxnDeltaG=[model.rxnDeltaG;NaN(numel(J),1)];
 end
+if isfield(model,'pwys')
+    model.pwys=[model.pwys;filler];
+end
+if isfield(model,'spontaneous')
+    model.spontaneous=[model.spontaneous;false(numel(J),1)];
+end
 end

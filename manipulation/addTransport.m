@@ -175,10 +175,16 @@ for i=1:numel(toComps)
         model.rxnReferences=[model.rxnReferences;filler];
     end
     if isfield(model,'rxnConfidenceScores')
-        model.rxnConfidenceScores=[model.rxnConfidenceScores;ones(nRxns,1)];
+        model.rxnConfidenceScores=[model.rxnConfidenceScores;NaN(nRxns,1)];
     end
     if isfield(model,'rxnDeltaG')
-        model.rxnDeltaG=[model.rxnDeltaG;zeros(nRxns,1)];
+        model.rxnDeltaG=[model.rxnDeltaG;NaN(nRxns,1)];
+    end
+    if isfield(model,'pwys')
+        model.pwys=[model.pwys;filler];
+    end
+    if isfield(model,'spontaneous')
+        model.spontaneous=[model.spontaneous;false(nRxns,1)];
     end
     addedRxns = [addedRxns; addedRxnsID];
 end

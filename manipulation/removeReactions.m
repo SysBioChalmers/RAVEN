@@ -38,75 +38,25 @@ if ~islogical(rxnsToRemove) && ~isnumeric(rxnsToRemove)
 end
 
 reducedModel=model;
+reg=ravenModelFields();
 
 if ~isempty(rxnsToRemove) || removeUnusedMets || removeUnusedGenes
     indexesToDelete=getIndexes(model,rxnsToRemove,'rxns');
     
     %Remove reactions
     if ~isempty(indexesToDelete)
-        reducedModel.rxns(indexesToDelete)=[];
-        if isfield(reducedModel,'lb')
-            reducedModel.lb(indexesToDelete)=[];
-        end
-        if isfield(reducedModel,'ub')
-            reducedModel.ub(indexesToDelete)=[];
-        end
-        if isfield(reducedModel,'rev')
-            reducedModel.rev(indexesToDelete)=[];
-        end
-        if isfield(reducedModel,'c')
-            reducedModel.c(indexesToDelete)=[];
+        rxnReg=reg(strcmp({reg.type},'rxn'));
+        for ri_=1:numel(rxnReg)
+            fname=rxnReg(ri_).name;
+            if isfield(reducedModel,fname)
+                reducedModel.(fname)(indexesToDelete)=[];
+            end
         end
         if isfield(reducedModel,'S')
             reducedModel.S(:,indexesToDelete)=[];
         end
-        if isfield(reducedModel,'rxnNames')
-            reducedModel.rxnNames(indexesToDelete)=[];
-        end
         if isfield(reducedModel,'rxnGeneMat')
             reducedModel.rxnGeneMat(indexesToDelete,:)=[];
-        end
-        if isfield(reducedModel,'grRules')
-            reducedModel.grRules(indexesToDelete,:)=[];
-        end
-        if isfield(reducedModel,'subSystems')
-            reducedModel.subSystems(indexesToDelete,:)=[];
-        end
-        if isfield(reducedModel,'eccodes')
-            reducedModel.eccodes(indexesToDelete,:)=[];
-        end
-        if isfield(reducedModel,'equations')
-            reducedModel.equations(indexesToDelete,:)=[];
-        end
-        if isfield(reducedModel,'rxnMiriams')
-            reducedModel.rxnMiriams(indexesToDelete,:)=[];
-        end
-        if isfield(reducedModel,'rxnComps')
-            reducedModel.rxnComps(indexesToDelete,:)=[];
-        end
-        if isfield(reducedModel,'rxnFrom')
-            reducedModel.rxnFrom(indexesToDelete,:)=[];
-        end
-        if isfield(reducedModel,'rxnScores')
-            reducedModel.rxnScores(indexesToDelete,:)=[];
-        end
-        if isfield(reducedModel,'rxnNotes')
-            reducedModel.rxnNotes(indexesToDelete,:)=[];
-        end
-        if isfield(reducedModel,'rxnReferences')
-            reducedModel.rxnReferences(indexesToDelete,:)=[];
-        end
-        if isfield(reducedModel,'rxnConfidenceScores')
-            reducedModel.rxnConfidenceScores(indexesToDelete,:)=[];
-        end
-        if isfield(reducedModel,'rxnDeltaG')
-            reducedModel.rxnDeltaG(indexesToDelete,:)=[];
-        end
-        if isfield(reducedModel,'pwys')
-            reducedModel.pwys(indexesToDelete,:)=[];
-        end
-        if isfield(reducedModel,'spontaneous')
-            reducedModel.spontaneous(indexesToDelete)=[];
         end
     end
     
@@ -127,28 +77,14 @@ if ~isempty(rxnsToRemove) || removeUnusedMets || removeUnusedGenes
         toKeep=false(numel(reducedModel.genes),1);
         toKeep(b)=true;
         
-        reducedModel.genes=reducedModel.genes(toKeep);
+        geneReg=reg(strcmp({reg.type},'gene'));
+        for ri_=1:numel(geneReg)
+            fname=geneReg(ri_).name;
+            if isfield(reducedModel,fname)
+                reducedModel.(fname)=reducedModel.(fname)(toKeep);
+            end
+        end
         reducedModel.rxnGeneMat=reducedModel.rxnGeneMat(:,toKeep);
-        
-        if isfield(reducedModel,'geneShortNames')
-            reducedModel.geneShortNames=reducedModel.geneShortNames(toKeep);
-        end
-
-        if isfield(reducedModel,'proteins')
-            reducedModel.proteins=reducedModel.proteins(toKeep);
-        end
-        
-        if isfield(reducedModel,'geneMiriams')
-            reducedModel.geneMiriams=reducedModel.geneMiriams(toKeep);
-        end
-        
-        if isfield(reducedModel,'geneFrom')
-            reducedModel.geneFrom=reducedModel.geneFrom(toKeep);
-        end
-        
-        if isfield(reducedModel,'geneComps')
-            reducedModel.geneComps=reducedModel.geneComps(toKeep);
-        end
     end
 else
     reducedModel=model;
