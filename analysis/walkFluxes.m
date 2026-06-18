@@ -73,7 +73,7 @@ while true
 
     for mi = 1:numel(nonzeroMets)
         m    = nonzeroMets(mi);
-        s_m  = col(m);
+        s_m  = full(col(m));
         netF = s_m * f;         % positive = produced here, negative = consumed here
 
         if netF < 0

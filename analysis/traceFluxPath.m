@@ -112,14 +112,14 @@ while ~isempty(queue)
     if numel(rpath) > maxHops, continue; end
 
     % Find metabolites net-produced by cur
-    col  = model.S(:, cur);
+    col  = full(model.S(:, cur));
     fcur = fluxes(cur);
     for m = 1:numel(col)
         if abs(col(m)) < 1e-15, continue; end
         if col(m) * fcur <= 0, continue; end   % skip consumed or zero-contribution mets
 
         % Reactions that net-consume this metabolite
-        row  = model.S(m, :);
+        row  = full(model.S(m, :));
         fVec = fluxes(:)';
         consumers = find(row .* fVec < -cutoff);
         consumers = consumers(~ismember(consumers, rpath));  % no revisiting
@@ -191,7 +191,7 @@ function printPath_(model, fluxes, pathRxns, pathMets, cumFrac, fromRxn, toRxn)
     parts = pathRxns{1};
     for i = 2:numel(pathRxns)
         mi = find(strcmp(model.mets, pathMets{i-1}));
-        row = model.S(mi, :);
+        row = full(model.S(mi, :));
         consumers = find(row .* fluxes' < -1e-12);
         if isempty(consumers)
             pct = NaN;
