@@ -33,14 +33,31 @@ function pairs = findDuplicateRxns(model, varargin)
 p=parseRAVENargs(varargin, {'ignoreDirection',true});
 ignoreDirection=p.ignoreDirection;
 
-pairs = zeros(0, 2);
-n = numel(model.rxns);
-for i = 1:n-1
-    for j = i+1:n
-        if isequal(model.S(:, i), model.S(:, j)) || ...
-                (ignoreDirection && isequal(model.S(:, i), -model.S(:, j)))
-            pairs(end+1, :) = [i, j]; %#ok<AGROW>
+S=full(model.S)';  % nRxns x nMets
+
+if ignoreDirection
+    % Canonical form: flip rows whose first nonzero entry is negative so
+    % that A->B and B->A hash to the same fingerprint.
+    for i=1:size(S,1)
+        k=find(S(i,:),1);
+        if ~isempty(k) && S(i,k)<0
+            S(i,:)=-S(i,:);
         end
     end
+end
+
+[~,~,ic]=unique(S,'rows');  % ic(i) = group label for reaction i
+
+pairs=zeros(0,2);
+for g=1:max(ic)
+    idx=sort(find(ic==g));
+    for ii=1:numel(idx)-1
+        for jj=ii+1:numel(idx)
+            pairs(end+1,:)=[idx(ii),idx(jj)]; %#ok<AGROW>
+        end
+    end
+end
+if ~isempty(pairs)
+    pairs=sortrows(pairs);
 end
 end

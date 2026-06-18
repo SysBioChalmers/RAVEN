@@ -9,6 +9,14 @@ classdef tAnnotation < RavenTestCase
             testCase.verifyEqual(numel(m2.mets), numel(testCase.model.mets));
         end
 
+        function editMiriamRemovesAnnotation(testCase)
+            m2 = editMiriam(testCase.model, 'met', 1, 'bigg.metabolite', 'testval', 'add');
+            m3 = editMiriam(m2, 'met', 1, 'bigg.metabolite', '', 'remove');
+            testCase.verifyClass(m3, 'struct');
+            [~, names] = extractMiriam(m3.metMiriams(1));
+            testCase.verifyFalse(any(strcmp('bigg.metabolite', names)));
+        end
+
         function extractMiriamReturnsNames(testCase)
             [miriams, names] = extractMiriam(testCase.model.metMiriams); %#ok<ASGLU>
             testCase.verifyNotEmpty(names);
@@ -27,9 +35,9 @@ classdef tAnnotation < RavenTestCase
             rxnCsv = [tempname '.csv'];
             testCase.addTeardown(@() delete(metCsv));
             testCase.addTeardown(@() delete(rxnCsv));
-            evalc('saveDeltaGtoCSV(m, metCsv, rxnCsv);');
+            evalc('deltaGCSV(m, ''save'', metCsv, rxnCsv);');
             base = testCase.model;
-            evalc('m2 = loadDeltaGfromCSV(base, metCsv, rxnCsv);');
+            evalc('m2 = deltaGCSV(base, ''load'', metCsv, rxnCsv);');
             testCase.verifyEqual(m2.metDeltaG, m.metDeltaG, 'AbsTol', 1e-6);
             testCase.verifyEqual(m2.rxnDeltaG, m.rxnDeltaG, 'AbsTol', 1e-6);
         end

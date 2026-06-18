@@ -25,6 +25,22 @@ classdef tGapfilling < RavenTestCase
             testCase.verifyClass(report, 'struct');
         end
 
+        function findLeakMetaboliteProduceReturnsSolution(testCase)
+            evalc('[sol, metabolite] = findLeakMetabolite(testCase.model, ''produce'');');
+            testCase.verifyNotEmpty(sol);
+        end
+
+        function findLeakMetaboliteConsumeReturnsSolution(testCase)
+            evalc('[sol, metabolite] = findLeakMetabolite(testCase.model, ''consume'');');
+            testCase.verifyNotEmpty(sol);
+        end
+
+        function findLeakMetaboliteInvalidDirectionErrors(testCase)
+            testCase.verifyError( ...
+                @() findLeakMetabolite(testCase.model, 'neither'), ...
+                'RAVEN:badInput');
+        end
+
         function makeSomethingReturnsSolution(testCase)
             evalc('[sol, metabolite] = makeSomething(testCase.model);');
             testCase.verifyNotEmpty(sol);

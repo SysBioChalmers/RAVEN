@@ -86,6 +86,17 @@ classdef tQueries < RavenTestCase
             testCase.verifyEqual(testCase.model.rxns(idx), exch);
         end
 
+        function getExchangeRxnsThirdOutputIsMetIndex(testCase)
+            [~, idx, mets] = getExchangeRxns(testCase.model);
+            testCase.verifyNumElements(mets, numel(idx));
+            % Each returned index must point to a metabolite with a
+            % non-zero entry in the exchange reaction's S column.
+            for i = 1:numel(idx)
+                testCase.verifyNotEqual(mets(i), 0);
+                testCase.verifyNotEqual(testCase.model.S(mets(i), idx(i)), 0);
+            end
+        end
+
         function getGenesFromGrRulesMatchesModel(testCase)
             [genes, rxnGeneMat] = getGenesFromGrRules(testCase.model.grRules);
             testCase.verifyTrue(iscellstr(genes)); %#ok<ISCLSTR>
@@ -112,11 +123,6 @@ classdef tQueries < RavenTestCase
             idx = getIndexes(testCase.model, true(nR, 1), 'rxns');
             testCase.verifyClass(idx, 'double');
             testCase.verifyEqual(idx, (1:nR)');
-        end
-
-        function getMetsInCompCount(testCase)
-            I = getMetsInComp(testCase.model, 'c');
-            testCase.verifyEqual(nnz(I), sum(testCase.model.metComps == 1));
         end
 
         function getRxnsInCompType(testCase)

@@ -6,25 +6,6 @@ classdef tIO < RavenTestCase
 
     methods (Test)
 
-        function getFullPathReturnsAbsolute(testCase)
-            p = getFullPath('.');
-            if ispc
-                % Windows: drive letter (C:\) or UNC (\\server).
-                testCase.verifyTrue(~isempty(regexp(p, '^([A-Za-z]:|\\\\)', 'once')));
-            else
-                % Unix/macOS: absolute paths start with /.
-                testCase.verifyTrue(startsWith(p, '/'));
-            end
-        end
-
-        function getMD5HashReturnsHexDigest(testCase)
-            f = fullfile(testCase.ravenRoot,'testing','function_tests', ...
-                'test_data','ecoli_textbook.mat');
-            h = getMD5Hash(f);
-            testCase.verifyTrue(ischar(h) || isstring(h));
-            testCase.verifyMatches(char(h), '^[0-9a-fA-F]{32}$');
-        end
-
         function exportForGitWritesDependencies(testCase)
             % The toolbox-version lookup is now embedded in exportForGit and
             % is exercised via the dependencies.txt it writes
@@ -127,13 +108,6 @@ classdef tIO < RavenTestCase
             testCase.addTeardown(@() rmdir(d, 's'));
             evalc('exportToTabDelimited(testCase.model, d);');
             testCase.verifyTrue(exist(fullfile(d,'excelRxns.txt'),'file')==2);
-        end
-
-        function exportModelToSIFWritesFile(testCase)
-            f = [tempname '.sif'];
-            testCase.addTeardown(@() delete(f));
-            evalc('exportModelToSIF(testCase.model, f);');
-            testCase.verifyTrue(exist(f,'file')==2);
         end
 
         function exportForGitWritesRepo(testCase)

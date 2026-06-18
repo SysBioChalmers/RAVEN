@@ -23,43 +23,19 @@ function reducedModel=deleteUnusedGenes(model,varargin)
 
 p=parseRAVENargs(varargin, {'verbose',1});
 verbose=p.verbose;
-reducedModel=model;
 
-%Find all genes that are not used
-[~, b]=find(reducedModel.rxnGeneMat);
-toKeep=false(numel(reducedModel.genes),1);
-toKeep(b)=true;
-
-switch verbose
-    case 1
-        disp('Number of unused genes removed from the model:')
-        disp(numel(toKeep(~toKeep)))
-    case 2
-        disp('The following genes were removed from the model:')
-        disp(reducedModel.genes(~toKeep))
-    case 0
-end
-        
-reducedModel.genes=reducedModel.genes(toKeep);
-reducedModel.rxnGeneMat=reducedModel.rxnGeneMat(:,toKeep);
-
-if isfield(reducedModel,'geneShortNames')
-    reducedModel.geneShortNames=reducedModel.geneShortNames(toKeep);
+if verbose && isfield(model,'rxnGeneMat') && isfield(model,'genes')
+    [~, b]=find(model.rxnGeneMat);
+    toKeep=false(numel(model.genes),1);
+    toKeep(b)=true;
+    switch verbose
+        case 1
+            fprintf('Number of unused genes removed from the model: %d\n', sum(~toKeep))
+        case 2
+            disp('The following genes were removed from the model:')
+            disp(model.genes(~toKeep))
+    end
 end
 
-if isfield(reducedModel,'proteins')
-    reducedModel.proteins=reducedModel.proteins(toKeep);
-end
-
-if isfield(reducedModel,'geneMiriams')
-    reducedModel.geneMiriams=reducedModel.geneMiriams(toKeep);
-end
-
-if isfield(reducedModel,'geneFrom')
-    reducedModel.geneFrom=reducedModel.geneFrom(toKeep);
-end
-
-if isfield(reducedModel,'geneComps')
-    reducedModel.geneComps=reducedModel.geneComps(toKeep);
-end
+reducedModel=removeReactions(model,[],'removeUnusedGenes',true);
 end
