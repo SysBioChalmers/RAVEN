@@ -4,107 +4,98 @@ function hpaData=parseHPA(fileName, varargin)
 % Parameters
 % ----------
 % fileName : char
-%     comma- or tab-separated database dump of HPA. For details regarding
-%     the format, see http://www.proteinatlas.org/about/download.
+%     comma- or tab-separated database dump of HPA protein data. For details
+%     regarding the format, see http://www.proteinatlas.org/about/download.
 %
 % Name-Value Arguments
 % --------------------
 % version : double
-%     version of HPA (default 19).
+%     accepted for backward compatibility but ignored; the format is now
+%     inferred from the column headers (default 19).
 %
 % Returns
 % -------
 % hpaData : struct
 %     parsed HPA data with fields:
 %
-%     - genes : cell array with the unique gene names. In version >=18 this
-%       is the ensemble name, see geneNames below for the names in ver >=18
-%     - geneNames : cell array with the gene names, indexed the same way as
-%       genes
-%     - tissues : cell array with the tissue names. The list may not be
-%       unique, as there can be multiple cell types per tissue
+%     - genes : cell array with the unique gene IDs (Ensembl in v>=18)
+%     - geneNames : cell array with the gene symbols (present in v>=18 only)
+%     - tissues : cell array with the tissue names (may not be unique; one
+%       entry per tissue-cell-type combination)
 %     - celltypes : cell array with the cell type names for each tissue
-%     - levels : cell array with the unique expression levels
-%     - types : cell array with the unique evidence types
+%     - levels : cell array with the unique expression level labels
+%     - types : cell array with the unique evidence types (v<18 only)
 %     - reliabilities : cell array with the unique reliability levels
-%     - gene2Level : gene-to-expression level mapping in sparse matrix form.
-%       The value for element i,j is the index in hpaData.levels of gene i
-%       in cell type j
-%     - gene2Type : gene-to-evidence type mapping in sparse matrix form. The
-%       value for element i,j is the index in hpaData.types of gene i in
-%       cell type j. Does not exist in version >=18.
-%     - gene2Reliability : gene-to-reliability level mapping in sparse
-%       matrix form. The value for element i,j is the index in
-%       hpaData.reliabilities of gene i in cell type j
+%     - gene2Level : sparse gene × tissue-cell-type matrix; value i,j is
+%       the index in hpaData.levels for gene i in tissue-cell-type j
+%     - gene2Type : sparse gene × tissue-cell-type matrix (v<18 only)
+%     - gene2Reliability : sparse gene × tissue-cell-type matrix; value i,j
+%       is the index in hpaData.reliabilities for gene i in tissue-cell-type j
 %
 % Examples
 % --------
-%     hpaData = parseHPA(fileName, version);
+%     hpaData = parseHPA(fileName);
 
-p=parseRAVENargs(varargin, {'version',19}); %Change this and add code for more versions when the current HPA version is increased and the format is changed
-version=p.version;
+p=parseRAVENargs(varargin, {'version',19}); %#ok<NASGU> retained for backward compat
 
 fileName=char(fileName);
 if ~isfile(fileName)
-    error('HPA file %s cannot be found',string(fileName));
+    error('HPA file %s cannot be found', string(fileName));
 end
 
-if (version >= 17)
-    fid=fopen(fileName,'r');
-    hpa=textscan(fid,'%q %q %q %q %q %q','Delimiter','\t');
-    fclose(fid);
-    
-    %Go through and see if the headers match what was expected
-    headers={'Gene' 'Gene name' 'Tissue' 'Cell type' 'Level' 'Reliability'};
-    for i=1:numel(headers)
-        if ~strcmpi(headers(i),hpa{i}(1))
-            EM=['Could not find the header "' headers{i} '". Make sure that the input file matches the format specified at http://www.proteinatlas.org/about/download'];
-            error('RAVEN:badInput', '%s', EM);
-        end
-        %Remove the header line here
-        hpa{i}(1)=[];
-    end
-    
-    %Get the unique values of each data type
-    [hpaData.genes, P, I]=unique(hpa{1});
-    hpaData.geneNames=hpa{2}(P); %make this vector use the index as genes
-    [~, J, K]=unique(strcat(hpa{3},'€',hpa{4}));
-    hpaData.tissues=hpa{3}(J);
-    hpaData.celltypes=hpa{4}(J);
-    [hpaData.levels, ~, L]=unique(hpa{5});
-    [hpaData.reliabilities, ~, N]=unique(hpa{6});
-    
-    %Map the data to be sparse matrises instead
-    hpaData.gene2Level=sparse(I,K,L,numel(hpaData.genes),numel(hpaData.tissues));
-    hpaData.gene2Reliability=sparse(I,K,N,numel(hpaData.genes),numel(hpaData.tissues));
+%Read header line and auto-detect delimiter
+fid=fopen(fileName,'r');
+headerLine=fgetl(fid);
+fclose(fid);
+
+if any(headerLine==9)  % char(9) = horizontal tab
+    delim=sprintf('\t');
 else
-    fid=fopen(fileName,'r');
-    hpa=textscan(fid,'%q %q %q %q %q %q','Delimiter',',');
-    fclose(fid);
-    
-    %Go through and see if the headers match what was expected
-    headers={'Gene' 'Tissue' 'Cell type' 'Level' 'Expression type' 'Reliability'};
-    for i=1:numel(headers)
-        if ~strcmpi(headers(i),hpa{i}(1))
-            EM=['Could not find the header "' headers{i} '". Make sure that the input file matches the format specified at http://www.proteinatlas.org/about/download'];
-            error('RAVEN:badInput', '%s', EM);
-        end
-        %Remove the header line here
-        hpa{i}(1)=[];
+    delim=',';
+end
+
+%Parse header and all data columns
+fid=fopen(fileName,'r');
+headers=strsplit(fgetl(fid), delim);
+fmtStr=strip(repmat('%q ',1,numel(headers)));
+hpa=textscan(fid, fmtStr, 'Delimiter',delim);
+fclose(fid);
+
+%Helper: column index by name
+ci=@(name) find(strcmp(headers,name),1);
+
+%Validate required columns common to all versions
+for h={'Gene','Tissue','Cell type','Level','Reliability'}
+    if isempty(ci(h{1}))
+        error(['Could not find the column "' h{1} '". ' ...
+            'Make sure the input file matches the format at https://www.proteinatlas.org/about/download']);
     end
-    
-    %Get the unique values of each data type
-    [hpaData.genes, ~, I]=unique(hpa{1});
-    [~, J, K]=unique(strcat(hpa{2},'€',hpa{3}));
-    hpaData.tissues=hpa{2}(J);
-    hpaData.celltypes=hpa{3}(J);
-    [hpaData.levels, ~, L]=unique(hpa{4});
-    [hpaData.types, ~, M]=unique(hpa{5});
-    [hpaData.reliabilities, ~, N]=unique(hpa{6});
-    
-    %Map the data to be sparse matrises instead
-    hpaData.gene2Level=sparse(I,K,L,numel(hpaData.genes),numel(hpaData.tissues));
-    hpaData.gene2Type=sparse(I,K,M,numel(hpaData.genes),numel(hpaData.tissues));
-    hpaData.gene2Reliability=sparse(I,K,N,numel(hpaData.genes),numel(hpaData.tissues));
+end
+
+hasGeneName=~isempty(ci('Gene name'));
+hasExprType=~isempty(ci('Expression type'));
+
+[hpaData.genes, P, I]=unique(hpa{ci('Gene')});
+if hasGeneName
+    hpaData.geneNames=hpa{ci('Gene name')}(P);
+end
+
+tissueCellStr=strcat(hpa{ci('Tissue')},'€',hpa{ci('Cell type')});
+[~, J, K]=unique(tissueCellStr);
+hpaData.tissues=hpa{ci('Tissue')}(J);
+hpaData.celltypes=hpa{ci('Cell type')}(J);
+
+[hpaData.levels, ~, L]=unique(hpa{ci('Level')});
+[hpaData.reliabilities, ~, N]=unique(hpa{ci('Reliability')});
+
+nGenes=numel(hpaData.genes);
+nTissues=max(K);
+
+hpaData.gene2Level=sparse(I,K,L,nGenes,nTissues);
+hpaData.gene2Reliability=sparse(I,K,N,nGenes,nTissues);
+
+if hasExprType
+    [hpaData.types, ~, M]=unique(hpa{ci('Expression type')});
+    hpaData.gene2Type=sparse(I,K,M,nGenes,nTissues);
 end
 end

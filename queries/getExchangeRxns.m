@@ -1,4 +1,4 @@
-function [exchangeRxns, exchangeRxnsIndexes]=getExchangeRxns(model,varargin)
+function [exchangeRxns, exchangeRxnsIndexes, exchangedMets]=getExchangeRxns(model,varargin)
 % getExchangeRxns  Retrieve the exchange reactions from a model.
 %
 % Exchange reactions are identified by having either no substrates or no
@@ -38,6 +38,9 @@ function [exchangeRxns, exchangeRxnsIndexes]=getExchangeRxns(model,varargin)
 %     cell array with the IDs of the exchange reactions.
 % exchangeRxnsIndexes : double
 %     vector with the indexes of the exchange reactions.
+% exchangedMets : double
+%     vector with the metabolite index for each exchange reaction (one
+%     metabolite per exchange reaction). Only computed when requested.
 %
 % Notes
 % -----
@@ -86,4 +89,15 @@ switch reactionType
 end
 exchangeRxnsIndexes = sort(exchangeRxnsIndexes);
 exchangeRxns = model.rxns(exchangeRxnsIndexes);
+
+if nargout > 2
+    nExch=numel(exchangeRxnsIndexes);
+    exchangedMets=zeros(nExch,1);
+    for ei=1:nExch
+        k=find(model.S(:,exchangeRxnsIndexes(ei)),1);
+        if ~isempty(k)
+            exchangedMets(ei)=k;
+        end
+    end
+end
 end

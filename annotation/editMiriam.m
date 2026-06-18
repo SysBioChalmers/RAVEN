@@ -6,34 +6,36 @@ function model=editMiriam(model,type,object,miriamName,miriams,keep)
 % model : struct
 %     model structure.
 % type : char
-%     "met", "rxn", "gene" or "comp" dependent on which objects the
+%     'met', 'rxn', 'gene' or 'comp' dependent on which objects the
 %     annotations should be assigned to.
 % object : cell or logical or double or char
 %     either a cell array of IDs, a logical vector with the same number of
 %     elements as the type (see above) in the model, a vector of indexes,
-%     or "all".
+%     or 'all'.
 % miriamName : char
 %     string specifying the namespace of the identifier, for instance
-%     "bigg.metabolite". Should be a valid prefix from identifiers.org
+%     'bigg.metabolite'. Should be a valid prefix from identifiers.org
 %     (e.g. https://registry.identifiers.org/registry/bigg.metabolite).
 % miriams : char or cell
 %     string or cell array of strings with annotation identifiers, e.g.
-%     "12dgr161".
+%     '12dgr161'.
 % keep : char
 %     one of the following strings, specifying what should be done if an
 %     object already has existing MIRIAM annotations with the same
 %     miriamName:
 %
-%     - "replace" : discard all existing annotations, all will be
+%     - 'replace' : discard all existing annotations, all will be
 %       overwritten, even if the new annotation is an empty field. Should
 %       only be used if you do not want to keep any of the old annotation
 %       with the same miriamName.
-%     - "fill" : only add annotations to those objects that did not yet
+%     - 'fill' : only add annotations to those objects that did not yet
 %       have an annotation with that miriamName. Otherwise, the existing
 %       annotation is kept, even if it is different from the suggested new
 %       annotation.
-%     - "add" : keep all existing annotations, and add any new
+%     - 'add' : keep all existing annotations, and add any new
 %       annotations, after removing duplicates.
+%     - 'remove' : remove all annotations with the given miriamName from
+%       the specified objects. The miriams argument is ignored.
 %
 % Returns
 % -------
@@ -46,17 +48,17 @@ function model=editMiriam(model,type,object,miriamName,miriams,keep)
 miriamName=char(miriamName);
 miriams=convertCharArray(miriams);
 
-%Check "keep" input
+%Check 'keep' input
 keep=char(keep);
-if ~any(strcmp(keep,{'replace','fill','add'}))
-    error('Invalid ''keep'', should be ''replace'',''fill'',''add''.')
+if ~any(strcmp(keep,{'replace','fill','add','remove'}))
+    error('Invalid ''keep'', should be ''replace'',''fill'',''add'',''remove''.')
 end
-%Check "type" input
+%Check 'type' input
 type=char(type);
 if ~any(strcmp(type,{'met','gene','rxn','comp'}))
     error('Invalid ''type'', should be ''met'', ''gene'', ''rxn'' or ''comp''.')
 end
-%Check "object" input
+%Check 'object' input
 if islogical(object)
     idxInModel=find(object);
 elseif isnumeric(object)
@@ -68,15 +70,17 @@ else
     else
         idxInModel=getIndexes(model,object,[type,'s']);
         if ~all(idxInModel)
-            error('RAVEN:badInput', '%s', ravenList('The following objects cannot be found in the model: ', object(~idxInModel)))
+            dispEM('The following objects cannot be found in the model: ',true,object(~idxInModel))
         end
     end
 end
-%Check "miriams" input
-if numel(miriams)==1 && numel(idxInModel)~=1
-    miriams=repmat(miriams,numel(idxInModel),1);
-elseif numel(miriams)~=numel(idxInModel)
-    error('The number of annotations does not match the number of objects.')
+%Check 'miriams' input (skip for 'remove' — miriams argument is not used)
+if ~strcmp(keep,'remove')
+    if numel(miriams)==1 && numel(idxInModel)~=1
+        miriams=repmat(miriams,numel(idxInModel),1);
+    elseif numel(miriams)~=numel(idxInModel)
+        error('The number of annotations does not match the number of objects.')
+    end
 end
 
 miriamFieldName=[type,'Miriams'];
@@ -89,7 +93,12 @@ else
 end
 
 [~, midx]=ismember(miriamName,extractedMiriamNames);
-if midx==0
+if strcmp(keep,'remove')
+    if midx>0
+        extractedMiriams(:,midx)={''};
+    end
+    % Nothing to do when midx==0: miriamName not present
+elseif midx==0
     midx=numel(extractedMiriamNames)+1;
     extractedMiriamNames(end+1)={miriamName};
     extractedMiriams(:,end+1)=miriams;

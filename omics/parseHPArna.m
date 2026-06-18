@@ -10,67 +10,71 @@ function arrayData=parseHPArna(fileName, varargin)
 % Name-Value Arguments
 % --------------------
 % version : double
-%     version of HPA (default 19). Only versions 18 and 19 are supported.
+%     accepted for backward compatibility but ignored; the format is now
+%     inferred from the column headers (default 19).
 %
 % Returns
 % -------
 % arrayData : struct
 %     parsed HPA RNA data with fields:
 %
-%     - genes : cell array with the unique ensemble gene IDs
-%     - geneNames : cell array with the gene names (gene abbrevs)
-%     - tissues : cell array with the tissue names
-%     - levels : matrix of gene expression levels (TPM), where rows
-%       correspond to genes, and columns correspond to tissues
+%     - genes : cell array with the unique Ensembl gene IDs
+%     - geneNames : cell array with the gene symbols
+%     - tissues : cell array with the unique tissue (or sample) names
+%     - levels : matrix of expression values (rows = genes, cols = tissues)
 %
 % Examples
 % --------
-%     arrayData = parseHPArna(fileName, version);
+%     arrayData = parseHPArna(fileName);
 
-%Change this and add code for more versions when the current HPA
-%version is increased and the format is changed
-p=parseRAVENargs(varargin, {'version',19});
-version=p.version;
+p=parseRAVENargs(varargin, {'version',19}); %#ok<NASGU> retained for backward compat
 
 fileName=char(fileName);
 if ~isfile(fileName)
     error('HPA file %s cannot be found', string(fileName));
 end
 
-%NOTE! This function assumes that the first 4 columns contain (in order):
-% (1) gene ensembl ID, (2) gene abbrev, (3) tissue name,  (4) TPM value
-if (version == 19)
-    headers={'Gene' 'Gene name' 'Tissue' 'TPM' 'pTPM' 'NX'};
-elseif (version == 18)
-    headers={'Gene' 'Gene name' 'Sample' 'Value' 'Unit'};
-else
-    error('Only HPA versions 18 and 19 are currently supported.');
-end
-
-%extract data from file
-formatSpec = strip(repmat('%q ', 1, numel(headers)));
-fid=fopen(fileName, 'r');
-hpa=textscan(fid, formatSpec, 'Delimiter', '\t');
+%Parse header and all data columns (RNA files are always TSV)
+fid=fopen(fileName,'r');
+headers=strsplit(fgetl(fid), sprintf('\t'));
+fmtStr=strip(repmat('%q ',1,numel(headers)));
+hpa=textscan(fid, fmtStr, 'Delimiter','\t');
 fclose(fid);
 
-%Go through and see if the headers match what was expected
-for i=1:numel(headers)
-    if ~strcmpi(headers(i),hpa{i}(1))
-        EM=['Could not find the header "' headers{i} '". Make sure that the input file matches the format specified at http://www.proteinatlas.org/about/download'];
-        error('RAVEN:badInput', '%s', EM);
+%Helper: column index by name (returns empty if not found)
+ci=@(name) find(strcmp(headers,name),1);
+
+%Validate required columns
+for h={'Gene','Gene name'}
+    if isempty(ci(h{1}))
+        error(['Could not find the column "' h{1} '". ' ...
+            'Make sure the input file matches the format at https://www.proteinatlas.org/about/download']);
     end
-    %Remove the header line here
-    hpa{i}(1)=[];
 end
 
-%Get unique gene IDs and tissue names
-[arrayData.genes, P, I] = unique(hpa{1});
-arrayData.geneNames = hpa{2}(P);  % retrieve corresponding gene names
-[arrayData.tissues, ~, J] = unique(hpa{3});
+%Detect tissue column: 'Tissue' (v19) or 'Sample' (v18)
+tissueCol='Tissue';
+if isempty(ci('Tissue')) && ~isempty(ci('Sample'))
+    tissueCol='Sample';
+elseif isempty(ci('Tissue'))
+    error(['Could not find a tissue column ("Tissue" or "Sample"). ' ...
+        'Make sure the input file matches the format at https://www.proteinatlas.org/about/download']);
+end
 
-%Now extract the gene levels and organize into matrix
-arrayData.levels = NaN(max(I),max(J));
-linearInd = sub2ind(size(arrayData.levels),I,J);
-arrayData.levels(linearInd) = str2double(hpa{4});
-    
+%Detect expression value column: 'TPM' (v19) or 'Value' (v18)
+valueCol='TPM';
+if isempty(ci('TPM')) && ~isempty(ci('Value'))
+    valueCol='Value';
+elseif isempty(ci('TPM'))
+    error(['Could not find an expression value column ("TPM" or "Value"). ' ...
+        'Make sure the input file matches the format at https://www.proteinatlas.org/about/download']);
+end
 
+[arrayData.genes, P, I]=unique(hpa{ci('Gene')});
+arrayData.geneNames=hpa{ci('Gene name')}(P);
+[arrayData.tissues, ~, J]=unique(hpa{ci(tissueCol)});
+
+arrayData.levels=NaN(max(I),max(J));
+linearInd=sub2ind(size(arrayData.levels),I,J);
+arrayData.levels(linearInd)=str2double(hpa{ci(valueCol)});
+end

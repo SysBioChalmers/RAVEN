@@ -33,6 +33,7 @@ function geneTable = getGeneData(accession, varargin)
 %       gene_name       — common gene symbol when available (e.g. 'rbcL')
 %       GenBank_protein — protein accession (e.g. 'XP_001698190.2'), matching
 %                         the protein FASTA headers
+%       UniProt         — UniProt accession from Dbxref when available
 %
 % Examples
 % --------
@@ -101,10 +102,10 @@ function T = parseGFF(gffPath)
 % prokaryotes), so the GenBank_protein column matches the protein FASTA.
 %
 % Returns a table with columns:
-%   locus_tag | old_locus_tag | GeneID | gene_name | GenBank_protein
+%   locus_tag | old_locus_tag | GeneID | gene_name | GenBank_protein | UniProt
 
     batchSize = 10000;
-    rows  = cell(batchSize, 5);
+    rows  = cell(batchSize, 6);
     nRows = 0;
     % Use a containers.Map to hold the last gene record keyed by gene ID,
     % and an mRNA → gene map to resolve eukaryote CDS parents.
@@ -154,10 +155,10 @@ function T = parseGFF(gffPath)
 
             nRows = nRows + 1;
             if nRows > size(rows, 1)
-                rows = [rows; cell(batchSize, 5)];
+                rows = [rows; cell(batchSize, 6)];
             end
             rows(nRows, :) = {g.locus_tag, g.old_locus_tag, ...
-                               g.geneID,    g.name,          proteinID};
+                               g.geneID,    g.name,          proteinID, g.uniProt};
         end
     end
     fclose(fid);
@@ -172,7 +173,7 @@ function T = parseGFF(gffPath)
     rows = rows(ia, :);
 
     T = cell2table(rows, 'VariableNames', ...
-        {'locus_tag','old_locus_tag','GeneID','gene_name','GenBank_protein'});
+        {'locus_tag','old_locus_tag','GeneID','gene_name','GenBank_protein','UniProt'});
 end
 
 % Attibute parsing utilities
@@ -221,11 +222,17 @@ function g = parseGeneAttrs(attrs)
     g.name          = extractAttr(attrs, 'Name');
     g.locus_tag     = extractAttr(attrs, 'locus_tag');
     g.old_locus_tag = extractAttr(attrs, 'old_locus_tag');
-    
+
     % Dbxref is a comma-separated list like:
     %   GeneID:5723799,GenBank:XM_001698190.2
     dbxref          = extractAttr(attrs, 'Dbxref');
     g.geneID        = extractDbxrefField(dbxref, 'GeneID');
+
+    % UniProt accession appears as UniProtKB/Swiss-Prot:P12345 or UniProtKB:P12345
+    g.uniProt       = extractDbxrefField(dbxref, 'UniProtKB/Swiss-Prot');
+    if isempty(g.uniProt)
+        g.uniProt   = extractDbxrefField(dbxref, 'UniProtKB');
+    end
 end
 
 function c = parseCDSAttrs(attrs)

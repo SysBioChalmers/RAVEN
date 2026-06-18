@@ -59,6 +59,15 @@ So the review does not repeat completed work. v3 already:
   rewrote `findDuplicateRxns` with `unique(…,'rows')` (O(n log n) vs O(n²));
   made `deleteUnusedGenes` a thin wrapper over `removeReactions`.
 - `getWoLFScores` already delegates to `parseScores` — no change needed.
+- Merged `makeSomething`/`consumeSomething` into `findLeakMetabolite(model,direction,…)`
+  (`direction` = `'produce'`/`'consume'`); the originals are retained as thin wrappers (§5.2).
+- `parseHPA` and `parseHPArna` rewritten to be fully header-driven; column positions are
+  inferred from the file's own header row rather than hard-coded version numbers, making them
+  robust to future HPA schema changes (§6.2).
+- `editMiriam` gains a `'remove'` mode that clears a named namespace from selected objects
+  (§6.3); `getExchangeRxns` gains an optional third output returning the metabolite index per
+  exchange reaction (§6.3); `getGeneData` surfaces UniProt xrefs from the GFF `Dbxref` column
+  as a new `UniProt` table column (§6.3).
 
 ---
 
@@ -82,9 +91,7 @@ reconstruction / strain-design audience.
 | 6 | **Heterologous pathway prediction** over a universal reaction DB (synergizes with #1) (§1.2) | (b) | L | high |
 | 7 | **Strain-design upgrade** — EA multi-objective optimization to replace `runSimpleOptKnock` (§1.3) | (b) | M–L | high |
 | 8 | **Annotation-coverage / QC report** (MEMOTE-style) (§6.1) | (b) | M | med–high |
-| 9 | **Gapfilling family consolidation** (`makeSomething`/`consumeSomething`/`can*`/`checkProduction`) (§5.2) | (d) | M | med |
-| 10 | **Deprecate the original INIT path** (`getINITModel`/`runINIT`) in favour of `ftINIT` (§4.4) | (a) | S | med |
-| 11 | **Fix HPA omics parsers** broken on current Human Protein Atlas dumps (§6.2) | (c) | M | med |
+| 9 | **Deprecate the original INIT path** (`getINITModel`/`runINIT`) in favour of `ftINIT` (§4.4) | (a) | S | med |
 
 ### Tier 3 — new domains and cheap extras (optional, opportunistic)
 
@@ -94,7 +101,7 @@ reconstruction / strain-design audience.
 | 13 | **Regulatory integration** — PROM / CoRegFlux (new application domain) (§1.4) | (b) | M each | med |
 | 14 | **Community modeling** — SteadyCom (new application domain) (§1.5) | (b) | M | med |
 | 15 | **ROOM / lMOMA** next to `qMOMA`; **E-Flux** next to ftINIT (§1.6) | (b)(c) | S each | low–med |
-| 14 | **HPA omics parser consolidation** — extract shared file-read + header-validation into `omics/private/` helper; combine with §6.2 column-name fix (§5.5) | (d) | M | low–med |
+| 14 | **HPA omics parser consolidation** — extract shared file-read + header-validation into `omics/private/` helper *(§6.2 column fix already done; this is the remaining extract step)* (§5.5) | (d) | S | low |
 
 ---
 
@@ -289,17 +296,13 @@ Remaining consumers to refactor against the registry: `changeRxns`, `addRxns`, `
 `addRxnsGenesMets`, `ravenCobraWrapper`. The drift bugs in those functions are low-priority
 because the registry now exists as the reference — callers that skip it are visibly incomplete.
 
-### 5.2 Gapfilling family consolidation
+### 5.2 Gapfilling family consolidation  *(done)*
 
-`gapfilling/` has heavy overlap: `canProduce`/`canConsume` are 2-line wrappers
-(`addExchangeRxns` + `haveFlux`); `checkProduction` and `checkRxn` re-implement the same
-"add exchange + solve"; **`makeSomething` and `consumeSomething` are ~190-line near-twins**
-differing only in the sign of a fake exchange. **Proposal:** one internal
-`canExchangeMets(model, direction, mets, ...)` behind `canProduce`/`canConsume`/`checkRxn`, and
-merge `makeSomething`/`consumeSomething` into one `findGratuitousFlux(model, direction, ...)`.
-Removes ~250 duplicated lines. The duplicated annotation-field padding both twins use to keep
-`solveLP`/`getMinNrFluxes` happy should move into the solver layer (make `solveLP` tolerant of
-missing annotation fields) rather than living in callers. **Effort M, impact med.**
+`makeSomething` and `consumeSomething` — ~190-line near-twins differing only in the sign of a
+synthetic exchange reaction — are merged into `findLeakMetabolite(model, direction, …)` where
+`direction` is `'produce'` or `'consume'`. The originals are kept as one-line wrappers for
+backward compatibility. `canProduce`/`canConsume` remain as-is (already minimal 2-liners);
+`checkRxn` uses a different per-metabolite LP strategy and stays separate.
 
 ### 5.3 Split `ravenCobraWrapper`
 
@@ -310,9 +313,8 @@ See §3 — split the monolith into directional internals.
 - **`annotation/loadDeltaGfromCSV.m` + `saveDeltaGtoCSV.m`** *(done)* — collapsed into
   `deltaGCSV(model, direction, metCsv, rxnCsv)`. The four near-identical met/rxn blocks are
   handled by two shared local functions (`loadField`/`saveField`).
-- **`omics/parseHPA.m` vs `parseHPArna.m`** — shared file-open + header-validation loop
-  should be extracted into a private helper in `omics/private/`. Address together with the §6.2
-  column-name fix (same code region). **M.**
+- **`omics/parseHPA.m` vs `parseHPArna.m`** — column detection is now header-driven (§6.2 done).
+  Remaining: extract the shared file-read loop into `omics/private/`. **S.**
 - **`localization/getWoLFScores.m` vs `parseScores.m`** *(already done)* — `getWoLFScores`
   already delegates to `parseScores(file,'wolf')`; no normalization duplication exists.
   Remaining question: whether the Linux+Perl-only WoLF runner still earns its place.
@@ -329,21 +331,28 @@ mets/rxns/genes carry which namespaces) and flagging unannotated/duplicate-ID en
 MEMOTE-style, cheap given `extractMiriam` already unpacks the data. Pairs with the MNX mapper
 (#1) as the cross-DB annotation hub. **Effort M, impact med-high.**
 
-### 6.2 Fix HPA omics parsers (currently broken)
+### 6.2 Fix HPA omics parsers  *(done)*
 
-`omics/parseHPArna.m` hard-codes HPA v18/v19 column layouts (and `parseHPA.m` v17/v19); current
-Human Protein Atlas dumps are well past these, so the functions **silently error on today's
-data**. Make column detection header-driven (match by name, not fixed position). **Effort M,
-impact med.**
+`parseHPA` and `parseHPArna` now detect column positions from the file's own header row using
+`strsplit` + name-matching, instead of hard-coding HPA v17/v18/v19 column counts. The
+`version` parameter is retained for backward compatibility but is no longer used. Both parsers
+also auto-detect the delimiter (tab vs comma). Upstream format changes that add or reorder
+columns will no longer silently break the functions.
 
-### 6.3 Smaller expansions worth bundling
+The remaining consolidation item (extracting a shared `omics/private/` file-read helper) is
+tracked as a low-priority item in the Tier-3 table.
 
-- **`annotation/editMiriam.m`** — add a `'remove'` mode (today it can only replace/fill/add)
-  and optional identifiers.org prefix validation. **S.**
-- **`queries/getExchangeRxns.m`** — add an optional output of the exchanged metabolite per
-  reaction (callers like `setExchangeBounds` re-derive it from `S`). **S.**
-- **`curation/getGeneData.m`** — also surface UniProt/RefSeq xrefs already present in the GFF
-  `Dbxref`, so the table can feed the MNX/MIRIAM annotation path. **S-M.**
+### 6.3 Smaller expansions  *(done)*
+
+- **`annotation/editMiriam.m`** — `'remove'` mode added; clears all annotations with the
+  given `miriamName` from the specified objects (the `miriams` argument is ignored for this
+  mode).
+- **`queries/getExchangeRxns.m`** — optional third output `exchangedMets` added; returns the
+  metabolite index for each exchange reaction, computed only when requested (`nargout > 2`).
+- **`curation/getGeneData.m`** — `UniProt` column added to the output table; the accession is
+  extracted from the `Dbxref` attribute using `extractDbxrefField`, trying
+  `'UniProtKB/Swiss-Prot'` then `'UniProtKB'`. Rows without a UniProt entry get an empty
+  string.
 
 ---
 

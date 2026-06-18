@@ -9,6 +9,14 @@ classdef tAnnotation < RavenTestCase
             testCase.verifyEqual(numel(m2.mets), numel(testCase.model.mets));
         end
 
+        function editMiriamRemovesAnnotation(testCase)
+            m2 = editMiriam(testCase.model, 'met', 1, 'bigg.metabolite', 'testval', 'add');
+            m3 = editMiriam(m2, 'met', 1, 'bigg.metabolite', '', 'remove');
+            testCase.verifyClass(m3, 'struct');
+            [~, names] = extractMiriam(m3.metMiriams(1));
+            testCase.verifyFalse(any(strcmp('bigg.metabolite', names)));
+        end
+
         function extractMiriamReturnsNames(testCase)
             [miriams, names] = extractMiriam(testCase.model.metMiriams); %#ok<ASGLU>
             testCase.verifyNotEmpty(names);
