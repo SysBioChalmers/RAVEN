@@ -387,7 +387,7 @@ fprintf('Querying the user-specified FASTA file against the KEGG Orthology speci
 [status, output]=system(['"' fullfile(ravenPath,'software','hmmer',['hmmsearch' binEnd]) '" --cpu "' num2str(cores) '" --tblout "' tblFile '" "' libraryFile '" "' fastaFile '"']);
 if status~=0
     EM=['Error when querying the concatenated HMM library:\n' output];
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 fprintf('COMPLETE\n');
 

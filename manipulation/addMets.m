@@ -88,7 +88,7 @@ else
 end
 if ~isfield(metsToAdd,'compartments')
     EM='compartments is a required field in metsToAdd';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 else
     metsToAdd.compartments=convertCharArray(metsToAdd.compartments);
     %If only one compartment is given, assume it is for all metabolites
@@ -120,7 +120,7 @@ end
 [I, compMap]=ismember(metsToAdd.compartments,model.comps);
 if ~all(I)
     EM='metsToAdd.compartments must match model.comps';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %Check that the metabolite names aren't present in the same compartment.
@@ -129,20 +129,20 @@ t1=strcat(metsToAdd.metNames(:),'***',metsToAdd.compartments(:));
 t2=strcat(model.metNames,'***',model.comps(model.metComps));
 if any(ismember(t1,t2))
     EM='One or more elements in metsToAdd.metNames already exist in the same compartments as the one it is being added to';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %Some more checks and if they pass then add each field to the structure
 if numel(metsToAdd.metNames)~=nMets
     EM='metsToAdd.metNames must have the same number of elements as metsToAdd.mets';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 else
     newModel.metNames=[newModel.metNames;metsToAdd.metNames(:)];
 end
 
 if numel(compMap)~=nMets
     EM='metsToAdd.compartments must have the same number of elements as metsToAdd.mets';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 else
     newModel.metComps=[newModel.metComps;compMap(:)];
 end
@@ -150,7 +150,7 @@ end
 if isfield(metsToAdd,'b')
     if size(metsToAdd.b,1)~=nMets
         EM='metsToAdd.b must have the same number of elements as metsToAdd.mets';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     else
         %Add empty field if it doesn't exist
         if ~isfield(newModel,'b')
@@ -174,7 +174,7 @@ end
 if isfield(metsToAdd,'unconstrained')
     if numel(metsToAdd.unconstrained)~=nMets
         EM='metsToAdd.unconstrained must have the same number of elements as metsToAdd.mets';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     else
         %Add empty field if it doesn't exist
         if ~isfield(newModel,'unconstrained')
@@ -195,7 +195,7 @@ if isfield(metsToAdd,'inchis')
     metsToAdd.inchis=convertCharArray(metsToAdd.inchis);
     if numel(metsToAdd.inchis)~=nMets
         EM='metsToAdd.inchis must have the same number of elements as metsToAdd.mets';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
     %Add empty field if it doesn't exist
     if ~isfield(newModel,'inchis')
@@ -214,7 +214,7 @@ if isfield(metsToAdd,'metSmiles')
     metsToAdd.metSmiles=convertCharArray(metsToAdd.metSmiles);
     if numel(metsToAdd.metSmiles)~=nMets
         EM='metsToAdd.metSmiles must have the same number of elements as metsToAdd.mets';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
     %Add empty field if it doesn't exist
     if ~isfield(newModel,'metSmiles')
@@ -232,7 +232,7 @@ if isfield(metsToAdd,'metFormulas')
     metsToAdd.metFormulas=convertCharArray(metsToAdd.metFormulas);
     if numel(metsToAdd.metFormulas)~=nMets
         EM='metsToAdd.metFormulas must have the same number of elements as metsToAdd.mets';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
     %Add empty field if it doesn't exist
     if ~isfield(newModel,'metFormulas')
@@ -249,11 +249,11 @@ end
 if isfield(metsToAdd,'metCharges')
     if numel(metsToAdd.metCharges)~=nMets
         EM='metsToAdd.metCharges must have the same number of elements as metsToAdd.mets';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
     if ~isnumeric(metsToAdd.metCharges)
         EM='metsToAdd.metCharges must be of type "double"';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
     if ~isfield(newModel,'metCharges')
         newModel.metCharges=NaN(numel(largeFiller),1);
@@ -269,11 +269,11 @@ end
 if isfield(metsToAdd,'metDeltaG')
     if numel(metsToAdd.metDeltaG)~=nMets
         EM='metsToAdd.metDeltaG must have the same number of elements as metsToAdd.mets';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
     if ~isnumeric(metsToAdd.metDeltaG)
         EM='metsToAdd.metDeltaG must be of type "double"';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
     if ~isfield(newModel,'metDeltaG')
         newModel.metDeltaG=NaN(numel(largeFiller),1);
@@ -296,7 +296,7 @@ if isfield(metsToAdd,'metNotes')
     end
     if numel(metsToAdd.metNotes)~=nMets
         EM='metsToAdd.metNotes must have the same number of elements as metsToAdd.mets';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
     %Add empty field if it doesn't exist
     if ~isfield(newModel,'metNotes')
@@ -319,7 +319,7 @@ if isfield(metsToAdd,'metMiriams')
     end
     if numel(metsToAdd.metMiriams)~=nMets
         EM='metsToAdd.metMiriams must have the same number of elements as metsToAdd.mets';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
     %Add empty field if it doesn't exist
     if ~isfield(newModel,'metMiriams')

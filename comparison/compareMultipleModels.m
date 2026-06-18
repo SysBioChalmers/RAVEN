@@ -77,11 +77,11 @@ if ~isempty(taskFile)
 end
 if numel(models) <= 1
     EM = 'Cannot compare only one model. Use printModelStats if you want a summary of a model';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 if isempty(taskFile) && funcCompare
     EM = 'Cannot perform the functional comparison without a task file. Specify taskFile or set funcCompare to FALSE.';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %% Set up model ID structure

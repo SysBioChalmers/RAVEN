@@ -39,7 +39,7 @@ printResults=p.printResults;
 
 if numel(models)<=1
     EM='Cannot compare only one model. Use printModelStats if you want a summary of a model';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 compStruct.modelIDs={};

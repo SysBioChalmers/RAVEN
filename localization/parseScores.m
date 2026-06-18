@@ -41,7 +41,7 @@ fid=fopen(inputFile,'r');
 
 if fid<1
     EM='Could not open file';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 if strcmpi(predictor,'wolf')
@@ -131,7 +131,7 @@ end
 
 if numel(J)~=numel(K)
     EM='There are duplicate genes in the input file';
-    dispEM(EM,false);
+    warning('RAVEN:warning', '%s', EM);
     GSS.genes=GSS.genes(J);
     GSS.scores=GSS.scores(J,:);
 end

@@ -95,7 +95,7 @@ end
 
 if numel(presentMets)~=numel(unique(presentMets))
     EM='Duplicate metabolite names in presentMets';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %Default is that the metabolites cannot be produced
@@ -113,7 +113,7 @@ end
 %reactions should be open
 if isfield(model,'unconstrained')
     EM='Exchange metabolites are still present in the model. Use simplifyModel if this is not intended';
-    dispEM(EM,false);
+    warning('RAVEN:warning', '%s', EM);
 end
 
 %The irreversible reactions that are essential must have a flux and are
@@ -325,7 +325,7 @@ if ~checkSolution(res)
     else
         EM='The problem is infeasible';
     end
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 fValue=res.obj;

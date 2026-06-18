@@ -151,7 +151,7 @@ end
 
 if isempty(modelSBML)
     EM=['There is a problem with the SBML file. Try using the SBML Validator at http://sbml.org/Facilities/Validator.\nlibSBML reports: ', errorMsg.message];
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %RAVEN only supports SBML Level 3 Version 1 with the FBC version 2 package.
@@ -163,7 +163,7 @@ if ~(isfield(modelSBML,'SBML_level') && isequal(modelSBML.SBML_level,3) && ...
         'version 2 package. Convert the model to this format first (for '...
         'example with another tool), or use an older RAVEN version to '...
         'import it.'];
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %Retrieve compartment names and IDs
@@ -449,7 +449,7 @@ for i=1:numel(modelSBML.reaction)
         metIndex=find(strcmp(modelSBML.reaction(i).reactant(j).species,metaboliteIDs),1);
         if isempty(metIndex)
             EM=['Could not find metabolite ' modelSBML.reaction(i).reactant(j).species ' in reaction ' reactionIDs{counter}];
-            dispEM(EM);
+            error('RAVEN:badInput', '%s', EM);
         end
         S(metIndex,counter)=S(metIndex,counter)+modelSBML.reaction(i).reactant(j).stoichiometry*-1;
     end
@@ -460,7 +460,7 @@ for i=1:numel(modelSBML.reaction)
         metIndex=find(strcmp(modelSBML.reaction(i).product(j).species,metaboliteIDs),1);
         if isempty(metIndex)
             EM=['Could not find metabolite ' modelSBML.reaction(i).product(j).species ' in reaction ' reactionIDs{counter}];
-            dispEM(EM);
+            error('RAVEN:badInput', '%s', EM);
         end
         S(metIndex,counter)=S(metIndex,counter)+modelSBML.reaction(i).product(j).stoichiometry;
     end
@@ -678,7 +678,7 @@ if any(rxnComps)
     else
         if supressWarnings==false
             EM='The compartments for the following reactions could not be matched. Ignoring reaction compartment information';
-            dispEM(EM,false,model.rxns(rxnComps==0));
+            warning('RAVEN:warning', '%s', ravenList(EM,model.rxns(rxnComps==0)));
         end
     end
 end
@@ -717,9 +717,9 @@ model.id=regexprep(model.id,'__([0-9]+)__','${char(str2num($1))}');
 
 if removePrefix
     [model, hasChanged]=removeIdentifierPrefix(model);
-    dispEM(['The following fields have prefixes removed from all entries. '...
+    warning('RAVEN:warning', '%s', ravenList(['The following fields have prefixes removed from all entries. '...
     'If this is undesired, run importModel with removePrefix as false. Example: '...
-    'importModel(''filename.xml'',[],false);'],false,hasChanged)
+    'importModel(''filename.xml'',[],false);'],hasChanged))
 end
 
 %Remove unused fields

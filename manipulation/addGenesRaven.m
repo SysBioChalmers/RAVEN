@@ -40,7 +40,7 @@ end
 %Check some stuff regarding the required fields
 if ~isfield(genesToAdd,'genes')
     EM='genes is a required field in genesToAdd';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 else
     genesToAdd.genes=convertCharArray(genesToAdd.genes);
 end
@@ -80,7 +80,7 @@ if isfield(genesToAdd,'geneShortNames')
     genesToAdd.geneShortNames=convertCharArray(genesToAdd.geneShortNames);
     if numel(genesToAdd.geneShortNames)~=nGenes
         EM='genesToAdd.geneShortNames must have the same number of elements as genesToAdd.genes';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
     %Add empty field if it doesn't exist
     if ~isfield(newModel,'geneShortNames')
@@ -97,7 +97,7 @@ if isfield(genesToAdd,'proteins')
     genesToAdd.proteins=convertCharArray(genesToAdd.proteins);
     if numel(genesToAdd.proteins)~=nGenes
         EM='genesToAdd.proteins must have the same number of elements as genesToAdd.genes';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
     %Add empty field if it doesn't exist
     if ~isfield(newModel,'proteins')
@@ -116,7 +116,7 @@ end
 if isfield(genesToAdd,'geneMiriams')
     if numel(genesToAdd.geneMiriams)~=nGenes
         EM='genesToAdd.geneMiriams must have the same number of elements as genesToAdd.genes';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
     %Add empty field if it doesn't exist
     if ~isfield(newModel,'geneMiriams')
@@ -132,13 +132,13 @@ end
 if isfield(genesToAdd,'geneComps')
     if numel(genesToAdd.geneComps)~=nGenes
         EM='genesToAdd.geneComps must have the same number of elements as genesToAdd.genes';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
     %Add empty field if it doesn't exist
     if ~isfield(newModel,'geneComps')
         newModel.geneComps=ones(nOldGenes,1);
         EM='Adding genes with compartment information to a model without such information. All existing genes will be assigned to the first compartment';
-        dispEM(EM,false);
+        warning('RAVEN:warning', '%s', EM);
     end
     newModel.geneComps=[newModel.geneComps;genesToAdd.geneComps(:)];
 else

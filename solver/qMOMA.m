@@ -40,7 +40,7 @@ fluxMinWeight=p.fluxMinWeight;
 
 %Check that the smaller model is a subset of the larger one
 if any(~rxnExists)
-    dispEM('All reactions in the test model must exist in the reference model');
+    error('RAVEN:badInput', '%s', 'All reactions in the test model must exist in the reference model');
 end
 
 %In order to make the calculations a little easier to formulate I reshape

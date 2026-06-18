@@ -145,7 +145,7 @@ while predicted==true
         switch metStatus
             case -2
                 EM=['Could not predict composition for "' metNames{i} '" due to inconsistencies'];
-                dispEM(EM,false);
+                warning('RAVEN:warning', '%s', EM);
             case 1
                 %Calculate and add the composition
                 str=getCompString(elements,comp);

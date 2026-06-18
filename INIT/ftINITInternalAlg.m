@@ -70,7 +70,7 @@ end
 %reactions should be open
 if isfield(model,'unconstrained')
     EM='Exchange metabolites are still present in the model. Use simplifyModel if this is not intended';
-    dispEM(EM,false);
+    warning('RAVEN:warning', '%s', EM);
 end
 
 
@@ -423,7 +423,7 @@ if ~checkSolution(res)
     else
         EM='The problem is infeasible';
     end
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %get the on/off vals

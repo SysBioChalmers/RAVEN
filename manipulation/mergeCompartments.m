@@ -62,7 +62,7 @@ if deleteRxnsWithOneMet==true
         %If there is no unconstrained field these reactions are probably
         %exchange reactions and shall be kept. If not then print a warning
         EM='There are reactions with only one metabolite. Cannot determine whether they are exchange reactions since there is no unconstrained field';
-        dispEM(EM,false);
+        warning('RAVEN:warning', '%s', EM);
     end
 end
 

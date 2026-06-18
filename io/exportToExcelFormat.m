@@ -48,7 +48,7 @@ end
 
 if ~strcmpi(B,'.xlsx')
     EM='As of RAVEN version 1.9, only export to xlsx format is supported';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %Accumulate the sheets, then write them all to the .xlsx at the end.

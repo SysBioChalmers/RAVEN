@@ -260,7 +260,7 @@ if onlyGenesInModels==true
         %no genes in the models are present in the corresponding sheet
         if isempty(blastStructure(i).fromGenes)
             EM=['No genes in matching from ' blastStructure(i).fromId ' to ' blastStructure(i).toId ' are present in the corresponding model'];
-            dispEM(EM);
+            error('RAVEN:badInput', '%s', EM);
         end
     end
 end

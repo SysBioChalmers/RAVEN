@@ -112,7 +112,7 @@ if deleteInaccessible==true
     %are taken up be the system
     if isfield(reducedModel,'unconstrained') && suppressWarnings==false
         EM='Removing dead-end reactions before removing exchange metabolites';
-        dispEM(EM,false);
+        warning('RAVEN:warning', '%s', EM);
     end
     
     while true

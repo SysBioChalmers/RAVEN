@@ -67,7 +67,7 @@ end
 
 if any(rxnScores>=0)
     EM='Only negative values are allowed in rxnScores';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %Prepare the input models a little
@@ -79,7 +79,7 @@ largeModelMets=upper(strcat(refModel.metNames,'[',refModel.comps(refModel.metCom
 
 if ~isfield(model,'unconstrained')
     EM='Exchange metabolites should normally not be removed from the model when using checkTasks. Inputs and outputs are defined in the task file instead. Use importModel(file,false) to import a model with exchange metabolites remaining';
-    dispEM(EM,false);
+    warning('RAVEN:warning', '%s', EM);
 end
 
 if isempty(taskStructure)
@@ -127,7 +127,7 @@ for i=1:numel(taskStructure)
             end
             if numel(J(I))~=numel(unique(J(I)))
                 EM=['The constraints on some input(s) in "[' taskStructure(i).id '] ' taskStructure(i).description '" are defined more than one time'];
-                dispEM(EM);
+                error('RAVEN:badInput', '%s', EM);
             end
             %If all metabolites should be added
             if any(K)
@@ -136,7 +136,7 @@ for i=1:numel(taskStructure)
                 %that are set
                 if K(1)==0
                     EM=['ALLMETS is used as an input in "[' taskStructure(i).id '] ' taskStructure(i).description '" but it it not the first metabolite in the list. Constraints defined for the metabolites before it will be over-written'];
-                    dispEM(EM,false);
+                    warning('RAVEN:warning', '%s', EM);
                 end
                 %Use the first match of ALLMETS. There should only be one,
                 %but still..
@@ -155,7 +155,7 @@ for i=1:numel(taskStructure)
                         tModel.b(model.metComps==C,1)=taskStructure(i).UBin(L(j))*-1;
                     else
                         EM=['The compartment defined for ALLMETSIN in "[' taskStructure(i).id '] ' taskStructure(i).description '" does not exist'];
-                        dispEM(EM);
+                        error('RAVEN:badInput', '%s', EM);
                     end
                 end
             end
@@ -179,7 +179,7 @@ for i=1:numel(taskStructure)
                 [found, metMatch]=ismember(upper(taskStructure(i).outputs(~goodMets)),largeModelMets);
                 if ~all(found)
                     EM=['Could not find all outputs in "[' taskStructure(i).id '] ' taskStructure(i).description '" in either model'];
-                    dispEM(EM);
+                    error('RAVEN:badInput', '%s', EM);
                 else
                     %Otherwise add them to the model
                     met.metNames=refModel.metNames(metMatch);
@@ -200,7 +200,7 @@ for i=1:numel(taskStructure)
             end
             if numel(J(I))~=numel(unique(J(I)))
                 EM=['The constraints on some output(s) in "[' taskStructure(i).id '] ' taskStructure(i).description '" are defined more than one time'];
-                dispEM(EM);
+                error('RAVEN:badInput', '%s', EM);
             end
             %If all metabolites should be added
             if any(K)
@@ -209,7 +209,7 @@ for i=1:numel(taskStructure)
                 %that are set
                 if K(1)==0
                     EM=['ALLMETS is used as an output in "[' taskStructure(i).id '] ' taskStructure(i).description '" but it it not the first metabolite in the list. Constraints defined for the metabolites before it will be over-written'];
-                    dispEM(EM,false);
+                    warning('RAVEN:warning', '%s', EM);
                 end
                 %Use the first match of ALLMETS. There should only be one,
                 %but still..
@@ -228,7 +228,7 @@ for i=1:numel(taskStructure)
                         tModel.b(model.metComps==C,2)=taskStructure(i).UBout(L(j));
                     else
                         EM=['The compartment defined for ALLMETSIN in "[' taskStructure(i).id '] ' taskStructure(i).description '" does not exist'];
-                        dispEM(EM);
+                        error('RAVEN:badInput', '%s', EM);
                     end
                 end
             end
@@ -243,7 +243,7 @@ for i=1:numel(taskStructure)
                 nonzero_LBout = taskStructure(i).LBout(I) > 0;
                 if any(nonzero_LBin & nonzero_LBout)
                     EM=['The IN LB and OUT LB in "[' taskStructure(i).id '] ' taskStructure(i).description '" cannot be nonzero for the same metabolite'];
-                    dispEM(EM);
+                    error('RAVEN:badInput', '%s', EM);
                 end
                 tModel.b(J(nonzero_LBout),1)=taskStructure(i).LBout(I(nonzero_LBout));
                 tModel.b(J,2)=taskStructure(i).UBout(I);
@@ -273,11 +273,11 @@ for i=1:numel(taskStructure)
                 [~, ~, newRxns, newModel, exitFlag]=fillGaps(tModel,refModel,false,true,supressWarnings,rxnScores);
                 if exitFlag==-2
                     EM=['"[' taskStructure(i).id '] ' taskStructure(i).description '" was aborted before reaching optimality.\n'];
-                    dispEM(EM,false);
+                    warning('RAVEN:warning', '%s', EM);
                 end
             catch
                 EM=['"[' taskStructure(i).id '] ' taskStructure(i).description '" could not be performed for any set of reactions\n'];
-                dispEM(EM,false);
+                warning('RAVEN:warning', '%s', EM);
                 failed=true;
             end
             if failed==false
@@ -326,7 +326,7 @@ for i=1:numel(taskStructure)
         modelMets=upper(strcat(model.metNames,'[',model.comps(model.metComps),']'));
     else
         EM=['"[' taskStructure(i).id '] ' taskStructure(i).description '" is set as SHOULD FAIL. Such tasks cannot be modelled using this approach and the task is therefore ignored\n'];
-        dispEM(EM,false);
+        warning('RAVEN:warning', '%s', EM);
     end
 end
 model.b(:,2) = [];  % resume field b

@@ -63,7 +63,7 @@ else
         [balanceStructure.elements, useMat, exitFlag]=parseFormulas(model.inchis, true,true);
     else
         EM='The model must contain either the "metFormulas" or the "inchis" field in order to test for elemental balancing';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
 end
 
@@ -129,17 +129,17 @@ for i=1:numel(toPrint)
     if balanceStructure.balanceStatus(toPrint(i))<0
         if balanceStructure.balanceStatus(toPrint(i))==-1
             EM=['The reaction ' model.rxns{toPrint(i)} ' could not be balanced due to missing information'];
-            dispEM(EM,false);
+            warning('RAVEN:warning', '%s', EM);
         else
             EM=['The reaction ' model.rxns{toPrint(i)} ' could not be balanced due to a parsing error'];
-            dispEM(EM,false);
+            warning('RAVEN:warning', '%s', EM);
         end
     else
         %Find the compounds that it's not balanced for
         notBalanced=find(total(toPrint(i),:));
         for j=1:numel(notBalanced)
             EM=['The reaction ' model.rxns{toPrint(i)} ' is not balanced with respect to ' balanceStructure.elements.names{notBalanced(j)}];
-            dispEM(EM,false);
+            warning('RAVEN:warning', '%s', EM);
         end
     end
 end

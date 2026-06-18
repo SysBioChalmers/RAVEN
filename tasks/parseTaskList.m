@@ -123,7 +123,7 @@ else
     try
         raw=readcell(inputFile,'Sheet','TASKS');
     catch
-        dispEM(['Could not load sheet "TASKS" from ' inputFile]);
+        error('RAVEN:badInput', '%s', ['Could not load sheet "TASKS" from ' inputFile]);
     end
     %Normalise blank cells (which readcell returns as "missing") to [], as
     %expected by the downstream cleanSheet/parsing.
@@ -155,7 +155,7 @@ end
 %Check that the ID field is present
 if I(1)==0
     EM='The TASKS sheet must have a column named ID';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %make sure numerical fields are converted from strings

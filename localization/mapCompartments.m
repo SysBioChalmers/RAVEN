@@ -104,7 +104,7 @@ end
 %Check that there are no compartment that should both be merged and kept
 if ~isempty(intersect(toKeep,toMerge))
     EM='There are inconsistencies where one or more compartment(s) should be both kept and merged to another';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %Check that there are no compartments in the rules that are not in the
@@ -114,7 +114,7 @@ J=[uComps,{'OTHER'}];
 
 if ~isempty(setdiff([toKeep;toMerge],J))
     EM='There are compartment in the rules that are not in geneScoreStructure.compartments';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %Loop through it again and do the mapping
@@ -137,12 +137,12 @@ for i=1:numel(I)
         %It's not allowed to have rules like A B=C D
         if numel(K)>1 && numel(L)>1
             EM='It is not allowed to have rules like "A B=C D" (map more than one compartment to more than one compartment)';
-            dispEM(EM);
+            error('RAVEN:badInput', '%s', EM);
         end
         
         if ~all(k) || ~all(l)
             EM='Error in mapping. This most likely means that some compartment(s) are mapped to different compartments in different rules. Use A B=C if you want to map C to several compartments';
-            dispEM(EM);
+            error('RAVEN:badInput', '%s', EM);
         end
         
         %Get the sum of the scores for the compartments that should be
@@ -173,11 +173,11 @@ if any(J)
             geneScoreStructure.scores(:,L)=max(geneScoreStructure.scores(:,L),S);
         else
             EM='Could not map "other" to more than one compartment';
-            dispEM(EM);
+            error('RAVEN:badInput', '%s', EM);
         end
     else
         EM='There are compartments that are not defined if they should be kept or removed. Use "A=other" or define more rules if you do not want them to be deleted';
-        dispEM(EM,false);
+        warning('RAVEN:warning', '%s', EM);
     end
     
     %Remove the comparement that were merged
@@ -194,7 +194,7 @@ geneScoreStructure.scores=bsxfun(@times, geneScoreStructure.scores, 1./I);
 I=find(isnan(geneScoreStructure.scores(:,1))); %Only looks a the first colum as it will be the same for the other ones
 if any(I)
     EM='The following genes had score 0.0 in all compartments. They have been removed from the structure. Consider using more rules or "A=other" in order to prevent this:';
-    dispEM(EM,false,geneScoreStructure.genes(I));
+    warning('RAVEN:warning', '%s', ravenList(EM, geneScoreStructure.genes(I)));
     geneScoreStructure.scores(I,:)=[];
     geneScoreStructure.genes(I)=[];
 end

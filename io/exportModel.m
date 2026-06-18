@@ -93,9 +93,9 @@ end
 % Add prefixes if required
 if ~neverPrefix
     [model,hasChanged] = addIdentifierPrefix(model);
-    dispEM(['The following fields have one or more entries that do not start '...
+    warning('RAVEN:warning', '%s', ravenList(['The following fields have one or more entries that do not start '...
         'with a letter or _ (conflicting with SBML specifications). Prefixes '...
-        'are added to all entries in those fields:'],false,hasChanged)
+        'are added to all entries in those fields:'],hasChanged))
 end
 
 %Check the model structure

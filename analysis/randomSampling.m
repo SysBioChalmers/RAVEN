@@ -117,7 +117,7 @@ end
 [sol,~]=solveLP(model);
 if isempty(sol.x)
     EM='The model has no feasible solution, likely due to incompatible constraints';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 elseif sol.f==0
     warning('The model objective function cannot reach a non-zero value. This might be intended, so randomSampling will continue, but this could indicate problems with your model')
 end

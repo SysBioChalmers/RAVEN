@@ -22,13 +22,13 @@ function equationString=buildEquation(mets,stoichCoeffs,isrev)
 mets=convertCharArray(mets);
 if ~isnumeric(stoichCoeffs)
     EM = 'stoichCoeffs must be a numeric vector';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 elseif ~islogical(isrev)
     EM = 'isrev must be a logical';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 elseif length(mets) ~= length(stoichCoeffs)
     EM = 'lengths of mets and stoichCoeffs should be the same';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %Reactant half:

@@ -9,12 +9,13 @@ function issues=checkModelStruct(model,varargin)
 % Name-Value Arguments
 % --------------------
 % throwErrors : logical
-%     true if the function should throw errors if inconsistencies are found.
-%     The alternative is to print warnings for all types of issues
-%     (default true).
+%     true if structural problems (wrong types, missing required fields,
+%     duplicate IDs, etc.) should throw an error. Advisory notices such as
+%     unused elements and bound inconsistencies are always reported as
+%     warnings regardless of this flag (default true).
 % trimWarnings : logical
 %     true if only a maximum of 10 items should be displayed in a given
-%     error/warning (default true).
+%     warning or error (default true).
 %
 % Returns
 % -------
@@ -38,148 +39,166 @@ function issues=checkModelStruct(model,varargin)
 %
 % Examples
 % --------
-%     checkModelStruct(model, throwErrors, trimWarnings);
+%     checkModelStruct(model);
+%     checkModelStruct(model, 'throwErrors', false);
 %     issues = checkModelStruct(model);
 
 p=parseRAVENargs(varargin, {'throwErrors',true; 'trimWarnings',true});
 throwErrors=p.throwErrors;
 trimWarnings=p.trimWarnings;
 
-if nargout > 0
-    % Collect mode: return a struct array of issues without printing or
-    % throwing. Check required fields inline first so that missing ones
-    % don't cause cascading access errors in the body below.
-    issues = struct('category',{},'target',{},'message',{});
-    reqFields = {'id';'name';'rxns';'mets';'S';'lb';'ub';'rev';'c';'b';'comps';'metComps'};
-    for reqI = 1:numel(reqFields)
-        if ~isfield(model,reqFields{reqI})
-            issues(end+1,1) = struct('category','missing_field', ...
-                'target',reqFields{reqI}, ...
-                'message',['The model is missing the "' reqFields{reqI} '" field']);
+collecting = nargout > 0;
+issues = struct('category',{},'target',{},'message',{});
+
+    function reportIssue(severity, msg, items)
+        % Report one issue: accumulate in collect mode, or warn/error.
+        % severity: 'error' | 'warning'
+        if nargin < 3; items = {}; end
+        if ~isempty(items)
+            items = convertCharArray(items);
+        end
+        if trimWarnings && numel(items) > 10
+            items{10} = sprintf('...and %d more', numel(items)-9);
+            items(11:end) = [];
+        end
+        if isempty(strtrim(msg)) && isempty(items); return; end
+        cat = issueCategory(msg);
+        if collecting
+            if isempty(items)
+                issues(end+1,1) = struct('category',cat,'target','','message',msg);
+            else
+                for ki_ = 1:numel(items)
+                    issues(end+1,1) = struct('category',cat,'target',items{ki_},'message',msg); %#ok<AGROW>
+                end
+            end
+            return
+        end
+        isErr = strcmp(severity,'error') && throwErrors;
+        if isErr
+            if isempty(items)
+                error('RAVEN:modelError', '%s', msg);
+            else
+                error('RAVEN:modelError', '%s', ravenList(msg, items, false));
+            end
+        else
+            if isempty(items)
+                warning('RAVEN:modelError', '%s', msg);
+            else
+                warning('RAVEN:modelError', '%s', ravenList(msg, items, false));
+            end
         end
     end
-    if ~isempty(issues)
-        return
-    end
-    % All required fields present: run the full check in warn-only mode
-    % and capture the fprintf output that dispEM produces.
-    try
-        captured = evalc( ...
-            ['checkModelStruct(model,''throwErrors'',false,''trimWarnings'',' ...
-             mat2str(trimWarnings) ')']);
-    catch
-        captured = '';
-    end
-    issues = parseIssueText(captured);
-    return
-end
 
-%Missing elements
+%Missing elements — checked inline so missing fields don't cause cascading
+%errors in the rest of the body
 fields={'id';'name';'rxns';'mets';'S';'lb';'ub';'rev';'c';'b';'comps';'metComps'};
 for i=1:numel(fields)
     if ~isfield(model,fields{i})
         EM=['The model is missing the "' fields{i} '" field'];
-        dispEM(EM,throwErrors);
+        reportIssue('error',EM);
     end
+end
+if collecting && ~isempty(issues)
+    return  % missing required fields would cause access errors below
 end
 
 %Type check
 if ~ischar(model.id)
     EM='The "id" field must be a string';
-    dispEM(EM,throwErrors);
+    reportIssue('error',EM);
 end
 if ~ischar(model.name)
     EM='The "name" field must be a string';
-    dispEM(EM,throwErrors);
+    reportIssue('error',EM);
 end
 if ~iscellstr(model.rxns)
     EM='The "rxns" field must be a cell array of strings';
-    dispEM(EM,throwErrors);
+    reportIssue('error',EM);
 end
 if ~iscellstr(model.mets)
     EM='The "mets" field must be a cell array of strings';
-    dispEM(EM,throwErrors);
+    reportIssue('error',EM);
 end
 if ~isnumeric(model.S)
     EM='The "S" field must be of type "double"';
-    dispEM(EM,throwErrors);
+    reportIssue('error',EM);
 end
 if ~isnumeric(model.lb)
     EM='The "lb" field must be of type "double"';
-    dispEM(EM,throwErrors);
+    reportIssue('error',EM);
 end
 if ~isnumeric(model.ub)
     EM='The "ub" field must be of type "double"';
-    dispEM(EM,throwErrors);
+    reportIssue('error',EM);
 end
 if ~isnumeric(model.rev)
     EM='The "rev" field must be of type "double"';
-    dispEM(EM,throwErrors);
+    reportIssue('error',EM);
 end
 if ~isnumeric(model.c)
     EM='The "c" field must be of type "double"';
-    dispEM(EM,throwErrors);
+    reportIssue('error',EM);
 end
 if ~isnumeric(model.b)
     EM='The "b" field must be of type "double"';
-    dispEM(EM,throwErrors);
+    reportIssue('error',EM);
 end
 if ~iscellstr(model.comps)
     EM='The "comps" field must be a cell array of strings';
-    dispEM(EM,throwErrors);
+    reportIssue('error',EM);
 end
 if ~isnumeric(model.metComps)
     EM='The "metComps" field must be of type "double"';
-    dispEM(EM,throwErrors);
+    reportIssue('error',EM);
 end
 if isfield(model,'compNames')
     if ~iscellstr(model.compNames)
         EM='The "compNames" field must be a cell array of strings';
-        dispEM(EM,throwErrors);
+        reportIssue('error',EM);
     end
 end
 if isfield(model,'compOutside')
     if ~iscellstr(model.compOutside)
         EM='The "compOutside" field must be a cell array of strings';
-        dispEM(EM,throwErrors);
+        reportIssue('error',EM);
     end
 end
 if isfield(model,'rxnNames')
     if ~iscellstr(model.rxnNames)
         EM='The "rxnNames" field must be a cell array of strings';
-        dispEM(EM,throwErrors);
+        reportIssue('error',EM);
     end
 end
 if isfield(model,'metNames')
     if ~iscellstr(model.metNames)
         EM='The "metNames" field must be a cell array of strings';
-        dispEM(EM,throwErrors);
+        reportIssue('error',EM);
     end
 end
 if isfield(model,'genes')
     if ~iscellstr(model.genes)
         EM='The "genes" field must be a cell array of strings';
-        dispEM(EM,throwErrors);
+        reportIssue('error',EM);
     end
 end
 if isfield(model,'rxnGeneMat')
     if ~isnumeric(model.rxnGeneMat)
         EM='The "rxnGeneMat" field must be of type "double"';
-        dispEM(EM,throwErrors);
+        reportIssue('error',EM);
     end
 end
 if isfield(model,'grRules')
     if ~iscellstr(model.grRules)
         EM='The "grRules" field must be a cell array of strings';
-        dispEM(EM,throwErrors);
+        reportIssue('error',EM);
     end
     if ~isfield(model,'genes')
         EM='If "grRules" field exists, the model should also contain a "genes" field';
-        dispEM(EM,throwErrors);
+        reportIssue('error',EM);
     else
         %Erroneous grRules that start/end with OR/AND
         EM='The following reaction(s) have grRules that start or end with ''OR'' or ''AND'':';
-        dispEM(EM,throwErrors,model.rxns(startsWith(model.grRules,{'or ','and '}) | endsWith(model.grRules,{' or',' and'})),trimWarnings);
+        reportIssue('error',EM,model.rxns(startsWith(model.grRules,{'or ','and '}) | endsWith(model.grRules,{' or',' and'})));
         %grRules that are not in genes field
         geneList = getGenesFromGrRules(model.grRules);
         geneList = setdiff(unique(geneList),model.genes);
@@ -187,44 +206,44 @@ if isfield(model,'grRules')
             problemGrRules = model.rxns(contains(model.grRules,geneList));
             problemGrRules = strjoin(problemGrRules(:),'; ');
             EM=['The reaction(s) "' problemGrRules '" contain the following genes in its "grRules" field, but these are not in the "genes" field:'];
-            dispEM(EM,throwErrors,geneList);
+            reportIssue('error',EM,geneList);
         end
     end
 end
 if isfield(model,'rxnComps')
     if ~isnumeric(model.rxnComps)
         EM='The "rxnComps" field must be of type "double"';
-        dispEM(EM,throwErrors);
+        reportIssue('error',EM);
     end
 end
 if isfield(model,'inchis')
     if ~iscellstr(model.inchis)
         EM='The "inchis" field must be a cell array of strings';
-        dispEM(EM,throwErrors);
+        reportIssue('error',EM);
     end
 end
 if isfield(model,'metSmiles')
     if ~iscellstr(model.metSmiles)
         EM='The "metSmiles" field must be a cell array of strings';
-        dispEM(EM,throwErrors);
+        reportIssue('error',EM);
     end
 end
 if isfield(model,'metFormulas')
     if ~iscellstr(model.metFormulas)
         EM='The "metFormulas" field must be a cell array of strings';
-        dispEM(EM,throwErrors);
+        reportIssue('error',EM);
     end
 end
 if isfield(model,'metCharges')
     if ~isnumeric(model.metCharges)
         EM='The "metCharges" field must be a double';
-        dispEM(EM,throwErrors);
+        reportIssue('error',EM);
     end
 end
 if isfield(model,'metDeltaG')
     if ~isnumeric(model.metDeltaG)
         EM='The "metDeltaG" field must be a double';
-        dispEM(EM,throwErrors);
+        reportIssue('error',EM);
     end
 end
 if isfield(model,'subSystems')
@@ -232,70 +251,72 @@ if isfield(model,'subSystems')
     isCellStr = any(cellfun(@(x) ischar(x), model.subSystems));
     if ~xor(isNested,isCellStr)
         EM='The "subSystems" field must be a cell array of chars, *or* a cell array of cell arrays of chars';
-            dispEM(EM,throwErrors);
+        reportIssue('error',EM);
     end
 end
 if isfield(model,'eccodes')
     if ~iscellstr(model.eccodes)
         EM='The "eccodes" field must be a cell array of strings';
-        dispEM(EM,throwErrors);
+        reportIssue('error',EM);
     end
 end
 if isfield(model,'unconstrained')
     if ~isnumeric(model.unconstrained)
         EM='The "unconstrained" field must be of type "double"';
-        dispEM(EM,throwErrors);
+        reportIssue('error',EM);
     end
 end
 if isfield(model,'rxnNotes')
     if ~iscellstr(model.rxnNotes)
         EM='The "rxnNotes" field must be a cell array of strings';
-        dispEM(EM,throwErrors);
+        reportIssue('error',EM);
     end
 end
 if isfield(model,'rxnReferences')
     if ~iscellstr(model.rxnReferences)
         EM='The "rxnReferences" field must be a cell array of strings';
-        dispEM(EM,throwErrors);
+        reportIssue('error',EM);
     end
 end
 if isfield(model,'rxnConfidenceScores')
     if ~isnumeric(model.rxnConfidenceScores)
         EM='The "rxnConfidenceScores" field must be a double';
-        dispEM(EM,throwErrors);
+        reportIssue('error',EM);
     end
 end
 if isfield(model,'rxnDeltaG')
     if ~isnumeric(model.rxnDeltaG)
         EM='The "rxnDeltaG" field must be a double';
-        dispEM(EM,throwErrors);
+        reportIssue('error',EM);
     end
 end
 
 %Empty strings
 if isempty(model.id)
     EM='The "id" field cannot be empty';
-    dispEM(EM,throwErrors);
+    reportIssue('error',EM);
 end
 if any(cellfun(@isempty,model.rxns))
     EM='The model contains empty reaction IDs';
-    dispEM(EM,throwErrors);
+    reportIssue('error',EM);
 end
 if any(cellfun(@isempty,model.mets))
     EM='The model contains empty metabolite IDs';
-    dispEM(EM,throwErrors);
+    reportIssue('error',EM);
 end
 if any(cellfun(@isempty,model.comps))
     EM='The model contains empty compartment IDs';
-    dispEM(EM,throwErrors);
+    reportIssue('error',EM);
 end
-EM='The following metabolites have empty names:';
-dispEM(EM,throwErrors,model.mets(cellfun(@isempty,model.metNames)),trimWarnings);
+if isfield(model,'metNames')
+    EM='The following metabolites have empty names:';
+    reportIssue('error',EM,model.mets(cellfun(@isempty,model.metNames)));
+end
 
 if isfield(model,'genes')
     if any(cellfun(@isempty,model.genes))
         EM='The model contains empty gene IDs';
-        dispEM(EM,throwErrors);
+        reportIssue('error',EM);
     end
 end
 
@@ -315,78 +336,82 @@ for i=1:numel(fields)
             'This does not impact RAVEN functionality, but be aware that '...
             'exportModel will automatically add ' fieldPrefix{i} ...
             ' prefixes to all ' fieldNames{i} ' identifiers:'];
-        dispEM(EM,false,{model.(fields{i}){numIDs}},trimWarnings);
+        reportIssue('warning',EM,{model.(fields{i}){numIDs}});
     end
 end
 
 %Duplicates
 EM='The following reaction IDs are duplicates:';
-dispEM(EM,throwErrors,model.rxns(duplicates(model.rxns)),trimWarnings);
+reportIssue('error',EM,model.rxns(duplicates(model.rxns)));
 EM='The following metabolite IDs are duplicates:';
-dispEM(EM,throwErrors,model.mets(duplicates(model.mets)),trimWarnings);
+reportIssue('error',EM,model.mets(duplicates(model.mets)));
 EM='The following compartment IDs are duplicates:';
-dispEM(EM,throwErrors,model.comps(duplicates(model.comps)),trimWarnings);
+reportIssue('error',EM,model.comps(duplicates(model.comps)));
 if isfield(model,'genes')
     EM='The following genes are duplicates:';
-    dispEM(EM,throwErrors,model.genes(duplicates(model.genes)),trimWarnings);
+    reportIssue('error',EM,model.genes(duplicates(model.genes)));
 end
-metInComp=strcat(model.metNames,'[',model.comps(model.metComps),']');
-EM='The following metabolites already exist in the same compartment:';
-dispEM(EM,throwErrors,metInComp(duplicates(metInComp)),trimWarnings);
+if isfield(model,'metNames')
+    metInComp=strcat(model.metNames,'[',model.comps(model.metComps),']');
+    EM='The following metabolites already exist in the same compartment:';
+    reportIssue('error',EM,metInComp(duplicates(metInComp)));
+end
 
-%Elements never used (print only as warnings
+%Elements never used (always reported as warnings)
 EM='The following reactions are empty (no involved metabolites):';
-dispEM(EM,false,model.rxns(~any(model.S,1)),trimWarnings);
+reportIssue('warning',EM,model.rxns(~any(model.S,1)));
 EM='The following metabolites are never used in a reaction:';
-dispEM(EM,false,model.mets(~any(model.S,2)),trimWarnings);
+reportIssue('warning',EM,model.mets(~any(model.S,2)));
 if isfield(model,'genes')
     EM='The following genes are not associated to a reaction:';
-    dispEM(EM,false,model.genes(~any(model.rxnGeneMat,1)),trimWarnings);
+    reportIssue('warning',EM,model.genes(~any(model.rxnGeneMat,1)));
 end
 I=true(numel(model.comps),1);
 I(model.metComps)=false;
 EM='The following compartments contain no metabolites:';
-dispEM(EM,false,model.comps(I),trimWarnings);
+reportIssue('warning',EM,model.comps(I));
 
 %Contradicting bounds
 EM='The following reactions have contradicting bounds (lower bound is higher than upper bound):';
-dispEM(EM,throwErrors,model.rxns(model.lb>model.ub),trimWarnings);
+reportIssue('error',EM,model.rxns(model.lb>model.ub));
 EM='The following reactions have lower and upper bounds that indicate reversibility, but are indicated as irreversible in model.rev:';
-dispEM(EM,false,model.rxns(model.lb < 0 & model.ub > 0 & model.rev==0),trimWarnings);
+reportIssue('warning',EM,model.rxns(model.lb < 0 & model.ub > 0 & model.rev==0));
 
 %Multiple or no objective functions not allowed in SBML L3V1 FBCv2
 if numel(find(model.c))>1
     EM='Multiple objective functions found. This might be intended, but results in FBCv2 non-compliant SBML file when exported';
-    dispEM(EM,false,model.rxns(find(model.c)),trimWarnings);
+    reportIssue('warning',EM,model.rxns(find(model.c)));
 elseif ~any(model.c)
     EM='No objective function found. This might be intended, but results in FBCv2 non-compliant SBML file when exported';
-    dispEM(EM,false);
+    reportIssue('warning',EM);
 end
 
 %Mapping of compartments
 if isfield(model,'compOutside')
     EM='The following compartments are in "compOutside" but not in "comps":';
-    dispEM(EM,throwErrors,setdiff(model.compOutside,[{''};model.comps]),trimWarnings);
+    reportIssue('error',EM,setdiff(model.compOutside,[{''};model.comps]));
 end
 
 %Met names which start with number
-I=false(numel(model.metNames),1);
-for i=1:numel(model.metNames)
-    index=strfind(model.metNames{i},' ');
-    if any(index)
-        if any(str2double(model.metNames{i}(1:index(1)-1)))
-            I(i)=true;
+if isfield(model,'metNames')
+    I=false(numel(model.metNames),1);
+    for i=1:numel(model.metNames)
+        index=strfind(model.metNames{i},' ');
+        if any(index)
+            if any(str2double(model.metNames{i}(1:index(1)-1)))
+                I(i)=true;
+            end
         end
     end
+    EM='The following metabolite names begin with a number directly followed by space, which could potentially cause problems:';
+    reportIssue('warning',EM,model.metNames(I));
 end
-EM='The following metabolite names begin with a number directly followed by space, which could potentially cause problems:';
-dispEM(EM,false,model.metNames(I),trimWarnings);
 
 %Non-parseable composition
 if isfield(model,'metFormulas')
     [~, ~, exitFlag]=parseFormulas(model.metFormulas,true,false);
     EM='The composition for the following metabolites could not be parsed:';
-    dispEM(EM,false,model.mets(exitFlag==-1),trimWarnings);
+    reportIssue('warning',EM,model.mets(exitFlag==-1));
 end
 
 %Check if there are metabolites with different names but the same MIRIAM
@@ -408,10 +433,10 @@ if isfield(model,'metMiriams')
             end
         end
     end
-    
+
     %Get all keys
     allMiriams=keys(miriams);
-    
+
     hasMultiple=false(numel(allMiriams),1);
     for i=1:numel(allMiriams)
         if numel(miriams(allMiriams{i}))>1
@@ -419,14 +444,14 @@ if isfield(model,'metMiriams')
             if numel(unique(model.metNames(miriams(allMiriams{i}))))>1
                 if ~regexp(allMiriams{i},'^sbo\/SBO:') % SBO terms are expected to be multiple
                     hasMultiple(i)=true;
-                end                
+                end
             end
         end
     end
-    
+
     %Print output
     EM='The following MIRIAM strings are associated to more than one unique metabolite name:';
-    dispEM(EM,false,allMiriams(hasMultiple),trimWarnings);
+    reportIssue('warning',EM,allMiriams(hasMultiple));
 end
 
 %Check if there are metabolites with different names but the same InChI
@@ -444,10 +469,10 @@ if isfield(model,'inchis')
             inchis(model.inchis{i})=[existing;i];
         end
     end
-    
+
     %Get all keys
     allInchis=keys(inchis);
-    
+
     hasMultiple=false(numel(allInchis),1);
     for i=1:numel(allInchis)
         if numel(inchis(allInchis{i}))>1
@@ -457,10 +482,10 @@ if isfield(model,'inchis')
             end
         end
     end
-    
+
     %Print output
     EM='The following InChI strings are associated to more than one unique metabolite name:';
-    dispEM(EM,false,allInchis(hasMultiple),trimWarnings);
+    reportIssue('warning',EM,allInchis(hasMultiple));
 end
 
 % %Check if there are metabolites with different names but the same SMILES
@@ -477,10 +502,10 @@ end
 %             metSmiles(model.metSmiles{i})=[existing;i];
 %         end
 %     end
-%     
+%
 %     %Get all keys
 %     allmetSmiles=keys(metSmiles);
-%     
+%
 %     hasMultiple=false(numel(metSmiles),1);
 %     for i=1:numel(metSmiles)
 %         if numel(metSmiles(metSmiles{i}))>1
@@ -490,10 +515,10 @@ end
 %             end
 %         end
 %     end
-%     
+%
 %     %Print output
 %     EM='The following metSmiles strings are associated to more than one unique metabolite name:';
-%     dispEM(EM,false,allmetSmiles(hasMultiple),trimWarnings);
+%     reportIssue('warning',EM,allmetSmiles(hasMultiple));
 % end
 end
 
@@ -504,48 +529,6 @@ if numel(J)~=numel(strings)
     L=1:numel(strings);
     L(K)=[];
     I(L)=true;
-end
-end
-
-function issues=parseIssueText(captured)
-% Parse WARNING: blocks emitted by dispEM (throwErrors=false) into a
-% struct array. Each block may have tab-indented item lines; those become
-% individual issue entries sharing the same message.
-issues=struct('category',{},'target',{},'message',{});
-if isempty(captured)
-    return
-end
-% Split on the "WARNING: " prefix that dispEM prepends; the first element
-% is text before the first warning (usually empty) and is discarded.
-blocks=regexp(captured,'(?m)^WARNING:\s*','split');
-for k=1:numel(blocks)
-    block=blocks{k};
-    if isempty(strtrim(block))
-        continue
-    end
-    lines=strsplit(block,'\n');
-    msgLines={};
-    itemLines={};
-    for li=1:numel(lines)
-        ln=lines{li};
-        if ~isempty(ln) && ln(1)==char(9)
-            itemLines{end+1}=strtrim(ln);   %#ok<AGROW>
-        elseif ~isempty(strtrim(ln))
-            msgLines{end+1}=strtrim(ln);    %#ok<AGROW>
-        end
-    end
-    if isempty(msgLines)
-        continue
-    end
-    msg=strjoin(msgLines,' ');
-    cat=issueCategory(msg);
-    if ~isempty(itemLines)
-        for ii=1:numel(itemLines)
-            issues(end+1,1)=struct('category',cat,'target',itemLines{ii},'message',msg); %#ok<AGROW>
-        end
-    else
-        issues(end+1,1)=struct('category',cat,'target','','message',msg); %#ok<AGROW>
-    end
 end
 end
 

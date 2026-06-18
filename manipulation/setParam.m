@@ -41,7 +41,7 @@ function model=setParam(model, paramType, rxnList, params, var)
 paramType=convertCharArray(paramType);
 if ~any(strcmpi(paramType,{'lb','ub','eq','obj','rev','var','unc'}))
     EM=['Incorrect parameter type: "' paramType{1} '"'];
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 if isnumeric(rxnList) || islogical(rxnList)
     rxnList=model.rxns(rxnList);
@@ -55,7 +55,7 @@ end
 %Allow to set several parameters to the same value
 if numel(rxnList)~=numel(params) && numel(params)~=1
     EM='The number of parameter values and the number of reactions must be the same';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 if length(rxnList)>1
@@ -77,7 +77,7 @@ if any(~Lia)
     params(~Lia)=[];
     indexes(~Lia)=[];
     paramType(~Lia)=[];
-    dispEM('Reactions not present in model, will be ignored:',false,rxnList(~Lia));
+    warning('RAVEN:warning', '%s', ravenList('Reactions not present in model, will be ignored:', rxnList(~Lia)));
 end
 
 %Change the parameters

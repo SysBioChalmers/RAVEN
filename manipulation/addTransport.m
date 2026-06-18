@@ -47,13 +47,13 @@ fromComp=char(fromComp);
 fromID=find(fromID);
 if sum(I)~=1
     EM='fromComps must have exactly one match in model.comps';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 toComps=convertCharArray(toComps);
 [I, toIDs]=ismember(toComps,model.comps);
 if ~all(I)
     EM='All compartments in toComps must have a match in model.comps';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 p=parseRAVENargs(varargin, {'metNames',[]; 'isRev',true; 'onlyToExisting',true; 'prefix','tr_'});
 isRev=p.isRev;
@@ -68,7 +68,7 @@ end
 
 %Check that the names are unique
 if numel(unique(metNames))~=numel(metNames)
-    dispEM('Not all metabolite names are unique');
+    error('RAVEN:badInput', '%s', 'Not all metabolite names are unique');
 end
 
 %Get the indexes of the mets in fromComp
@@ -76,7 +76,7 @@ I=find(model.metComps==fromID);
 [J, K]=ismember(metNames,model.metNames(I));
 if ~all(J)
     EM='Not all metabolites in metNames exist in fromComp';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 fromMets=I(K); %These are the ids of the metabolites to transport. The order corresponds to metNames
 addedRxns={};

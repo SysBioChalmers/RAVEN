@@ -54,10 +54,10 @@ I=find(I<4,1);
 if any(I)
     if isempty(rxns)
         EM=['The following equation does not have reversibility data: ' equations{I} ];
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     else
         EM=['The reaction ' rxns{I} ' does not have reversibility data'];
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
 end
 
@@ -95,10 +95,10 @@ for i=1:numel(equations)
     if numel(arrowIndex)~=1
         if isempty(rxns)
             EM=['The following equation does not have reversibility data: ' equations{i} ];
-            dispEM(EM);
+            error('RAVEN:badInput', '%s', EM);
         else
             EM=['The reaction ' rxns{i} ' does not have reversibility data'];
-            dispEM(EM);
+            error('RAVEN:badInput', '%s', EM);
         end
     end
     

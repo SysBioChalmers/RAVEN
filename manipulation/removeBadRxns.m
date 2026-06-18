@@ -95,7 +95,7 @@ balanceElements=convertCharArray(p.balanceElements);
 refModel=p.refModel;
 if ~isempty(refModel)
     EM='The feature to supply a reference model is currently not supported';
-    dispEM(EM,false);
+    warning('RAVEN:warning', '%s', EM);
 end
 ignoreIntBounds=p.ignoreIntBounds;
 printReport=p.printReport;
@@ -107,7 +107,7 @@ if ~isfield(model,'unconstrained')
     if any(I)
         if any(model.lb(I)~=0) || any(model.ub(I)~=0)
             EM='The model contains open exchange reactions. This is not the intended use of this function. Consider importing your model using importModel(filename,false)';
-            dispEM(EM,false);
+            warning('RAVEN:warning', '%s', EM);
         end
     end
 end
@@ -116,7 +116,7 @@ end
 sol=solveLP(model);
 if isempty(sol.f)
     EM='The model is not feasible. Consider removing lower bounds (such as ATP maintenance)';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %Check that the reference model is feasible
@@ -124,7 +124,7 @@ if any(refModel)
     sol=solveLP(refModel);
     if isempty(sol.f)
         EM='The reference model is not feasible';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
 end
 
@@ -135,7 +135,7 @@ balanceStructure=getElementalBalance(model);
 %Check which elements to balance for
 if ~isempty(setdiff(balanceElements,balanceStructure.elements.abbrevs))
     EM='Could not recognize all elements to balance for';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 bal=ismember(balanceStructure.elements.abbrevs,balanceElements);
 
@@ -177,10 +177,10 @@ for i=1:2
             if rxnRules==1
                 if i==1
                     EM=['No unbalanced reactions were found in the solution, but the model can still make "' model.metNames{metabolite} '". Aborting search. Consider setting rxnRules to 2 or 3 for a more exhaustive search'];
-                    dispEM(EM,false);
+                    warning('RAVEN:warning', '%s', EM);
                 else
                     EM=['No unbalanced reactions were found in the solution, but the model can still consume "' model.metNames{metabolite} '". Aborting search. Consider setting rxnRules to 2 or 3 for a more exhaustive search'];
-                    dispEM(EM,false);
+                    warning('RAVEN:warning', '%s', EM);
                 end
                 break;
             else
@@ -201,23 +201,23 @@ for i=1:2
                         %with flux
                         if i==1
                             EM=['No unbalanced or unparsable reactions were found in the solution, but the model can still make "' model.metNames{metabolite} '". Aborting search. Consider setting rxnRules to 3 for a more exhaustive search'];
-                            dispEM(EM,false);
+                            warning('RAVEN:warning', '%s', EM);
                         else
                             EM=['No unbalanced or unparsable reactions were found in the solution, but the model can still consume "' model.metNames{metabolite} '". Aborting search. Consider setting rxnRules to 3 for a more exhaustive search'];
-                            dispEM(EM,false);
+                            warning('RAVEN:warning', '%s', EM);
                         end
                         break;
                     else
                         if i==1
                             if warned(1)==false
                                 EM=['No unbalanced or unparsable reactions were found in the solution, but the model can still make "' model.metNames{metabolite} '". This indicates some error in the metabolite formulas. Removing random reactions in the solution'];
-                                dispEM(EM,false);
+                                warning('RAVEN:warning', '%s', EM);
                                 warned(1)=true;
                             end
                         else
                             if warned(2)==false
                                 EM=['No unbalanced or unparsable reactions were found in the solution, but the model can still consume "' model.metNames{metabolite} '". This indicates some error in the metabolite formulas. Removing random reactions in the solution'];
-                                dispEM(EM,false);
+                                warning('RAVEN:warning', '%s', EM);
                                 warned(2)=true;
                             end
                         end

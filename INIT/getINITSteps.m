@@ -119,7 +119,7 @@ elseif strcmp(series,'full') %Just one run, slow on large models, but this is th
         INITStepDesc(false, false, 'ignore', [0,0,0,0,0,0,0,0], [], params) ...
         };
 else
-    dispEM(['Invalid series in getINITSteps: ' series])
+    error('RAVEN:badInput', '%s', ['Invalid series in getINITSteps: ' series])
 end
 
 end

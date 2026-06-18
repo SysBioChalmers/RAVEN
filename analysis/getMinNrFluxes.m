@@ -72,7 +72,7 @@ if isempty(scores)
 else
     if numel(scores)~=numel(toMinimize)
         EM='The number of scores must be the same as the number of reactions to minimize';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
     
     %Change positive scores to have a small negative weight. This is a

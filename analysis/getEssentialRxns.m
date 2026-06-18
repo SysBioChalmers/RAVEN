@@ -44,7 +44,7 @@ model.c=zeros(numel(model.rxns),1);
 
 if sol.stat==-1 || isempty(sol.x)
     EM='No feasible solution to the full model';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %Check which reactions have flux. Only those can be essential. This is not

@@ -15,17 +15,23 @@ classdef tUtils < RavenTestCase
             testCase.verifyEqual(convertCharArray("str"), {'str'});
         end
 
-        function dispEMThrowsByDefault(testCase)
-            testCase.verifyError(@() dispEM('boom'), ?MException);
+        function ravenListFormatsItems(testCase)
+            msg = ravenList('Bad genes:', {'G1','G2'});
+            testCase.verifySubstring(msg, 'G1');
+            testCase.verifySubstring(msg, 'G2');
         end
 
-        function dispEMThrowsWhenRequested(testCase)
-            testCase.verifyError(@() dispEM('boom', true), ?MException);
+        function ravenListTrimsToTenByDefault(testCase)
+            items = arrayfun(@(n) sprintf('G%d',n), 1:12, 'UniformOutput', false);
+            msg = ravenList('Too many:', items);
+            testCase.verifySubstring(msg, '...and 3 more');
         end
 
-        function dispEMWarningIsPrintedNotThrown(testCase)
-            out = evalc('dispEM(''heads up'', false)');
-            testCase.verifySubstring(out, 'WARNING');
+        function ravenListNoTrimWhenFalse(testCase)
+            items = arrayfun(@(n) sprintf('G%d',n), 1:12, 'UniformOutput', false);
+            msg = ravenList('All:', items, false);
+            testCase.verifySubstring(msg, 'G12');
+            testCase.verifyFalse(contains(msg, '...and'));
         end
 
         function emptyOrLogicalScalarAcceptsValid(testCase)

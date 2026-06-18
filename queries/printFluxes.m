@@ -73,10 +73,10 @@ if ~isempty(metaboliteList)
 end
 if isempty(fluxes)
     EM='Empty vector of fluxes, solveLP possibly returned infeasible';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 elseif size(fluxes,1)~=numel(model.rxns)
     EM='The number of fluxes and the number of reactions must be the same';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %Only keep reactions involving the defined metabolites

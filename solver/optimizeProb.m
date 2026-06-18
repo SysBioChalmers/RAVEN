@@ -39,7 +39,7 @@ verbose=p.verbose;
 global RAVENSOLVER;
 if isempty(RAVENSOLVER)
     if(~ispref('RAVEN','solver'))
-        dispEM('RAVEN solver not defined or unknown. Try using setRavenSolver(''solver'').');
+        error('RAVEN:badInput', '%s', 'RAVEN solver not defined or unknown. Try using setRavenSolver(''solver'').');
     else
         RAVENSOLVER = getpref('RAVEN','solver');
     end

@@ -70,7 +70,7 @@ rxnsToFit=convertCharArray(rxnsToFit);
 
 if ~all(I)
     EM='Could not find all reactions in rxnsToFit';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %Find the indexes of reactions that will be used for constraints.
@@ -78,7 +78,7 @@ end
 
 if ~all(I)
     EM='Could not find all reactions in xRxns';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 [parameters, fitnessScore, exitFlag]=fminsearch(@(parameters) getRSS(parameters,model,xRxnsIndexes,xValues,rxnsToFitIndexes,valuesToFit,parameterPositions,fitToRatio),initialGuess);

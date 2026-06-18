@@ -100,19 +100,19 @@ end
 
 if isempty(hpaData) && isempty(arrayData)
     EM = 'Must supply hpaData, arrayData or both';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 if ~ismember(lower(isozymeScoring),{'min','max','median','average'})
     EM = 'Valid options for isozymeScoring are "min", "max", "median", or "average"';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 if ~ismember(lower(complexScoring),{'min','max','median','average'})
     EM = 'Valid options for complexScoring are "min", "max", "median", or "average"';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 if ~ismember(lower(multipleCellScoring),{'max','average'})
     EM = 'Valid options for multipleCellScoring are "max" or "average"';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 
@@ -122,7 +122,7 @@ if ~isempty(arrayData)
     if numel(unique(arrayData.tissues)) < 2
         if ~isfield(arrayData,'threshold') || isempty(arrayData.threshold)
             EM = 'arrayData must contain measurements for at least two celltypes/tissues since the score is calculated based on the expression level compared to the overall average';
-            dispEM(EM);
+            error('RAVEN:badInput', '%s', EM);
         end
     end
 end
@@ -157,17 +157,17 @@ end
 % Check that the tissue exists
 if ~ismember(upper(tissue),upper(hpaData.tissues)) && ~ismember(upper(tissue),upper(arrayData.tissues))
     EM = 'The tissue name does not match';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 if any(celltype)
     % Check that both data types has cell type defined if that is to be used
     if ~isfield(hpaData,'celltypes') || ~isfield(arrayData,'celltypes')
         EM = 'Both hpaData and arrayData must contain cell type information if cell type is to be used';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
     if ~ismember(upper(celltype),upper(hpaData.celltypes)) && ~ismember(upper(celltype),upper(arrayData.celltypes))
         EM = 'The cell type name does not match';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
 end
 
@@ -263,7 +263,7 @@ aScores(isnan(aScores)) = -5;  % NaNs occur when gene expression is zero across 
 [I, J] = ismember(upper(hpaData.levels),upper(hpaLevelScores.names));
 if ~all(I)
     EM = 'There are expression level categories that do not match to hpaLevelScores';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 [K, L, M] = find(hpaData.gene2Level);
 scores = hpaLevelScores.scores(J);

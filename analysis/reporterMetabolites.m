@@ -67,11 +67,11 @@ geneFoldChanges=p.geneFoldChanges;
 %Check some stuff
 if numel(genes)~=numel(genePValues)
     EM='The number of genes and the number of Z-scores must be the same';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 if ~isfield(model,'rxnGeneMat')
     EM='The model structure must have a rxnGeneMat field';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %Remove the genes which are not in the model

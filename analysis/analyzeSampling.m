@@ -57,7 +57,7 @@ pR=zeros(nRxns,1);
 %Check that the number of reactions is the same in both expression and flux
 if nRxns~=size(solutionsA,1)
     EM='The number of reactions must be the same in Tex as in solutionsA';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %Get the Z-score and mean for the solutions
@@ -69,7 +69,7 @@ Zf=getFluxZ(solutionsA, solutionsB);
 I=isnan(Tex) | isinf(Tex);
 if any(I)
     EM='There are t-scores that are NaN or +/- Inf. These values are changed to 0.0';
-    dispEM(EM,false);
+    warning('RAVEN:warning', '%s', EM);
 end
 Tex(I)=0;
 

@@ -65,7 +65,7 @@ if sortReactionOrder==true
     %Check if the model has sub-systems, otherwise throw an error
     if ~isfield(model,'subSystems')
         EM='The model must contain a subSystems field in order to sort reaction order';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
     
     subsystemsUnique='';

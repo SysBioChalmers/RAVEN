@@ -79,17 +79,17 @@ for i=1:numel(mergedRxns)
     duplRxn=transpose([mergedRxns(i),duplicateRxns(mergeTo==mergedRxns(i))]);
     if numel(unique(model.lb(duplRxn)))>1
         EM=['Duplicates of reaction ' model.rxns{mergedRxns(i)} ' have different lower bound. Uses the most negative/smallest lower bound'];
-        dispEM(EM,false);
+        warning('RAVEN:warning', '%s', EM);
         model.lb(mergedRxns(i))=min(model.lb(duplRxn));
     end
     if numel(unique(model.ub(duplRxn)))>1
         EM=['Duplicates of reaction ' model.rxns{mergedRxns(i)} ' have different upper bound. Uses the most positive/largest upper bound'];
-        dispEM(EM,false);
+        warning('RAVEN:warning', '%s', EM);
         model.ub(mergedRxns(i))=max(model.ub(duplRxn));
     end
     if numel(unique(model.c(duplRxn)))>1
         EM=['Duplicates of reaction ' model.rxns{mergedRxns(i)} ' has a different objective function coefficient. Uses the largest coefficient'];
-        dispEM(EM,false);
+        warning('RAVEN:warning', '%s', EM);
         model.c(mergedRxns(i))=max(model.c(duplRxn));
     end
     if isfield(model,'grRules') && any(~isempty(model.grRules(duplRxn)))

@@ -113,7 +113,7 @@ rxnScores=rxnScores(:);
 if supressWarnings==false
     if isfield(model,'unconstrained')
         EM='This algorithm is meant to function on a model with exchange reactions for uptake and excretion of metabolites. The current model still has the "unconstrained" field';
-        dispEM(EM,false);
+        warning('RAVEN:warning', '%s', EM);
     else
         if isempty(getExchangeRxns(model,'both'))
             fprintf('NOTE: This algorithm is meant to function on a model with exchange reactions for uptake and excretion of metabolites. The current model does not seem to contain any such reactions.\n');
@@ -129,7 +129,7 @@ for i=1:numel(models)
     models{i}=simplifyModel(models{i},false,false,true);
     if strcmpi(models{i}.id,model.id)
         EM='The reference model(s) cannot have the same id as the model';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
 end
 
@@ -166,7 +166,7 @@ if useModelConstraints==true
     sol=solveLP(allModels);
     if isempty(sol.f)
         EM='There are no reactions in the template model(s) that can make the model constraints satisfied';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
     
     %Remove dead ends for speed reasons. This has to be done here and

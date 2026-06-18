@@ -84,8 +84,7 @@ end
 
 [~, rxnIdx]=ismember(rxns,sourceModel.rxns); % Get rxnIDs
 if any(rxnIdx==0)
-    dispEM('The following reaction IDs could not be found in the source model:',true,...
-        rxns(rxnIdx==0));
+    error('RAVEN:badInput', '%s', ravenList('The following reaction IDs could not be found in the source model:', rxns(rxnIdx==0)));
 end
 
 % Add new metabolites
@@ -175,7 +174,7 @@ rxnToAdd.rxnNotes(:)=rxnNote(~notNewRxn);
 rxnToAdd.rxnConfidenceScores=NaN(1,numel(rxnToAdd.rxns));
 if ~isnumeric(confidence)
     EM='confidence score must be numeric';
-    dispEM(EM, true);
+    error('RAVEN:badInput', '%s', EM);
 end
 rxnToAdd.rxnConfidenceScores(:)=confidence;
 if isfield(sourceModel,'rxnDeltaG')

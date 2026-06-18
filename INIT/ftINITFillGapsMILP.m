@@ -50,7 +50,7 @@ function [x,I,exitFlag]=ftINITFillGapsMILP(model, varargin)
 % glpk solver as implemented by COBRA does not work well for MILP.
 global CBT_MILP_SOLVER
 if strcmp(getpref('RAVEN','solver'),'cobra') && strcmp(CBT_MILP_SOLVER,'glpk')
-    dispEM('The current solver is set to ''cobra'', while in COBRA the MILP solver has been set to ''glpk''. The COBRA implementation of glpk is not well suitable for solving MILPs. Please install the Gurobi or an alternative MILP solver.',true);
+    error('RAVEN:badInput', '%s', 'The current solver is set to ''cobra'', while in COBRA the MILP solver has been set to ''glpk''. The COBRA implementation of glpk is not well suitable for solving MILPs. Please install the Gurobi or an alternative MILP solver.');
 end
 
 exitFlag=1;
@@ -79,7 +79,7 @@ if isempty(scores)
 else
     if numel(scores)~=numel(toMinimize)
         EM='The number of scores must be the same as the number of reactions to minimize';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
     
     %Change positive scores to have a small negative weight. This is a

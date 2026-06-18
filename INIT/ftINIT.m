@@ -133,7 +133,7 @@ end
 
 if (~isempty(metabolomicsData))
     if length(unique(upper(metabolomicsData))) ~= length(metabolomicsData)
-        dispEM('Metabolomics contains the same metabolite multiple times');
+        error('RAVEN:badInput', '%s', 'Metabolomics contains the same metabolite multiple times');
     end
     metData = false(numel(metabolomicsData), length(prepData.minModel.rxns)); %one row per metabolite that is a boolean vector
     for i=1:numel(metabolomicsData)
@@ -181,7 +181,7 @@ for initStep = 1:length(INITSteps)
     stp = INITSteps{initStep};
     
     if any ((rxnsToIgnoreLastStep - stp.RxnsToIgnoreMask) < 0)
-        dispEM('RxnsToIgnoreMask may not cover rxns not covered in previous steps, but the other way around is fine.');
+        error('RAVEN:badInput', '%s', 'RxnsToIgnoreMask may not cover rxns not covered in previous steps, but the other way around is fine.');
     end
     rxnsToIgnoreLastStep = stp.RxnsToIgnoreMask;
     
@@ -281,7 +281,7 @@ for initStep = 1:length(INITSteps)
     end
     
     if ~success
-        dispEM(['Failed to find good enough solution within the time frame. MIPGap: ' num2str(mipGap)]);
+        error('RAVEN:badInput', '%s', ['Failed to find good enough solution within the time frame. MIPGap: ' num2str(mipGap)]);
     end
     
     %save the reactions turned on and their fluxes for the next step

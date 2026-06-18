@@ -83,7 +83,7 @@ end
 %Check that the test type is correct
 if ~strcmpi(testType,'sgd') && ~strcmpi(testType,'dgd') && ~strcmpi(testType,'sgo') && ~strcmpi(testType,'dgo')
     EM='Incorrect test type';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %Check that the analysis type is correct
@@ -93,18 +93,18 @@ else
     analysisType=char(analysisType);
     if ~any(strcmpi(analysisType,{'fba','moma'}))
         EM='Incorrect analysis type';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
 end
 
 if (strcmpi(testType,'sgo') || strcmpi(testType,'dgo')) && strcmpi(analysisType,'fba')
     EM='Over expression is only available when using MOMA';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 if strcmpi(analysisType,'moma') && isempty(refModel)
     EM='A reference model must be supplied when using MOMA';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 originalGenes=model.genes;

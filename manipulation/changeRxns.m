@@ -78,7 +78,7 @@ compartment=char(compartment);
 [I, J]=ismember(rxns,model.rxns);
 if ~all(I)
     EM='All reaction ids must exist in the model';
-    dispEM(EM);
+    error('RAVEN:badInput', '%s', EM);
 end
 
 %The reactions are changed in the following manner. First create a

@@ -93,7 +93,7 @@ elseif ismac
 elseif isunix
     binEnd='';
 else
-    dispEM('Unknown OS, exiting.')
+    error('RAVEN:badInput', '%s', 'Unknown OS, exiting.')
     return
 end
 

@@ -215,7 +215,7 @@ if minFlux~=0
                 solution.x(revRxns)=solution.x(revRxns)-sol.x(numel(model.c)+1:end);
             else
                 EM='Could not solve the problem of minimizing the sum of fluxes. Uses output from original problem';
-                dispEM(EM,false);
+                warning('RAVEN:warning', '%s', EM);
                 solution.stat=-2;
             end
             
@@ -230,7 +230,7 @@ if minFlux~=0
                 solution.x=qx;
             else
                 EM='Could not solve the problem of minimizing the number of fluxes. Uses output from linear program';
-                dispEM(EM,false);
+                warning('RAVEN:warning', '%s', EM);
                 solution.stat=-2;
             end
     end

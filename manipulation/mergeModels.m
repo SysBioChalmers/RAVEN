@@ -115,7 +115,7 @@ for i=2:numel(models)
         end
         if supressWarnings==false
             EM=['The following reaction IDs in ' models{i}.id ' are already present in the model and were renamed:'];
-            dispEM(EM,false,printString);
+            warning('RAVEN:warning', '%s', ravenList(EM, printString));
             fprintf('\n');
         end
     end
@@ -324,7 +324,7 @@ for i=2:numel(models)
         end
         if supressWarnings==false
             EM=['The following metabolite IDs in ' models{i}.id ' are already present in the model and were renamed:'];
-            dispEM(EM,false,printString);
+            warning('RAVEN:warning', '%s', ravenList(EM, printString));
         end
     end
     
@@ -459,7 +459,7 @@ for i=2:numel(models)
         [~, conflicting]=ismember(models{i}.compNames(compIndexes),model.compNames);
         if any(conflicting)
             EM=['The following compartment IDs in ' models{i}.id ' are already present in the model but with another name. They have to be renamed'];
-            dispEM(EM,true,model.comps(conflicting));
+            error('RAVEN:badInput', '%s', ravenList(EM, model.comps(conflicting)));
         end
         
         %It's ok to add duplicate name, but not duplicate IDs
@@ -491,7 +491,7 @@ for i=2:numel(models)
     %Just a check
     if ~all(I)
         EM='There was an unexpected error in matching compartments';
-        dispEM(EM);
+        error('RAVEN:badInput', '%s', EM);
     end
     model.metComps=[model.metComps;J];
      
@@ -612,14 +612,14 @@ for i=2:numel(models)
                         emptyGeneMir=ones(numel(model.genes)-numel(genesToAdd),1);
                         model.geneComps=[emptyGeneMir;models{i}.geneComps(genesToAdd)];
                         EM='Adding genes with compartment information to a model without such information. All existing genes will be assigned to the first compartment';
-                        dispEM(EM,false);
+                        warning('RAVEN:warning', '%s', EM);
                     end
                 else
                     if isfield(model,'geneComps')
                         emptyGeneMir=ones(numel(genesToAdd),1);
                         model.geneComps=[model.geneComps;emptyGeneMir];
                         EM='Adding genes with compartment information to a model without such information. All existing genes will be assigned to the first compartment';
-                        dispEM(EM,false);
+                        warning('RAVEN:warning', '%s', EM);
                     end
                 end
             end
@@ -632,7 +632,7 @@ for i=2:numel(models)
             %Just a check
             if ~all(a)
                 EM='There was an unexpected error in matching genes';
-                dispEM(EM);
+                error('RAVEN:badInput', '%s', EM);
             end
             model.grRules=[model.grRules;models{i}.grRules];
         end
