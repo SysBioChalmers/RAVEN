@@ -18,8 +18,11 @@ classdef tQueries < RavenTestCase
         end
 
         function checkModelStructValidModel(testCase)
-            % A valid model must not raise when errors are requested.
-            testCase.verifyWarningFree(@() checkModelStruct(testCase.model, true));
+            % A valid model must not throw when errors are requested.
+            % Advisory warnings (unused elements, bounds notes, etc.) are
+            % expected MATLAB warnings in the new system; the check is
+            % only that no error is raised.
+            checkModelStruct(testCase.model, true);
         end
 
         function constructEquationsAllRxns(testCase)

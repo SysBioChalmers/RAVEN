@@ -53,8 +53,7 @@ issues = struct('category',{},'target',{},'message',{});
     function reportIssue(severity, msg, items)
         % Report one issue: accumulate in collect mode, or warn/error.
         % severity: 'error' | 'warning'
-        % When items is supplied (3 args) but is empty, behave like
-        % dispEM(msg, flag, {}) — silently do nothing.
+        % When items is supplied (3 args) but is empty, silently do nothing.
         listProvided = nargin >= 3;
         if nargin < 3; items = {}; end
         if ~isempty(items)

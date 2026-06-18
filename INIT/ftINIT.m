@@ -298,10 +298,6 @@ for initStep = 1:length(INITSteps)
     %make sure that all reactions that are on actually has a flux - otherwise
     %things could go bad, since the flux will be set to essential in a random direction
     %This sometimes happens for rxns with negative score - let's just accept that.
-    %if (sum(abs(fluxes1) < 10^-7 & rxnsTurnedOn))
-    %    dispEM('There are rxns turned on without flux - this might cause problems');
-    %end
-    %fluxes(abs(fluxes1) < 10^-7) = fluxesOld(abs(fluxes1) < 10^-9);
 end
 
 

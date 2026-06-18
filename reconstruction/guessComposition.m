@@ -113,18 +113,8 @@ while predicted==true
                                 metStatus=-2;
                                 break;
                                 
-                                %%Check if there is an inconcistency
-                                %if any(currentComp~=comp)
-                                %    dispEM(['Could not predict composition
-                                %    of ' model.metNames{mets(i)} ],false);
-                                %end
                             end
                         else
-                            %Check if there is an inconcistency if
-                            %any(currentComp~=comp)
-                            %    dispEM(['Could not predict composition of
-                            %    ' model.metNames{loopThrough(i)} ],false);
-                            %end
                             metStatus=-2;
                             break;
                         end
