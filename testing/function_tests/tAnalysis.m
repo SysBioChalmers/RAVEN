@@ -168,6 +168,26 @@ classdef tAnalysis < RavenTestCase
             testCase.verifyNotEmpty(c);
         end
 
+        function getMinimalMediumReturnsMedium(testCase)
+            testCase.assumeMILPSolver();
+            evalc('[med, idx] = getMinimalMedium(testCase.model, ''verbose'', false);');
+            testCase.verifyClass(med, 'cell');
+            testCase.verifyClass(idx, 'double');
+            % Every returned reaction must have lb < 0 (it is an uptake exchange)
+            [~, exchIdx] = getExchangeRxns(testCase.model);
+            testCase.verifyTrue(all(ismember(idx, exchIdx)));
+            testCase.verifyTrue(all(testCase.model.lb(idx) < 0));
+        end
+
+        function getMinimalMediumExplicitGrowth(testCase)
+            testCase.assumeMILPSolver();
+            sol = solveLP(testCase.model);
+            minG = 0.05 * sol.f;
+            evalc('[med, idx] = getMinimalMedium(testCase.model, ''minGrowth'', minG, ''verbose'', false);');
+            testCase.verifyClass(med, 'cell');
+            testCase.verifyNotEmpty(med);
+        end
+
         function runSimpleOptKnockRuns(testCase)
             testCase.assumeMILPSolver();
             biomassRxn = testCase.model.rxns{find(testCase.model.c == 1, 1)};
