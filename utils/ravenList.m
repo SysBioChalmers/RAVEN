@@ -23,6 +23,10 @@ function msg = ravenList(header, items, trim)
 
 if nargin < 3; trim = true; end
 items = convertCharArray(items);
+if isempty(items)
+    msg = header;
+    return
+end
 if trim && numel(items) > 10
     items{10} = sprintf('...and %d more', numel(items)-9);
     items(11:end) = [];

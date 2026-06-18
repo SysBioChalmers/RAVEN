@@ -53,15 +53,18 @@ issues = struct('category',{},'target',{},'message',{});
     function reportIssue(severity, msg, items)
         % Report one issue: accumulate in collect mode, or warn/error.
         % severity: 'error' | 'warning'
+        % When items is supplied (3 args) but is empty, behave like
+        % dispEM(msg, flag, {}) — silently do nothing.
+        listProvided = nargin >= 3;
         if nargin < 3; items = {}; end
         if ~isempty(items)
             items = convertCharArray(items);
         end
+        if listProvided && isempty(items); return; end
         if trimWarnings && numel(items) > 10
             items{10} = sprintf('...and %d more', numel(items)-9);
             items(11:end) = [];
         end
-        if isempty(strtrim(msg)) && isempty(items); return; end
         cat = issueCategory(msg);
         if collecting
             if isempty(items)
