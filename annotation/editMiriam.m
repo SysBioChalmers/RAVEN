@@ -70,7 +70,7 @@ else
     else
         idxInModel=getIndexes(model,object,[type,'s']);
         if ~all(idxInModel)
-            dispEM('The following objects cannot be found in the model: ',true,object(~idxInModel))
+            error('RAVEN:badInput', '%s', ravenList('The following objects cannot be found in the model: ', object(~idxInModel)))
         end
     end
 end
