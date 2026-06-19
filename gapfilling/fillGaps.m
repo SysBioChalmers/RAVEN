@@ -49,6 +49,22 @@ function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(m
 %     be a cell array of vectors. The solver will try to maximize the sum
 %     of the scores for the included reactions (default is -1 for all
 %     reactions).
+% algorithm : char
+%     gap-filling algorithm to use (default 'reference'):
+%
+%     - 'reference'   : existing MILP-based connectivity maximisation
+%     - 'fastLP'      : L1-norm LP relaxation via FASTCORE (gapFillFastLP)
+%     - 'swiftLP'     : SWIFTCORE single-LP variant (gapFillFastLP)
+%     - 'gapfillMILP' : growth-floor MILP with directionality repair
+%                       (gapFillMILP). Uses only models{1} as the database.
+%     - 'topological' : BFS metabolite producibility pre-screening
+%                       (gapFillTopological); no model modification.
+% epsilon : double
+%     minimum flux threshold used by fastLP and swiftLP (default 1e-4).
+% minGrowth : double
+%     minimum growth rate for gapfillMILP (default [] = 10% of max FBA).
+% verbose : logical
+%     print progress messages for new algorithms (default true).
 %
 % Returns
 % -------
@@ -84,12 +100,51 @@ p=parseRAVENargs(varargin, {'allowNetProduction',false; ...
     'useModelConstraints',false; ...
     'supressWarnings',false; ...
     'rxnScores',[]; ...
-    'params',[]});
+    'params',[]; ...
+    'algorithm','reference'; ...
+    'epsilon',1e-4; ...
+    'minGrowth',[]; ...
+    'verbose',true});
 allowNetProduction=p.allowNetProduction;
 useModelConstraints=p.useModelConstraints;
 supressWarnings=p.supressWarnings;
 rxnScores=p.rxnScores;
 params=p.params;
+
+% ---- Dispatch to alternative gap-filling algorithms ----
+switch lower(p.algorithm)
+    case {'fastlp', 'swiftlp'}
+        if numel(models) < 1
+            error('RAVEN:badInput', 'fillGaps: fastLP/swiftLP requires at least one reference model.');
+        end
+        variant = strrep(lower(p.algorithm), 'lp', '');
+        [addedRxns, newModel, cannotConnect] = gapFillFastLP(model, models{1}, ...
+            'epsilon', p.epsilon, 'verbose', p.verbose, 'variant', variant);
+        newConnected = {};
+        exitFlag = 1;
+        return;
+    case 'gapfillmilp'
+        if numel(models) < 1
+            error('RAVEN:badInput', 'fillGaps: gapfillMILP requires at least one reference model.');
+        end
+        [addedRxns, ~, newModel, exitFlag] = gapFillMILP(model, models{1}, ...
+            'minGrowth', p.minGrowth, 'verbose', p.verbose, 'params', params);
+        newConnected = {};
+        cannotConnect = {};
+        return;
+    case 'topological'
+        if numel(models) < 1
+            error('RAVEN:badInput', 'fillGaps: topological requires at least one reference model.');
+        end
+        result = gapFillTopological(model, models{1}, 'verbose', p.verbose);
+        addedRxns    = {};
+        newModel     = model;
+        cannotConnect = result.blockedMets;
+        newConnected = {};
+        exitFlag = 1;
+        return;
+end
+% Falls through to the 'reference' algorithm (existing code) for all other values.
 
 if isempty(rxnScores)
     rxnScores=cell(numel(models),1);
