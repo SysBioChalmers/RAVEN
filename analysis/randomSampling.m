@@ -1,8 +1,23 @@
 function [solutions, goodRxns]=randomSampling(model,varargin)
-% randomSampling  Perform random sampling of the solution space.
+% randomSampling  Sample the flux solution space (entry point for all samplers).
 %
-% Performs random sampling of the solution space, as described in Bordel et
-% al. (2010) PLoS Comput Biol (doi:10.1371/journal.pcbi.1000859).
+% Dispatches to one of three sampling methods via the 'method' argument:
+%   'achr' (default)  Artificially Centered Hit-and-Run; near-uniform MCMC
+%                     sampling of the polytope interior (see sampleACHR).
+%   'chrr'            Coordinate Hit-and-Run with Rounding; near-uniform MCMC
+%                     with maximum-volume-ellipsoid rounding, for better mixing
+%                     on thin/ill-conditioned polytopes such as enzyme-
+%                     constrained models (see sampleCHRR).
+%   'randomObjective' the random-objective vertex method of Bordel et al. (2010)
+%                     PLoS Comput Biol (doi:10.1371/journal.pcbi.1000859): each
+%                     sample maximises a small random objective, returning a
+%                     polytope vertex. This was randomSampling's historical
+%                     behaviour; it is no longer the default.
+%
+% The 'achr'/'chrr' methods draw the (near-)uniform interior distribution; the
+% 'randomObjective' method draws diverse vertices. Arguments below marked
+% [randomObjective] apply only to that method; 'thinning'/'nBurnin' apply only
+% to the MCMC methods.
 %
 % Parameters
 % ----------
@@ -13,7 +28,14 @@ function [solutions, goodRxns]=randomSampling(model,varargin)
 % --------------------
 % nSamples : double
 %     the number of solutions to return (default 1000).
+% method : char
+%     sampling method: 'achr' (default), 'chrr', or 'randomObjective'.
+% thinning : double
+%     MCMC steps between recorded samples for 'achr'/'chrr' (default 100).
+% nBurnin : double
+%     burn-in steps discarded before the first sample for 'chrr' (default 1000).
 % replaceBoundsWithInf : logical
+%     [randomObjective]
 %     replace the largest upper bounds with Inf and the smallest lower
 %     bounds with -Inf. This is needed in order to get solutions without
 %     loops if your model has, for example, 1000/-1000 as arbitrarily large
@@ -50,8 +72,9 @@ function [solutions, goodRxns]=randomSampling(model,varargin)
 % solutions : double
 %     matrix with the solutions.
 % goodRxns : double
-%     vector of indexes of those reactions that are not involved in loops or
-%     always carry zero flux and can be used as random objective functions.
+%     [randomObjective] vector of indexes of those reactions that are not
+%     involved in loops or always carry zero flux and can be used as random
+%     objective functions. Empty ([]) for the 'achr' and 'chrr' methods.
 %
 % Notes
 % -----
@@ -65,10 +88,18 @@ function [solutions, goodRxns]=randomSampling(model,varargin)
 %
 % Examples
 % --------
-%     solutions = randomSampling(model, nSamples, replaceBoundsWithInf, ...
-%                     supressErrors, runParallel, goodRxns, minFlux);
+%     % Near-uniform interior sampling (default, ACHR):
+%     solutions = randomSampling(model, 1000);
+%     % Coordinate hit-and-run with rounding:
+%     solutions = randomSampling(model, 1000, 'method', 'chrr', 'seed', 1);
+%     % Historical random-objective vertex method:
+%     solutions = randomSampling(model, 1000, 'method', 'randomObjective');
+%
+% See also
+% --------
+% sampleACHR, sampleCHRR, sampleMaxVolEllipse
 
-p=parseRAVENargs(varargin, {'nSamples',[]; 'replaceBoundsWithInf',[]; 'supressErrors',[]; 'runParallel',[]; 'goodRxns',[]; 'minFlux',[]; 'nObjectives',[]; 'seed',[]});
+p=parseRAVENargs(varargin, {'nSamples',[]; 'replaceBoundsWithInf',[]; 'supressErrors',[]; 'runParallel',[]; 'goodRxns',[]; 'minFlux',[]; 'nObjectives',[]; 'seed',[]; 'method',[]; 'thinning',[]; 'nBurnin',[]});
 nSamples=p.nSamples;
 replaceBoundsWithInf=p.replaceBoundsWithInf;
 supressErrors=p.supressErrors;
@@ -77,9 +108,38 @@ goodRxns=p.goodRxns;
 minFlux=p.minFlux;
 nObjectives=p.nObjectives;
 seed=p.seed;
+method=p.method;
+thinning=p.thinning;
+nBurnin=p.nBurnin;
 if isempty(nSamples)
     nSamples=1000;
 end
+if isempty(method)
+    method='achr';
+end
+
+% ---- Dispatch to the requested sampler ----
+% 'achr'/'chrr' are near-uniform MCMC samplers of the polytope interior,
+% implemented in sampleACHR / sampleCHRR. 'randomObjective' is the historical
+% random-objective vertex method (Bordel 2010), implemented below; goodRxns is
+% meaningful only for that method (empty otherwise).
+switch lower(method)
+    case 'achr'
+        solutions = sampleACHR(model, nSamples, thinning, [], seed);
+        goodRxns = [];
+        return;
+    case 'chrr'
+        solutions = sampleCHRR(model, nSamples, thinning, nBurnin, seed);
+        goodRxns = [];
+        return;
+    case {'randomobjective', 'objective'}
+        % fall through to the random-objective implementation below
+    otherwise
+        error('RAVEN:badInput', ...
+            ['randomSampling: unknown method ''%s''; expected ''achr'', ' ...
+             '''chrr'', or ''randomObjective''.'], method);
+end
+
 if isempty(replaceBoundsWithInf)
     replaceBoundsWithInf=true;
 end
