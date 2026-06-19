@@ -126,14 +126,16 @@ classdef tAnalysis < RavenTestCase
         end
 
         function randomSamplingRuns(testCase)
+            % Bare call exercises the default method (ACHR).
             evalc('sols = randomSampling(testCase.model, 5);');
             testCase.verifyEqual(size(sols, 1), numel(testCase.model.rxns));
         end
 
         function randomSamplingDeterministicWithSeed(testCase)
-            evalc('[~, gR] = randomSampling(testCase.model, 0, ''runParallel'', false);');
-            evalc('s1 = randomSampling(testCase.model, 5, ''seed'', 42, ''runParallel'', false, ''goodRxns'', gR);');
-            evalc('s2 = randomSampling(testCase.model, 5, ''seed'', 42, ''runParallel'', false, ''goodRxns'', gR);');
+            % goodRxns reuse is specific to the random-objective method.
+            evalc('[~, gR] = randomSampling(testCase.model, 0, ''method'', ''randomObjective'', ''runParallel'', false);');
+            evalc('s1 = randomSampling(testCase.model, 5, ''method'', ''randomObjective'', ''seed'', 42, ''runParallel'', false, ''goodRxns'', gR);');
+            evalc('s2 = randomSampling(testCase.model, 5, ''method'', ''randomObjective'', ''seed'', 42, ''runParallel'', false, ''goodRxns'', gR);');
             testCase.verifyEqual(s1, s2);
         end
 
