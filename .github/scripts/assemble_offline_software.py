@@ -3,9 +3,9 @@
 
 Downloads the per-platform binary ZIPs from raven-data and lays them out under
 ``<raven>/software/<tool>/`` using RAVEN's suffix scheme — bare name = Linux,
-``.mac`` = macOS, ``.exe`` = Windows — plus the WoLFPSORT tree. With all
-platforms present in one tree, the whole RAVEN checkout can be zipped into a
-single **OS-independent** offline distribution (see the release-bundle workflow).
+``.mac`` = macOS, ``.exe`` = Windows. With all platforms present in one tree, the
+whole RAVEN checkout can be zipped into a single **OS-independent** offline
+distribution (see the release-bundle workflow).
 
 Run from the RAVEN root, or pass ``--raven <dir>``. Requires network access to
 https://github.com/SysBioChalmers/raven-data .
@@ -61,9 +61,6 @@ def assemble(raven: Path) -> None:
             # Windows already carries .exe — so only the macOS members need renaming.
             rename = {e: e + ".mac" for e in exes} if suffix == ".mac" else {}
             _extract(_fetch(f"{RAVEN_DATA}/{bundle}-{version}/{asset}"), dest, rename)
-
-    print("  WoLFPSORT: wolfpsort-0.2.zip")
-    _extract(_fetch(f"{RAVEN_DATA}/wolfpsort-0.2/wolfpsort-0.2.zip"), soft, {})
 
 
 def main(argv: list[str] | None = None) -> None:

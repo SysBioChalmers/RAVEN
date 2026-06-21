@@ -27,7 +27,7 @@ fix: optimizeProb parsing results from Gurobi
 A more detailed explanation or comments can be left in the commit description.
 
 ### External Software Update
-* Once the newer version for any external software (BLAST+, DIAMOND, HMMER, WoLFPSORT) is available, identify the newest version which is simultaneously available for macOS, Unix/Linux and Windows
+* Once the newer version for any external software (BLAST+, DIAMOND, HMMER) is available, identify the newest version which is simultaneously available for macOS, Unix/Linux and Windows
 * Create a separate branch from the `devel` branch and name it e.g. `chore/updateBinaries`
 * Commit the changes for each program and operating system separately, e.g. `chore: update HMMER (Win) to 3.2.1`
 * As soon as all binaries for particular program are updated through commits, update the corresponding license file, if available and place it in e.g. `software/blast+` directory.
