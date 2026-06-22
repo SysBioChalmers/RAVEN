@@ -6,7 +6,7 @@ function downloadRavenBinaries(tools)
 %   the current platform is fetched, and only when needed.
 %
 %   Input:
-%   tools   cell array, subset of {'blast+','diamond','hmmer','WoLFPSORT'} to
+%   tools   cell array, subset of {'blast+','diamond','hmmer'} to
 %           download. Defaults to all of them. Tools whose target executable is
 %           already present are skipped.
 %
@@ -19,11 +19,11 @@ function downloadRavenBinaries(tools)
 %
 %   Usage: downloadRavenBinaries({'blast+','diamond'})
 %
-% NOTE: lazily invoked by getBlast/getDiamond/getKEGGModelForOrganism/
-% getWoLFScores and offered by checkInstallation when a binary is missing.
+% NOTE: lazily invoked by getBlast/getDiamond/getKEGGModelForOrganism and
+% offered by checkInstallation when a binary is missing.
 
 if nargin < 1 || isempty(tools)
-    tools = {'blast+','diamond','hmmer','WoLFPSORT'};
+    tools = {'blast+','diamond','hmmer'};
 elseif ischar(tools)
     tools = {tools};
 end
@@ -66,23 +66,15 @@ for i = 1:numel(tools)
             destDir = fullfile(ravenDir,'software','hmmer');
             sentinel = fullfile(destDir,'hmmsearch');
             execs = {'hmmsearch'};
-        case 'WoLFPSORT'
-            tag = 'wolfpsort-0.2';
-            asset = 'wolfpsort-0.2.zip';                     % zip contains the WoLFPSORT/ tree
-            destDir = fullfile(ravenDir,'software');
-            sentinel = fullfile(destDir,'WoLFPSORT','bin','wolfPredict');
-            execs = {};                                      % whole bin/ tree (chmod'd below)
         otherwise
             error('downloadRavenBinaries: unknown tool ''%s''.',tool);
     end
 
     % macOS uses a .mac suffix and Windows a .exe suffix (Linux: bare name).
-    if ~strcmp(tool,'WoLFPSORT')
-        if ispc
-            sentinel = [sentinel '.exe']; %#ok<AGROW>
-        elseif ismac
-            sentinel = [sentinel '.mac']; %#ok<AGROW>
-        end
+    if ispc
+        sentinel = [sentinel '.exe']; %#ok<AGROW>
+    elseif ismac
+        sentinel = [sentinel '.mac']; %#ok<AGROW>
     end
     if exist(sentinel,'file')
         continue;   % already provisioned
@@ -103,7 +95,7 @@ for i = 1:numel(tools)
 
     % macOS uses the .mac suffix throughout RAVEN, but the raven-data macOS ZIP
     % ships bare names, so rename the extracted executables to match.
-    if ismac && ~strcmp(tool,'WoLFPSORT')
+    if ismac
         for k = 1:numel(execs)
             bare = fullfile(destDir,execs{k});
             if isfile(bare)
@@ -114,20 +106,14 @@ for i = 1:numel(tools)
 
     % MATLAB's unzip does not preserve Unix execute permissions; restore them.
     if isunix
-        if strcmp(tool,'WoLFPSORT')
-            attrTarget = fullfile(destDir,'WoLFPSORT');
-            system(['chmod -R +x "' fullfile(attrTarget,'bin') '"']);
-        else
-            attrTarget = destDir;
-            if ismac; sfx = '.mac'; else; sfx = ''; end
-            for k = 1:numel(execs)
-                system(['chmod +x "' fullfile(destDir,[execs{k} sfx]) '"']);
-            end
+        if ismac; sfx = '.mac'; else; sfx = ''; end
+        for k = 1:numel(execs)
+            system(['chmod +x "' fullfile(destDir,[execs{k} sfx]) '"']);
         end
         % Downloaded binaries are quarantined by macOS Gatekeeper and will not
         % execute until the com.apple.quarantine attribute is cleared.
         if ismac
-            system(['xattr -dr com.apple.quarantine "' attrTarget '"']);
+            system(['xattr -dr com.apple.quarantine "' destDir '"']);
         end
     end
 end

@@ -114,8 +114,11 @@ end
 defaultCompartment=char(defaultCompartment);
 I=ismember(defaultCompartment,GSS.compartments);
 if I==false
-    EM='defaultCompartment not found in GSS';
-    error('RAVEN:badInput', '%s', EM);
+    error('RAVEN:badInput', ...
+        ['defaultCompartment ''%s'' not found in GSS. Available compartments: %s. ' ...
+         '(If you mapped scores to model ids via compartmentMap, pass an id such as ''c''; ' ...
+         'otherwise pass the raw predictor label.)'], ...
+        defaultCompartment, strjoin(GSS.compartments(:)', ', '));
 end
 
 if numel(model.comps)>1

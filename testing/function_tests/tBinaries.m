@@ -6,9 +6,6 @@ classdef tBinaries < matlab.unittest.TestCase
 %   tools) it actually runs. On macOS, running the downloaded binary also
 %   confirms the Gatekeeper quarantine attribute was cleared.
 %
-%   WoLFPSORT is a Linux-only bundle (run via WSL on Windows), so only its
-%   extraction is checked here, not execution.
-%
 %   Exercised on Linux and macOS by the "binary-tests" CI job. Requires network
 %   access to https://github.com/SysBioChalmers/raven-data .
 
@@ -25,15 +22,6 @@ classdef tBinaries < matlab.unittest.TestCase
 
         function hmmer(testCase)
             testCase.fetchAndRun('hmmer', 'hmmsearch', '-h');
-        end
-
-        function wolfpsort(testCase)
-            downloadRavenBinaries({'WoLFPSORT'});
-            wolfDir = fullfile(findRAVENroot(),'software','WoLFPSORT','bin');
-            testCase.verifyTrue(isfile(fullfile(wolfDir,'runWolfPsortSummary')), ...
-                'WoLFPSORT/bin/runWolfPsortSummary not found after download');
-            testCase.verifyTrue(isfile(fullfile(wolfDir,'wolfPredict')), ...
-                'WoLFPSORT/bin/wolfPredict not found after download');
         end
     end
 

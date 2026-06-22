@@ -29,7 +29,7 @@ solver (Gurobi or SCIP).
 Tests that need a dependency which may be absent are written with test
 *assumptions*, so they are reported as filtered (not failed) when the
 dependency is missing. This keeps the suite green in any environment. Skipped
-categories: external binaries (BLAST+, DIAMOND, WoLF PSORT), a local KEGG dump,
+categories: external binaries (BLAST+, DIAMOND, HMMER), a local KEGG dump,
 optional solvers (Gurobi/SCIP for MILP), the Optimization Toolbox (`quadprog`),
 a Python/pyyaml bridge, and input files for table-driven curation. The full
 ftINIT MILP pipeline (in `tINIT`) is guarded on a MILP solver and skipped when
