@@ -42,7 +42,7 @@ This function is called by:
 
 <h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <ul style="list-style-image:url(../../matlabicon.gif)">
-<li><a href="#_sub1" class="code">function testExcelImport(testCase)</a></li><li><a href="#_sub2" class="code">function testSBMLImport(testCase)</a></li><li><a href="#_sub3" class="code">function testYAMLimport(testCase)</a></li><li><a href="#_sub4" class="code">function testExcelExport(testCase)</a></li><li><a href="#_sub5" class="code">function testSBMLExport(testCase)</a></li><li><a href="#_sub6" class="code">function testYAMLexport(testCase)</a></li></ul>
+<li><a href="#_sub1" class="code">function testExcelImport(testCase)</a></li><li><a href="#_sub2" class="code">function testSBMLImport(testCase)</a></li><li><a href="#_sub3" class="code">function testYAMLimport(testCase)</a></li><li><a href="#_sub4" class="code">function testExcelExport(testCase)</a></li><li><a href="#_sub5" class="code">function testSBMLExport(testCase)</a></li><li><a href="#_sub6" class="code">function testSBMLExportNestedSubSystems(testCase)</a></li><li><a href="#_sub7" class="code">function testYAMLexport(testCase)</a></li></ul>
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <div class="fragment"><pre>0001 <span class="comment">%run this test case with the command</span>
@@ -106,18 +106,48 @@ This function is called by:
 0059 delete(fullfile(sourceDir,<span class="string">'testing'</span>,<span class="string">'unit_tests'</span>,<span class="string">'test_data'</span>,<span class="string">'_test.xml'</span>));
 0060 <span class="keyword">end</span>
 0061 
-0062 <a name="_sub6" href="#_subfunctions" class="code">function testYAMLexport(testCase)</a>
-0063 sourceDir=fileparts(fileparts(fileparts(which(mfilename))));
-0064 load(fullfile(sourceDir,<span class="string">'tutorial'</span>,<span class="string">'empty.mat'</span>), <span class="string">'emptyModel'</span>);
-0065 evalc(<span class="string">'writeYAMLmodel(emptyModel,fullfile(sourceDir,''testing'',''unit_tests'',''test_data'',''_test.yml''))'</span>);
-0066 <span class="comment">%File will not be exactly equal as it contains the current date and time,</span>
-0067 <span class="comment">%so md5 or similar would not work. Just check whether file is reasonably</span>
-0068 <span class="comment">%sized.</span>
-0069 s = dir(fullfile(sourceDir,<span class="string">'testing'</span>,<span class="string">'unit_tests'</span>,<span class="string">'test_data'</span>,<span class="string">'_test.yml'</span>));         
-0070 filesize = s.bytes;
-0071 verifyTrue(testCase,filesize&gt;1290);
-0072 delete(fullfile(sourceDir,<span class="string">'testing'</span>,<span class="string">'unit_tests'</span>,<span class="string">'test_data'</span>,<span class="string">'_test.yml'</span>));
-0073 <span class="keyword">end</span></pre></div>
+0062 <a name="_sub6" href="#_subfunctions" class="code">function testSBMLExportNestedSubSystems(testCase)</a>
+0063 <span class="comment">%Regression test: a model where reactions have differing numbers of</span>
+0064 <span class="comment">%subsystems (nested cell-of-cells, e.g. one reaction in two subsystems and</span>
+0065 <span class="comment">%others in one) must be exportable to SBML. Previously exportModel failed</span>
+0066 <span class="comment">%with &quot;Dimensions of arrays being concatenated are not consistent&quot; because</span>
+0067 <span class="comment">%the subSystems flattening could not concatenate entries of unequal length.</span>
+0068 sourceDir=fileparts(fileparts(fileparts(which(mfilename))));
+0069 load(fullfile(sourceDir,<span class="string">'testing'</span>,<span class="string">'unit_tests'</span>,<span class="string">'test_data'</span>,<span class="string">'ecoli_textbook.mat'</span>), <span class="string">'model'</span>);
+0070 
+0071 <span class="comment">%Assign nested subSystems: most reactions get a single subsystem, but a few</span>
+0072 <span class="comment">%get multiple, which is the scenario that triggered the bug.</span>
+0073 nRxns=numel(model.rxns);
+0074 model.subSystems=repmat({{<span class="string">'Subsystem A'</span>}},nRxns,1);
+0075 model.subSystems{1}={<span class="string">'Subsystem A'</span>,<span class="string">'Subsystem B'</span>};
+0076 model.subSystems{2}={<span class="string">'Subsystem B'</span>,<span class="string">'Subsystem C'</span>};
+0077 
+0078 tmpFile=fullfile(sourceDir,<span class="string">'testing'</span>,<span class="string">'unit_tests'</span>,<span class="string">'test_data'</span>,<span class="string">'_testNested.xml'</span>);
+0079 <span class="comment">%This call previously errored; verify it completes and round-trips.</span>
+0080 evalc(<span class="string">'exportModel(model,tmpFile)'</span>);
+0081 evalc(<span class="string">'modelImported=importModel(tmpFile)'</span>);
+0082 delete(tmpFile);
+0083 
+0084 <span class="comment">%Subsystems should be preserved (order within a reaction is not guaranteed)</span>
+0085 srt=@(c) sort(reshape(c,1,[]));
+0086 <span class="keyword">for</span> i=1:3
+0087     j=find(strcmp(modelImported.rxns,model.rxns{i}));
+0088     verifyEqual(testCase,srt(modelImported.subSystems{j}),srt(model.subSystems{i}));
+0089 <span class="keyword">end</span>
+0090 <span class="keyword">end</span>
+0091 
+0092 <a name="_sub7" href="#_subfunctions" class="code">function testYAMLexport(testCase)</a>
+0093 sourceDir=fileparts(fileparts(fileparts(which(mfilename))));
+0094 load(fullfile(sourceDir,<span class="string">'tutorial'</span>,<span class="string">'empty.mat'</span>), <span class="string">'emptyModel'</span>);
+0095 evalc(<span class="string">'writeYAMLmodel(emptyModel,fullfile(sourceDir,''testing'',''unit_tests'',''test_data'',''_test.yml''))'</span>);
+0096 <span class="comment">%File will not be exactly equal as it contains the current date and time,</span>
+0097 <span class="comment">%so md5 or similar would not work. Just check whether file is reasonably</span>
+0098 <span class="comment">%sized.</span>
+0099 s = dir(fullfile(sourceDir,<span class="string">'testing'</span>,<span class="string">'unit_tests'</span>,<span class="string">'test_data'</span>,<span class="string">'_test.yml'</span>));         
+0100 filesize = s.bytes;
+0101 verifyTrue(testCase,filesize&gt;1290);
+0102 delete(fullfile(sourceDir,<span class="string">'testing'</span>,<span class="string">'unit_tests'</span>,<span class="string">'test_data'</span>,<span class="string">'_test.yml'</span>));
+0103 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
