@@ -627,239 +627,242 @@ This function is called by:
 0564     model.subSystems(isChar)  = cellfun(@(s){s}, model.subSystems(isChar),  <span class="string">'UniformOutput'</span>, false);
 0565     model.subSystems(cellfun(@isempty, model.subSystems)) = {{}};
 0566 
-0567     <span class="comment">% If some entries contain string scalars by mistake, coerce them:</span>
-0568     model.subSystems = cellfun(@(c) cellfun(@char, c, <span class="string">'UniformOutput'</span>, false), model.subSystems, <span class="string">'UniformOutput'</span>, false);
-0569 
-0570     <span class="comment">% === 2) Flatten once: names and their reaction indices (vectorized) ===</span>
-0571     flatNames = vertcat(model.subSystems{:});                    <span class="comment">% 1×M cellstr of all subsystem labels</span>
-0572     <span class="keyword">if</span> isempty(flatNames)
-0573         <span class="comment">% Nothing to do: no subsystems present</span>
-0574         <span class="keyword">return</span>
-0575     <span class="keyword">end</span>
-0576 
-0577     counts   = cellfun(@numel, model.subSystems);         <span class="comment">% reactions -&gt; how many subsystems</span>
-0578     <span class="comment">% For each reaction r, repeat r exactly counts(r) times</span>
-0579     flatIdx  = arrayfun(@(r,c) repmat(r, c, 1), (1:numel(model.subSystems)).', counts, <span class="string">'UniformOutput'</span>, false);
-0580     flatIdx  = vertcat(flatIdx{:});           <span class="comment">% M×1 vector of reaction indices</span>
-0581 
-0582     <span class="comment">% === 3) Group in one shot: unique subsystems + members per subsystem ===</span>
-0583     [subSystems, ~, g] = unique(flatNames, <span class="string">'stable'</span>);          <span class="comment">% stable preserves first appearance</span>
-0584     membersIdx = accumarray(g, flatIdx, [], @(v){v});          <span class="comment">% cell: one vector of r-idx per group</span>
-0585     nSubs = numel(subSystems);
-0586 
-0587     <span class="comment">% === 4) Preallocate and build SBML groups (single simple loop) ===</span>
-0588     modelSBML.groups_group(1:nSubs) = grpTemplate;
-0589     groupIDs = &quot;group&quot; + (1:nSubs);
-0590 
-0591     <span class="keyword">if</span> isfield(grpTemplate,<span class="string">'groups_member'</span>)
-0592         memTemplate = grpTemplate.groups_member;
-0593     <span class="keyword">else</span>
-0594         memTemplate = struct(<span class="string">'groups_idRef'</span>,<span class="string">''</span>);
-0595     <span class="keyword">end</span>
-0596 
-0597     <span class="keyword">for</span> i = 1:nSubs
-0598         rIdx       = membersIdx{i};
-0599         groupRXNs  = model.rxns(rIdx);
-0600         cgroup     = grpTemplate;
-0601 
-0602         <span class="comment">% Preallocate and fill members</span>
-0603         nM = numel(groupRXNs);
-0604         <span class="keyword">if</span> nM &gt; 0
-0605             cgroup.groups_member(1:nM) = memTemplate;
-0606             [cgroup.groups_member.groups_idRef] = deal(groupRXNs{:});
-0607         <span class="keyword">else</span>
-0608             cgroup.groups_member = repmat(memTemplate, 0, 1);
-0609         <span class="keyword">end</span>
-0610 
-0611         cgroup.groups_id   = char(groupIDs(i));     <span class="comment">% keep as char for SBML compatibility</span>
-0612         cgroup.groups_name = subSystems{i};
-0613         modelSBML.groups_group(i) = cgroup;
-0614     <span class="keyword">end</span>
-0615 <span class="keyword">end</span>
-0616 
-0617 
-0618 <span class="comment">%Prepare fbc_objective subfield</span>
+0567     <span class="comment">% If some entries contain string scalars by mistake, coerce them. Also</span>
+0568     <span class="comment">% force each entry to a column cell array, so that reactions with</span>
+0569     <span class="comment">% different numbers of subsystems can be concatenated below (otherwise</span>
+0570     <span class="comment">% mixing e.g. 1x1 and 1x2 entries breaks vertcat):</span>
+0571     model.subSystems = cellfun(@(c) reshape(cellfun(@char, c, <span class="string">'UniformOutput'</span>, false), [], 1), model.subSystems, <span class="string">'UniformOutput'</span>, false);
+0572 
+0573     <span class="comment">% === 2) Flatten once: names and their reaction indices (vectorized) ===</span>
+0574     flatNames = vertcat(model.subSystems{:});                    <span class="comment">% Mx1 cellstr of all subsystem labels</span>
+0575     <span class="keyword">if</span> isempty(flatNames)
+0576         <span class="comment">% Nothing to do: no subsystems present</span>
+0577         <span class="keyword">return</span>
+0578     <span class="keyword">end</span>
+0579 
+0580     counts   = cellfun(@numel, model.subSystems);         <span class="comment">% reactions -&gt; how many subsystems</span>
+0581     <span class="comment">% For each reaction r, repeat r exactly counts(r) times</span>
+0582     flatIdx  = arrayfun(@(r,c) repmat(r, c, 1), (1:numel(model.subSystems)).', counts, <span class="string">'UniformOutput'</span>, false);
+0583     flatIdx  = vertcat(flatIdx{:});           <span class="comment">% M×1 vector of reaction indices</span>
+0584 
+0585     <span class="comment">% === 3) Group in one shot: unique subsystems + members per subsystem ===</span>
+0586     [subSystems, ~, g] = unique(flatNames, <span class="string">'stable'</span>);          <span class="comment">% stable preserves first appearance</span>
+0587     membersIdx = accumarray(g, flatIdx, [], @(v){v});          <span class="comment">% cell: one vector of r-idx per group</span>
+0588     nSubs = numel(subSystems);
+0589 
+0590     <span class="comment">% === 4) Preallocate and build SBML groups (single simple loop) ===</span>
+0591     modelSBML.groups_group(1:nSubs) = grpTemplate;
+0592     groupIDs = &quot;group&quot; + (1:nSubs);
+0593 
+0594     <span class="keyword">if</span> isfield(grpTemplate,<span class="string">'groups_member'</span>)
+0595         memTemplate = grpTemplate.groups_member;
+0596     <span class="keyword">else</span>
+0597         memTemplate = struct(<span class="string">'groups_idRef'</span>,<span class="string">''</span>);
+0598     <span class="keyword">end</span>
+0599 
+0600     <span class="keyword">for</span> i = 1:nSubs
+0601         rIdx       = membersIdx{i};
+0602         groupRXNs  = model.rxns(rIdx);
+0603         cgroup     = grpTemplate;
+0604 
+0605         <span class="comment">% Preallocate and fill members</span>
+0606         nM = numel(groupRXNs);
+0607         <span class="keyword">if</span> nM &gt; 0
+0608             cgroup.groups_member(1:nM) = memTemplate;
+0609             [cgroup.groups_member.groups_idRef] = deal(groupRXNs{:});
+0610         <span class="keyword">else</span>
+0611             cgroup.groups_member = repmat(memTemplate, 0, 1);
+0612         <span class="keyword">end</span>
+0613 
+0614         cgroup.groups_id   = char(groupIDs(i));     <span class="comment">% keep as char for SBML compatibility</span>
+0615         cgroup.groups_name = subSystems{i};
+0616         modelSBML.groups_group(i) = cgroup;
+0617     <span class="keyword">end</span>
+0618 <span class="keyword">end</span>
 0619 
-0620 modelSBML.fbc_objective.fbc_type=<span class="string">'maximize'</span>;
-0621 modelSBML.fbc_objective.fbc_id=<span class="string">'obj'</span>;
+0620 
+0621 <span class="comment">%Prepare fbc_objective subfield</span>
 0622 
-0623 ind=find(model.c);
-0624 
-0625 <span class="keyword">if</span> isempty(ind)
-0626     modelSBML.fbc_objective.fbc_fluxObjective.fbc_coefficient=0;
-0627 <span class="keyword">else</span>
-0628     <span class="keyword">for</span> i=1:length(ind)
-0629         <span class="comment">%Copy the default values to the next index as long as it is not the</span>
-0630         <span class="comment">%last one</span>
-0631         <span class="keyword">if</span> i&lt;numel(ind)
-0632             modelSBML.reaction(i+1)=modelSBML.reaction(i);
-0633         <span class="keyword">end</span>
-0634         values=model.c(model.c~=0);
-0635         modelSBML.fbc_objective(i).fbc_fluxObjective.fbc_reaction=modelSBML.reaction(ind(i)).id;
-0636         modelSBML.fbc_objective(i).fbc_fluxObjective.fbc_coefficient=values(i);
-0637         modelSBML.fbc_objective(i).fbc_fluxObjective.isSetfbc_coefficient=1;
-0638     <span class="keyword">end</span>
-0639 <span class="keyword">end</span>
-0640 
-0641 modelSBML.fbc_activeObjective=modelSBML.fbc_objective.fbc_id;
-0642 
-0643 fbcStr=[<span class="string">'http://www.sbml.org/sbml/level'</span>, num2str(sbmlLevel), <span class="string">'/version'</span>, num2str(sbmlVersion), <span class="string">'/fbc/version'</span>,num2str(sbmlPackageVersions(1))];
-0644 <span class="keyword">if</span> modelHasSubsystems
-0645     groupStr=[<span class="string">'http://www.sbml.org/sbml/level'</span>, num2str(sbmlLevel), <span class="string">'/version'</span>, num2str(sbmlVersion), <span class="string">'/groups/version'</span>,num2str(sbmlPackageVersions(2))];
-0646     modelSBML.namespaces=struct(<span class="string">'prefix'</span>,{<span class="string">''</span>,<span class="string">'fbc'</span>,<span class="string">'groups'</span>},<span class="keyword">...</span>
-0647         <span class="string">'uri'</span>,{[<span class="string">'http://www.sbml.org/sbml/level'</span>, num2str(sbmlLevel), <span class="string">'/version'</span>, num2str(sbmlVersion), <span class="string">'/core'</span>],<span class="keyword">...</span>
-0648         fbcStr,groupStr});
-0649 <span class="keyword">else</span>
-0650     modelSBML.namespaces=struct(<span class="string">'prefix'</span>,{<span class="string">''</span>,<span class="string">'fbc'</span>},<span class="keyword">...</span>
-0651         <span class="string">'uri'</span>,{[<span class="string">'http://www.sbml.org/sbml/level'</span>, num2str(sbmlLevel), <span class="string">'/version'</span>, num2str(sbmlVersion), <span class="string">'/core'</span>],<span class="keyword">...</span>
-0652         fbcStr});
-0653 <span class="keyword">end</span>
-0654 
-0655 <span class="keyword">if</span> sbmlPackageVersions(1) == 2
-0656     modelSBML.fbc_strict=1;
-0657     modelSBML.isSetfbc_strict = 1;
-0658 <span class="keyword">end</span>
-0659 
-0660 modelSBML.rule=[];
-0661 modelSBML.constraint=[];
+0623 modelSBML.fbc_objective.fbc_type=<span class="string">'maximize'</span>;
+0624 modelSBML.fbc_objective.fbc_id=<span class="string">'obj'</span>;
+0625 
+0626 ind=find(model.c);
+0627 
+0628 <span class="keyword">if</span> isempty(ind)
+0629     modelSBML.fbc_objective.fbc_fluxObjective.fbc_coefficient=0;
+0630 <span class="keyword">else</span>
+0631     <span class="keyword">for</span> i=1:length(ind)
+0632         <span class="comment">%Copy the default values to the next index as long as it is not the</span>
+0633         <span class="comment">%last one</span>
+0634         <span class="keyword">if</span> i&lt;numel(ind)
+0635             modelSBML.reaction(i+1)=modelSBML.reaction(i);
+0636         <span class="keyword">end</span>
+0637         values=model.c(model.c~=0);
+0638         modelSBML.fbc_objective(i).fbc_fluxObjective.fbc_reaction=modelSBML.reaction(ind(i)).id;
+0639         modelSBML.fbc_objective(i).fbc_fluxObjective.fbc_coefficient=values(i);
+0640         modelSBML.fbc_objective(i).fbc_fluxObjective.isSetfbc_coefficient=1;
+0641     <span class="keyword">end</span>
+0642 <span class="keyword">end</span>
+0643 
+0644 modelSBML.fbc_activeObjective=modelSBML.fbc_objective.fbc_id;
+0645 
+0646 fbcStr=[<span class="string">'http://www.sbml.org/sbml/level'</span>, num2str(sbmlLevel), <span class="string">'/version'</span>, num2str(sbmlVersion), <span class="string">'/fbc/version'</span>,num2str(sbmlPackageVersions(1))];
+0647 <span class="keyword">if</span> modelHasSubsystems
+0648     groupStr=[<span class="string">'http://www.sbml.org/sbml/level'</span>, num2str(sbmlLevel), <span class="string">'/version'</span>, num2str(sbmlVersion), <span class="string">'/groups/version'</span>,num2str(sbmlPackageVersions(2))];
+0649     modelSBML.namespaces=struct(<span class="string">'prefix'</span>,{<span class="string">''</span>,<span class="string">'fbc'</span>,<span class="string">'groups'</span>},<span class="keyword">...</span>
+0650         <span class="string">'uri'</span>,{[<span class="string">'http://www.sbml.org/sbml/level'</span>, num2str(sbmlLevel), <span class="string">'/version'</span>, num2str(sbmlVersion), <span class="string">'/core'</span>],<span class="keyword">...</span>
+0651         fbcStr,groupStr});
+0652 <span class="keyword">else</span>
+0653     modelSBML.namespaces=struct(<span class="string">'prefix'</span>,{<span class="string">''</span>,<span class="string">'fbc'</span>},<span class="keyword">...</span>
+0654         <span class="string">'uri'</span>,{[<span class="string">'http://www.sbml.org/sbml/level'</span>, num2str(sbmlLevel), <span class="string">'/version'</span>, num2str(sbmlVersion), <span class="string">'/core'</span>],<span class="keyword">...</span>
+0655         fbcStr});
+0656 <span class="keyword">end</span>
+0657 
+0658 <span class="keyword">if</span> sbmlPackageVersions(1) == 2
+0659     modelSBML.fbc_strict=1;
+0660     modelSBML.isSetfbc_strict = 1;
+0661 <span class="keyword">end</span>
 0662 
-0663 [ravenDir,prevDir]=findRAVENroot();
-0664 fileName=<a href="checkFileExistence.html" class="code" title="function files=checkFileExistence(files,fullOrTemp,allowSpace,checkExist)">checkFileExistence</a>(fileName,1,true,false);
+0663 modelSBML.rule=[];
+0664 modelSBML.constraint=[];
 0665 
-0666 OutputSBML_RAVEN(modelSBML,fileName,1,0,[1,0]);
-0667 <span class="keyword">end</span>
+0666 [ravenDir,prevDir]=findRAVENroot();
+0667 fileName=<a href="checkFileExistence.html" class="code" title="function files=checkFileExistence(files,fullOrTemp,allowSpace,checkExist)">checkFileExistence</a>(fileName,1,true,false);
 0668 
-0669 
-0670 <a name="_sub1" href="#_subfunctions" class="code">function modelSBML=getSBMLStructure(sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions)</a>
-0671 <span class="comment">%Returns the blank SBML model structure by using appropriate libSBML</span>
-0672 <span class="comment">%functions. This creates structure by considering three levels</span>
-0673 
-0674 sbmlFieldNames=getStructureFieldnames(<span class="string">'model'</span>,sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
-0675 sbmlDefaultValues=getDefaultValues(<span class="string">'model'</span>,sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+0669 OutputSBML_RAVEN(modelSBML,fileName,1,0,[1,0]);
+0670 <span class="keyword">end</span>
+0671 
+0672 
+0673 <a name="_sub1" href="#_subfunctions" class="code">function modelSBML=getSBMLStructure(sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions)</a>
+0674 <span class="comment">%Returns the blank SBML model structure by using appropriate libSBML</span>
+0675 <span class="comment">%functions. This creates structure by considering three levels</span>
 0676 
-0677 <span class="keyword">for</span> i=1:numel(sbmlFieldNames)
-0678     modelSBML.(sbmlFieldNames{1,i})=sbmlDefaultValues{1,i};
-0679     sbmlSubfieldNames=getStructureFieldnames(sbmlFieldNames{1,i},sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
-0680     sbmlSubfieldValues=getDefaultValues(sbmlFieldNames{1,i},sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
-0681     <span class="keyword">if</span> ~strcmp(sbmlFieldNames{1,i},<span class="string">'event'</span>) &amp;&amp; ~strcmp(sbmlFieldNames{1,i},<span class="string">'functionDefinition'</span>) &amp;&amp; ~strcmp(sbmlFieldNames{1,i},<span class="string">'initialAssignment'</span>)
-0682         <span class="keyword">for</span> j=1:numel(sbmlSubfieldNames)
-0683             modelSBML.(sbmlFieldNames{1,i}).(sbmlSubfieldNames{1,j})=sbmlSubfieldValues{1,j};
-0684             sbmlSubsubfieldNames=getStructureFieldnames(sbmlSubfieldNames{1,j},sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
-0685             sbmlSubsubfieldValues=getDefaultValues(sbmlSubfieldNames{1,j},sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
-0686             <span class="keyword">if</span> ~strcmp(sbmlSubfieldNames{1,j},<span class="string">'modifier'</span>) &amp;&amp; ~strcmp(sbmlSubfieldNames{1,j},<span class="string">'kineticLaw'</span>)
-0687                 <span class="keyword">for</span> k=1:numel(sbmlSubsubfieldNames)
-0688                     <span class="comment">%'compartment' and 'species' fields are not supposed to</span>
-0689                     <span class="comment">%have their standalone structures if they are subfields</span>
-0690                     <span class="comment">%or subsubfields</span>
-0691                     <span class="keyword">if</span> ~strcmp(sbmlSubfieldNames{1,j},<span class="string">'compartment'</span>) &amp;&amp; ~strcmp(sbmlSubfieldNames{1,j},<span class="string">'species'</span>)
-0692                         modelSBML.(sbmlFieldNames{1,i}).(sbmlSubfieldNames{1,j}).(sbmlSubsubfieldNames{1,k})=sbmlSubsubfieldValues{1,k};
-0693                     <span class="keyword">end</span>
-0694                     <span class="comment">%If it is fbc_association in the third level, we need</span>
-0695                     <span class="comment">%to establish the fourth level, since libSBML requires</span>
-0696                     <span class="comment">%it</span>
-0697                     <span class="keyword">if</span> strcmp(sbmlSubsubfieldNames{1,k},<span class="string">'fbc_association'</span>)
-0698                         fbc_associationFieldNames=getStructureFieldnames(<span class="string">'fbc_association'</span>,sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
-0699                         fbc_associationFieldValues=getDefaultValues(<span class="string">'fbc_association'</span>,sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
-0700                         <span class="keyword">for</span> l=1:numel(fbc_associationFieldNames)
-0701                             modelSBML.(sbmlFieldNames{1,i}).(sbmlSubfieldNames{1,j}).(sbmlSubsubfieldNames{1,k}).(fbc_associationFieldNames{1,l})=fbc_associationFieldValues{1,l};
-0702                         <span class="keyword">end</span>
-0703                     <span class="keyword">end</span>
-0704                 <span class="keyword">end</span>
-0705             <span class="keyword">end</span>
-0706         <span class="keyword">end</span>
-0707     <span class="keyword">end</span>
-0708     <span class="keyword">if</span> ~isstruct(modelSBML.(sbmlFieldNames{1,i}))
-0709         modelSBML.(sbmlFieldNames{1,i})=sbmlDefaultValues{1,i};
+0677 sbmlFieldNames=getStructureFieldnames(<span class="string">'model'</span>,sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+0678 sbmlDefaultValues=getDefaultValues(<span class="string">'model'</span>,sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+0679 
+0680 <span class="keyword">for</span> i=1:numel(sbmlFieldNames)
+0681     modelSBML.(sbmlFieldNames{1,i})=sbmlDefaultValues{1,i};
+0682     sbmlSubfieldNames=getStructureFieldnames(sbmlFieldNames{1,i},sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+0683     sbmlSubfieldValues=getDefaultValues(sbmlFieldNames{1,i},sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+0684     <span class="keyword">if</span> ~strcmp(sbmlFieldNames{1,i},<span class="string">'event'</span>) &amp;&amp; ~strcmp(sbmlFieldNames{1,i},<span class="string">'functionDefinition'</span>) &amp;&amp; ~strcmp(sbmlFieldNames{1,i},<span class="string">'initialAssignment'</span>)
+0685         <span class="keyword">for</span> j=1:numel(sbmlSubfieldNames)
+0686             modelSBML.(sbmlFieldNames{1,i}).(sbmlSubfieldNames{1,j})=sbmlSubfieldValues{1,j};
+0687             sbmlSubsubfieldNames=getStructureFieldnames(sbmlSubfieldNames{1,j},sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+0688             sbmlSubsubfieldValues=getDefaultValues(sbmlSubfieldNames{1,j},sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+0689             <span class="keyword">if</span> ~strcmp(sbmlSubfieldNames{1,j},<span class="string">'modifier'</span>) &amp;&amp; ~strcmp(sbmlSubfieldNames{1,j},<span class="string">'kineticLaw'</span>)
+0690                 <span class="keyword">for</span> k=1:numel(sbmlSubsubfieldNames)
+0691                     <span class="comment">%'compartment' and 'species' fields are not supposed to</span>
+0692                     <span class="comment">%have their standalone structures if they are subfields</span>
+0693                     <span class="comment">%or subsubfields</span>
+0694                     <span class="keyword">if</span> ~strcmp(sbmlSubfieldNames{1,j},<span class="string">'compartment'</span>) &amp;&amp; ~strcmp(sbmlSubfieldNames{1,j},<span class="string">'species'</span>)
+0695                         modelSBML.(sbmlFieldNames{1,i}).(sbmlSubfieldNames{1,j}).(sbmlSubsubfieldNames{1,k})=sbmlSubsubfieldValues{1,k};
+0696                     <span class="keyword">end</span>
+0697                     <span class="comment">%If it is fbc_association in the third level, we need</span>
+0698                     <span class="comment">%to establish the fourth level, since libSBML requires</span>
+0699                     <span class="comment">%it</span>
+0700                     <span class="keyword">if</span> strcmp(sbmlSubsubfieldNames{1,k},<span class="string">'fbc_association'</span>)
+0701                         fbc_associationFieldNames=getStructureFieldnames(<span class="string">'fbc_association'</span>,sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+0702                         fbc_associationFieldValues=getDefaultValues(<span class="string">'fbc_association'</span>,sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+0703                         <span class="keyword">for</span> l=1:numel(fbc_associationFieldNames)
+0704                             modelSBML.(sbmlFieldNames{1,i}).(sbmlSubfieldNames{1,j}).(sbmlSubsubfieldNames{1,k}).(fbc_associationFieldNames{1,l})=fbc_associationFieldValues{1,l};
+0705                         <span class="keyword">end</span>
+0706                     <span class="keyword">end</span>
+0707                 <span class="keyword">end</span>
+0708             <span class="keyword">end</span>
+0709         <span class="keyword">end</span>
 0710     <span class="keyword">end</span>
-0711 <span class="keyword">end</span>
-0712 
-0713 modelSBML.unitDefinition.id=<span class="string">'mmol_per_gDW_per_hr'</span>;
-0714 
-0715 unitFieldNames=getStructureFieldnames(<span class="string">'unit'</span>,sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
-0716 unitDefaultValues=getDefaultValues(<span class="string">'unit'</span>,sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+0711     <span class="keyword">if</span> ~isstruct(modelSBML.(sbmlFieldNames{1,i}))
+0712         modelSBML.(sbmlFieldNames{1,i})=sbmlDefaultValues{1,i};
+0713     <span class="keyword">end</span>
+0714 <span class="keyword">end</span>
+0715 
+0716 modelSBML.unitDefinition.id=<span class="string">'mmol_per_gDW_per_hr'</span>;
 0717 
-0718 kinds={<span class="string">'mole'</span>,<span class="string">'gram'</span>,<span class="string">'second'</span>};
-0719 exponents=[1 -1 -1];
-0720 scales=[-3 0 0];
-0721 multipliers=[1 1 1*60*60];
-0722 
-0723 <span class="keyword">for</span> i=1:numel(unitFieldNames)
-0724     modelSBML.unitDefinition.unit(1).(unitFieldNames{1,i})=unitDefaultValues{1,i};
-0725     <span class="keyword">for</span> j=1:3
-0726         modelSBML.unitDefinition.unit(j).(unitFieldNames{1,i})=unitDefaultValues{1,i};
-0727         <span class="keyword">if</span> strcmp(unitFieldNames{1,i},<span class="string">'kind'</span>)
-0728             modelSBML.unitDefinition.unit(j).(unitFieldNames{1,i})=kinds{j};
-0729         <span class="keyword">elseif</span> strcmp(unitFieldNames{1,i},<span class="string">'exponent'</span>)
-0730             modelSBML.unitDefinition.unit(j).(unitFieldNames{1,i})=exponents(j);
-0731         <span class="keyword">elseif</span> strcmp(unitFieldNames{1,i},<span class="string">'scale'</span>)
-0732             modelSBML.unitDefinition.unit(j).(unitFieldNames{1,i})=scales(j);
-0733         <span class="keyword">elseif</span> strcmp(unitFieldNames{1,i},<span class="string">'multiplier'</span>)
-0734             modelSBML.unitDefinition.unit(j).(unitFieldNames{1,i})=multipliers(j);
-0735         <span class="keyword">end</span>
-0736     <span class="keyword">end</span>
-0737 <span class="keyword">end</span>
-0738 <span class="keyword">end</span>
-0739 
-0740 <a name="_sub2" href="#_subfunctions" class="code">function miriamString=getMiriam(miriamStruct)</a>
-0741 <span class="comment">%Returns a string with list elements for a miriam structure ('&lt;rdf:li</span>
-0742 <span class="comment">%rdf:resource=&quot;https://identifiers.org/go/GO:0005739&quot;/&gt;' for example). This</span>
-0743 <span class="comment">%is just to speed up things since this is done many times during the</span>
-0744 <span class="comment">%exporting</span>
-0745 
-0746 miriamString=<span class="string">''</span>;
-0747 <span class="keyword">if</span> isfield(miriamStruct,<span class="string">'name'</span>)
-0748     <span class="keyword">for</span> i=1:numel(miriamStruct.name)
-0749         miriamString=[miriamString <span class="string">'&lt;rdf:li rdf:resource=&quot;https://identifiers.org/'</span> miriamStruct.name{i} <span class="string">'/'</span> miriamStruct.value{i} <span class="string">'&quot;/&gt;'</span>];
-0750     <span class="keyword">end</span>
-0751 <span class="keyword">end</span>
-0752 <span class="keyword">end</span>
-0753 
-0754 <a name="_sub3" href="#_subfunctions" class="code">function [tmp_Rxn]=addReactantsProducts(model,sbmlModel,i)</a>
-0755 <span class="comment">%This function provides reactants and products for particular reaction. The</span>
-0756 <span class="comment">%function was 'borrowed' from writeSBML in COBRA toolbox, lines 663-679</span>
-0757 
-0758 met_idx = find(model.S(:, i));
-0759 tmp_Rxn.product=[];
-0760 tmp_Rxn.reactant=[];
-0761 <span class="keyword">for</span> j_met=1:size(met_idx,1)
-0762     tmp_idx = met_idx(j_met,1);
-0763     sbml_tmp_species_ref.species = sbmlModel.species(tmp_idx).id;
-0764     met_stoich = model.S(tmp_idx, i);
-0765     sbml_tmp_species_ref.stoichiometry = abs(met_stoich);
-0766     sbml_tmp_species_ref.isSetStoichiometry=1;
-0767     sbml_tmp_species_ref.constant=1;
-0768     <span class="keyword">if</span> (met_stoich &gt; 0)
-0769         tmp_Rxn.product = [ tmp_Rxn.product, sbml_tmp_species_ref ];
-0770     <span class="keyword">else</span>
-0771         tmp_Rxn.reactant = [ tmp_Rxn.reactant, sbml_tmp_species_ref];
-0772     <span class="keyword">end</span>
-0773 <span class="keyword">end</span>
-0774 <span class="keyword">end</span>
-0775 
-0776 <a name="_sub4" href="#_subfunctions" class="code">function vecT = columnVector(vec)</a>
-0777 <span class="comment">% Code below taken from COBRA Toolbox under GNU General Public License v3.0</span>
-0778 <span class="comment">% license file in readme/GPL.MD.</span>
-0779 <span class="comment">%</span>
-0780 <span class="comment">% Converts a vector to a column vector</span>
-0781 <span class="comment">%</span>
-0782 <span class="comment">% USAGE:</span>
-0783 <span class="comment">%</span>
-0784 <span class="comment">%   vecT = columnVector(vec)</span>
-0785 <span class="comment">%</span>
-0786 <span class="comment">% INPUT:</span>
-0787 <span class="comment">%   vec:     a vector</span>
+0718 unitFieldNames=getStructureFieldnames(<span class="string">'unit'</span>,sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+0719 unitDefaultValues=getDefaultValues(<span class="string">'unit'</span>,sbmlLevel,sbmlVersion,sbmlPackages,sbmlPackageVersions);
+0720 
+0721 kinds={<span class="string">'mole'</span>,<span class="string">'gram'</span>,<span class="string">'second'</span>};
+0722 exponents=[1 -1 -1];
+0723 scales=[-3 0 0];
+0724 multipliers=[1 1 1*60*60];
+0725 
+0726 <span class="keyword">for</span> i=1:numel(unitFieldNames)
+0727     modelSBML.unitDefinition.unit(1).(unitFieldNames{1,i})=unitDefaultValues{1,i};
+0728     <span class="keyword">for</span> j=1:3
+0729         modelSBML.unitDefinition.unit(j).(unitFieldNames{1,i})=unitDefaultValues{1,i};
+0730         <span class="keyword">if</span> strcmp(unitFieldNames{1,i},<span class="string">'kind'</span>)
+0731             modelSBML.unitDefinition.unit(j).(unitFieldNames{1,i})=kinds{j};
+0732         <span class="keyword">elseif</span> strcmp(unitFieldNames{1,i},<span class="string">'exponent'</span>)
+0733             modelSBML.unitDefinition.unit(j).(unitFieldNames{1,i})=exponents(j);
+0734         <span class="keyword">elseif</span> strcmp(unitFieldNames{1,i},<span class="string">'scale'</span>)
+0735             modelSBML.unitDefinition.unit(j).(unitFieldNames{1,i})=scales(j);
+0736         <span class="keyword">elseif</span> strcmp(unitFieldNames{1,i},<span class="string">'multiplier'</span>)
+0737             modelSBML.unitDefinition.unit(j).(unitFieldNames{1,i})=multipliers(j);
+0738         <span class="keyword">end</span>
+0739     <span class="keyword">end</span>
+0740 <span class="keyword">end</span>
+0741 <span class="keyword">end</span>
+0742 
+0743 <a name="_sub2" href="#_subfunctions" class="code">function miriamString=getMiriam(miriamStruct)</a>
+0744 <span class="comment">%Returns a string with list elements for a miriam structure ('&lt;rdf:li</span>
+0745 <span class="comment">%rdf:resource=&quot;https://identifiers.org/go/GO:0005739&quot;/&gt;' for example). This</span>
+0746 <span class="comment">%is just to speed up things since this is done many times during the</span>
+0747 <span class="comment">%exporting</span>
+0748 
+0749 miriamString=<span class="string">''</span>;
+0750 <span class="keyword">if</span> isfield(miriamStruct,<span class="string">'name'</span>)
+0751     <span class="keyword">for</span> i=1:numel(miriamStruct.name)
+0752         miriamString=[miriamString <span class="string">'&lt;rdf:li rdf:resource=&quot;https://identifiers.org/'</span> miriamStruct.name{i} <span class="string">'/'</span> miriamStruct.value{i} <span class="string">'&quot;/&gt;'</span>];
+0753     <span class="keyword">end</span>
+0754 <span class="keyword">end</span>
+0755 <span class="keyword">end</span>
+0756 
+0757 <a name="_sub3" href="#_subfunctions" class="code">function [tmp_Rxn]=addReactantsProducts(model,sbmlModel,i)</a>
+0758 <span class="comment">%This function provides reactants and products for particular reaction. The</span>
+0759 <span class="comment">%function was 'borrowed' from writeSBML in COBRA toolbox, lines 663-679</span>
+0760 
+0761 met_idx = find(model.S(:, i));
+0762 tmp_Rxn.product=[];
+0763 tmp_Rxn.reactant=[];
+0764 <span class="keyword">for</span> j_met=1:size(met_idx,1)
+0765     tmp_idx = met_idx(j_met,1);
+0766     sbml_tmp_species_ref.species = sbmlModel.species(tmp_idx).id;
+0767     met_stoich = model.S(tmp_idx, i);
+0768     sbml_tmp_species_ref.stoichiometry = abs(met_stoich);
+0769     sbml_tmp_species_ref.isSetStoichiometry=1;
+0770     sbml_tmp_species_ref.constant=1;
+0771     <span class="keyword">if</span> (met_stoich &gt; 0)
+0772         tmp_Rxn.product = [ tmp_Rxn.product, sbml_tmp_species_ref ];
+0773     <span class="keyword">else</span>
+0774         tmp_Rxn.reactant = [ tmp_Rxn.reactant, sbml_tmp_species_ref];
+0775     <span class="keyword">end</span>
+0776 <span class="keyword">end</span>
+0777 <span class="keyword">end</span>
+0778 
+0779 <a name="_sub4" href="#_subfunctions" class="code">function vecT = columnVector(vec)</a>
+0780 <span class="comment">% Code below taken from COBRA Toolbox under GNU General Public License v3.0</span>
+0781 <span class="comment">% license file in readme/GPL.MD.</span>
+0782 <span class="comment">%</span>
+0783 <span class="comment">% Converts a vector to a column vector</span>
+0784 <span class="comment">%</span>
+0785 <span class="comment">% USAGE:</span>
+0786 <span class="comment">%</span>
+0787 <span class="comment">%   vecT = columnVector(vec)</span>
 0788 <span class="comment">%</span>
-0789 <span class="comment">% OUTPUT:</span>
-0790 <span class="comment">%   vecT:    a column vector</span>
-0791 
-0792 [n, m] = size(vec);
-0793 
-0794 <span class="keyword">if</span> n &lt; m
-0795     vecT = vec';
-0796 <span class="keyword">else</span>
-0797     vecT = vec;
-0798 <span class="keyword">end</span>
-0799 <span class="keyword">end</span></pre></div>
+0789 <span class="comment">% INPUT:</span>
+0790 <span class="comment">%   vec:     a vector</span>
+0791 <span class="comment">%</span>
+0792 <span class="comment">% OUTPUT:</span>
+0793 <span class="comment">%   vecT:    a column vector</span>
+0794 
+0795 [n, m] = size(vec);
+0796 
+0797 <span class="keyword">if</span> n &lt; m
+0798     vecT = vec';
+0799 <span class="keyword">else</span>
+0800     vecT = vec;
+0801 <span class="keyword">end</span>
+0802 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

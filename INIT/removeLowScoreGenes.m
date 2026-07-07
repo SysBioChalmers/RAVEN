@@ -109,12 +109,19 @@ end
 
 % regenerate "genes" and "rxnGeneMat" model fields
 [genes,rxnGeneMat] = getGenesFromGrRules(newModel.grRules);
-newModel.genes = genes;
-newModel.rxnGeneMat = rxnGeneMat;
 
-% update other gene-related fields
-remInd = ~ismember(model.genes,newModel.genes);
+% determine which of the original genes were removed
+remInd = ~ismember(model.genes,genes);
 remGenes = model.genes(remInd);
+
+% Keep the retained genes in their original order rather than the sorted
+% order returned by getGenesFromGrRules. Gene removal never introduces new
+% genes, so the remaining genes are model.genes(~remInd). Preserving this
+% order ensures the gene-associated fields trimmed below (geneShortNames,
+% proteins, etc.), which are indexed by remInd, stay aligned with genes.
+newModel.genes = model.genes(~remInd);
+[~,reorderInd] = ismember(newModel.genes,genes);
+newModel.rxnGeneMat = rxnGeneMat(:,reorderInd);
 
 if isfield(newModel,'geneShortNames')
     newModel.geneShortNames(remInd) = [];

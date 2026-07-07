@@ -564,11 +564,14 @@ if modelHasSubsystems
     model.subSystems(isChar)  = cellfun(@(s){s}, model.subSystems(isChar),  'UniformOutput', false);
     model.subSystems(cellfun(@isempty, model.subSystems)) = {{}};
 
-    % If some entries contain string scalars by mistake, coerce them:
-    model.subSystems = cellfun(@(c) cellfun(@char, c, 'UniformOutput', false), model.subSystems, 'UniformOutput', false);
+    % If some entries contain string scalars by mistake, coerce them. Also
+    % force each entry to a column cell array, so that reactions with
+    % different numbers of subsystems can be concatenated below (otherwise
+    % mixing e.g. 1x1 and 1x2 entries breaks vertcat):
+    model.subSystems = cellfun(@(c) reshape(cellfun(@char, c, 'UniformOutput', false), [], 1), model.subSystems, 'UniformOutput', false);
 
     % === 2) Flatten once: names and their reaction indices (vectorized) ===
-    flatNames = vertcat(model.subSystems{:});                    % 1×M cellstr of all subsystem labels
+    flatNames = vertcat(model.subSystems{:});                    % Mx1 cellstr of all subsystem labels
     if isempty(flatNames)
         % Nothing to do: no subsystems present
         return

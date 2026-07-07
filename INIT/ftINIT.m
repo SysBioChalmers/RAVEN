@@ -233,6 +233,13 @@ for initStep = 1:length(INITSteps)
         if ~isfield(params, 'TimeLimit')
             params.TimeLimit = 5000;
         end
+
+        %Default to single-threaded Gurobi MILP solving. Multi-threaded Gurobi
+        %can non-deterministically report the MILP as infeasible (issue #607).
+        %Override by setting 'Threads' in the step's MILPParams (0 = all cores).
+        if ~isfield(params, 'Threads')
+            params.Threads = 1;
+        end
         
         if ~first 
             %There is sometimes a problem with that the objective function becomes close to zero,
