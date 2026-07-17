@@ -312,7 +312,11 @@ if ~isempty(metData)
     %    vnrn <= (1-vnrbm)*100 (if bool is one, vnrn is zero): vnrn + 100*vnrbm + vnrvm2 == 0, -100 <= vnrvm2 <= inf (metRows3)
     % We then also say that vnrp + vnrn >= 0.1*Yi, -0.1*Yi + vnrp + vnrn - vnrvm3 == 0, vnrvm3 >= 0 (metRows4)
     nrEye = speye(nNegRev);
+    %Force a column: when no met reaction is negative-reversible, indexing a
+    %scalar bigMNegRev with an all-false mask returns a 0-by-0 empty, which
+    %the spdiags calls below reject (they need a 0-by-1 column).
     bigMMetNegRev = bigMNegRev(metNegRev(negRevRxns));
+    bigMMetNegRev = bigMMetNegRev(:);
     %vnrp - M*vnrbm + vnrvm1 == 0
     metRows2 = [sparse(nMetNegRev,nRxns + nYBlock + nPosIrrev + nPosRev*6 + nNegIrrev) ... %zeros up to vnrp
                 nrEye(metNegRev(negRevRxns),:) ... %vnrp

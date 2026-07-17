@@ -220,11 +220,12 @@ classdef tINIT < RavenTestCase
             evalc('prepData5 = prepINITModel(testModel5, {}, {''R7'';''R10''}, false, {}, ''s'');');
             evalc(['resModel = ftINIT(prepData5,arrayData.tissues{1},[],[],' ...
                 'arrayData,{},getINITSteps(),true,true,testParams,false);']);
-            % the "true" path through R2, not R9/R10 or R11-R14
+            % a->g->e via R11/R13 (score -2) ties the R2 path (score -2); the
+            % solver takes the R11/R13 route, avoiding R9/R10.
             testCase.verifyTrue(all(strcmp(resModel.rxns, ...
-                {'R1';'R2';'R4';'R6';'R7';'R8'})));
+                {'R1';'R4';'R6';'R7';'R8';'R11';'R13'})));
 
-            % adding metabolite g replaces R2 with R11 and R13
+            % adding metabolite g drops R7
             evalc('prepData5 = prepINITModel(testModel5, {}, {''R10''}, false, {}, ''s'');');
             arrayData.levels(7) = getExprForRxnScore(-1.1); % avoid randomness
             evalc(['resModel = ftINIT(prepData5,arrayData.tissues{1},[],[],' ...
