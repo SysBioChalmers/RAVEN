@@ -1,4 +1,4 @@
-function [outModel, addedRxns]=ftINITFillGapsForAllTasks(model,refModel,inputFile,printOutput,rxnScores,taskStructure,params,verbose)
+function [outModel, addedRxns, failedTasks]=ftINITFillGapsForAllTasks(model,refModel,inputFile,printOutput,rxnScores,taskStructure,params,verbose)
 % ftINITFillGapsForAllTasks
 %   Fills gaps in a model by including reactions from a reference model,
 %   so that the resulting model can perform all the tasks in a task list.
@@ -28,6 +28,11 @@ function [outModel, addedRxns]=ftINITFillGapsForAllTasks(model,refModel,inputFil
 %                   for each task (N). An element is true if the corresponding
 %                   reaction is added in the corresponding task.
 %                   Failed tasks and SHOULD FAIL tasks are ignored
+%   failedTasks     Nx1 logical, true for each task that could not be
+%                   gap-filled, either because no feasible solution exists
+%                   using the reference model or because the attempt threw.
+%                   Such tasks add no reactions, so they are otherwise
+%                   indistinguishable from tasks that already worked
 %
 %   This function fills gaps in a model by using a reference model, so
 %   that the resulting model can perform a list of metabolic tasks. The
@@ -74,6 +79,7 @@ end
 
 tModel=model;
 addedRxns=false(numel(refModel.rxns),numel(taskStructure));
+failedTasks=false(numel(taskStructure),1);
 supressWarnings=false;
 nAdded=0;
 
@@ -308,14 +314,25 @@ for i=1:numel(taskStructure)
             failed=false;
             try
                 [newRxns, newModel, exitFlag]=ftINITFillGaps(tModel,model,tRefModel,false,supressWarnings,tRxnScores,params,verbose);
-                if exitFlag==-2
+                if exitFlag==-1
+                    %No set of reactions from the reference model makes the
+                    %task feasible. Without this branch the task falls
+                    %through and reports "Added 0 reaction(s)", which is the
+                    %same thing an already-feasible task reports.
+                    EM=['"[' taskStructure(i).id '] ' taskStructure(i).description '" could not be gap-filled: no feasible solution exists using the reference model\n'];
+                    warning('RAVEN:warning', '%s', EM);
+                    failed=true;
+                elseif exitFlag==-2
                     EM=['"[' taskStructure(i).id '] ' taskStructure(i).description '" was aborted before reaching optimality. Consider increasing params.maxTime\n'];
                     warning('RAVEN:warning', '%s', EM);
                 end
             catch e
-                EM=['"[' taskStructure(i).id '] ' taskStructure(i).description '" could not be performed for any set of reactions\n'];
+                EM=['"[' taskStructure(i).id '] ' taskStructure(i).description '" could not be performed for any set of reactions: ' e.message '\n'];
                 warning('RAVEN:warning', '%s', EM);
                 failed=true;
+            end
+            if failed
+                failedTasks(i)=true;
             end
             if failed==false
                 if ~isempty(newRxns)

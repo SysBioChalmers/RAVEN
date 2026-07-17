@@ -229,6 +229,7 @@ for initStep = 1:length(INITSteps)
     first = true;
     success = false;
     fullMipRes = [];
+    lastError = [];
     for rn = 1:length(stp.MILPParams)
         params = stp.MILPParams{rn};
         if ~isfield(params, 'MIPGap')
@@ -275,13 +276,21 @@ for initStep = 1:length(INITSteps)
         catch e
             mipGap = Inf;
             lastObjVal = Inf; %we need to set something here, Inf leads to that this doesn't come into play
+            lastError = e; %kept so a throw is not reported as a time-limit miss
         end
         
         success = mipGap <= params.MIPGap;
     end
     
     if ~success
-        error('RAVEN:badInput', '%s', ['Failed to find good enough solution within the time frame. MIPGap: ' num2str(mipGap)]);
+        if ~isempty(lastError)
+            %The MILP threw rather than returning a poor gap; reporting this
+            %as a time-limit miss sends users off to raise params.TimeLimit
+            %for what is often a solver or input problem.
+            error('RAVEN:badInput', '%s', ['Failed to find good enough solution within the time frame. The last MILP attempt failed with: ' lastError.message]);
+        else
+            error('RAVEN:badInput', '%s', ['Failed to find good enough solution within the time frame. MIPGap: ' num2str(mipGap)]);
+        end
     end
     
     %save the reactions turned on and their fluxes for the next step
