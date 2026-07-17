@@ -45,6 +45,54 @@ classdef tAssignCompartments < RavenTestCase
             testCase.verifyEqual(eFlag, -1);                  % growth floor unreachable
         end
 
+        function certificationReportsRealGrowth(testCase)
+            % A certified placement reports certified=true and the achieved
+            % growth; an unreachable floor reports the real (short) growth
+            % rather than hiding it behind an optimal-MILP status.
+            testCase.assumeMILPSolver();
+            model = tAssignCompartments.toy();
+            GSS = tAssignCompartments.gss();
+            evalc(['[~, ~, ~, ok, rep] = assignCompartments(model, GSS, {''r1''}, ' ...
+                   '''defaultCompartment'', ''c'', ''transportable'', {}, ''verbose'', false);']);
+            testCase.verifyEqual(ok, 1);
+            testCase.verifyTrue(rep.certified);
+            testCase.verifyEqual(rep.status, 'certified');
+            testCase.verifyGreaterThan(rep.growths.primary, 1e-6);
+
+            evalc(['[~, ~, ~, bad, badRep] = assignCompartments(model, GSS, {''r1''}, ' ...
+                   '''defaultCompartment'', ''c'', ''minGrowth'', 1e6, ''verbose'', false);']);
+            testCase.verifyEqual(bad, -1);
+            testCase.verifyFalse(badRep.certified);
+            testCase.verifyEqual(badRep.status, 'uncertified');
+            % the real growth is small and reported, not concealed
+            testCase.verifyGreaterThan(badRep.growths.primary, 1e-6);
+            testCase.verifyLessThan(badRep.growths.primary, 1e6);
+        end
+
+        function confinementColocatesMovableReactions(testCase)
+            % Two movable reactions share a non-transportable intermediate X.
+            % Their scores pull them to different compartments, but X cannot
+            % be transported, so the confinement repair must co-locate them.
+            testCase.assumeMILPSolver();
+            model = tAssignCompartments.chainToy();
+            GSS = tAssignCompartments.chainGss();
+            % X_c non-transportable, S_c/P_c transportable (so the biomass
+            % path is not what forces co-location).
+            evalc(['[~, place, ~, ok] = assignCompartments(model, GSS, {''r1'';''r2''}, ' ...
+                   '''defaultCompartment'', ''c'', ''transportable'', {''S_c'';''P_c''}, ''verbose'', false);']);
+            testCase.verifyEqual(ok, 1);
+            c1 = place.compartment{strcmp(place.rxns,'r1')};
+            c2 = place.compartment{strcmp(place.rxns,'r2')};
+            testCase.verifyEqual(c1, c2);                     % co-located
+
+            % With X_c transportable too, nothing forces co-location and the
+            % opposing scores split the two reactions across compartments.
+            evalc(['[~, sp] = assignCompartments(model, GSS, {''r1'';''r2''}, ' ...
+                   '''defaultCompartment'', ''c'', ''transportable'', {''S_c'';''X_c'';''P_c''}, ''verbose'', false);']);
+            testCase.verifyNotEqual(sp.compartment{strcmp(sp.rxns,'r1')}, ...
+                                    sp.compartment{strcmp(sp.rxns,'r2')});
+        end
+
     end
 
     methods (Static)
@@ -59,6 +107,28 @@ classdef tAssignCompartments < RavenTestCase
         end
         function GSS = gss()
             GSS.genes={'g1'}; GSS.compartments={'c';'m'}; GSS.scores=[0.4 0.9];
+        end
+
+        function model = chainToy()
+            % EX_S -> S -> [r1] -> X -> [r2] -> P -> bio.  X is the shared,
+            % non-transportable intermediate of the two movable reactions.
+            model.id='chain'; model.comps={'c'}; model.compNames={'cytoplasm'};
+            model.mets={'S_c';'X_c';'P_c'}; model.metNames={'S';'X';'P'}; model.metComps=[1;1;1];
+            %              EX_S  r1    r2    bio
+            model.S=sparse([ 1   -1    0     0;    % S
+                             0    1   -1     0;    % X
+                             0    0    1    -1]);  % P
+            model.rxns={'EX_S';'r1';'r2';'bio'}; model.rxnNames=model.rxns;
+            model.lb=[-10;0;0;0]; model.ub=[1000;1000;1000;1000]; model.rev=[1;0;0;0];
+            model.c=[0;0;0;1]; model.b=zeros(3,1);
+            model.genes={'g1';'g2'}; model.grRules={'';'g1';'g2';''};
+            model.rxnGeneMat=sparse([0 0; 1 0; 0 1; 0 0]);
+        end
+        function GSS = chainGss()
+            % g1 prefers 'c' strongly, g2 prefers 'm'; co-located in 'c' wins
+            % on combined score (0.9+0.6 > 0.1+0.9).
+            GSS.genes={'g1';'g2'}; GSS.compartments={'c';'m'};
+            GSS.scores=[0.9 0.1; 0.6 0.9];
         end
     end
 end
