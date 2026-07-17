@@ -75,10 +75,9 @@ if ~isempty(genesToRemove)
                 for j = 1:numel(geneRxns)
                     index  = geneRxns(j);
                     grRule = reducedModel.grRules{index};
-                    ruleGenes = reducedModel.genes(logical(rxnGeneMat(index,:)));
                     if ~ismember(index,toCheck) && canCarryFlux(index) && ~isempty(grRule)
                         %Check if rxn can carry flux without this gene:
-                        canCarryFlux(index) = canRxnCarryFlux(ruleGenes,grRule,genes{i});
+                        canCarryFlux(index) = canRxnCarryFlux(grRule,genes{i});
                         %Adapt gene rule & gene matrix:
                         grRule = removeGeneFromRule(grRule,genes{i});
                         reducedModel.grRules{index} = grRule;
@@ -105,33 +104,74 @@ if standardizeRules
 end
 end
 
-function canIt = canRxnCarryFlux(ruleGenes,geneRule,geneToRemove)
-%This function converts a gene rule to a logical statement, and then
-%asseses if the rule is true (i.e. rxn can still carry flux) or not (cannot
-%carry flux).
-geneRule = [' ', geneRule, ' '];
-for i = 1:length(ruleGenes)
-    if strcmp(ruleGenes{i},geneToRemove)
-        geneRule = strrep(geneRule,[' ' ruleGenes{i} ' '],' false ');
-        geneRule = strrep(geneRule,['(' ruleGenes{i} ' '],'(false ');
-        geneRule = strrep(geneRule,[' ' ruleGenes{i} ')'],' false)');
-    else
-        geneRule = strrep(geneRule,[' ' ruleGenes{i} ' '],' true ');
-        geneRule = strrep(geneRule,['(' ruleGenes{i} ' '],'(true ');
-        geneRule = strrep(geneRule,[' ' ruleGenes{i} ')'],' true)');
-    end
+function canIt = canRxnCarryFlux(geneRule,geneToRemove)
+%Evaluate the rule with geneToRemove absent and every other gene present.
+%A complex (AND) needs all of its subunits, isozymes (OR) need only one.
+tree = parseGrRule(geneRule);
+if isempty(tree)
+    canIt = true;
+    return
 end
-geneRule = strtrim(geneRule);
-geneRule = strrep(geneRule,'and','&&');
-geneRule = strrep(geneRule,'or','||');
-canIt    = eval(geneRule);
+canIt = evalWithout(tree,geneToRemove);
+end
+
+function tf = evalWithout(node,geneToRemove)
+switch node.type
+    case 'gene'
+        tf = ~strcmp(node.id,geneToRemove);
+    case 'and'
+        tf = all(cellfun(@(c) evalWithout(c,geneToRemove),node.children));
+    case 'or'
+        tf = any(cellfun(@(c) evalWithout(c,geneToRemove),node.children));
+    otherwise
+        error('RAVEN:badGrRule',['Unexpected grRule node type: ' node.type]);
+end
 end
 
 function geneRule = removeGeneFromRule(geneRule,geneToRemove)
-%This function receives a standard gene rule and it returns it without the
-%chosen gene.
-geneSets = strsplit(geneRule,' or ');
-hasGene  = ~cellfun(@isempty,strfind(geneSets,geneToRemove));
-geneSets = geneSets(~hasGene);
-geneRule = strjoin(geneSets,' or ');
+%This function receives a gene rule and it returns it without the chosen
+%gene. A complex that loses a subunit is dropped whole; an isozyme is
+%dropped from its OR without disturbing the alternatives.
+tree = parseGrRule(geneRule);
+geneRule = grRuleToString(pruneGene(tree,geneToRemove));
+end
+
+function node = pruneGene(node,geneToRemove)
+%Remove geneToRemove from the tree, returning [] when nothing is left that
+%can catalyse the reaction.
+if isempty(node)
+    node = [];
+    return
+end
+switch node.type
+    case 'gene'
+        if strcmp(node.id,geneToRemove)
+            node = [];
+        end
+    case 'and'
+        %A complex missing any subunit cannot form at all.
+        for k = 1:numel(node.children)
+            if isempty(pruneGene(node.children{k},geneToRemove))
+                node = [];
+                return
+            end
+        end
+    case 'or'
+        kept = {};
+        for k = 1:numel(node.children)
+            child = pruneGene(node.children{k},geneToRemove);
+            if ~isempty(child)
+                kept{end+1} = child; %#ok<AGROW>
+            end
+        end
+        if isempty(kept)
+            node = [];
+        elseif isscalar(kept)
+            node = kept{1};
+        else
+            node.children = kept;
+        end
+    otherwise
+        error('RAVEN:badGrRule',['Unexpected grRule node type: ' node.type]);
+end
 end

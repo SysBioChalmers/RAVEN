@@ -25,14 +25,17 @@ function issues=findPotentialErrors(model)
 %
 % Notes
 % -----
-% Detection uses a parse-tree walk rather than substring search, so gene
-% IDs that contain substrings such as "and" or "or" do not cause false
-% positives or negatives.
+% Detection walks the parse tree from parseGrRule rather than searching the
+% raw string, so gene IDs that contain substrings such as "and" or "or" do
+% not cause false positives or negatives.
 %
-% A rule is non-DNF when the top-level operator is AND and one of its
-% operands contains OR, or equivalently when any OR subexpression appears
-% inside a bracket group that is joined to another group by AND.
+% A rule is non-DNF when an AND operator has an OR anywhere beneath it.
+% Bracketing alone never makes a rule non-DNF: "((G1 and G2) or G3)" and
+% "(G1 or G2) or (G3 and G4)" are both fine.
 % Use standardizeGrRules to attempt automatic repair.
+%
+% Rules that cannot be parsed at all are reported as issues too, with the
+% parser's message as the reason.
 %
 % Examples
 % --------
@@ -53,84 +56,31 @@ for i=1:numel(model.grRules)
     if isempty(rule)
         continue
     end
-    % Normalize operator keywords to single-character symbols so that gene
-    % IDs containing " and " or " or " as substrings are not misread.
-    ruleN=lower(rule);
-    ruleN=regexprep(ruleN,' and ',' & ');
-    ruleN=regexprep(ruleN,' or ',' | ');
 
-    % Rules with only one operator type are always DNF.
-    hasAnd=contains(ruleN,' & ');
-    hasOr =contains(ruleN,' | ');
-    if ~hasAnd || ~hasOr
+    try
+        isDnf=isDnfGrRule(rule);
+    catch ME
+        if ~strcmp(ME.identifier,'RAVEN:badGrRule')
+            rethrow(ME)
+        end
+        % A rule that cannot be parsed is itself worth reporting: it is
+        % certainly not usable by the isoenzyme/complex reasoning, and
+        % silently skipping it would hide the very thing this function
+        % exists to surface.
+        issues(end+1,1)=struct( ...
+            'index',  i, ...
+            'rxn',    model.rxns{i}, ...
+            'grRule', rule, ...
+            'reason', ['Cannot be parsed: ' ME.message]); %#ok<AGROW>
         continue
     end
 
-    % Split at top-level | (OR) to get each conjunction term.
-    terms=splitTopLevel(ruleN,'|');
-    nonDnf=false;
-    for j=1:numel(terms)
-        term=strtrim(terms{j});
-        % Strip a single pair of enclosing parens if present.
-        if ~isempty(term) && term(1)=='(' && matchClose(term,1)==numel(term)
-            term=term(2:end-1);
-        end
-        % If this AND-term still contains an OR operator the rule is non-DNF.
-        if contains(term,' | ')
-            nonDnf=true;
-            break
-        end
-    end
-
-    if nonDnf
+    if ~isDnf
         issues(end+1,1)=struct( ...
             'index',  i, ...
             'rxn',    model.rxns{i}, ...
             'grRule', rule, ...
             'reason', 'Non-DNF: OR operator nested inside AND context'); %#ok<AGROW>
-    end
-end
-end
-
-
-function parts=splitTopLevel(str,sep)
-% Split str on sep only at bracket depth zero.
-parts={};
-depth=0;
-start=1;
-n=numel(str);
-sn=numel(sep);
-k=1;
-while k<=n
-    c=str(k);
-    if c=='('
-        depth=depth+1;
-    elseif c==')'
-        depth=depth-1;
-    elseif depth==0 && k+sn-1<=n && strcmp(str(k:k+sn-1),sep)
-        parts{end+1}=str(start:k-1); %#ok<AGROW>
-        start=k+sn;
-        k=k+sn-1;
-    end
-    k=k+1;
-end
-parts{end+1}=str(start:end);
-end
-
-
-function pos=matchClose(str,openPos)
-% Return the position of the closing ")" that matches str(openPos).
-depth=0;
-pos=-1;
-for k=openPos:numel(str)
-    if str(k)=='('
-        depth=depth+1;
-    elseif str(k)==')'
-        depth=depth-1;
-        if depth==0
-            pos=k;
-            return
-        end
     end
 end
 end

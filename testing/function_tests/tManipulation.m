@@ -251,5 +251,106 @@ classdef tManipulation < RavenTestCase
             testCase.verifyNumElements(grRules, numel(testCase.model.rxns));
         end
 
+        function findPotentialErrorsFlagsOnlyNonDnf(testCase)
+            m = struct();
+            m.rxns = {'R1';'R2';'R3';'R4'};
+            m.grRules = {'((G1 and G2) or G3)'      % DNF, just bracketed
+                         '(G1 or G2) or (G3 and G4)' % DNF
+                         'G1 or G2'                  % DNF
+                         '(G1 or G2) and (G3 or G4)'};% genuinely non-DNF
+            issues = findPotentialErrors(m);
+            testCase.verifyEqual(vertcat(issues.index), 4);
+        end
+
+        function findPotentialErrorsReportsUnparseable(testCase)
+            m = struct();
+            m.rxns = {'R1'};
+            m.grRules = {'(G1 and G2'};
+            issues = findPotentialErrors(m);
+            testCase.verifyNumElements(issues, 1);
+            testCase.verifySubstring(issues(1).reason, 'Cannot be parsed');
+        end
+
+        function standardizeGrRulesRepairsBracketedDnf(testCase)
+            % A rule that is DNF but redundantly bracketed must be repaired,
+            % not skipped: standardizeGrRules leaves flagged rules alone, so a
+            % false positive from findPotentialErrors silently prevents repair.
+            m = struct();
+            m.rxns = {'R1'};
+            m.grRules = {'((G1 and G2) or G3)'};
+            m.genes = {'G1';'G2';'G3'};
+            m.rxnGeneMat = sparse([1 1 1]);
+            [grRules,~,indexes2check] = standardizeGrRules(m, true);
+            testCase.verifyEmpty(indexes2check);
+            testCase.verifyEqual(grRules{1}, '(G1 and G2) or G3');
+        end
+
+        function removeGenesMatchesWholeGeneIds(testCase)
+            % Gene "10" is a prefix of "100". Removing it must not take "100"
+            % with it, which an unanchored substring search would.
+            m = testCase.gprTestModel('10 or 100', {'10';'100'}, [1 1]);
+            r = removeGenes(m, {'10'});
+            testCase.verifyEqual(r.grRules{1}, '100');
+            testCase.verifyEqual(r.ub(1), 1000);
+        end
+
+        function removeGenesDropsWholeComplex(testCase)
+            % A complex missing a subunit cannot form; the other isozyme lives.
+            m = testCase.gprTestModel('(G1 and G2) or G3', {'G1';'G2';'G3'}, [1 1 1]);
+            r = removeGenes(m, {'G1'});
+            testCase.verifyEqual(r.grRules{1}, 'G3');
+        end
+
+        function removeGenesBlocksWhenNoEnzymeLeft(testCase)
+            m = testCase.gprTestModel('G1 and G2', {'G1';'G2'}, [1 1]);
+            r = removeGenes(m, {'G1'});
+            testCase.verifyEmpty(r.grRules{1});
+            testCase.verifyEqual(r.lb(1), 0);
+            testCase.verifyEqual(r.ub(1), 0);
+        end
+
+        function expandModelKeepsMandatorySubunit(testCase)
+            % "g1 and (g2 or g3)" is two isozymes, both needing g1. Stripping
+            % brackets and splitting on ' or ' loses g1 from the second.
+            m = testCase.gprTestModel('g1 and (g2 or g3)', {'g1';'g2';'g3'}, [1 1 1]);
+            e = expandModel(m);
+            testCase.verifyEqual(sort(e.grRules), {'g1 and g2';'g1 and g3'});
+        end
+
+        function expandModelDistributesBothSides(testCase)
+            % Two or:s, but four isozymes.
+            m = testCase.gprTestModel('(g1 or g2) and (g3 or g4)', ...
+                {'g1';'g2';'g3';'g4'}, [1 1 1 1]);
+            [e, rxnToCheck] = expandModel(m);
+            testCase.verifyEqual(sort(e.grRules), ...
+                {'g1 and g3';'g1 and g4';'g2 and g3';'g2 and g4'});
+            testCase.verifyEqual(rxnToCheck, {'R1'});
+        end
+
+        function expandModelLeavesDnfAlone(testCase)
+            % An OR of complexes expands without needing distributivity, so it
+            % must not be reported as needing a check.
+            m = testCase.gprTestModel('(g1 and g2) or (g3 and g4)', ...
+                {'g1';'g2';'g3';'g4'}, [1 1 1 1]);
+            [e, rxnToCheck] = expandModel(m);
+            testCase.verifyEqual(sort(e.grRules), {'g1 and g2';'g3 and g4'});
+            testCase.verifyEmpty(rxnToCheck);
+        end
+
+    end
+
+    methods (Access = private)
+        function m = gprTestModel(~, grRule, genes, rxnGeneRow)
+            % Smallest model that removeGenes/expandModel will operate on.
+            m = struct();
+            m.rxns = {'R1'}; m.rxnNames = {'R1'};
+            m.mets = {'A';'B'}; m.metNames = {'A';'B'}; m.metComps = [1;1];
+            m.comps = {'c'}; m.compNames = {'c'};
+            m.S = sparse([-1;1]); m.lb = 0; m.ub = 1000; m.rev = 0; m.c = 0;
+            m.b = [0;0];
+            m.genes = genes;
+            m.grRules = {grRule};
+            m.rxnGeneMat = sparse(rxnGeneRow);
+        end
     end
 end
