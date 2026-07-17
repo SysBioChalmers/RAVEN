@@ -190,8 +190,18 @@ nRxns = numel(model.rxns);
 if isempty(goodRxns)
     [minF, maxF] = getAllowedBounds(model, 'runParallel', runParallel);
     goodRxns = true(nRxns, 1);
-    % Reactions that reach ±1000 are involved in loops
-    goodRxns(maxF > 999 | minF < -999) = false;
+    % Reactions that reach the model's own highest bound are involved in
+    % loops. The threshold has to be derived from the model, as the bound
+    % replacement below does: hardcoding ±1000 matches nothing on a model
+    % whose bounds are on another scale (ecModels, 100-scale bounds), so no
+    % reaction would be excluded and loops would be sampled while the
+    % function reports success.
+    loopUb = max(model.ub);
+    loopLb = min(model.lb);
+    goodRxns(maxF == Inf | maxF > loopUb*0.999) = false;
+    if loopLb < 0
+        goodRxns(minF == -Inf | minF < loopLb*0.999) = false;
+    end
     % Reactions that cannot carry any non-zero flux
     goodRxns(~(maxF > 0 | minF < 0)) = false;
     % In ecModels do not sample from usage_prot reactions

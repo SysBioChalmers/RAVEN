@@ -136,5 +136,43 @@ classdef tSampling < RavenTestCase
                 'RAVEN:badInput');
         end
 
+        function randomSamplingLoopDetectionUsesModelBounds(testCase)
+            % Loop detection must take its threshold from the model. R2/R3
+            % form an a -> b -> a loop that runs up to this model's 100 cap,
+            % while the linear path R1 -> R4 is held to 10. A threshold that
+            % assumes ±1000 bounds matches neither, leaving the loop
+            % reactions to be sampled as if they were loop-free.
+            m = tSampling.loopModel();
+            evalc(['[~, goodRxns] = randomSampling(m, 2, ''method'', ' ...
+                '''randomObjective'', ''seed'', 1);']);
+            testCase.verifyEqual(sort(goodRxns(:))', [1 4]);
+        end
+
+    end
+
+    methods (Static, Access = private)
+
+        function m = loopModel()
+            m = struct();
+            m.id       = 'loop';
+            m.rxns     = {'R1';'R2';'R3';'R4'};
+            m.rxnNames = m.rxns;
+            m.mets     = {'a';'b'};
+            m.metNames = {'a';'b'};
+            m.metComps = [1;1];
+            m.comps    = {'c'};
+            m.compNames= {'cytosol'};
+            %             R1  R2  R3  R4
+            m.S = sparse([ 1  -1   1   0;    % a
+                           0   1  -1  -1]);  % b
+            m.lb  = [0;0;0;0];
+            m.ub  = [10;100;100;100];
+            m.rev = [0;0;0;0];
+            m.c   = [0;0;0;1];
+            m.b   = zeros(2,1);
+            m.genes = {}; m.grRules = {'';'';'';''}; m.rxnGeneMat = sparse(4,0);
+            m.metFormulas = {'C';'C'};
+        end
+
     end
 end
