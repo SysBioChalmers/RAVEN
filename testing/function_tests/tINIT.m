@@ -259,6 +259,32 @@ classdef tINIT < RavenTestCase
             testCase.verifyTrue(all(contains(mres2.rxns, expResult)));
         end
 
+        function ftINITSeriesVariantsRun(testCase)
+            % Only '1+1' and 'full' were ever exercised, so the 2-step series
+            % from the paper -- and the allowExcretion constraint they lean on
+            % -- had no coverage at all.
+            testCase.assumeMILPSolver();
+            testModel  = getTstModel();
+            testParams = struct();
+            evalc('prepData = prepINITModel(testModel, {}, {}, false, {}, ''s'');');
+            arrayData.genes     = testModel.genes;
+            arrayData.tissues   = {'a'};
+            arrayData.levels    = getExprForRxnScore(getTstModelRxnScores());
+            arrayData.threshold = 1;
+
+            steps = getINITSteps([], '2+1');
+            evalc(['resModel = ftINIT(prepData,arrayData.tissues{1},[],[],' ...
+                'arrayData,[],steps,true,true,testParams,false);']);
+            % Same answer as the '1+1' series in ftINITPipelineRuns.
+            testCase.verifyEqual(resModel.rxns, {'R1';'R4';'R6';'R8';'R9';'R10'});
+
+            steps = getINITSteps([], '2+0');
+            evalc(['resModel = ftINIT(prepData,arrayData.tissues{1},[],[],' ...
+                'arrayData,[],steps,true,true,testParams,false);']);
+            % '2+0' skips step 3, so the GPR-less transport R2 survives.
+            testCase.verifyEqual(resModel.rxns, {'R1';'R2';'R4';'R6';'R8';'R9';'R10'});
+        end
+
     end
 end
 
