@@ -79,6 +79,67 @@ classdef tQueries < RavenTestCase
             testCase.verifyLessThanOrEqual(bs.balanceStatus(end), -1);
         end
 
+        function getElementalBalanceReportsChargeBalance(testCase)
+            % A charge-imbalanced reaction is reported as such, while the
+            % elemental verdict is left alone.
+            m = testCase.model;
+            m.mets      = {'a';'b'};
+            m.metNames  = {'a';'b'};
+            m.metComps  = [1;1];
+            m.metFormulas = {'H';'H'};
+            m.metCharges  = [0;1];
+            m.comps     = {'c'};
+            m.compNames = {'cytosol'};
+            m.rxns      = {'R1'};
+            m.rxnNames  = {'R1'};
+            m.S         = sparse([-1;1]);
+            m.lb = 0; m.ub = 1000; m.rev = 0; m.c = 0; m.b = zeros(2,1);
+            m.grRules = {''}; m.genes = {}; m.rxnGeneMat = sparse(1,0);
+
+            bs = getElementalBalance(m);
+            testCase.verifyEqual(bs.chargeStatus(1), 0);
+            testCase.verifyEqual(bs.chargeResidual(1), 1, 'AbsTol', 1e-9);
+            % a -> b is elementally balanced (H on both sides)
+            testCase.verifyEqual(bs.balanceStatus(1), 1);
+
+            % Balancing the charge flips chargeStatus, not balanceStatus
+            m.metCharges = [1;1];
+            bs = getElementalBalance(m);
+            testCase.verifyEqual(bs.chargeStatus(1), 1);
+            testCase.verifyEqual(bs.chargeResidual(1), 0, 'AbsTol', 1e-9);
+        end
+
+        function getElementalBalanceChargeUnknownIsNotZero(testCase)
+            % An unset charge on a participating metabolite makes the charge
+            % balance unknown, and must not be reported as balanced. An unset
+            % charge on a metabolite that does not participate must not leak
+            % into the reaction's residual.
+            m = testCase.model;
+            m.mets      = {'a';'b';'spectator'};
+            m.metNames  = {'a';'b';'spectator'};
+            m.metComps  = [1;1;1];
+            m.metFormulas = {'H';'H';'H'};
+            m.metCharges  = [1;1;NaN];
+            m.comps     = {'c'};
+            m.compNames = {'cytosol'};
+            m.rxns      = {'R1'};
+            m.rxnNames  = {'R1'};
+            m.S         = sparse([-1;1;0]);
+            m.lb = 0; m.ub = 1000; m.rev = 0; m.c = 0; m.b = zeros(3,1);
+            m.grRules = {''}; m.genes = {}; m.rxnGeneMat = sparse(1,0);
+
+            % The NaN belongs to a metabolite outside the reaction
+            bs = getElementalBalance(m);
+            testCase.verifyEqual(bs.chargeStatus(1), 1);
+            testCase.verifyEqual(bs.chargeResidual(1), 0, 'AbsTol', 1e-9);
+
+            % Now the NaN is on a participant: unknown, not balanced
+            m.metCharges = [1;NaN;0];
+            bs = getElementalBalance(m);
+            testCase.verifyEqual(bs.chargeStatus(1), -1);
+            testCase.verifyTrue(isnan(bs.chargeResidual(1)));
+        end
+
         function getExchangeRxnsConsistent(testCase)
             [exch, idx] = getExchangeRxns(testCase.model);
             testCase.verifyClass(exch, 'cell');

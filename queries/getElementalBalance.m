@@ -28,7 +28,14 @@ function balanceStructure=getElementalBalance(model,varargin)
 %
 %     - balanceStatus : 1 if the reaction is balanced, 0 if it is
 %       unbalanced, -1 if it could not be balanced due to missing
-%       information, -2 if it could not be balanced due to an error
+%       information, -2 if it could not be balanced due to an error.
+%       Elemental only; charge is reported separately below
+%     - chargeStatus : 1 if the reaction is charge balanced, 0 if it is
+%       not, -1 if any participating metabolite has no charge (or the
+%       model has no metCharges field), in which case the charge balance
+%       is unknown rather than zero
+%     - chargeResidual : the sum of charges over the reaction, NaN where
+%       chargeStatus is -1
 %     - elements : struct with fields abbrevs (cell array with
 %       abbreviations for all used elements) and names (cell array with
 %       the names for all used elements)
@@ -115,6 +122,33 @@ balanceStructure.balanceStatus(emptyRxns) = min(-1, balanceStructure.balanceStat
 %The remaining ones are all balanced
 balanceStructure.balanceStatus(isnan(balanceStructure.balanceStatus))=1;
 
+%Charge balance. This is reported separately from balanceStatus, which
+%callers such as removeBadRxns and printModelStats read as a purely
+%elemental verdict.
+balanceStructure.chargeStatus=zeros(numel(model.rxns),1);
+balanceStructure.chargeResidual=nan(numel(model.rxns),1);
+if ~isfield(model,'metCharges')
+    balanceStructure.chargeStatus(:)=-1;
+else
+    for j=1:numel(model.rxns)
+        %Only the participating metabolites may be touched: S is sparse and
+        %0*NaN is NaN, so a single unset charge anywhere in the model would
+        %otherwise poison every reaction. Summing with 'omitnan' instead
+        %would be worse, silently reporting an unknown residual as 0.
+        idx=find(model.S(:,j));
+        if isempty(idx) || any(isnan(model.metCharges(idx)))
+            balanceStructure.chargeStatus(j)=-1;
+        else
+            balanceStructure.chargeResidual(j)=sum(full(model.S(idx,j)).*model.metCharges(idx));
+            if abs(balanceStructure.chargeResidual(j))>10^-8 %Roundoff error
+                balanceStructure.chargeStatus(j)=0;
+            else
+                balanceStructure.chargeStatus(j)=1;
+            end
+        end
+    end
+end
+
 %Print warnings
 toPrint=[];
 if printUnbalanced==true
@@ -150,6 +184,8 @@ if ~isempty(rxns)
     rxns = getIndexes(model,rxns,'rxns');
     [~,i] = sort(rxns);
     balanceStructure.balanceStatus(i) = balanceStructure.balanceStatus;
+    balanceStructure.chargeStatus(i) = balanceStructure.chargeStatus;
+    balanceStructure.chargeResidual(i) = balanceStructure.chargeResidual;
     balanceStructure.leftComp(i,:) = balanceStructure.leftComp;
     balanceStructure.rightComp(i,:) = balanceStructure.rightComp;
 end

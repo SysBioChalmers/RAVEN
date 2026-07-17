@@ -33,6 +33,26 @@ classdef tBiomass < RavenTestCase
                 'protein', 0.9), ?MException);
         end
 
+        function scaleBiomassPseudoreactionRebalancesProton(testCase)
+            % Rescaling the substrates rebalances H+ so the pseudoreaction
+            % stays charge neutral.
+            [m, cfg] = tBiomass.protonToyModel();
+            out = scaleBiomassPseudoreaction(m, cfg, 'protein', 0.5);
+            % x_c: -0.5 * charge -2 = +1, so H+ must come in at -1
+            testCase.verifyEqual(full(out.S(strcmp(out.mets,'x_c'), 1)), -0.5, 'AbsTol', 1e-9);
+            testCase.verifyEqual(full(out.S(strcmp(out.mets,'h_c'), 1)), -1, 'AbsTol', 1e-9);
+        end
+
+        function scaleBiomassPseudoreactionRefusesUnknownCharge(testCase)
+            % An unset charge on a participating metabolite leaves the charge
+            % balance unknown. Treating it as neutral would silently write the
+            % wrong proton coefficient, so the rescale must refuse instead.
+            [m, cfg] = tBiomass.protonToyModel();
+            m.metCharges(strcmp(m.mets,'x_c')) = NaN;
+            testCase.verifyError(@() scaleBiomassPseudoreaction(m, cfg, 'protein', 0.5), ...
+                'scaleBiomassPseudoreaction:unknownCharge');
+        end
+
         function fitParametersRunsWhenQuadprogAvailable(testCase)
             testCase.assumeDependency(exist('quadprog','file')==2, ...
                 'Optimization Toolbox (quadprog)');
@@ -44,6 +64,33 @@ classdef tBiomass < RavenTestCase
             testCase.verifyNotEmpty(p);
         end
 
+    end
+
+    methods (Static, Access = private)
+        function [m, cfg] = protonToyModel()
+            % One pseudoreaction: x_c -> protein, with h_c available to carry
+            % the charge balance.
+            m = struct();
+            m.id        = 'toy';
+            m.rxns      = {'R1'};
+            m.rxnNames  = {'protein pseudoreaction'};
+            m.mets      = {'x_c';'h_c';'prot_c'};
+            m.metNames  = {'x';'h';'protein'};
+            m.metComps  = [1;1;1];
+            m.metCharges= [-2;1;0];
+            m.comps     = {'c'};
+            m.compNames = {'cytosol'};
+            m.S         = sparse([-1;0;1]);
+            m.lb = 0; m.ub = 1000; m.rev = 0; m.c = 1; m.b = zeros(3,1);
+            m.grRules = {''}; m.genes = {}; m.rxnGeneMat = sparse(1,0);
+
+            cfg = struct();
+            cfg.biomass_rxn = 'R1';
+            cfg.proton_met  = 'h_c';
+            cfg.components  = {struct('name','protein', ...
+                'pseudoreaction_name','protein pseudoreaction', ...
+                'mass_strategy','mw')};
+        end
     end
 
     methods (Access = private)

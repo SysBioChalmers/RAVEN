@@ -88,8 +88,24 @@ if isfield(cond, 'cofactor_pseudoreaction')
     if isfield(cp, 'charge_balance_met')
         balanceIdx = find(strcmp(model.mets, cp.charge_balance_met));
         model.S(balanceIdx, cofacIdx) = 0;
+        % Only the participating metabolites may be summed: S is sparse and
+        % 0*NaN is NaN, while 'omitnan' would treat an unset charge as
+        % neutral and silently write the wrong balancing coefficient.
+        metIdx = find(model.S(:, cofacIdx));
+        if ~isfield(model, 'metCharges')
+            error('applyCondition:noCharges', ...
+                ['Cannot charge balance %s: the model has no metCharges ' ...
+                 'field.'], cp.rxn_id);
+        end
+        unknown = metIdx(isnan(model.metCharges(metIdx)));
+        if ~isempty(unknown)
+            error('applyCondition:unknownCharge', ...
+                ['Cannot charge balance %s: the following metabolites have ' ...
+                 'no charge, so the charge balance is unknown rather than ' ...
+                 'zero:\n\t%s'], cp.rxn_id, strjoin(model.mets(unknown), ', '));
+        end
         model.S(balanceIdx, cofacIdx) = ...
-            -sum(model.S(:, cofacIdx) .* model.metCharges, 'omitnan');
+            -sum(full(model.S(metIdx, cofacIdx)) .* model.metCharges(metIdx));
     end
 end
 
