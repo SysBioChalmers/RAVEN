@@ -105,8 +105,15 @@ end
 
 % Merge to a single compartment so every metabolite has one identity;
 % placement and transports are then expressed relative to defaultCompartment.
+% After merging, treat that single compartment AS the default: pinned
+% reactions are considered to sit there, and placed reactions and transports
+% are expressed relative to it.
 if numel(model.comps) > 1
     model = mergeCompartments(model, true, true);
+    model.comps = {defaultCompartment};
+    if isfield(model,'compNames'); model.compNames = {defaultCompartment}; end
+    if isfield(model,'compOutside'); model.compOutside = {''}; end
+    model.metComps = ones(numel(model.mets),1);
 end
 biomassIdx = find(model.c ~= 0, 1);
 
@@ -292,10 +299,24 @@ for gi=1:numel(groups)
 end
 A_colo=sparse(coR,coC,coV,row,nVar); b_colo=zeros(row,1);
 
-% objective: max sum score*y - multiPen*sum y
+% objective: max sum score*y - multiPen*sum y, with a small score-consistent
+% tie-break on the reaction placement. The gene reward on y decides which
+% compartment each gene occupies, but leaves the reaction binaries x
+% underdetermined (any placement consistent with the gene assignment is
+% optimal); without the tie-break the solver picks one arbitrarily. The tiny
+% reward on x pulls each reaction into the compartment its own genes score
+% highest, without being large enough to change the gene assignment.
+xTie = 1e-3;
 c = zeros(nVar,1);
 for gi=1:nGene
     for ci=1:nC; c(yCol(gi,ci)) = score(gi,ci) - multiPen; end
+end
+for k=1:nMov
+    gOn = find(model.rxnGeneMat(movIdx(k),:)~=0);
+    for g=gOn
+        gi=find(geneIdx==g,1); if isempty(gi); continue; end
+        for ci=1:nC; c(xCol(k,ci)) = c(xCol(k,ci)) + xTie*score(gi,ci); end
+    end
 end
 
 prob.A = [A_place; A_couple; A_has; A_gene1; A_force; A_colo];
