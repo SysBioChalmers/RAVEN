@@ -258,8 +258,15 @@ if ~any(strcmp({rxnsCoeffs,rxnsInfo},'none'))
         rxnsToAdd.stoichCoeffs{i}=cell2mat(rxnsToAdd.stoichCoeffs{i});
         %Check if the reaction not already exists, by stoichiometry of its
         %products and reactants
-        modelCoeffs         = transpose(newModel.S(getIndexes(newModel,rxnsToAdd.mets{i},'mets'),:));
+        metIdx              = getIndexes(newModel,rxnsToAdd.mets{i},'mets');
+        modelCoeffs         = transpose(newModel.S(metIdx,:));
         modelCoeffs2        = find(~all(modelCoeffs==0,2));
+        % Only reactions built from exactly these metabolites can be
+        % duplicates. Any model reaction that also involves other
+        % metabolites projects onto the same row of coefficients, but is a
+        % different reaction and must not be overwritten.
+        sameSupport         = full(sum(newModel.S(:,modelCoeffs2)~=0,1))' == numel(metIdx);
+        modelCoeffs2        = modelCoeffs2(sameSupport);
         modelCoeffs         = modelCoeffs(modelCoeffs2,:);
         [~, duplicateRxn]   = intersect(modelCoeffs,rxnsToAdd.stoichCoeffs{i},'rows');
         if ~isempty(duplicateRxn)
