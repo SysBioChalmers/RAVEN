@@ -30,8 +30,8 @@ function model=getKEGGModelForOrganism(organismID,varargin)
 %     and whether the HMMs were trained on pro- or eukaryotic sequences. The
 %     directory name matches the published HMM library it is paired with. The
 %     prebuilt concatenated KO HMM library (dataDir.hmm) is downloaded here
-%     from the corresponding RAVEN release if not already present. May also
-%     This parameter should ALWAYS be provided.
+%     from the corresponding raven-data release if not already present. This
+%     parameter should ALWAYS be provided.
 % outDir : char
 %     directory to save the results from the quering of the hidden Markov
 %     models. The output is specific for the input sequences and the
@@ -217,7 +217,6 @@ if ~isempty(dataDir)
         fprintf('Extracting the HMM library file... ');
         gunzip([libraryFile '.gz']);
         fprintf('COMPLETE\n');
-        useConcatLib=false;
     else
         fprintf('Downloading the HMM library file... ');
         try
@@ -231,7 +230,6 @@ if ~isempty(dataDir)
         fprintf('Extracting the HMM library file... ');
         gunzip([libraryFile '.gz']);
         fprintf('COMPLETE\n');
-        useConcatLib=true;
     end
     %Check that the HMM library is available
     if ~isfile(libraryFile)
@@ -447,7 +445,6 @@ end
 fclose(fid);
 delete(tblFile);
 fprintf('COMPLETE\n');
-end
 
 fprintf('Removing gene, KEGG Orthology associations below minScoreRatioKO, minScoreRatioG... ');
 koGeneMat=koGeneMat(:,1:geneCounter);
@@ -556,18 +553,4 @@ end
 %Remove the temp fasta file
 delete(fastaFile)
 fprintf('COMPLETE\n\n*** Model reconstruction complete ***\n');
-end
-
-function files=listFiles(directory)
-%Supporter function to list the files in a directory and return them as a
-%cell array
-temp=dir(directory);
-files=cell(numel(temp),1);
-for i=1:numel(temp)
-    files{i}=temp(i,1).name;
-end
-files=strrep(files,'.fa','');
-files=strrep(files,'.hmm','');
-files=strrep(files,'.out','');
-files=strrep(files,'.faw','');
 end
