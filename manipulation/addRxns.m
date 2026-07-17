@@ -252,8 +252,10 @@ end
 %Parse the equations. This is done at this early stage since I need the
 %reversibility info
 [S, mets, badRxns, reversible]=constructS(rxnsToAdd.equations);
-EM='The following equations have one or more metabolites both as substrate and product. Only the net equations will be added:';
-warning('RAVEN:warning', '%s', ravenList(EM, rxnsToAdd.rxns(badRxns)));
+if any(badRxns)
+    EM='The following equations have one or more metabolites both as substrate and product. Only the net equations will be added:';
+    warning('RAVEN:warning', '%s', ravenList(EM, rxnsToAdd.rxns(badRxns)));
+end
 
 newModel.rev=[newModel.rev;reversible];
 newModel.rxns=[newModel.rxns;rxnsToAdd.rxns(:)];

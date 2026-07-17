@@ -45,6 +45,24 @@ classdef tQueries < RavenTestCase
             testCase.verifyEqual(full(S), [-1;-1;1]);
         end
 
+        function constructSLeadingNumberIsPartOfName(testCase)
+            % A metabolite whose name starts with a number must not have that
+            % number read as a stoichiometric coefficient when the metabolite
+            % list says the whole entry is a metabolite.
+            mets = {'2 oxoglutarate';'succinate'};
+            [S, outMets] = constructS({'2 oxoglutarate => succinate'}, 'mets', mets);
+            testCase.verifyEqual(outMets, mets);
+            testCase.verifyEqual(full(S), [-1;1]);
+        end
+
+        function constructSLeadingNumberStillReadsCoefficient(testCase)
+            % With no such metabolite, the leading number is a coefficient.
+            mets = {'oxoglutarate';'succinate'};
+            [S, outMets] = constructS({'2 oxoglutarate => succinate'}, 'mets', mets);
+            testCase.verifyEqual(outMets, mets);
+            testCase.verifyEqual(full(S), [-2;1]);
+        end
+
         function getAllRxnsFromGenesType(testCase)
             % Use a reaction that has a gene association.
             withGpr = testCase.model.rxns(find(~cellfun(@isempty, ...

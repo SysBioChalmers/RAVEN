@@ -85,6 +85,16 @@ classdef tManipulation < RavenTestCase
             testCase.verifyGreaterThan(numel(m2.rxns), numel(testCase.model.rxns));
         end
 
+        function addRxnsCleanEquationDoesNotWarn(testCase)
+            % The "metabolite on both sides" warning must only fire for the
+            % equations it names, not on every call.
+            rxnsToAdd.rxns      = {'newRxn'};
+            rxnsToAdd.equations = {[testCase.model.mets{1} ' => ' testCase.model.mets{2}]};
+            lastwarn('');
+            evalc('addRxns(testCase.model, rxnsToAdd, 1);');
+            testCase.verifyEmpty(strfind(lastwarn, 'both as substrate and product')); %#ok<STRIFY>
+        end
+
         function changeGrRulesUpdatesRule(testCase)
             m2 = changeGrRules(testCase.model, 'ACKr', 'b2296 and b1849', true);
             idx = strcmp(m2.rxns, 'ACKr');
