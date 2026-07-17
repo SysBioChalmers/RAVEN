@@ -84,6 +84,31 @@ classdef tINIT < RavenTestCase
             testCase.verifyNumElements(rxnScores, numel(testCase.model.rxns));
         end
 
+        function scoreComplexModelHpaUnmeasuredCellTypeIsNotZero(testCase)
+            % A gene not detected in one cell type of a tissue and not
+            % measured in the other must keep its 'Not detected' score. An
+            % unmeasured cell type is not a measurement of zero, and zero
+            % ranks above 'Not detected' (-8), so scoring it as such would
+            % also keep the gene from ever being pruned.
+            m = testCase.model;
+            hpaData.genes      = m.genes(1);
+            hpaData.tissues    = {'liver';'liver'};
+            hpaData.celltypes  = {'hepatocyte';'kupffer'};
+            hpaData.levels     = {'Not detected'};
+            hpaData.gene2Level = sparse(1,2);
+            hpaData.gene2Level(1,1) = 1;   % not detected in hepatocyte
+                                           % not measured in kupffer
+
+            evalc(['[~,~,hpaScores] = scoreComplexModel(m, hpaData, [], ' ...
+                '''liver'', ''multipleCellScoring'', ''max'');']);
+            testCase.verifyEqual(hpaScores(1), -8, 'AbsTol', 1e-9);
+
+            % The average is likewise taken over the measurements that exist
+            evalc(['[~,~,hpaScores] = scoreComplexModel(m, hpaData, [], ' ...
+                '''liver'', ''multipleCellScoring'', ''average'');']);
+            testCase.verifyEqual(hpaScores(1), -8, 'AbsTol', 1e-9);
+        end
+
         function scoreComplexModelExactScores(testCase)
             % scoreComplexModel must reproduce the known reaction scores for
             % the reference model prepared by prepINITModel.

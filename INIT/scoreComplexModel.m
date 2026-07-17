@@ -265,12 +265,19 @@ if ~all(I)
     EM = 'There are expression level categories that do not match to hpaLevelScores';
     error('RAVEN:badInput', '%s', EM);
 end
-[K, L, M] = find(hpaData.gene2Level);
+[K, ~, M] = find(hpaData.gene2Level);
 scores = hpaLevelScores.scores(J);
+% Reduce over the cell types each gene was actually measured in. Building a
+% sparse GENESxCELLTYPES matrix instead would put a numeric 0 at every
+% unmeasured (gene, cell type) pair, and 0 sits between 'Low' (10) and
+% 'Not detected' (-8): a gene not detected in one of two cell types would
+% score 0 rather than -8 under 'max', and would never be pruned. The
+% arrayData branch above likewise divides by the number of measurements.
+measured = reshape(scores(M), [], 1);
 if strcmpi(multipleCellScoring,'max')
-    hScores = max(sparse(K,L,scores(M),numel(hpaData.genes),numel(hpaData.tissues)),[],2);
+    hScores = accumarray(K(:), measured, [numel(hpaData.genes) 1], @max, 0);
 else
-    hScores = mean(sparse(K,L,scores(M),numel(hpaData.genes),numel(hpaData.tissues)),2);
+    hScores = accumarray(K(:), measured, [numel(hpaData.genes) 1], @mean, 0);
 end
 
 % Assign gene scores, prioritizing HPA (protein) data over arrayData (RNA)
