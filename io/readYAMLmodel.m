@@ -106,6 +106,7 @@ modelFields =   {'id',char();...
               'comps',cell(0,0);...
           'compNames',cell(0,0);...
         'compOutside',cell(0,0);...
+        'compMiriams',cell(0,0);...
           'geneComps',cell(0,0);... %Changed to double in the end.
         'geneMiriams',cell(0,0);...
      'geneShortNames',cell(0,0);...
@@ -146,6 +147,7 @@ section = 0;
 metMiriams=cell(100000,3);   metMirNo=1;
 rxnMiriams=cell(100000,3);   rxnMirNo=1;
 geneMiriams=cell(100000,3);  genMirNo=1;
+compMiriams=cell(1000,3);    compMirNo=1;
 subSystems=cell(100000,2);   subSysNo=1;
 eccodes=cell(100000,2);      ecCodeNo=1;
 equations=cell(100000,3);    equatiNo=1;
@@ -447,8 +449,22 @@ for i=1:numel(line_key)
 
     % import compartments:
     if section == 5
-        model.comps(end+1,1) = {tline_key};
-        model.compNames(end+1,1) = {tline_value};
+        switch tline_key
+            case 'annotation'
+                readList = 'annotation';
+            otherwise
+                % Annotation entries are indented deeper than the
+                % compartment they belong to, so anything at compartment
+                % level ends the annotation and starts a new compartment.
+                if strcmp(readList,'annotation') && ~isempty(regexp(tline_raw,'^ {6,}','once'))
+                    [compMiriams, miriamKey, compMirNo] = gatherAnnotation(pos,compMiriams,tline_key,tline_value,miriamKey,compMirNo);
+                else
+                    pos = pos + 1;
+                    model.comps(end+1,1) = {tline_key};
+                    model.compNames(end+1,1) = {tline_value};
+                    readList = ''; miriamKey = '';
+                end
+        end; continue
     end
 
     % import ec reaction info
@@ -531,6 +547,13 @@ if ~isempty(geneMiriams)
     for i=unique(locs)'
         model.geneMiriams{i,1}.name=geneMiriams(locs==i,2);
         model.geneMiriams{i,1}.value=geneMiriams(locs==i,3);
+    end
+end
+if ~isempty(compMiriams)
+    locs = cell2mat(compMiriams(:,1));
+    for i=unique(locs)'
+        model.compMiriams{i,1}.name=compMiriams(locs==i,2);
+        model.compMiriams{i,1}.value=compMiriams(locs==i,3);
     end
 end
 
@@ -634,7 +657,7 @@ for i={'geneComps'} % Ones, assume first compartment
    model = emptyOrFill(model,i{1},1,'genes');
 end
 % Comps
-for i={'compNames'} % Empty strings
+for i={'compNames','compMiriams'} % Empty strings
    model = emptyOrFill(model,i{1},{''},'comps');
 end
 for i={'compOutside'} % First comp
