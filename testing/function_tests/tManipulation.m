@@ -236,6 +236,20 @@ classdef tManipulation < RavenTestCase
             testCase.verifyNumElements(m2.comps, 1);
         end
 
+        function mergeCompartmentsDropsStaleCompMiriams(testCase)
+            % Merging collapses every compartment into one, so any
+            % per-compartment MIRIAM annotation must not be left behind at the
+            % original length (which would desync compMiriams from comps).
+            m = testCase.model;
+            m.compMiriams = cell(numel(m.comps),1);
+            m.compMiriams{1}.name  = {'go'};
+            m.compMiriams{1}.value = {'GO:0005737'};
+            evalc('m2 = mergeCompartments(m);');
+            if isfield(m2,'compMiriams')
+                testCase.verifyNumElements(m2.compMiriams, numel(m2.comps));
+            end
+        end
+
         function mergeModelsReturnsStruct(testCase)
             modelB = removeReactions(testCase.model, testCase.model.rxns(1:5), true, true, true);
             evalc('merged = mergeModels({testCase.model; modelB});');

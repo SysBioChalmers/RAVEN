@@ -110,6 +110,12 @@ model.compNames={'System'};
 model.comps={'s'};
 model.compOutside={''};
 model.metComps=ones(numel(model.mets),1);
+%The per-compartment MIRIAM annotations no longer apply once every
+%compartment is merged into one, and leaving them would desync compMiriams
+%from the rebuilt comps. Drop them.
+if isfield(model,'compMiriams')
+    model=rmfield(model,'compMiriams');
+end
 
 %Add exchange mets to another compartment "b" with id "2"
 if keepUnconstrained==true
