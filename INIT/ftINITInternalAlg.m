@@ -392,10 +392,17 @@ onoffNegRev = onoffVarInd((1:nNegRev)+nPosIrrev+nPosRev+nNegIrrev);
 metVarInd = (1:nMetabolMets) + (length(prob.vartype) - nMetVars);
 
 if allowExcretion
-    prob.csense = [repmat('L', 1, length(milpModel.mets)), ...
+    %S*v >= 0: a metabolite may be produced in excess of what is consumed,
+    %and the surplus is implicitly excreted. 'L' would say S*v <= 0, which
+    %lets a metabolite be consumed without ever being produced -- free
+    %uptake, the opposite of excretion, and enough for the MILP to switch a
+    %reaction on by conjuring its substrates out of nothing.
+    prob.csense = [repmat('G', 1, length(milpModel.mets)), ...
                   repmat('E', 1, length(prob.b) - length(milpModel.mets))];
 else
-    prob.csense = '=';
+    %One character per row: optimizeProb maps csense elementwise for glpk and
+    %cobra, so a scalar '=' only happens to work on gurobi.
+    prob.csense = repmat('E', 1, length(prob.b));
 end
 
 params.intTol = 10^-7; %This value is very important. If set too low
