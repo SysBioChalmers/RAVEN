@@ -109,6 +109,14 @@ classdef tSampling < RavenTestCase
             testCase.verifyLessThan(max(abs(resid(:))), 1e-6);
         end
 
+        function randomSamplingCHRRExposesInfo(testCase)
+            % The CHRR convergence diagnostics must be reachable through the
+            % documented randomSampling entry point, not only sampleCHRR.
+            evalc(['[sols, gr, sInfo] = randomSampling(testCase.model, 10, ' ...
+                '''method'', ''chrr'', ''thinning'', 5, ''nBurnin'', 20, ''seed'', 1);']);
+            testCase.verifyTrue(isfield(sInfo, 'mveConverged'));
+        end
+
         function randomSamplingCHRRDeterministic(testCase)
             evalc(['s1 = randomSampling(testCase.model, 8, ''method'', ''chrr'', ' ...
                 '''thinning'', 5, ''nBurnin'', 20, ''seed'', 42);']);
