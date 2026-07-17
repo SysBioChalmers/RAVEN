@@ -1,4 +1,4 @@
-function [solutions, goodRxns]=randomSampling(model,varargin)
+function [solutions, goodRxns, info]=randomSampling(model,varargin)
 % randomSampling  Sample the flux solution space (entry point for all samplers).
 %
 % Dispatches to one of three sampling methods via the 'method' argument:
@@ -75,6 +75,10 @@ function [solutions, goodRxns]=randomSampling(model,varargin)
 %     [randomObjective] vector of indexes of those reactions that are not
 %     involved in loops or always carry zero flux and can be used as random
 %     objective functions. Empty ([]) for the 'achr' and 'chrr' methods.
+% info : struct
+%     [chrr] the diagnostics from sampleCHRR, including mveConverged (whether
+%     the maximum-volume ellipsoid rounding reached tolerance). Empty ([])
+%     for the 'achr' and 'randomObjective' methods.
 %
 % Notes
 % -----
@@ -111,6 +115,7 @@ seed=p.seed;
 method=p.method;
 thinning=p.thinning;
 nBurnin=p.nBurnin;
+info=[]; %only populated by the 'chrr' method
 if isempty(nSamples)
     nSamples=1000;
 end
@@ -129,7 +134,7 @@ switch lower(method)
         goodRxns = [];
         return;
     case 'chrr'
-        solutions = sampleCHRR(model, nSamples, thinning, nBurnin, seed);
+        [solutions, info] = sampleCHRR(model, nSamples, thinning, nBurnin, seed);
         goodRxns = [];
         return;
     case {'randomobjective', 'objective'}

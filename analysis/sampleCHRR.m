@@ -118,6 +118,11 @@ x0 = sampleChebyshevCenter(A_full, b_full);
 [center, E, converged] = sampleMaxVolEllipse(A_full, b_full, x0);
 info.nDimensions = d;
 info.mveConverged = converged;
+if ~converged
+    warning('RAVEN:warning', '%s', ['The maximum-volume ellipsoid rounding ' ...
+        'did not converge; the samples may be poorly mixed. Inspect the ' ...
+        'mveConverged field of the second output.']);
+end
 
 % Rounded polytope {y : A_r*y <= b_r}, which contains the unit ball.
 A_r = A_full * E;
