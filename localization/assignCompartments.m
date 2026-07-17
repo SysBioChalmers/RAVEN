@@ -1,63 +1,58 @@
 function [outModel, placement, addedTransports, exitFlag, report] = assignCompartments(model, GSS, reactionsToRelocate, varargin)
 % assignCompartments  Assign reactions to compartments, certified by growth.
 %
-% Deterministic alternative to predictLocalization. Places the requested
-% reactions into the compartments named by localization scores (GSS) and then
-% verifies, by an actual FBA on the built model, that the objective (biomass)
-% is still producible. The work is done in three phases:
+% Faithful MATLAB port of raven_toolbox.localization.assign_compartments. Places
+% reactions into subcellular compartments from soft gene x compartment
+% localization scores while keeping the result functional, WITHOUT ever putting
+% a flux model inside the placement optimisation:
 %
-%   1. Place   - a flux-free MILP that maximises the localization score.
-%                Its only variables are placement binaries (reaction ->
-%                compartment, gene -> compartment); it has no flux variables
-%                and no growth constraint, so a placement can never harvest a
-%                compartment's score through leaked flux.
-%   2. Repair  - a solver-free fixpoint that keeps the placement connected: a
-%                non-transportable metabolite split across compartments forces
-%                its reactions to co-locate; transportable splits get passive
-%                transports through the default compartment.
-%   3. Certify - the placement is materialised into a compartmentalised model
-%                and that exact model is solved. exitFlag reflects whether it
-%                reached the growth floor, so the certificate is the model
-%                that is returned, never a placement the model cannot grow.
+%   1. a flux-free placement master (maximise localization score,
+%      mono-localisation): with no flux variable and no growth constraint, a
+%      tolerance-rounded binary has nothing to leak into;
+%   2. a structural confinement repair: reactions sharing a non-transportable
+%      metabolite are co-located (or pinned to a fixed reaction's compartment),
+%      and transportable pools a placement splits get star-topology transports;
+%   3. materialised-FBA certification: the placement is confirmed functional by a
+%      real solveLP on the model i_applyAssignment builds, over the primary
+%      medium and every growth condition;
+%   4. feedback on real failure: for a genuine placement gap, tighten the
+%      placement and re-solve until certified or the round budget is hit.
 %
-% Mono-localization: each reaction is placed in exactly one compartment; a
-% gene still spans compartments when it catalyses reactions placed in
-% different ones.
+% The model is NOT merged: each reaction keeps its current compartment, movable
+% reactions are re-placed, and pinned reactions stay where they are (merge the
+% model first, as a caller, to place onto a single-compartment draft).
 %
 % Parameters
 % ----------
 % model : struct
-%     a RAVEN model with an objective (model.c) and grRules. Multiple
-%     compartments are merged before placement.
+%     a RAVEN model with an objective (model.c) and grRules.
 % GSS : struct
 %     gene scoring structure (genes, compartments, scores) as from parseScores.
-%     GSS.compartments are the target compartment labels and must include
-%     defaultCompartment.
 % reactionsToRelocate : cell
-%     reaction ids to (re)place. Boundary reactions and the objective reaction
-%     are always pinned.
+%     reaction ids to (re)place. Boundary, multi-compartment and objective
+%     reactions are always pinned.
 %
 % Name-Value Arguments
 % --------------------
 % defaultCompartment : char
-%     compartment that transports route through (usually cytosol); must be in
-%     GSS.compartments.
+%     compartment transports route through (usually cytosol); must be in the
+%     union of model and GSS compartments.
 % multiCompartmentPenalty : double (default 0.5)
-%     score cost per extra compartment a gene ends up in.
+%     score cost per compartment a gene ends up in.
 % minGrowth : double (default [] = 10%% of the unconstrained optimum)
 %     required objective flux for certification.
-% transportable : cell (default [] = all)
-%     metabolite ids (merged-model names) that may receive transports.
-%     Restricting it forces functionality-driven placement of reactions whose
-%     substrates are confined.
+% transportable : cell (default [] = all movable base metabolites)
+%     metabolite NAMES that may receive transports.
 % growthConditions : struct array (default [])
-%     extra media the placement must also grow on, each with fields: name,
-%     medium (struct of exchangeRxnId -> max uptake), and minGrowth.
+%     extra media to certify on, each with fields name, medium
+%     (struct exchangeRxnId -> max uptake) and minGrowth.
 % maxRounds : double (default 8)
-%     maximum place/repair rounds before returning the best placement found.
+%     budget on placement-tightening rounds.
+% pruneTransports : logical (default true)
+%     drop transports blocked in every certification medium.
 % transportCost : double (default 0.5)
-%     accepted for backward compatibility but not used: placement is driven by
-%     the score alone, and transports are a structural consequence of repair.
+%     accepted for signature compatibility but NOT used (placement is
+%     flux-free and score-only).
 % verbose : logical (default true)
 %
 % Returns
@@ -65,17 +60,13 @@ function [outModel, placement, addedTransports, exitFlag, report] = assignCompar
 % outModel : struct
 %     the compartmentalised model.
 % placement : struct
-%     .rxns and .compartment (the assigned compartment id per relocated
-%     reaction).
+%     .rxns and .compartment (cell of compartment ids per placed reaction).
 % addedTransports : struct
-%     .mets and .compartment for the transports repair added.
+%     .mets (base metabolite names) and .compartment for the added transports.
 % exitFlag : double
-%     1 = certified (the built model reaches the growth floor on every
-%     medium), -1 = could not place or the built model did not certify.
+%     1 = certified on every medium, -1 = could not place or did not certify.
 % report : struct
-%     .certified (logical), .status (char), and .growths (struct of
-%     medium -> objective flux), so a failed certification reports the real
-%     growth rather than hiding it.
+%     .certified, .status, .growths (struct medium -> flux), .unplaced.
 %
 % See also
 % --------
@@ -83,105 +74,69 @@ function [outModel, placement, addedTransports, exitFlag, report] = assignCompar
 
 p = parseRAVENargs(varargin, {'defaultCompartment',[]; 'transportCost',0.5; ...
     'multiCompartmentPenalty',0.5; 'minGrowth',[]; 'transportable',[]; ...
-    'growthConditions',[]; 'maxRounds',8; 'verbose',true});
+    'growthConditions',[]; 'maxRounds',8; 'pruneTransports',true; 'verbose',true});
 defaultCompartment = char(p.defaultCompartment);
 multiPen = p.multiCompartmentPenalty;
 minGrowth = p.minGrowth;
 growthConditions = p.growthConditions;
 maxRounds = p.maxRounds;
+pruneTransports = p.pruneTransports;
 verbose = p.verbose;
 
-outModel = model; placement = struct('rxns',{{}},'compartment',{{}});
-addedTransports = struct('mets',{{}},'compartment',{{}}); exitFlag = -1;
-report = struct('certified',false,'status','not_solved','growths',struct());
+outModel = model;
+placement = struct('rxns',{{}},'compartment',{{}});
+addedTransports = struct('mets',{{}},'compartment',{{}});
+exitFlag = -1;
+report = struct('certified',false,'status','not_solved','growths',struct(),'unplaced',{{}});
 
 if all(model.c == 0)
     error('RAVEN:badInput','model has no objective (set model.c).');
 end
-comps = GSS.compartments(:);
+% compartments = union of model and score compartments
+comps = unique([model.comps(:); GSS.compartments(:)], 'stable');
+comps = sort(comps);
 if ~ismember(defaultCompartment, comps)
-    error('RAVEN:badInput','defaultCompartment ''%s'' not in GSS.compartments.', defaultCompartment);
+    error('RAVEN:badInput','defaultCompartment ''%s'' not in the model/score compartments.', defaultCompartment);
 end
 
-% Merge to a single compartment so every metabolite has one identity;
-% placement and transports are then expressed relative to defaultCompartment.
-% After merging, treat that single compartment AS the default: pinned
-% reactions are considered to sit there, and placed reactions and transports
-% are expressed relative to it.
-if numel(model.comps) > 1
-    model = mergeCompartments(model, true, true);
-    model.comps = {defaultCompartment};
-    if isfield(model,'compNames'); model.compNames = {defaultCompartment}; end
-    if isfield(model,'compOutside'); model.compOutside = {''}; end
-    model.metComps = ones(numel(model.mets),1);
-end
-biomassIdx = find(model.c ~= 0, 1);
-
-if isempty(minGrowth)
-    sol = solveLP(model);
-    if isempty(sol.f) || sol.f <= 0
-        error('RAVEN:badInput','merged model does not grow; pass minGrowth.');
-    end
-    minGrowth = 0.1 * abs(sol.f);
-end
-
-% ---- scope: movable vs pinned ----
-isBoundary = (sum(model.S ~= 0, 1)' == 1);   % one-metabolite reactions
-relocate = ismember(model.rxns, reactionsToRelocate);
-movableMask = relocate & ~isBoundary;
-movableMask(biomassIdx) = false;
-movIdx = find(movableMask);
-pinIdx = find(~movableMask);
-nMov = numel(movIdx); nC = numel(comps);
-defC = find(strcmp(comps, defaultCompartment));
-
-% Genes in scope: those on movable reactions that have a row in GSS
-[gInGSS, gssRow] = ismember(model.genes, GSS.genes);
-geneOnMov = any(model.rxnGeneMat(movIdx, :) ~= 0, 1)';
-geneIdx = find(gInGSS & geneOnMov);
-nGene = numel(geneIdx);
-score = zeros(nGene, nC);
-for gi = 1:nGene
-    score(gi, :) = GSS.scores(gssRow(geneIdx(gi)), :);
-end
-
-% Transportable metabolites (a base metabolite may be moved between
-% compartments by a passive transport during repair).
-movMetMask = any(model.S(:, movIdx) ~= 0, 2);
-if isnumeric(p.transportable) && isempty(p.transportable)
-    transpMet = find(movMetMask);                                   % default: all
-else
-    transpMet = find(movMetMask & ismember(model.mets, p.transportable));
-end
-isTransp = false(numel(model.mets),1); isTransp(transpMet) = true;
+% ---- scope: biomass, growth floor, movable/pinned, genes, transportable ----
+sc = i_prepareScope(model, GSS, reactionsToRelocate, comps, defaultCompartment, minGrowth, p.transportable, verbose);
+minGrowth = sc.minGrowth;
+report.unplaced = sc.unplaced;
 
 if verbose
     fprintf('assignCompartments: %d movable, %d pinned reactions, %d genes, %d compartments.\n', ...
-        nMov, numel(pinIdx), nGene, nC);
+        numel(sc.movIdx), numel(sc.pinIdx), numel(sc.geneIdx), numel(comps));
 end
 
-% ---- place / repair rounds ----
-% forced(mi) = compartment index a movable reaction is pinned to (0 = free);
-% groups is a cell array of movable-index vectors that must share a
-% compartment. Both grow monotonically until the confinement fixpoint holds.
-forced = zeros(nMov,1);
+% ---- place -> repair -> certify (-> tighten) loop ----
+forced = containers.Map('KeyType','double','ValueType','double');  % movable local idx -> comp idx
 groups = {};
+gapPinned = containers.Map('KeyType','double','ValueType','logical');
 seen = {};
-placeIdx = [];
+best = struct('placeIdx',[],'trMet',[],'trComp',[],'growths',struct('primary',-1), ...
+    'certified',false,'status','uncertified');
+
 for round = 1:maxRounds
-    placeIdx = i_placementMaster(model, movIdx, geneIdx, score, multiPen, ...
-        nC, forced, groups, verbose);
+    sig = i_signature(forced, groups);
+    if any(strcmp(seen, sig))
+        break;  % configuration already tried: diagnosers are cycling
+    end
+    seen{end+1} = sig; %#ok<AGROW>
+
+    placeIdx = i_placementMaster(model, sc, comps, multiPen, forced, groups, verbose);
     if isempty(placeIdx)
         report.status = 'infeasible';
-        if verbose; fprintf('assignCompartments: placement MILP infeasible.\n'); end
         return;
     end
-    [newForced, newGroups] = i_diagnoseConfinement(model, movIdx, pinIdx, ...
-        placeIdx, defC, isTransp);
-    % Apply only genuinely new tightenings; stop at the fixpoint.
+
+    % confinement fixpoint
+    [newForced, newGroups, relaxed] = i_diagnoseConfinement(model, sc, comps, placeIdx, gapPinned);
     changed = false;
-    for k = 1:nMov
-        if newForced(k) ~= 0 && forced(k) == 0
+    fk = keys(newForced);
+    for i = 1:numel(fk)
+        k = fk{i};
+        if (~isKey(forced,k) || forced(k) ~= newForced(k)) && ~isKey(gapPinned,k)
             forced(k) = newForced(k); changed = true;
         end
     end
@@ -190,58 +145,128 @@ for round = 1:maxRounds
             groups{end+1} = newGroups{gi}; changed = true; %#ok<AGROW>
         end
     end
-    sig = i_signature(forced, groups);
-    if ~changed || any(strcmp(seen, sig))
-        break;
+    if changed
+        continue;
     end
-    seen{end+1} = sig; %#ok<AGROW>
+
+    % transports + materialise + certify
+    [trMet, trComp] = i_splitTransports(model, sc, comps, defaultCompartment, placeIdx, relaxed);
+    outModel = i_applyAssignment(model, sc, comps, defaultCompartment, placeIdx, trMet, trComp);
+    [ok, growths] = i_certify(outModel, sc.biomassId, minGrowth, growthConditions);
+
+    if ok
+        if pruneTransports && ~isempty(trMet)
+            [trMet, trComp] = i_usableTransports(outModel, trMet, trComp, comps, sc.biomassId, growthConditions);
+            outModel = i_applyAssignment(model, sc, comps, defaultCompartment, placeIdx, trMet, trComp);
+        end
+        exitFlag = 1; report.status = 'certified'; report.certified = true; report.growths = growths;
+        placement.rxns = model.rxns(sc.movIdx); placement.compartment = comps(placeIdx);
+        addedTransports.mets = sc.metNames(trMet); addedTransports.compartment = comps(trComp);
+        return;
+    end
+
+    % keep best partial (largest primary growth)
+    if growths.primary > best.growths.primary
+        best = struct('placeIdx',placeIdx,'trMet',trMet,'trComp',trComp,'growths',growths, ...
+            'certified',false,'status','uncertified');
+    end
+
+    % growth-gap feedback: pin the sole producer of a stranded biomass precursor
+    fb = i_diagnoseGrowthGap(outModel, model, sc, comps, placeIdx);
+    if ~isempty(fb) && (~isKey(forced,fb(1)) || forced(fb(1)) ~= fb(2))
+        forced(fb(1)) = fb(2); gapPinned(fb(1)) = true;
+        continue;
+    end
+    break;  % no tightening available
 end
 
-% ---- placement + transports ----
-placeRxns = model.rxns(movIdx);
-placeComp = comps(placeIdx);
-placement.rxns = placeRxns(:); placement.compartment = placeComp(:);
+% honest uncertified result: return the best partial found
+if ~isempty(best.placeIdx)
+    outModel = i_applyAssignment(model, sc, comps, defaultCompartment, best.placeIdx, best.trMet, best.trComp);
+    placement.rxns = model.rxns(sc.movIdx); placement.compartment = comps(best.placeIdx);
+    addedTransports.mets = sc.metNames(best.trMet); addedTransports.compartment = comps(best.trComp);
+    report.growths = best.growths;
+end
+report.status = 'uncertified';
+if verbose
+    fprintf('assignCompartments: did not certify (growth %.4g < %.4g).\n', best.growths.primary, minGrowth);
+end
+end
 
-[trMet, trComp] = i_splitTransports(model, movIdx, pinIdx, placeIdx, defC, isTransp, nC);
-addedTransports.mets = model.mets(trMet);
-addedTransports.compartment = comps(trComp);
+% ============================================================ scope
+function sc = i_prepareScope(model, GSS, relocate, comps, defaultCompartment, minGrowth, transportable, verbose) %#ok<INUSD>
+biomassIdx = find(model.c ~= 0, 1);
+sc.biomassId = model.rxns{biomassIdx};
 
-% ---- materialise + certify ----
-outModel = i_applyAssignment(model, placement, addedTransports, comps, defaultCompartment);
-[certified, growths] = i_certify(outModel, biomassIdx, model.rxns{biomassIdx}, minGrowth, growthConditions);
-report.certified = certified;
-report.growths = growths;
-if certified
-    exitFlag = 1; report.status = 'certified';
+if isempty(minGrowth)
+    sol = solveLP(model);
+    if isempty(sol.f) || abs(sol.f) <= 0
+        error('RAVEN:badInput','the draft model does not grow; pass minGrowth.');
+    end
+    minGrowth = 0.1 * abs(sol.f);
+end
+sc.minGrowth = minGrowth;
+
+% each reaction's single compartment ('' if boundary/multi-compartment)
+sc.rxnComp = i_reactionCompartments(model);
+
+toRelocate = ismember(model.rxns, relocate);
+isBoundary = (sum(model.S ~= 0, 1)' == 1);
+movable = toRelocate & ~isBoundary & ~cellfun(@isempty, sc.rxnComp);
+movable(biomassIdx) = false;
+sc.movIdx = find(movable);
+sc.pinIdx = find(~movable);
+
+% genes on movable reactions that are scored
+[gInGSS, gssRow] = ismember(model.genes, GSS.genes);
+geneOnMov = any(model.rxnGeneMat(sc.movIdx, :) ~= 0, 1)';
+scope = gInGSS & geneOnMov;
+sc.geneIdx = find(scope);
+sc.score = zeros(numel(sc.geneIdx), numel(comps));
+% align score columns (GSS.compartments) to comps
+[~, colOf] = ismember(GSS.compartments, comps);
+for gi = 1:numel(sc.geneIdx)
+    row = GSS.scores(gssRow(sc.geneIdx(gi)), :);
+    sc.score(gi, colOf(colOf>0)) = row(colOf>0);
+end
+
+% unplaced: movable reactions with genes but none scored
+sc.unplaced = {};
+for k = 1:numel(sc.movIdx)
+    g = find(model.rxnGeneMat(sc.movIdx(k),:) ~= 0);
+    if ~isempty(g) && ~any(ismember(g, sc.geneIdx))
+        sc.unplaced{end+1,1} = model.rxns{sc.movIdx(k)}; %#ok<AGROW>
+    end
+end
+
+% base metabolite = metabolite name; transportable base names
+sc.metNames = model.metNames;
+movMetMask = any(model.S(:, sc.movIdx) ~= 0, 2);
+if isnumeric(transportable) && isempty(transportable)
+    sc.isTransp = movMetMask;                                  % default: all movable bases
 else
-    exitFlag = -1; report.status = 'uncertified';
-    if verbose
-        fprintf('assignCompartments: placement did not certify (growth %.4g < %.4g).\n', ...
-            growths.primary, minGrowth);
-    end
+    sc.isTransp = movMetMask & ismember(model.metNames, transportable);
 end
 end
 
-% ------------------------------------------------------------- placement MILP
-function placeIdx = i_placementMaster(model, movIdx, geneIdx, score, multiPen, nC, forced, groups, verbose)
-% Flux-free score MILP. Variables: x[mov,c] and y[gene,c], both binary.
-% Returns the chosen compartment index per movable reaction, or [] if
-% infeasible.
-nMov = numel(movIdx); nGene = numel(geneIdx);
+% ============================================================ placement MILP
+function placeIdx = i_placementMaster(model, sc, comps, multiPen, forced, groups, verbose)
+% Flux-free score MILP. Variables x[mov,c] and y[gene,c], both binary.
+% Objective: max sum score*y - multiPen*sum y (no reward on x).
+movIdx = sc.movIdx; geneIdx = sc.geneIdx; score = sc.score;
+nMov = numel(movIdx); nGene = numel(geneIdx); nC = numel(comps);
 oX = 0;      nX = nMov*nC;
 oY = oX+nX;  nY = nGene*nC;
 nVar = oY+nY;
 xCol = @(mi,ci) oX + (mi-1)*nC + ci;
 yCol = @(gi,ci) oY + (gi-1)*nC + ci;
 
-% placement: sum_c x[r,c] = 1
 pR=[];pC=[];pV=[];
 for k=1:nMov
     for ci=1:nC; pR(end+1)=k; pC(end+1)=xCol(k,ci); pV(end+1)=1; end %#ok<AGROW>
 end
 A_place=sparse(pR,pC,pV,nMov,nVar); b_place=ones(nMov,1);
 
-% coupling: x[r,c] - y[g,c] <= 0 for each gene g on reaction r
 cR=[];cC=[];cV=[];row=0;
 for k=1:nMov
     gOn=find(model.rxnGeneMat(movIdx(k),:)~=0);
@@ -256,7 +281,6 @@ for k=1:nMov
 end
 A_couple=sparse(cR,cC,cV,row,nVar); b_couple=zeros(row,1);
 
-% has: y[g,c] - sum_{r of g} x[r,c] <= 0
 hR=[];hC=[];hV=[];row=0;
 for gi=1:nGene
     g=geneIdx(gi);
@@ -268,23 +292,19 @@ for gi=1:nGene
 end
 A_has=sparse(hR,hC,hV,row,nVar); b_has=zeros(row,1);
 
-% gene1: sum_c y[g,c] >= 1
 g1R=[];g1C=[];g1V=[];
 for gi=1:nGene
     for ci=1:nC; g1R(end+1)=gi; g1C(end+1)=yCol(gi,ci); g1V(end+1)=1; end %#ok<AGROW>
 end
 A_gene1=sparse(g1R,g1C,g1V,nGene,nVar); b_gene1=ones(nGene,1);
 
-% forced pins: x[r,c_force] = 1
-fR=[];fC=[];nForce=0;
-for k=1:nMov
-    if forced(k)~=0
-        nForce=nForce+1; fR(end+1)=nForce; fC(end+1)=xCol(k,forced(k)); %#ok<AGROW>
-    end
+fR=[];fC=[];nForce=0; fkeys=keys(forced);
+for i=1:numel(fkeys)
+    k=fkeys{i};
+    nForce=nForce+1; fR(end+1)=nForce; fC(end+1)=xCol(k,forced(k)); %#ok<AGROW>
 end
 A_force=sparse(fR,fC,ones(1,nForce),nForce,nVar); b_force=ones(nForce,1);
 
-% co-location groups: x[a,c] - x[b,c] = 0 for consecutive members
 coR=[];coC=[];coV=[];row=0;
 for gi=1:numel(groups)
     mem=groups{gi};
@@ -299,24 +319,9 @@ for gi=1:numel(groups)
 end
 A_colo=sparse(coR,coC,coV,row,nVar); b_colo=zeros(row,1);
 
-% objective: max sum score*y - multiPen*sum y, with a small score-consistent
-% tie-break on the reaction placement. The gene reward on y decides which
-% compartment each gene occupies, but leaves the reaction binaries x
-% underdetermined (any placement consistent with the gene assignment is
-% optimal); without the tie-break the solver picks one arbitrarily. The tiny
-% reward on x pulls each reaction into the compartment its own genes score
-% highest, without being large enough to change the gene assignment.
-xTie = 1e-3;
 c = zeros(nVar,1);
 for gi=1:nGene
     for ci=1:nC; c(yCol(gi,ci)) = score(gi,ci) - multiPen; end
-end
-for k=1:nMov
-    gOn = find(model.rxnGeneMat(movIdx(k),:)~=0);
-    for g=gOn
-        gi=find(geneIdx==g,1); if isempty(gi); continue; end
-        for ci=1:nC; c(xCol(k,ci)) = c(xCol(k,ci)) + xTie*score(gi,ci); end
-    end
 end
 
 prob.A = [A_place; A_couple; A_has; A_gene1; A_force; A_colo];
@@ -325,8 +330,7 @@ prob.b = [b_place; b_couple; b_has; b_gene1; b_force; b_colo];
 prob.csense = [repmat('E',1,nMov), repmat('L',1,numel(b_couple)), ...
                repmat('L',1,numel(b_has)), repmat('G',1,nGene), ...
                repmat('E',1,nForce), repmat('E',1,numel(b_colo))];
-prob.c = -c;            % optimizeProb minimises; we maximise c
-prob.osense = 1;
+prob.c = -c; prob.osense = 1;
 prob.lb = zeros(nVar,1); prob.ub = ones(nVar,1);
 prob.vartype = repmat('B',1,nVar);
 
@@ -343,112 +347,103 @@ for k=1:nMov
 end
 end
 
-% ------------------------------------------------------ confinement diagnosis
-function [forced, groups] = i_diagnoseConfinement(model, movIdx, pinIdx, placeIdx, defC, isTransp)
-% Solver-free: find non-transportable metabolites split across compartments
-% and decide, per split, whether to force the movers to the pinned
-% compartment or to co-locate them. Pinned reactions all live in the default
-% compartment (the model was merged first).
-nMov = numel(movIdx);
-forced = zeros(nMov,1);
+% ============================================================ confinement
+function [forced, groups, relaxed] = i_diagnoseConfinement(model, sc, comps, placeIdx, gapPinned)
+% Find non-transportable metabolites a placement splits across compartments;
+% force to a pinned compartment, co-locate all-movable sets, or relax
+% (transport anyway) when pinned into >=2 comps or shared with a protected pin.
+forced = containers.Map('KeyType','double','ValueType','double');
 groups = {};
+relaxed = containers.Map('KeyType','double','ValueType','logical');
 
-% used{metRow} maps compartment index -> list of movable local indices.
-% pinnedHere(metRow) is true if a pinned reaction touches the metabolite.
+placedComp = i_placedCompartments(model, sc, comps, placeIdx);   % per reaction, comp idx or 0
+movLocal = containers.Map('KeyType','double','ValueType','double'); % rxn idx -> movable local idx
+for k=1:numel(sc.movIdx); movLocal(sc.movIdx(k)) = k; end
+
 nMet = numel(model.mets);
-usedComp = cell(nMet,1);
-usedMov  = cell(nMet,1);
-pinnedHere = false(nMet,1);
-for k=1:nMov
-    mrows = find(model.S(:,movIdx(k))~=0)';
-    ci = placeIdx(k);
-    for mm=mrows
-        if isTransp(mm); continue; end     % transportable: handled by a transport
-        usedComp{mm}(end+1) = ci;
-        usedMov{mm}(end+1) = k;
-    end
-end
-for k=1:numel(pinIdx)
-    mrows = find(model.S(:,pinIdx(k))~=0)';
-    for mm=mrows
-        if isTransp(mm); continue; end
-        usedComp{mm}(end+1) = defC;
-        pinnedHere(mm) = true;
+usedComp = cell(nMet,1); usedRxn = cell(nMet,1);
+allRxn = [sc.movIdx; sc.pinIdx];
+for r = allRxn'
+    comp = placedComp(r);
+    if comp == 0; continue; end     % multi-compartment reaction: bridges pools
+    for mm = find(model.S(:,r)~=0)'
+        if sc.isTransp(mm); continue; end
+        usedComp{mm}(end+1) = comp; usedRxn{mm}(end+1) = r;
     end
 end
 
 for mm=1:nMet
     cs = unique(usedComp{mm});
-    if numel(cs) <= 1; continue; end       % lives in one compartment: fine
-    movers = unique(usedMov{mm});
-    if pinnedHere(mm)
-        % A pinned reaction anchors this metabolite in the default
-        % compartment; every movable toucher must join it there.
-        for k=movers; forced(k) = defC; end
-    else
-        % Only movable reactions touch it: co-locate them and let the score
-        % objective choose the shared compartment.
-        groups{end+1} = movers(:)'; %#ok<AGROW>
+    if numel(cs) <= 1; continue; end
+    touching = usedRxn{mm};
+    isMov = arrayfun(@(r) isKey(movLocal,r), touching);
+    movers = touching(isMov);
+    % pinned compartments = comps where a pinned (non-movable) reaction touches mm
+    pinnedComps = unique(arrayfun(@(i) placedComp(touching(i)), find(~isMov)));
+    anyProtected = any(arrayfun(@(r) isKey(movLocal,r) && isKey(gapPinned,movLocal(r)), touching));
+    if numel(pinnedComps) > 1 || anyProtected
+        relaxed(mm) = true;
+    elseif ~isempty(pinnedComps)
+        for r = movers; forced(movLocal(r)) = pinnedComps(1); end
+    elseif ~isempty(movers)
+        g = sort(unique(arrayfun(@(r) movLocal(r), movers)));
+        groups{end+1} = g(:)'; %#ok<AGROW>
     end
 end
 end
 
-% ----------------------------------------------------------- split transports
-function [trMet, trComp] = i_splitTransports(model, movIdx, pinIdx, placeIdx, defC, isTransp, nC)
-% For each transportable base metabolite placed in more than one compartment,
-% add a transport between the default compartment and each non-default one.
+% ============================================================ split transports
+function [trMet, trComp] = i_splitTransports(model, sc, comps, defaultCompartment, placeIdx, relaxed)
+defC = find(strcmp(comps, defaultCompartment), 1);
+placedComp = i_placedCompartments(model, sc, comps, placeIdx);
+allRxn = [sc.movIdx; sc.pinIdx];
 nMet = numel(model.mets);
-compsUsed = cell(nMet,1);
-for k=1:numel(movIdx)
-    mrows = find(model.S(:,movIdx(k))~=0)';
-    for mm=mrows; compsUsed{mm}(end+1) = placeIdx(k); end
-end
-for k=1:numel(pinIdx)
-    mrows = find(model.S(:,pinIdx(k))~=0)';
-    for mm=mrows; compsUsed{mm}(end+1) = defC; end
+used = cell(nMet,1);
+for r = allRxn'
+    comp = placedComp(r);
+    if comp == 0; continue; end
+    for mm = find(model.S(:,r)~=0)'
+        if sc.isTransp(mm) || (isKey(relaxed,mm))
+            used{mm}(end+1) = comp;
+        end
+    end
 end
 trMet=[]; trComp=[];
 for mm=1:nMet
-    if ~isTransp(mm); continue; end
-    cs = unique(compsUsed{mm});
+    cs = unique(used{mm});
     if numel(cs) <= 1; continue; end
-    for ci=cs
-        if ci==defC; continue; end
-        trMet(end+1)=mm; trComp(end+1)=ci; %#ok<AGROW>
+    for ci = sort(cs)
+        if ci ~= defC; trMet(end+1)=mm; trComp(end+1)=ci; end %#ok<AGROW>
     end
 end
 trMet=trMet(:); trComp=trComp(:);
 end
 
-% ------------------------------------------------------------- certification
-function [certified, growths] = i_certify(outModel, biomassIdx, biomassId, minGrowth, growthConditions)
-% Solve the materialised model and confirm it reaches minGrowth on the primary
-% medium and on every extra growth condition.
+% ============================================================ certification
+function [ok, growths] = i_certify(outModel, biomassId, minGrowth, growthConditions)
 tol = 1e-9;
 growths = struct();
-bIdx = find(strcmp(outModel.rxns, biomassId), 1);
-if isempty(bIdx); bIdx = biomassIdx; end
-sol = solveLP(outModel);
-primary = 0;
-if ~isempty(sol.f); primary = abs(sol.f); end
-growths.primary = primary;
-certified = primary >= minGrowth - tol;
-
+growths.primary = i_growOn(outModel, biomassId, []);
+ok = growths.primary >= minGrowth - tol;
 if ~isempty(growthConditions) && isstruct(growthConditions)
     for i=1:numel(growthConditions)
         gc = growthConditions(i);
-        m2 = i_applyMedium(outModel, gc.medium);
-        s2 = solveLP(m2);
-        g = 0; if ~isempty(s2.f); g = abs(s2.f); end
+        g = i_growOn(outModel, biomassId, gc.medium);
         growths.(matlab.lang.makeValidName(gc.name)) = g;
-        certified = certified && (g >= gc.minGrowth - tol);
+        ok = ok && (g >= gc.minGrowth - tol);
     end
 end
 end
 
+function g = i_growOn(model, biomassId, medium)
+if ~isempty(medium); model = i_applyMedium(model, medium); end
+bIdx = find(strcmp(model.rxns, biomassId), 1);
+model.c = zeros(numel(model.rxns),1); model.c(bIdx) = 1;
+sol = solveLP(model);
+if isempty(sol.f); g = 0; else; g = abs(sol.f); end
+end
+
 function model = i_applyMedium(model, medium)
-% Close all uptake, then open only the listed exchanges. medium is a struct
-% of exchangeRxnId -> max uptake.
 [~, exchIdx] = getExchangeRxns(model);
 model.lb(exchIdx(model.lb(exchIdx) < 0)) = 0;
 if ~isempty(medium) && isstruct(medium)
@@ -460,26 +455,64 @@ if ~isempty(medium) && isstruct(medium)
 end
 end
 
-% ------------------------------------------------------------------ helpers
-function tf = i_hasGroup(groups, g)
-tf = false;
-g = sort(g(:)');
-for i=1:numel(groups)
-    if isequal(sort(groups{i}(:)'), g); tf = true; return; end
+% ============================================================ transport pruning
+function [trMet, trComp] = i_usableTransports(outModel, trMet, trComp, comps, biomassId, growthConditions)
+% Keep only transports that can carry flux in at least one certification
+% medium (sound: an unusable reaction's removal cannot change any of those
+% FBAs).
+trId = cell(numel(trMet),1);
+for i=1:numel(trMet)
+    trId{i} = ['tr_' num2str(i-1) '_' comps{trComp(i)}];
+end
+media = {[]};
+if ~isempty(growthConditions) && isstruct(growthConditions)
+    for i=1:numel(growthConditions); media{end+1} = growthConditions(i).medium; end %#ok<AGROW>
+end
+keep = false(numel(trMet),1);
+for mi=1:numel(media)
+    m = outModel;
+    if ~isempty(media{mi}); m = i_applyMedium(m, media{mi}); end
+    bIdx = find(strcmp(m.rxns, biomassId), 1);
+    m.c = zeros(numel(m.rxns),1); m.c(bIdx) = 1;
+    idx = zeros(numel(trId),1);
+    for i=1:numel(trId); j=find(strcmp(m.rxns,trId{i}),1); if ~isempty(j); idx(i)=j; end; end
+    valid = idx>0;
+    fl = false(numel(trId),1);
+    fl(valid) = haveFlux(m, 'rxns', idx(valid));
+    keep = keep | fl;
+end
+trMet = trMet(keep); trComp = trComp(keep);
+end
+
+% ============================================================ growth-gap feedback
+function fb = i_diagnoseGrowthGap(outModel, model, sc, comps, placeIdx)
+% If a biomass precursor is blocked, pin its sole movable producer to biomass's
+% compartment. Returns [movableLocalIdx, compIdx] or [].
+fb = [];
+bIdx = find(strcmp(outModel.rxns, sc.biomassId), 1);
+if isempty(bIdx); return; end
+bioComp = i_reactionCompartments(outModel); bioComp = bioComp{bIdx};
+if isempty(bioComp); return; end
+bcIdx = find(strcmp(comps, bioComp),1);
+% precursors: base names biomass consumes
+precRows = find(outModel.S(:,bIdx) < 0);
+precNames = unique(outModel.metNames(precRows));
+% blocked reactions in the materialised model
+canFlux = haveFlux(outModel);
+placedComp = i_placedCompartments(model, sc, comps, placeIdx);
+for k=1:numel(sc.movIdx)
+    r = sc.movIdx(k);
+    ri = find(strcmp(outModel.rxns, model.rxns{r}),1);
+    if isempty(ri) || canFlux(ri); continue; end
+    touchNames = model.metNames(model.S(:,r)~=0);
+    if any(ismember(touchNames, precNames)) && placedComp(r) ~= bcIdx
+        fb = [k, bcIdx]; return;
+    end
 end
 end
 
-function s = i_signature(forced, groups)
-gp = '';
-for i=1:numel(groups); gp = [gp '|' num2str(sort(groups{i}(:)'))]; end %#ok<AGROW>
-s = [num2str(forced(:)') '#' gp];
-end
-
-% ------------------------------------------------------------------- apply
-function outModel = i_applyAssignment(model, placement, addedTransports, comps, defaultCompartment)
-% Build the compartmentalised model: relabel each placed reaction's metabolites
-% into its compartment (creating per-compartment metabolite copies) and add the
-% requested transports.
+% ============================================================ materialisation
+function outModel = i_applyAssignment(model, sc, comps, defaultCompartment, placeIdx, trMet, trComp)
 outModel = model;
 for ci = 1:numel(comps)
     if ~ismember(comps{ci}, outModel.comps)
@@ -487,19 +520,40 @@ for ci = 1:numel(comps)
         if isfield(outModel,'compNames'); outModel.compNames{end+1,1} = comps{ci}; end
     end
 end
-for k = 1:numel(placement.rxns)
-    r = find(strcmp(outModel.rxns, placement.rxns{k}), 1);
-    comp = placement.compartment{k};
-    srcR = find(strcmp(model.rxns,placement.rxns{k}),1);
-    mrows = find(model.S(:, srcR) ~= 0); %#ok<*FNDSB>
+for k = 1:numel(sc.movIdx)
+    r = sc.movIdx(k); comp = comps{placeIdx(k)};
+    mrows = find(model.S(:, r) ~= 0);
     for mm = mrows'
         [outModel, newMet] = i_metInComp(outModel, model, mm, comp);
-        outModel.S(newMet, r) = model.S(mm, srcR);
+        outModel.S(newMet, r) = model.S(mm, r);
         if ~isequal(newMet, mm); outModel.S(mm, r) = 0; end
     end
 end
-for k = 1:numel(addedTransports.mets)
-    outModel = i_addTransport(outModel, model, addedTransports.mets{k}, addedTransports.compartment{k}, defaultCompartment);
+for k = 1:numel(trMet)
+    outModel = i_addTransport(outModel, model, trMet(k), comps{trComp(k)}, defaultCompartment, k-1);
+end
+outModel = i_reconcileFields(outModel);
+end
+
+function model = i_reconcileFields(model)
+% Pad every registered rxn/met/gene/comp-indexed field to the current entity
+% count, so the materialised model stays consistent for downstream functions
+% (haveFlux, removeReactions, ...). Only the core fields are grown as
+% reactions/metabolites are added; the rest are reconciled here.
+reg = ravenModelFields();
+counts = struct('rxn',numel(model.rxns),'met',numel(model.mets), ...
+    'gene',numel(model.genes),'comp',numel(model.comps));
+for i=1:numel(reg)
+    f = reg(i).name;
+    if ~isfield(model,f) || strcmp(f,'rxns') || strcmp(f,'mets') || ...
+            strcmp(f,'genes') || strcmp(f,'comps'); continue; end
+    n = counts.(reg(i).type);
+    cur = size(model.(f),1);
+    if cur >= n; continue; end
+    def = reg(i).default;
+    for j = cur+1:n
+        if iscell(model.(f)); model.(f){j,1} = def; else; model.(f)(j,1) = def; end
+    end
 end
 end
 
@@ -508,7 +562,7 @@ ci = find(strcmp(outModel.comps, comp), 1);
 name = model.metNames{srcMetRow};
 cand = find(strcmp(outModel.metNames, name) & outModel.metComps == ci, 1);
 if ~isempty(cand); idx = cand; return; end
-newId = [model.mets{srcMetRow} '_' comp];
+newId = [model.mets{srcMetRow} '__' comp];
 outModel.mets{end+1,1} = newId;
 outModel.metNames{end+1,1} = name;
 outModel.metComps(end+1,1) = ci;
@@ -517,12 +571,10 @@ if isfield(outModel,'b'); outModel.b(end+1,1) = 0; end
 idx = numel(outModel.mets);
 end
 
-function outModel = i_addTransport(outModel, model, metId, comp, defaultCompartment)
-srcRow = find(strcmp(model.mets, metId), 1);
-if isempty(srcRow); return; end
+function outModel = i_addTransport(outModel, model, srcRow, comp, defaultCompartment, n)
 [outModel, dRow] = i_metInComp(outModel, model, srcRow, defaultCompartment);
 [outModel, cRow] = i_metInComp(outModel, model, srcRow, comp);
-trId = ['tr_' model.metNames{srcRow} '_' comp];
+trId = ['tr_' num2str(n) '_' comp];
 if any(strcmp(outModel.rxns, trId)); return; end
 outModel.rxns{end+1,1} = trId;
 outModel.S(:, end+1) = 0; outModel.S(dRow, end) = -1; outModel.S(cRow, end) = 1;
@@ -532,4 +584,44 @@ if isfield(outModel,'c'); outModel.c(end+1,1) = 0; end
 if isfield(outModel,'rxnNames'); outModel.rxnNames{end+1,1} = trId; end
 if isfield(outModel,'grRules'); outModel.grRules{end+1,1} = ''; end
 if isfield(outModel,'rxnGeneMat'); outModel.rxnGeneMat(end+1,:) = 0; end
+end
+
+% ============================================================ helpers
+function comp = i_reactionCompartments(model)
+% Per reaction: the single compartment id of its metabolites, '' if boundary
+% or multi-compartment.
+comp = cell(numel(model.rxns),1);
+for r=1:numel(model.rxns)
+    cc = unique(model.metComps(model.S(:,r)~=0));
+    if numel(cc)==1; comp{r} = model.comps{cc}; else; comp{r} = ''; end
+end
+end
+
+function pc = i_placedCompartments(model, sc, comps, placeIdx)
+% Per reaction index: compartment index. Movable -> placeIdx; pinned -> its own
+% compartment; 0 if boundary/multi-compartment.
+pc = zeros(numel(model.rxns),1);
+for k=1:numel(sc.movIdx); pc(sc.movIdx(k)) = placeIdx(k); end
+for r = sc.pinIdx'
+    if ~isempty(sc.rxnComp{r})
+        ci = find(strcmp(comps, sc.rxnComp{r}),1);
+        if ~isempty(ci); pc(r) = ci; end
+    end
+end
+end
+
+function tf = i_hasGroup(groups, g)
+tf = false; g = sort(g(:)');
+for i=1:numel(groups)
+    if isequal(sort(groups{i}(:)'), g); tf = true; return; end
+end
+end
+
+function s = i_signature(forced, groups)
+fk = sort(cell2mat(keys(forced)));
+fs = '';
+for i=1:numel(fk); fs = [fs sprintf('%d:%d,', fk(i), forced(fk(i)))]; end %#ok<AGROW>
+gs = '';
+for i=1:numel(groups); gs = [gs '|' num2str(sort(groups{i}(:)'))]; end %#ok<AGROW>
+s = [fs '#' gs];
 end

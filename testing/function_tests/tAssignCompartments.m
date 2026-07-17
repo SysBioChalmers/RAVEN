@@ -76,19 +76,19 @@ classdef tAssignCompartments < RavenTestCase
             testCase.assumeMILPSolver();
             model = tAssignCompartments.chainToy();
             GSS = tAssignCompartments.chainGss();
-            % X_c non-transportable, S_c/P_c transportable (so the biomass
-            % path is not what forces co-location).
+            % X non-transportable (S/P transportable, keyed by metabolite
+            % name), so the biomass path is not what forces co-location.
             evalc(['[~, place, ~, ok] = assignCompartments(model, GSS, {''r1'';''r2''}, ' ...
-                   '''defaultCompartment'', ''c'', ''transportable'', {''S_c'';''P_c''}, ''verbose'', false);']);
+                   '''defaultCompartment'', ''c'', ''transportable'', {''S'';''P''}, ''verbose'', false);']);
             testCase.verifyEqual(ok, 1);
             c1 = place.compartment{strcmp(place.rxns,'r1')};
             c2 = place.compartment{strcmp(place.rxns,'r2')};
             testCase.verifyEqual(c1, c2);                     % co-located
 
-            % With X_c transportable too, nothing forces co-location and the
-            % opposing scores split the two reactions across compartments.
+            % With X transportable too, nothing forces co-location and the
+            % dominant scores split the two reactions across compartments.
             evalc(['[~, sp] = assignCompartments(model, GSS, {''r1'';''r2''}, ' ...
-                   '''defaultCompartment'', ''c'', ''transportable'', {''S_c'';''X_c'';''P_c''}, ''verbose'', false);']);
+                   '''defaultCompartment'', ''c'', ''transportable'', {''S'';''X'';''P''}, ''verbose'', false);']);
             testCase.verifyNotEqual(sp.compartment{strcmp(sp.rxns,'r1')}, ...
                                     sp.compartment{strcmp(sp.rxns,'r2')});
         end
@@ -125,10 +125,13 @@ classdef tAssignCompartments < RavenTestCase
             model.rxnGeneMat=sparse([0 0; 1 0; 0 1; 0 0]);
         end
         function GSS = chainGss()
-            % g1 prefers 'c' strongly, g2 prefers 'm'; co-located in 'c' wins
-            % on combined score (0.9+0.6 > 0.1+0.9).
+            % Each gene has a single dominant compartment (the other score is
+            % below the 0.5 multi-compartment penalty), so placement is
+            % determined without a tie-break: g1 -> 'c', g2 -> 'm'. When X is
+            % transportable they split; when X is non-transportable the shared
+            % pool co-locates them, in 'c' (combined 0.9+0.3 > 0.1+0.9).
             GSS.genes={'g1';'g2'}; GSS.compartments={'c';'m'};
-            GSS.scores=[0.9 0.1; 0.6 0.9];
+            GSS.scores=[0.9 0.1; 0.3 0.9];
         end
     end
 end
