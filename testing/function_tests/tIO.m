@@ -102,6 +102,23 @@ classdef tIO < RavenTestCase
             testCase.verifyEqual(numel(m2.rxns), numel(testCase.model.rxns));
         end
 
+        function writeReadYAMLPreservesCompartmentAnnotations(testCase)
+            % Compartment annotations must round-trip, and must not be read
+            % back as additional compartments.
+            m = testCase.model;
+            m.compMiriams = cell(numel(m.comps),1);
+            m.compMiriams{1}.name  = {'go'};
+            m.compMiriams{1}.value = {'GO:0005737'};
+            f = [tempname '.yml'];
+            testCase.addTeardown(@() delete(f));
+            evalc('writeYAMLmodel(m, f);');
+            evalc('m2 = readYAMLmodel(f);');
+            testCase.verifyEqual(m2.comps, m.comps);
+            testCase.verifyEqual(m2.compNames, m.compNames);
+            testCase.verifyEqual(m2.compMiriams{1}.name, {'go'});
+            testCase.verifyEqual(m2.compMiriams{1}.value, {'GO:0005737'});
+        end
+
         function exportToTabDelimitedWritesFiles(testCase)
             d = [tempname filesep];
             mkdir(d);
