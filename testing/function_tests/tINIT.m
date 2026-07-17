@@ -172,6 +172,27 @@ classdef tINIT < RavenTestCase
             testCase.verifyTrue(all(strcmp(mTempRef.rxns(addedRxnMat), 'R7')));
         end
 
+        function ftINITFillGapsForAllTasksReportsUnfillableTask(testCase)
+            % R7 is required for the task, so removing it from the reference
+            % model as well leaves the task unfillable. That must be reported,
+            % not reported as "Added 0 reaction(s)" like an already-working
+            % task.
+            testCase.assumeMILPSolver();
+            testModel      = getTstModel();
+            testModelTasks = getTstModelTasks();
+            testRxnScores  = getTstModelRxnScores();
+
+            mTempRef = closeModel(testModel);
+            mTempRef = removeReactions(mTempRef, {'R1';'R7';'R8'});
+            mTemp    = mTempRef;
+            mTemp.id = 'tmp';
+            tmpRxnScores = testRxnScores([2;3;4;5;6;9;10]);
+            evalc(['[~,addedRxnMat,failedTasks] = ftINITFillGapsForAllTasks(mTemp,' ...
+                'mTempRef,[],false,min(tmpRxnScores,-0.1),testModelTasks);']);
+            testCase.verifyTrue(failedTasks(1));
+            testCase.verifyFalse(any(addedRxnMat(:)));
+        end
+
         function ftINITMetabolomicsRuns(testCase)
             % Detected metabolites steer ftINIT towards alternative pathways.
             testCase.assumeMILPSolver();

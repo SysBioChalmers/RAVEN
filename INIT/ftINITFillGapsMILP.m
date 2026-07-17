@@ -231,13 +231,19 @@ params.Seed = 26;%This is weird - although it says "optimal solution found", we 
 
 % Optimize the problem
 res = optimizeProb(prob,params,verbose);
-isFeasible=checkSolution(res);
+[isFeasible, isOptimal]=checkSolution(res);
 
 if ~isFeasible
     x=[];
     I=[];
     exitFlag=-1;
     return;
+end
+if ~isOptimal
+    %A feasible but suboptimal solution, i.e. the solver stopped on its time
+    %limit. The solution is still returned, but must not be reported as
+    %optimal: the gap-fill it describes may be far from the smallest one.
+    exitFlag=-2;
 end
 
 x=res.full(1:numel(model.rxns));%the fluxes
