@@ -57,7 +57,29 @@ end
 % Rebalance H+ to keep charge neutrality.
 Hc = find(strcmp(model.mets, biomassConfig.proton_met));
 model.S(Hc, rxnPos) = 0;
-model.S(Hc, rxnPos) = -sum(model.S(:, rxnPos) .* model.metCharges, 'omitnan');
+model.S(Hc, rxnPos) = -chargeResidual(model, rxnPos);
+end
+
+function residual = chargeResidual(model, rxnPos)
+% Sum of charges over the metabolites that take part in a reaction. Only the
+% participants may be summed: S is sparse and 0*NaN is NaN, so any unset
+% charge in the model would otherwise poison the result. Summing with
+% 'omitnan' instead would treat an unset charge as neutral and silently
+% rebalance the reaction to the wrong coefficient.
+metIdx = find(model.S(:, rxnPos));
+if ~isfield(model, 'metCharges')
+    error('scaleBiomassPseudoreaction:noCharges', ...
+        ['Cannot rebalance charge: the model has no metCharges field. ' ...
+         'Provide metabolite charges, or rescale without charge balancing.']);
+end
+unknown = metIdx(isnan(model.metCharges(metIdx)));
+if ~isempty(unknown)
+    error('scaleBiomassPseudoreaction:unknownCharge', ...
+        ['Cannot rebalance charge of %s: the following metabolites have no ' ...
+         'charge, so the charge balance is unknown rather than zero:\n\t%s'], ...
+        model.rxns{rxnPos}, strjoin(model.mets(unknown), ', '));
+end
+residual = sum(full(model.S(metIdx, rxnPos)) .* model.metCharges(metIdx));
 end
 
 function comp = findComponent(cfg, name)
