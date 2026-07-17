@@ -113,6 +113,86 @@ classdef tManipulation < RavenTestCase
             testCase.verifyGreaterThanOrEqual(numel(m2.rxns), numel(testCase.model.rxns));
         end
 
+        function convertToIrrevSplitsBoundsAndStoichiometry(testCase)
+            % A reversible reaction with bounds (-500,1000) keeps (0,1000) and
+            % its stoichiometry, while the _REV copy gets (0,500) and the
+            % negated stoichiometry.
+            m = tManipulation.twoMetModel();
+            m.rev = 1; m.lb = -500; m.ub = 1000;
+            m2 = convertToIrrev(m);
+
+            fwd = strcmp(m2.rxns, 'R1');
+            rev = strcmp(m2.rxns, 'R1_REV');
+            testCase.verifyTrue(any(rev));
+            testCase.verifyEqual(full(m2.lb(fwd)), 0);
+            testCase.verifyEqual(full(m2.ub(fwd)), 1000);
+            testCase.verifyEqual(full(m2.lb(rev)), 0);
+            testCase.verifyEqual(full(m2.ub(rev)), 500);
+            testCase.verifyEqual(full(m2.S(:,fwd)), [-1;1]);
+            testCase.verifyEqual(full(m2.S(:,rev)), [1;-1]);
+        end
+
+        function convertToIrrevReverseCopyInheritsGrRule(testCase)
+            % The _REV copy is catalysed by the same genes as the forward one.
+            m = tManipulation.twoMetModel();
+            m.rev = 1; m.lb = -500; m.ub = 1000;
+            m.genes = {'g1'}; m.grRules = {'g1'}; m.rxnGeneMat = sparse(1,1,1);
+            m2 = convertToIrrev(m);
+            testCase.verifyEqual(m2.grRules{strcmp(m2.rxns,'R1_REV')}, 'g1');
+        end
+
+        function findDuplicateRxnsIgnoreDirection(testCase)
+            % a -> b and b -> a are the same reaction run backwards, so they
+            % group by default and stay separate when direction matters.
+            m = tManipulation.twoMetModel();
+            m.rxns     = {'R1';'R2'};
+            m.rxnNames = {'R1';'R2'};
+            m.S   = sparse([-1 1; 1 -1]);
+            m.lb  = [0;0]; m.ub = [1000;1000]; m.rev = [0;0]; m.c = [0;0];
+            m.grRules = {'';''}; m.rxnGeneMat = sparse(2,0);
+
+            pairs = findDuplicateRxns(m);
+            testCase.verifyEqual(pairs, [1 2]);
+
+            pairs = findDuplicateRxns(m, 'ignoreDirection', false);
+            testCase.verifyEmpty(pairs);
+        end
+
+        function changeGrRulesAppendsToExistingRule(testCase)
+            % replace=false must OR the new rule onto the existing one rather
+            % than overwrite it, and add the new gene to the model.
+            m2 = changeGrRules(testCase.model, 'ACKr', 'b9999', false);
+            rule = m2.grRules{strcmp(m2.rxns, 'ACKr')};
+            testCase.verifySubstring(rule, 'b9999');
+            testCase.verifySubstring(rule, ' or ');
+            % the gene the reaction already had must still be in the rule
+            oldRule = testCase.model.grRules{strcmp(testCase.model.rxns, 'ACKr')};
+            oldGene = regexp(oldRule, 'b\d+', 'match', 'once');
+            testCase.verifySubstring(rule, oldGene);
+            testCase.verifyTrue(ismember('b9999', m2.genes));
+        end
+
+        function copyToCompsDeleteOriginalIsAMove(testCase)
+            % deleteOriginal turns the copy into a move: the reaction count is
+            % unchanged and the original compartment's copy is gone.
+            evalc('copied = copyToComps(testCase.model, {''p''}, ''rxns'', ''ACKr'');');
+            evalc(['moved = copyToComps(testCase.model, {''p''}, ''rxns'', ''ACKr'', ' ...
+                '''deleteOriginal'', true);']);
+            testCase.verifyEqual(numel(copied.rxns), numel(testCase.model.rxns) + 1);
+            testCase.verifyEqual(numel(moved.rxns), numel(testCase.model.rxns));
+        end
+
+        function mergeModelsMetParamDecidesUnification(testCase)
+            % The same metabolite under two ids unifies when matching on names
+            % and stays distinct when matching on ids.
+            a = tManipulation.namedMetModel('glc_c', 'A');
+            b = tManipulation.namedMetModel('glucose_c', 'B');
+            evalc('byName = mergeModels({a; b});');
+            evalc('byId   = mergeModels({a; b}, ''metParam'', ''mets'');');
+            testCase.verifyEqual(nnz(strcmp(byName.metNames, 'Glucose')), 1);
+            testCase.verifyEqual(nnz(strcmp(byId.metNames, 'Glucose')), 2);
+        end
+
         function copyToCompsAddsCompartment(testCase)
             evalc('m2 = copyToComps(testCase.model, {''p''}, ''ACKr'');');
             testCase.verifyTrue(ismember('p', m2.comps));
@@ -249,6 +329,44 @@ classdef tManipulation < RavenTestCase
         function standardizeGrRulesReturnsRules(testCase)
             evalc('grRules = standardizeGrRules(testCase.model);');
             testCase.verifyNumElements(grRules, numel(testCase.model.rxns));
+        end
+
+    end
+
+    methods (Static, Access = private)
+
+        function m = twoMetModel()
+            % Single reaction a -> b in one compartment.
+            m = struct();
+            m.id        = 'toy';
+            m.rxns      = {'R1'};
+            m.rxnNames  = {'R1'};
+            m.mets      = {'a';'b'};
+            m.metNames  = {'a';'b'};
+            m.metComps  = [1;1];
+            m.comps     = {'c'};
+            m.compNames = {'cytosol'};
+            m.S         = sparse([-1;1]);
+            m.lb = 0; m.ub = 1000; m.rev = 0; m.c = 0; m.b = zeros(2,1);
+            m.genes = {}; m.grRules = {''}; m.rxnGeneMat = sparse(1,0);
+            m.metFormulas = {'C';'C'};
+        end
+
+        function m = namedMetModel(glucoseId, modelId)
+            % Glucose[c] under a caller-chosen id, consumed by one reaction.
+            m = struct();
+            m.id        = modelId;
+            m.rxns      = {['R_' modelId]};
+            m.rxnNames  = m.rxns;
+            m.mets      = {glucoseId; ['product_' modelId]};
+            m.metNames  = {'Glucose'; ['Product' modelId]};
+            m.metComps  = [1;1];
+            m.comps     = {'c'};
+            m.compNames = {'cytosol'};
+            m.S         = sparse([-1;1]);
+            m.lb = 0; m.ub = 1000; m.rev = 0; m.c = 0; m.b = zeros(2,1);
+            m.genes = {}; m.grRules = {''}; m.rxnGeneMat = sparse(1,0);
+            m.metFormulas = {'C6H12O6';'C'};
         end
 
     end
