@@ -65,6 +65,10 @@ end
 equations=strtrim(equations);
 equations=fixEquations(equations);
 
+%A supplied list is authoritative, so an entry in it can be matched in full
+%before the leading number of "2 oxoglutarate" is read as a coefficient. A
+%list derived from the equations cannot disambiguate that.
+metsSupplied=~isempty(mets);
 if isempty(mets)
     mets=parseRxnEqu(equations);
 end
@@ -125,6 +129,11 @@ for i=1:numel(equations)
             %No coefficient
             coeff=1;
             name=metabolites{j};
+        elseif metsSupplied && any(strcmp(strtrim(metabolites{j}),mets))
+            %The whole entry is a known metabolite, so its leading number is
+            %part of its name ("2 oxoglutarate") rather than a coefficient
+            coeff=1;
+            name=strtrim(metabolites{j});
         else
             coeff=str2double(metabolites{j}(1:space(1)));
             
