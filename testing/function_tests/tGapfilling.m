@@ -140,6 +140,37 @@ classdef tGapfilling < RavenTestCase
             testCase.verifyNumElements(result.reachableMets, numel(gapModel.mets));
         end
 
+        function gapFillTopologicalReachesThroughInExchange(testCase)
+            % A -> B -> C fed by an 'in' exchange on A. addExchangeRxns writes
+            % 'in' as "=> A", which has lb = 0, so a seed test of lb < 0 finds
+            % no uptake at all and every metabolite comes back blocked.
+            m = testCase.chainModel();
+            m = addExchangeRxns(m, 'in', {'A'});
+            evalc(['result = gapFillTopological(m, m, ''targets'', ' ...
+                '{''A'',''B'',''C''}, ''verbose'', false);']);
+            testCase.verifyTrue(all(result.reachableMets));
+            testCase.verifyEmpty(result.blockedMets);
+        end
+
+        function gapFillTopologicalReachesThroughReversibleExchange(testCase)
+            % "A <=>" supplies A too, but is 'reverse' rather than 'uptake'.
+            m = testCase.chainModel();
+            m = addExchangeRxns(m, 'both', {'A'});
+            evalc(['result = gapFillTopological(m, m, ''targets'', ' ...
+                '{''A'',''B'',''C''}, ''verbose'', false);']);
+            testCase.verifyTrue(all(result.reachableMets));
+        end
+
+        function gapFillTopologicalBlocksWithoutExchange(testCase)
+            % Without any exchange nothing is producible: the positive control
+            % for the two tests above.
+            m = testCase.chainModel();
+            evalc(['result = gapFillTopological(m, m, ''seeds'', {}, ''targets'', ' ...
+                '{''A'',''B'',''C''}, ''verbose'', false);']);
+            testCase.verifyFalse(any(result.reachableMets));
+            testCase.verifyNumElements(result.blockedMets, 3);
+        end
+
         function gapFillMILPRepairsGrowth(testCase)
             testCase.assumeMILPSolver();
             modelDB = testCase.model; modelDB.id = 'DB';
@@ -189,5 +220,19 @@ classdef tGapfilling < RavenTestCase
             testCase.verifyEqual(exitFlag, 1);
         end
 
+    end
+
+    methods (Access = private)
+        function m = chainModel(~)
+            % A -> B -> C, no exchanges; the caller adds the ones it needs.
+            m = struct();
+            m.rxns = {'R1';'R2'}; m.rxnNames = {'R1';'R2'};
+            m.mets = {'A';'B';'C'}; m.metNames = {'A';'B';'C'}; m.metComps = [1;1;1];
+            m.comps = {'c'}; m.compNames = {'c'};
+            m.S = sparse([-1 0; 1 -1; 0 1]);
+            m.lb = [0;0]; m.ub = [1000;1000]; m.rev = [0;0]; m.c = [0;1];
+            m.b = [0;0;0];
+            m.genes = {}; m.grRules = {'';''}; m.rxnGeneMat = sparse(2,0);
+        end
     end
 end

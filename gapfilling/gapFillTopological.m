@@ -31,7 +31,8 @@ function result = gapFillTopological(model, universalModel, varargin)
 % --------------------------------
 % 'seeds' (default [])
 %     Metabolite IDs (cell array) available from the medium. Default:
-%     metabolites involved in uptake exchange reactions (lb < 0).
+%     metabolites of every exchange reaction whose bounds let it supply the
+%     metabolite, i.e. getExchangeRxns 'uptake' plus 'reverse'.
 % 'targets' (default [])
 %     Metabolite IDs (cell array) that should be produced. Default:
 %     substrates of the objective (biomass) reaction.
@@ -67,9 +68,22 @@ nRxns = numel(model.rxns);
 
 % ---- Identify seed metabolites ----
 if isempty(seeds)
-    % Default: metabolites in exchange reactions that allow uptake (lb < 0)
-    [~, exchIdx] = getExchangeRxns(model);
-    uptakeIdx = exchIdx(model.lb(exchIdx) < 0);
+    % Default: metabolites that an exchange reaction can supply. Ask
+    % getExchangeRxns rather than testing lb < 0 here: RAVEN writes an uptake
+    % exchange either as "=> met" (addExchangeRxns 'in', so lb = 0 and a
+    % positive flux supplies the metabolite) or as "met =>" with lb < 0. Only
+    % the second has lb < 0, so a hand-rolled lb < 0 test silently misses
+    % every 'in' exchange.
+    %
+    % 'uptake' alone is not enough either: it means the bounds allow *only*
+    % uptake, so a reversible exchange ("met <=>") is classified 'reverse'
+    % even though it supplies the metabolite just as well. The union of the
+    % two is exactly "forward flux produces it, or reverse flux does", which
+    % is what analyse_topology's lower_bound < 0 test means under cobra's
+    % convention, where every exchange is written "met <=>".
+    [~, onlyUptakeIdx] = getExchangeRxns(model, 'uptake');
+    [~, reversibleIdx] = getExchangeRxns(model, 'reverse');
+    uptakeIdx = union(onlyUptakeIdx, reversibleIdx);
     if isempty(uptakeIdx)
         warning(['gapFillTopological: no uptake exchange reactions found. ' ...
             'Provide seeds manually via the ''seeds'' option.']);
@@ -149,6 +163,20 @@ firedRev  = false(nRxns, 1);
 queue  = seedMetIdx(:)';
 qHead  = 1;
 reachable(seedMetIdx) = true;
+
+% Reactions with no substrates have nothing to wait for and fire straight
+% away. They are in no subOf list, so the countdown below never reaches them
+% and their products would otherwise stay unreachable forever. This is where
+% "=> met" uptake exchanges enter the scope.
+for j = find(subCountFwd == 0)'
+    firedFwd(j) = true;
+    for p = rxnProds{j}
+        if ~reachable(p)
+            reachable(p) = true;
+            queue(end+1) = p; %#ok<AGROW>
+        end
+    end
+end
 
 while qHead <= numel(queue)
     m = queue(qHead);
