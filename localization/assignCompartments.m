@@ -50,10 +50,23 @@ function [outModel, placement, addedTransports, exitFlag, report] = assignCompar
 %     budget on placement-tightening rounds.
 % pruneTransports : logical (default true)
 %     drop transports blocked in every certification medium.
+% minimizeTransports : logical (default false)
+%     after certifying, prune transports to those carrying flux in a
+%     parsimonious-FBA solution, re-certifying (falls back if a needed
+%     transport is pruned).
+% biomassReaction : char (default [] = the largest objective-coefficient
+%     reaction)
+%     the reaction whose flux is the growth objective.
+% baseMetabolite : char (default 'name')
+%     the compartment-agnostic metabolite key: 'name' (metNames, the RAVEN
+%     convention) or 'id' (model.mets).
 % transportCost : double (default 0.5)
 %     accepted for signature compatibility but NOT used (placement is
 %     flux-free and score-only).
 % verbose : logical (default true)
+%
+% Not ported from the raven-toolbox reference: universal-model gap-fill, and
+% multi-localization (which requires a loopless FVA RAVEN does not provide).
 %
 % Returns
 % -------
@@ -74,13 +87,15 @@ function [outModel, placement, addedTransports, exitFlag, report] = assignCompar
 
 p = parseRAVENargs(varargin, {'defaultCompartment',[]; 'transportCost',0.5; ...
     'multiCompartmentPenalty',0.5; 'minGrowth',[]; 'transportable',[]; ...
-    'growthConditions',[]; 'maxRounds',8; 'pruneTransports',true; 'verbose',true});
+    'growthConditions',[]; 'maxRounds',8; 'pruneTransports',true; ...
+    'minimizeTransports',false; 'biomassReaction',[]; 'baseMetabolite',[]; 'verbose',true});
 defaultCompartment = char(p.defaultCompartment);
 multiPen = p.multiCompartmentPenalty;
 minGrowth = p.minGrowth;
 growthConditions = p.growthConditions;
 maxRounds = p.maxRounds;
 pruneTransports = p.pruneTransports;
+minimizeTransports = p.minimizeTransports;
 verbose = p.verbose;
 
 outModel = model;
@@ -100,7 +115,7 @@ if ~ismember(defaultCompartment, comps)
 end
 
 % ---- scope: biomass, growth floor, movable/pinned, genes, transportable ----
-sc = i_prepareScope(model, GSS, reactionsToRelocate, comps, defaultCompartment, minGrowth, p.transportable, verbose);
+sc = i_prepareScope(model, GSS, reactionsToRelocate, comps, minGrowth, p.transportable, p.biomassReaction, p.baseMetabolite);
 minGrowth = sc.minGrowth;
 report.unplaced = sc.unplaced;
 
@@ -114,7 +129,7 @@ forced = containers.Map('KeyType','double','ValueType','double');  % movable loc
 groups = {};
 gapPinned = containers.Map('KeyType','double','ValueType','logical');
 seen = {};
-best = struct('placeIdx',[],'trMet',[],'trComp',[],'growths',struct('primary',-1), ...
+best = struct('placeIdx',[],'trBase',[],'trComp',[],'growths',struct('primary',-1), ...
     'certified',false,'status','uncertified');
 
 for round = 1:maxRounds
@@ -150,24 +165,29 @@ for round = 1:maxRounds
     end
 
     % transports + materialise + certify
-    [trMet, trComp] = i_splitTransports(model, sc, comps, defaultCompartment, placeIdx, relaxed);
-    outModel = i_applyAssignment(model, sc, comps, defaultCompartment, placeIdx, trMet, trComp);
+    [trBase, trComp] = i_splitTransports(model, sc, comps, defaultCompartment, placeIdx, relaxed);
+    outModel = i_applyAssignment(model, sc, comps, defaultCompartment, placeIdx, trBase, trComp);
     [ok, growths] = i_certify(outModel, sc.biomassId, minGrowth, growthConditions);
 
     if ok
-        if pruneTransports && ~isempty(trMet)
-            [trMet, trComp] = i_usableTransports(outModel, trMet, trComp, comps, sc.biomassId, growthConditions);
-            outModel = i_applyAssignment(model, sc, comps, defaultCompartment, placeIdx, trMet, trComp);
+        if pruneTransports && ~isempty(trBase)
+            keep = i_usableTransports(outModel, trComp, comps, sc.biomassId, growthConditions);
+            trBase = trBase(keep); trComp = trComp(keep);
+            outModel = i_applyAssignment(model, sc, comps, defaultCompartment, placeIdx, trBase, trComp);
+        end
+        if minimizeTransports && ~isempty(trBase)
+            [trBase, trComp, outModel] = i_minimizeTransports(model, sc, comps, ...
+                defaultCompartment, placeIdx, trBase, trComp, minGrowth, growthConditions);
         end
         exitFlag = 1; report.status = 'certified'; report.certified = true; report.growths = growths;
         placement.rxns = model.rxns(sc.movIdx); placement.compartment = comps(placeIdx);
-        addedTransports.mets = sc.metNames(trMet); addedTransports.compartment = comps(trComp);
+        addedTransports.mets = sc.baseNames(trBase); addedTransports.compartment = comps(trComp);
         return;
     end
 
     % keep best partial (largest primary growth)
     if growths.primary > best.growths.primary
-        best = struct('placeIdx',placeIdx,'trMet',trMet,'trComp',trComp,'growths',growths, ...
+        best = struct('placeIdx',placeIdx,'trBase',trBase,'trComp',trComp,'growths',growths, ...
             'certified',false,'status','uncertified');
     end
 
@@ -182,9 +202,9 @@ end
 
 % honest uncertified result: return the best partial found
 if ~isempty(best.placeIdx)
-    outModel = i_applyAssignment(model, sc, comps, defaultCompartment, best.placeIdx, best.trMet, best.trComp);
+    outModel = i_applyAssignment(model, sc, comps, defaultCompartment, best.placeIdx, best.trBase, best.trComp);
     placement.rxns = model.rxns(sc.movIdx); placement.compartment = comps(best.placeIdx);
-    addedTransports.mets = sc.metNames(best.trMet); addedTransports.compartment = comps(best.trComp);
+    addedTransports.mets = sc.baseNames(best.trBase); addedTransports.compartment = comps(best.trComp);
     report.growths = best.growths;
 end
 report.status = 'uncertified';
@@ -194,8 +214,16 @@ end
 end
 
 % ============================================================ scope
-function sc = i_prepareScope(model, GSS, relocate, comps, defaultCompartment, minGrowth, transportable, verbose) %#ok<INUSD>
-biomassIdx = find(model.c ~= 0, 1);
+function sc = i_prepareScope(model, GSS, relocate, comps, minGrowth, transportable, biomassReaction, baseMetabolite)
+% biomass reaction: the largest-objective-coefficient reaction (or a named one)
+if isempty(biomassReaction)
+    [~, biomassIdx] = max(model.c);
+else
+    biomassIdx = find(strcmp(model.rxns, biomassReaction), 1);
+    if isempty(biomassIdx)
+        error('RAVEN:badInput','biomassReaction ''%s'' not in model.', biomassReaction);
+    end
+end
 sc.biomassId = model.rxns{biomassIdx};
 
 if isempty(minGrowth)
@@ -207,6 +235,13 @@ if isempty(minGrowth)
 end
 sc.minGrowth = minGrowth;
 
+% base metabolite key (identifies the same species across compartments).
+% Default 'name': RAVEN gives a metabolite a different id per compartment but a
+% shared metName, so the name is the compartment-agnostic key (the equivalent
+% of the Python default's compartment-suffix strip on cobra ids).
+if isempty(baseMetabolite); baseMetabolite = 'name'; end
+if strcmp(baseMetabolite,'name'); sc.base = model.metNames; else; sc.base = model.mets; end
+
 % each reaction's single compartment ('' if boundary/multi-compartment)
 sc.rxnComp = i_reactionCompartments(model);
 
@@ -214,7 +249,11 @@ toRelocate = ismember(model.rxns, relocate);
 isBoundary = (sum(model.S ~= 0, 1)' == 1);
 movable = toRelocate & ~isBoundary & ~cellfun(@isempty, sc.rxnComp);
 movable(biomassIdx) = false;
+% movable in sorted-reaction-id order (matching the Python master's variable
+% order, so an equal-cost placement is broken the same way).
 sc.movIdx = find(movable);
+[~, ord] = sort(model.rxns(sc.movIdx));
+sc.movIdx = sc.movIdx(ord);
 sc.pinIdx = find(~movable);
 
 % genes on movable reactions that are scored
@@ -239,13 +278,20 @@ for k = 1:numel(sc.movIdx)
     end
 end
 
-% base metabolite = metabolite name; transportable base names
+% base metabolites: the same species across compartments shares a base key, so
+% confinement and transports are keyed by base (not by per-compartment row),
+% matching Python. baseId maps each metabolite row to its base index.
 sc.metNames = model.metNames;
-movMetMask = any(model.S(:, sc.movIdx) ~= 0, 2);
+[sc.baseNames, baseRep, sc.baseId] = unique(sc.base, 'stable');
+sc.nBase = numel(sc.baseNames);
+sc.baseRep = baseRep;                                          % a met row per base
+movBase = false(sc.nBase,1);
+mrows = find(any(model.S(:, sc.movIdx) ~= 0, 2));
+movBase(sc.baseId(mrows)) = true;                             % bases touched by movable rxns
 if isnumeric(transportable) && isempty(transportable)
-    sc.isTransp = movMetMask;                                  % default: all movable bases
+    sc.baseTransp = movBase;                                   % default: all movable bases
 else
-    sc.isTransp = movMetMask & ismember(model.metNames, transportable);
+    sc.baseTransp = movBase & ismember(sc.baseNames, transportable);
 end
 end
 
@@ -360,19 +406,20 @@ placedComp = i_placedCompartments(model, sc, comps, placeIdx);   % per reaction,
 movLocal = containers.Map('KeyType','double','ValueType','double'); % rxn idx -> movable local idx
 for k=1:numel(sc.movIdx); movLocal(sc.movIdx(k)) = k; end
 
-nMet = numel(model.mets);
-usedComp = cell(nMet,1); usedRxn = cell(nMet,1);
+% used{base} = compartments (and touching reactions) a non-transportable base
+% appears in, keyed by base index.
+usedComp = cell(sc.nBase,1); usedRxn = cell(sc.nBase,1);
 allRxn = [sc.movIdx; sc.pinIdx];
 for r = allRxn'
     comp = placedComp(r);
     if comp == 0; continue; end     % multi-compartment reaction: bridges pools
-    for mm = find(model.S(:,r)~=0)'
-        if sc.isTransp(mm); continue; end
-        usedComp{mm}(end+1) = comp; usedRxn{mm}(end+1) = r;
+    for b = unique(sc.baseId(model.S(:,r)~=0))'
+        if sc.baseTransp(b); continue; end
+        usedComp{b}(end+1) = comp; usedRxn{b}(end+1) = r;
     end
 end
 
-for mm=1:nMet
+for mm=1:sc.nBase
     cs = unique(usedComp{mm});
     if numel(cs) <= 1; continue; end
     touching = usedRxn{mm};
@@ -393,30 +440,31 @@ end
 end
 
 % ============================================================ split transports
-function [trMet, trComp] = i_splitTransports(model, sc, comps, defaultCompartment, placeIdx, relaxed)
+function [trBase, trComp] = i_splitTransports(model, sc, comps, defaultCompartment, placeIdx, relaxed)
+% Returns (baseIndex, compIndex) transports for transportable/relaxed bases a
+% placement splits across compartments (routed through defaultCompartment).
 defC = find(strcmp(comps, defaultCompartment), 1);
 placedComp = i_placedCompartments(model, sc, comps, placeIdx);
 allRxn = [sc.movIdx; sc.pinIdx];
-nMet = numel(model.mets);
-used = cell(nMet,1);
+used = cell(sc.nBase,1);
 for r = allRxn'
     comp = placedComp(r);
     if comp == 0; continue; end
-    for mm = find(model.S(:,r)~=0)'
-        if sc.isTransp(mm) || (isKey(relaxed,mm))
-            used{mm}(end+1) = comp;
+    for b = unique(sc.baseId(model.S(:,r)~=0))'
+        if sc.baseTransp(b) || isKey(relaxed,b)
+            used{b}(end+1) = comp;
         end
     end
 end
-trMet=[]; trComp=[];
-for mm=1:nMet
-    cs = unique(used{mm});
+trBase=[]; trComp=[];
+for b=1:sc.nBase
+    cs = unique(used{b});
     if numel(cs) <= 1; continue; end
     for ci = sort(cs)
-        if ci ~= defC; trMet(end+1)=mm; trComp(end+1)=ci; end %#ok<AGROW>
+        if ci ~= defC; trBase(end+1)=b; trComp(end+1)=ci; end %#ok<AGROW>
     end
 end
-trMet=trMet(:); trComp=trComp(:);
+trBase=trBase(:); trComp=trComp(:);
 end
 
 % ============================================================ certification
@@ -456,32 +504,55 @@ end
 end
 
 % ============================================================ transport pruning
-function [trMet, trComp] = i_usableTransports(outModel, trMet, trComp, comps, biomassId, growthConditions)
-% Keep only transports that can carry flux in at least one certification
+function keep = i_usableTransports(outModel, trComp, comps, biomassId, growthConditions)
+% Logical mask of transports that can carry flux in at least one certification
 % medium (sound: an unusable reaction's removal cannot change any of those
 % FBAs).
-trId = cell(numel(trMet),1);
-for i=1:numel(trMet)
+nTr = numel(trComp);
+trId = cell(nTr,1);
+for i=1:nTr
     trId{i} = ['tr_' num2str(i-1) '_' comps{trComp(i)}];
 end
 media = {[]};
 if ~isempty(growthConditions) && isstruct(growthConditions)
     for i=1:numel(growthConditions); media{end+1} = growthConditions(i).medium; end %#ok<AGROW>
 end
-keep = false(numel(trMet),1);
+keep = false(nTr,1);
 for mi=1:numel(media)
     m = outModel;
     if ~isempty(media{mi}); m = i_applyMedium(m, media{mi}); end
     bIdx = find(strcmp(m.rxns, biomassId), 1);
     m.c = zeros(numel(m.rxns),1); m.c(bIdx) = 1;
-    idx = zeros(numel(trId),1);
-    for i=1:numel(trId); j=find(strcmp(m.rxns,trId{i}),1); if ~isempty(j); idx(i)=j; end; end
+    idx = zeros(nTr,1);
+    for i=1:nTr; j=find(strcmp(m.rxns,trId{i}),1); if ~isempty(j); idx(i)=j; end; end
     valid = idx>0;
-    fl = false(numel(trId),1);
+    fl = false(nTr,1);
     fl(valid) = haveFlux(m, 'rxns', idx(valid));
     keep = keep | fl;
 end
-trMet = trMet(keep); trComp = trComp(keep);
+end
+
+% ============================================================ transport minimisation
+function [trBase, trComp, outModel] = i_minimizeTransports(model, sc, comps, defaultCompartment, placeIdx, trBase, trComp, minGrowth, growthConditions)
+% Prune the transports to those carrying flux in a parsimonious-FBA solution,
+% then re-certify. Sound: a zero-flux reaction can be removed without changing
+% the solution. Falls back to the input set if pFBA is infeasible or the
+% pruned set regresses any medium.
+outModel = i_applyAssignment(model, sc, comps, defaultCompartment, placeIdx, trBase, trComp);
+bIdx = find(strcmp(outModel.rxns, sc.biomassId), 1);
+m = outModel; m.c = zeros(numel(m.rxns),1); m.c(bIdx) = 1;
+sol = solveLP(m, 1);
+if isempty(sol.x); return; end
+carry = false(numel(trBase),1);
+for i=1:numel(trBase)
+    j = find(strcmp(outModel.rxns, ['tr_' num2str(i-1) '_' comps{trComp(i)}]), 1);
+    if ~isempty(j) && abs(sol.x(j)) > 1e-7; carry(i) = true; end
+end
+newBase = trBase(carry); newComp = trComp(carry);
+minModel = i_applyAssignment(model, sc, comps, defaultCompartment, placeIdx, newBase, newComp);
+ok = i_certify(minModel, sc.biomassId, minGrowth, growthConditions);
+if ~ok; return; end                       % a needed transport was pruned: keep the safe set
+trBase = newBase; trComp = newComp; outModel = minModel;
 end
 
 % ============================================================ growth-gap feedback
@@ -512,7 +583,7 @@ end
 end
 
 % ============================================================ materialisation
-function outModel = i_applyAssignment(model, sc, comps, defaultCompartment, placeIdx, trMet, trComp)
+function outModel = i_applyAssignment(model, sc, comps, defaultCompartment, placeIdx, trBase, trComp)
 outModel = model;
 for ci = 1:numel(comps)
     if ~ismember(comps{ci}, outModel.comps)
@@ -529,8 +600,8 @@ for k = 1:numel(sc.movIdx)
         if ~isequal(newMet, mm); outModel.S(mm, r) = 0; end
     end
 end
-for k = 1:numel(trMet)
-    outModel = i_addTransport(outModel, model, trMet(k), comps{trComp(k)}, defaultCompartment, k-1);
+for k = 1:numel(trBase)
+    outModel = i_addTransport(outModel, model, sc.baseRep(trBase(k)), comps{trComp(k)}, defaultCompartment, k-1);
 end
 outModel = i_reconcileFields(outModel);
 end
