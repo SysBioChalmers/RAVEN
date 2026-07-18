@@ -60,13 +60,22 @@ function [outModel, placement, addedTransports, exitFlag, report] = assignCompar
 % baseMetabolite : char (default 'name')
 %     the compartment-agnostic metabolite key: 'name' (metNames, the RAVEN
 %     convention) or 'id' (model.mets).
+% universal : struct (default [])
+%     a template model; if a placement fails to certify because the primary
+%     medium falls short, gaps are filled from it (via fillGaps).
+% multiLocalize : logical (default false)
+%     after certifying, add multi-compartment placements: for each placed
+%     reaction, propose a second compartment its genes score highest for,
+%     materialise the duplicate, and keep it only if a loopless FVA
+%     (looplessFVA) shows it can carry flux in a biomass-supporting solution.
+% multiLocalizeThreshold : double (default 0.7)
+%     the gene score a second compartment needs for a duplicate to be proposed.
+% multiLocalizeEps : double (default 1e-6)
+%     the loopless flux a proposed duplicate must reach to be kept.
 % transportCost : double (default 0.5)
 %     accepted for signature compatibility but NOT used (placement is
 %     flux-free and score-only).
 % verbose : logical (default true)
-%
-% Not ported from the raven-toolbox reference: universal-model gap-fill, and
-% multi-localization (which requires a loopless FVA RAVEN does not provide).
 %
 % Returns
 % -------
@@ -88,7 +97,9 @@ function [outModel, placement, addedTransports, exitFlag, report] = assignCompar
 p = parseRAVENargs(varargin, {'defaultCompartment',[]; 'transportCost',0.5; ...
     'multiCompartmentPenalty',0.5; 'minGrowth',[]; 'transportable',[]; ...
     'growthConditions',[]; 'maxRounds',8; 'pruneTransports',true; ...
-    'minimizeTransports',false; 'biomassReaction',[]; 'baseMetabolite',[]; 'verbose',true});
+    'minimizeTransports',false; 'biomassReaction',[]; 'baseMetabolite',[]; ...
+    'universal',[]; 'multiLocalize',false; 'multiLocalizeThreshold',0.7; ...
+    'multiLocalizeEps',1e-6; 'verbose',true});
 defaultCompartment = char(p.defaultCompartment);
 multiPen = p.multiCompartmentPenalty;
 minGrowth = p.minGrowth;
@@ -96,6 +107,10 @@ growthConditions = p.growthConditions;
 maxRounds = p.maxRounds;
 pruneTransports = p.pruneTransports;
 minimizeTransports = p.minimizeTransports;
+universal = p.universal;
+multiLocalize = p.multiLocalize;
+mlThreshold = p.multiLocalizeThreshold;
+mlEps = p.multiLocalizeEps;
 verbose = p.verbose;
 
 outModel = model;
@@ -169,6 +184,14 @@ for round = 1:maxRounds
     outModel = i_applyAssignment(model, sc, comps, defaultCompartment, placeIdx, trBase, trComp);
     [ok, growths] = i_certify(outModel, sc.biomassId, minGrowth, growthConditions);
 
+    % feedback: gap-fill from the universal model if the primary medium fell short
+    if ~ok && ~isempty(universal) && growths.primary < minGrowth - 1e-9
+        gf = i_gapfill(outModel, universal, sc.biomassId, minGrowth);
+        if ~isempty(gf.rxns)
+            outModel = gf; [ok, growths] = i_certify(outModel, sc.biomassId, minGrowth, growthConditions);
+        end
+    end
+
     if ok
         if pruneTransports && ~isempty(trBase)
             keep = i_usableTransports(outModel, trComp, comps, sc.biomassId, growthConditions);
@@ -179,7 +202,13 @@ for round = 1:maxRounds
             [trBase, trComp, outModel] = i_minimizeTransports(model, sc, comps, ...
                 defaultCompartment, placeIdx, trBase, trComp, minGrowth, growthConditions);
         end
+        multiLoc = {};
+        if multiLocalize
+            [outModel, multiLoc] = i_enrichMultiloc(model, sc, comps, defaultCompartment, ...
+                placeIdx, outModel, minGrowth, mlThreshold, mlEps, growthConditions);
+        end
         exitFlag = 1; report.status = 'certified'; report.certified = true; report.growths = growths;
+        report.multiLocalized = multiLoc;
         placement.rxns = model.rxns(sc.movIdx); placement.compartment = comps(placeIdx);
         addedTransports.mets = sc.baseNames(trBase); addedTransports.compartment = comps(trComp);
         return;
@@ -530,6 +559,96 @@ for mi=1:numel(media)
     fl(valid) = haveFlux(m, 'rxns', idx(valid));
     keep = keep | fl;
 end
+end
+
+% ============================================================ universal gap-fill
+function outModel = i_gapfill(outModel, universal, biomassId, minGrowth)
+% Fill gaps from the universal model to restore the growth floor, using
+% RAVEN's fillGaps. The added reactions are validated by the caller's
+% certification FBA. On any failure the model is returned unchanged.
+outModel.rxns = outModel.rxns;   % ensure struct is returned even on failure
+try
+    bIdx = find(strcmp(outModel.rxns, biomassId), 1);
+    m = outModel; m.lb(bIdx) = minGrowth;   % require growth while filling
+    [~, ~, addedRxns, newModel] = evalc('fillGaps(m, {universal}, ''useModelConstraints'', true, ''minGrowth'', minGrowth, ''verbose'', false)');
+    if ~isempty(addedRxns)
+        newModel.lb(strcmp(newModel.rxns, biomassId)) = outModel.lb(bIdx);  % restore biomass bound
+        outModel = newModel;
+    end
+catch
+    % gap-fill infeasible or unavailable: leave the model unchanged
+end
+end
+
+% ============================================================ multi-localisation
+function [outModel, multiLoc] = i_enrichMultiloc(model, sc, comps, defaultCompartment, placeIdx, outModel, minGrowth, threshold, eps, growthConditions)
+% Add sound multi-compartment placements to a certified mono model: propose,
+% per placed reaction, a second compartment its genes score >= threshold for;
+% materialise every candidate as a duplicate; keep only those a loopless FVA
+% shows can carry flux >= eps at the growth floor. Re-certifies; on failure or
+% no survivor, returns the mono model.
+multiLoc = {};
+cand = [];  % [movableLocalIdx, compIdx]
+for k=1:numel(sc.movIdx)
+    genes = find(model.rxnGeneMat(sc.movIdx(k),:) ~= 0);
+    gl = arrayfun(@(g) find(sc.geneIdx==g,1), genes, 'UniformOutput', false);
+    gl = [gl{:}];
+    if isempty(gl); continue; end
+    for ci=1:numel(comps)
+        if ci == placeIdx(k); continue; end
+        if max(sc.score(gl, ci)) >= threshold
+            cand = [cand; k, ci]; %#ok<AGROW>
+        end
+    end
+end
+if isempty(cand); return; end
+
+% materialise all candidate duplicates onto the certified model
+trial = outModel; dupId = cell(size(cand,1),1);
+for i=1:size(cand,1)
+    r = sc.movIdx(cand(i,1)); comp = comps{cand(i,2)};
+    [trial, dupId{i}] = i_duplicateReaction(trial, model, r, comp);
+end
+trial = i_reconcileFields(trial);
+
+% loopless FVA over the duplicates at the growth floor; keep flux-carriers
+present = find(~cellfun(@isempty, dupId));
+if isempty(present); return; end
+ids = dupId(present);
+[lo, hi] = looplessFVA(trial, ids, minGrowth);
+keep = present(max(abs(lo), abs(hi)) >= eps);
+if isempty(keep); return; end
+
+% rebuild the model keeping only surviving duplicates, re-certify
+enriched = outModel;
+for i=keep'
+    r = sc.movIdx(cand(i,1)); comp = comps{cand(i,2)};
+    enriched = i_duplicateReaction(enriched, model, r, comp);
+    multiLoc{end+1,1} = {model.rxns{r}, comp}; %#ok<AGROW>
+end
+enriched = i_reconcileFields(enriched);
+if i_certify(enriched, sc.biomassId, minGrowth, growthConditions)
+    outModel = enriched;
+else
+    multiLoc = {};   % safety net: duplicates only add capability, keep mono
+end
+end
+
+function [outModel, dupId] = i_duplicateReaction(outModel, model, r, comp)
+dupId = [model.rxns{r} '_' comp];
+if any(strcmp(outModel.rxns, dupId)); dupId = ''; return; end
+outModel.rxns{end+1,1} = dupId;
+outModel.S(:, end+1) = 0;
+for mm = find(model.S(:,r) ~= 0)'
+    [outModel, newMet] = i_metInComp(outModel, model, mm, comp);
+    outModel.S(newMet, end) = model.S(mm, r);
+end
+outModel.lb(end+1,1) = model.lb(r); outModel.ub(end+1,1) = model.ub(r);
+if isfield(outModel,'rev'); outModel.rev(end+1,1) = model.rev(r); end
+if isfield(outModel,'c'); outModel.c(end+1,1) = 0; end
+if isfield(outModel,'rxnNames'); outModel.rxnNames{end+1,1} = dupId; end
+if isfield(outModel,'grRules'); outModel.grRules{end+1,1} = model.grRules{r}; end
+if isfield(outModel,'rxnGeneMat'); outModel.rxnGeneMat(end+1,:) = 0; end
 end
 
 % ============================================================ transport minimisation

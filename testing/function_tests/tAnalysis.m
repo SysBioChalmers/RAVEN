@@ -21,6 +21,29 @@ classdef tAnalysis < RavenTestCase
             testCase.verifyNumElements(I, numel(testCase.model.rxns));
         end
 
+        function cycleFreeFluxRemovesLoop(testCase)
+            % R1/R2 form a futile a<->b loop; the input carries 1000 around it
+            % with a net through-flux of 10. cycleFreeFlux must strip the loop
+            % (R1 -> 10, R2 -> 0) while preserving the exchange fluxes.
+            m = tAnalysis.loopModel();
+            cf = cycleFreeFlux(m, [10; 1000; 990; 10]);
+            testCase.verifyEqual(cf(1), 10, 'AbsTol', 1e-6);   % R_in preserved
+            testCase.verifyEqual(cf(4), 10, 'AbsTol', 1e-6);   % R_out preserved
+            testCase.verifyEqual(cf(2), 10, 'AbsTol', 1e-6);   % R1 net only
+            testCase.verifyLessThan(abs(cf(3)), 1e-6);         % R2 loop flux gone
+        end
+
+        function looplessFVAExcludesLoopFlux(testCase)
+            % Standard FVA lets R1 reach 1000 around the loop; loopless FVA
+            % must cap it at the net 10, and R2 (only ever loop flux) at 0.
+            testCase.assumeMILPSolver();
+            m = tAnalysis.loopModel();
+            [lo, hi] = looplessFVA(m, {'R1';'R2'});
+            testCase.verifyEqual(hi(1), 10, 'AbsTol', 1e-4);
+            testCase.verifyLessThan(abs(hi(2)), 1e-4);
+            testCase.verifyGreaterThanOrEqual(lo(1), -1e-4);
+        end
+
         function getMinNrFluxesReturnsFlux(testCase)
             testCase.assumeMILPSolver();
             evalc('[x, I, exitFlag] = getMinNrFluxes(testCase.model, testCase.model.rxns);');
@@ -228,5 +251,21 @@ classdef tAnalysis < RavenTestCase
             testCase.verifyClass(out, 'struct');
         end
 
+    end
+
+    methods (Static, Access = private)
+        function m = loopModel()
+            % R_in -> a; R1: a->b; R2: b->a (futile loop); R_out: b ->.
+            m = struct();
+            m.id='loop'; m.comps={'c'}; m.compNames={'cyt'};
+            m.mets={'a';'b'}; m.metNames={'a';'b'}; m.metComps=[1;1];
+            m.S = sparse([ 1 -1  1  0;
+                           0  1 -1 -1]);
+            m.rxns={'R_in';'R1';'R2';'R_out'}; m.rxnNames=m.rxns;
+            m.lb=[0;0;0;0]; m.ub=[10;1000;1000;1000]; m.rev=[0;0;0;0];
+            m.c=[0;0;0;1]; m.b=zeros(2,1);
+            m.genes={}; m.grRules={'';'';'';''}; m.rxnGeneMat=sparse(4,0);
+            m.metFormulas={'C';'C'};
+        end
     end
 end

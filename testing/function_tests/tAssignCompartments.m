@@ -93,6 +93,20 @@ classdef tAssignCompartments < RavenTestCase
                                     sp.compartment{strcmp(sp.rxns,'r2')});
         end
 
+        function multiLocalizeKeepsFluxCarryingDuplicate(testCase)
+            % A reaction whose gene scores high in a second compartment, and
+            % which can carry flux there (independent uptake/drain), is
+            % duplicated into it; the model stays certified.
+            testCase.assumeMILPSolver();
+            model = tAssignCompartments.dualToy();
+            GSS = struct('genes',{{'g1'}},'compartments',{{'c';'m'}},'scores',[0.9 0.9]);
+            evalc(['[oM, ~, ~, ok, rep] = assignCompartments(model, GSS, {''R''}, ' ...
+                   '''defaultCompartment'', ''c'', ''multiLocalize'', true, ''verbose'', false);']);
+            testCase.verifyEqual(ok, 1);
+            testCase.verifyNumElements(rep.multiLocalized, 1);
+            testCase.verifyTrue(any(strcmp(oM.rxns, 'R_m')));
+        end
+
     end
 
     methods (Static)
@@ -123,6 +137,24 @@ classdef tAssignCompartments < RavenTestCase
             model.c=[0;0;0;1]; model.b=zeros(3,1);
             model.genes={'g1';'g2'}; model.grRules={'';'g1';'g2';''};
             model.rxnGeneMat=sparse([0 0; 1 0; 0 1; 0 0]);
+        end
+        function model = dualToy()
+            % A/B exist in c and m; R (A->B) can run in either compartment,
+            % each fed and drained independently, so a duplicate carries flux.
+            model = struct(); model.id='dual';
+            model.comps={'c';'m'}; model.compNames={'c';'m'};
+            model.mets={'A_c';'B_c';'A_m';'B_m'}; model.metNames={'A';'B';'A';'B'};
+            model.metComps=[1;1;2;2];
+            %                    EXAc EXAm  R   bio  EXBm
+            model.S = sparse([    1    0   -1   0    0;    % A_c
+                                  0    0    1  -1    0;    % B_c
+                                  0    1    0   0    0;    % A_m
+                                  0    0    0   0   -1]);  % B_m
+            model.rxns={'EX_A_c';'EX_A_m';'R';'bio';'EX_B_m'}; model.rxnNames=model.rxns;
+            model.lb=[0;0;0;0;0]; model.ub=[10;10;1000;1000;1000]; model.rev=[0;0;0;0;0];
+            model.c=[0;0;0;1;0]; model.b=zeros(4,1);
+            model.genes={'g1'}; model.grRules={'';'';'g1';'';''};
+            model.rxnGeneMat=sparse([0;0;1;0;0]); model.metFormulas={'C';'C';'C';'C'};
         end
         function GSS = chainGss()
             % Each gene has a single dominant compartment (the other score is
