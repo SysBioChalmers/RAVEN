@@ -45,6 +45,68 @@ classdef tAssignCompartments < RavenTestCase
             testCase.verifyEqual(eFlag, -1);                  % growth floor unreachable
         end
 
+        function certificationReportsRealGrowth(testCase)
+            % A certified placement reports certified=true and the achieved
+            % growth; an unreachable floor reports the real (short) growth
+            % rather than hiding it behind an optimal-MILP status.
+            testCase.assumeMILPSolver();
+            model = tAssignCompartments.toy();
+            GSS = tAssignCompartments.gss();
+            evalc(['[~, ~, ~, ok, rep] = assignCompartments(model, GSS, {''r1''}, ' ...
+                   '''defaultCompartment'', ''c'', ''transportable'', {}, ''verbose'', false);']);
+            testCase.verifyEqual(ok, 1);
+            testCase.verifyTrue(rep.certified);
+            testCase.verifyEqual(rep.status, 'certified');
+            testCase.verifyGreaterThan(rep.growths.primary, 1e-6);
+
+            evalc(['[~, ~, ~, bad, badRep] = assignCompartments(model, GSS, {''r1''}, ' ...
+                   '''defaultCompartment'', ''c'', ''minGrowth'', 1e6, ''verbose'', false);']);
+            testCase.verifyEqual(bad, -1);
+            testCase.verifyFalse(badRep.certified);
+            testCase.verifyEqual(badRep.status, 'uncertified');
+            % the real growth is small and reported, not concealed
+            testCase.verifyGreaterThan(badRep.growths.primary, 1e-6);
+            testCase.verifyLessThan(badRep.growths.primary, 1e6);
+        end
+
+        function confinementColocatesMovableReactions(testCase)
+            % Two movable reactions share a non-transportable intermediate X.
+            % Their scores pull them to different compartments, but X cannot
+            % be transported, so the confinement repair must co-locate them.
+            testCase.assumeMILPSolver();
+            model = tAssignCompartments.chainToy();
+            GSS = tAssignCompartments.chainGss();
+            % X non-transportable (S/P transportable, keyed by metabolite
+            % name), so the biomass path is not what forces co-location.
+            evalc(['[~, place, ~, ok] = assignCompartments(model, GSS, {''r1'';''r2''}, ' ...
+                   '''defaultCompartment'', ''c'', ''transportable'', {''S'';''P''}, ''verbose'', false);']);
+            testCase.verifyEqual(ok, 1);
+            c1 = place.compartment{strcmp(place.rxns,'r1')};
+            c2 = place.compartment{strcmp(place.rxns,'r2')};
+            testCase.verifyEqual(c1, c2);                     % co-located
+
+            % With X transportable too, nothing forces co-location and the
+            % dominant scores split the two reactions across compartments.
+            evalc(['[~, sp] = assignCompartments(model, GSS, {''r1'';''r2''}, ' ...
+                   '''defaultCompartment'', ''c'', ''transportable'', {''S'';''X'';''P''}, ''verbose'', false);']);
+            testCase.verifyNotEqual(sp.compartment{strcmp(sp.rxns,'r1')}, ...
+                                    sp.compartment{strcmp(sp.rxns,'r2')});
+        end
+
+        function multiLocalizeKeepsFluxCarryingDuplicate(testCase)
+            % A reaction whose gene scores high in a second compartment, and
+            % which can carry flux there (independent uptake/drain), is
+            % duplicated into it; the model stays certified.
+            testCase.assumeMILPSolver();
+            model = tAssignCompartments.dualToy();
+            GSS = struct('genes',{{'g1'}},'compartments',{{'c';'m'}},'scores',[0.9 0.9]);
+            evalc(['[oM, ~, ~, ok, rep] = assignCompartments(model, GSS, {''R''}, ' ...
+                   '''defaultCompartment'', ''c'', ''multiLocalize'', true, ''verbose'', false);']);
+            testCase.verifyEqual(ok, 1);
+            testCase.verifyNumElements(rep.multiLocalized, 1);
+            testCase.verifyTrue(any(strcmp(oM.rxns, 'R_m')));
+        end
+
     end
 
     methods (Static)
@@ -59,6 +121,49 @@ classdef tAssignCompartments < RavenTestCase
         end
         function GSS = gss()
             GSS.genes={'g1'}; GSS.compartments={'c';'m'}; GSS.scores=[0.4 0.9];
+        end
+
+        function model = chainToy()
+            % EX_S -> S -> [r1] -> X -> [r2] -> P -> bio.  X is the shared,
+            % non-transportable intermediate of the two movable reactions.
+            model.id='chain'; model.comps={'c'}; model.compNames={'cytoplasm'};
+            model.mets={'S_c';'X_c';'P_c'}; model.metNames={'S';'X';'P'}; model.metComps=[1;1;1];
+            %              EX_S  r1    r2    bio
+            model.S=sparse([ 1   -1    0     0;    % S
+                             0    1   -1     0;    % X
+                             0    0    1    -1]);  % P
+            model.rxns={'EX_S';'r1';'r2';'bio'}; model.rxnNames=model.rxns;
+            model.lb=[-10;0;0;0]; model.ub=[1000;1000;1000;1000]; model.rev=[1;0;0;0];
+            model.c=[0;0;0;1]; model.b=zeros(3,1);
+            model.genes={'g1';'g2'}; model.grRules={'';'g1';'g2';''};
+            model.rxnGeneMat=sparse([0 0; 1 0; 0 1; 0 0]);
+        end
+        function model = dualToy()
+            % A/B exist in c and m; R (A->B) can run in either compartment,
+            % each fed and drained independently, so a duplicate carries flux.
+            model = struct(); model.id='dual';
+            model.comps={'c';'m'}; model.compNames={'c';'m'};
+            model.mets={'A_c';'B_c';'A_m';'B_m'}; model.metNames={'A';'B';'A';'B'};
+            model.metComps=[1;1;2;2];
+            %                    EXAc EXAm  R   bio  EXBm
+            model.S = sparse([    1    0   -1   0    0;    % A_c
+                                  0    0    1  -1    0;    % B_c
+                                  0    1    0   0    0;    % A_m
+                                  0    0    0   0   -1]);  % B_m
+            model.rxns={'EX_A_c';'EX_A_m';'R';'bio';'EX_B_m'}; model.rxnNames=model.rxns;
+            model.lb=[0;0;0;0;0]; model.ub=[10;10;1000;1000;1000]; model.rev=[0;0;0;0;0];
+            model.c=[0;0;0;1;0]; model.b=zeros(4,1);
+            model.genes={'g1'}; model.grRules={'';'';'g1';'';''};
+            model.rxnGeneMat=sparse([0;0;1;0;0]); model.metFormulas={'C';'C';'C';'C'};
+        end
+        function GSS = chainGss()
+            % Each gene has a single dominant compartment (the other score is
+            % below the 0.5 multi-compartment penalty), so placement is
+            % determined without a tie-break: g1 -> 'c', g2 -> 'm'. When X is
+            % transportable they split; when X is non-transportable the shared
+            % pool co-locates them, in 'c' (combined 0.9+0.3 > 0.1+0.9).
+            GSS.genes={'g1';'g2'}; GSS.compartments={'c';'m'};
+            GSS.scores=[0.9 0.1; 0.3 0.9];
         end
     end
 end
