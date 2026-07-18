@@ -290,6 +290,10 @@ sc.pinIdx = find(~movable);
 geneOnMov = any(model.rxnGeneMat(sc.movIdx, :) ~= 0, 1)';
 scope = gInGSS & geneOnMov;
 sc.geneIdx = find(scope);
+% genes in sorted-id order, so the placement MILP is built in a canonical
+% order (identical to the Python master) and the solver sees the same problem.
+[~, go] = sort(model.genes(sc.geneIdx));
+sc.geneIdx = sc.geneIdx(go);
 sc.score = zeros(numel(sc.geneIdx), numel(comps));
 % align score columns (GSS.compartments) to comps
 [~, colOf] = ismember(GSS.compartments, comps);
@@ -336,80 +340,77 @@ nVar = oY+nY;
 xCol = @(mi,ci) oX + (mi-1)*nC + ci;
 yCol = @(gi,ci) oY + (gi-1)*nC + ci;
 
-pR=[];pC=[];pV=[];
+% Constraint rows are emitted in the exact order the Python master builds them,
+% because the row order (like the column order) selects which of the degenerate
+% co-optimal placements the solver returns -- a permutation of the rows changes
+% the vertex. Order: per movable, its place row then its couple rows (in-scope
+% genes on the reaction, in sorted-id order, x compartments); then per gene, its
+% gene1 row then its has rows (x compartments); then the forced and colocation
+% rows. Assembled as one triplet list with a running row index.
+aR=[];aC=[];aV=[]; bVec=[]; cs=''; row=0;
 for k=1:nMov
-    for ci=1:nC; pR(end+1)=k; pC(end+1)=xCol(k,ci); pV(end+1)=1; end %#ok<AGROW>
-end
-A_place=sparse(pR,pC,pV,nMov,nVar); b_place=ones(nMov,1);
-
-cR=[];cC=[];cV=[];row=0;
-for k=1:nMov
-    gOn=find(model.rxnGeneMat(movIdx(k),:)~=0);
-    for g=gOn
-        gi=find(geneIdx==g,1); if isempty(gi); continue; end
-        for ci=1:nC
+    row=row+1;                                            % place: sum_c x[k,c] = 1
+    for ci=1:nC; aR(end+1)=row; aC(end+1)=xCol(k,ci); aV(end+1)=1; end %#ok<AGROW>
+    bVec(end+1)=1; cs(end+1)='E'; %#ok<AGROW>
+    gOn=find(model.rxnGeneMat(movIdx(k),geneIdx)~=0);     % in-scope genes on k, sorted-id order
+    for gi=gOn
+        for ci=1:nC                                      % couple: x[k,c] - y[gi,c] <= 0
             row=row+1;
-            cR(end+1)=row; cC(end+1)=xCol(k,ci); cV(end+1)=1;   %#ok<AGROW>
-            cR(end+1)=row; cC(end+1)=yCol(gi,ci); cV(end+1)=-1; %#ok<AGROW>
+            aR(end+1)=row; aC(end+1)=xCol(k,ci);  aV(end+1)=1;  %#ok<AGROW>
+            aR(end+1)=row; aC(end+1)=yCol(gi,ci); aV(end+1)=-1; %#ok<AGROW>
+            bVec(end+1)=0; cs(end+1)='L'; %#ok<AGROW>
         end
     end
 end
-A_couple=sparse(cR,cC,cV,row,nVar); b_couple=zeros(row,1);
-
-hR=[];hC=[];hV=[];row=0;
 for gi=1:nGene
-    g=geneIdx(gi);
-    rOfG=find(model.rxnGeneMat(movIdx,g)~=0)';
-    for ci=1:nC
-        row=row+1; hR(end+1)=row; hC(end+1)=yCol(gi,ci); hV(end+1)=1; %#ok<AGROW>
-        for k=rOfG; hR(end+1)=row; hC(end+1)=xCol(k,ci); hV(end+1)=-1; end %#ok<AGROW>
+    row=row+1;                                            % gene1: sum_c y[gi,c] >= 1
+    for ci=1:nC; aR(end+1)=row; aC(end+1)=yCol(gi,ci); aV(end+1)=1; end %#ok<AGROW>
+    bVec(end+1)=1; cs(end+1)='G'; %#ok<AGROW>
+    rOfG=find(model.rxnGeneMat(movIdx,geneIdx(gi))~=0)';  % movable reactions on gi, movable order
+    for ci=1:nC                                          % has: y[gi,c] - sum_r x[r,c] <= 0
+        row=row+1; aR(end+1)=row; aC(end+1)=yCol(gi,ci); aV(end+1)=1; %#ok<AGROW>
+        for k=rOfG; aR(end+1)=row; aC(end+1)=xCol(k,ci); aV(end+1)=-1; end %#ok<AGROW>
+        bVec(end+1)=0; cs(end+1)='L'; %#ok<AGROW>
     end
 end
-A_has=sparse(hR,hC,hV,row,nVar); b_has=zeros(row,1);
-
-g1R=[];g1C=[];g1V=[];
-for gi=1:nGene
-    for ci=1:nC; g1R(end+1)=gi; g1C(end+1)=yCol(gi,ci); g1V(end+1)=1; end %#ok<AGROW>
-end
-A_gene1=sparse(g1R,g1C,g1V,nGene,nVar); b_gene1=ones(nGene,1);
-
-fR=[];fC=[];nForce=0; fkeys=keys(forced);
+fkeys=keys(forced);
 for i=1:numel(fkeys)
-    k=fkeys{i};
-    nForce=nForce+1; fR(end+1)=nForce; fC(end+1)=xCol(k,forced(k)); %#ok<AGROW>
+    k=fkeys{i};                                          % force: x[k,forced(k)] = 1
+    row=row+1; aR(end+1)=row; aC(end+1)=xCol(k,forced(k)); aV(end+1)=1; %#ok<AGROW>
+    bVec(end+1)=1; cs(end+1)='E'; %#ok<AGROW>
 end
-A_force=sparse(fR,fC,ones(1,nForce),nForce,nVar); b_force=ones(nForce,1);
-
-coR=[];coC=[];coV=[];row=0;
 for gi=1:numel(groups)
     mem=groups{gi};
     for j=1:numel(mem)-1
         a=mem(j); b=mem(j+1);
-        for ci=1:nC
+        for ci=1:nC                                      % colo: x[a,c] - x[b,c] = 0
             row=row+1;
-            coR(end+1)=row; coC(end+1)=xCol(a,ci); coV(end+1)=1;  %#ok<AGROW>
-            coR(end+1)=row; coC(end+1)=xCol(b,ci); coV(end+1)=-1; %#ok<AGROW>
+            aR(end+1)=row; aC(end+1)=xCol(a,ci); aV(end+1)=1;  %#ok<AGROW>
+            aR(end+1)=row; aC(end+1)=xCol(b,ci); aV(end+1)=-1; %#ok<AGROW>
+            bVec(end+1)=0; cs(end+1)='E'; %#ok<AGROW>
         end
     end
 end
-A_colo=sparse(coR,coC,coV,row,nVar); b_colo=zeros(row,1);
 
 c = zeros(nVar,1);
 for gi=1:nGene
     for ci=1:nC; c(yCol(gi,ci)) = score(gi,ci) - multiPen; end
 end
 
-prob.A = [A_place; A_couple; A_has; A_gene1; A_force; A_colo];
+prob.A = sparse(aR,aC,aV,row,nVar);
 prob.a = prob.A;
-prob.b = [b_place; b_couple; b_has; b_gene1; b_force; b_colo];
-prob.csense = [repmat('E',1,nMov), repmat('L',1,numel(b_couple)), ...
-               repmat('L',1,numel(b_has)), repmat('G',1,nGene), ...
-               repmat('E',1,nForce), repmat('E',1,numel(b_colo))];
+prob.b = bVec(:);
+prob.csense = cs;
 prob.c = -c; prob.osense = 1;
 prob.lb = zeros(nVar,1); prob.ub = ones(nVar,1);
 prob.vartype = repmat('B',1,nVar);
 
 params.intTol = 1e-9; params.TimeLimit = 1000;
+% deterministic, solver-independent solve: single thread and fixed seed remove
+% thread-count/seed nondeterminism, MIPGap 0 forces the exact optimum rather
+% than an early heuristic stop. With a canonically ordered problem this makes
+% the placement reproducible and identical to the Python master.
+params.Threads = 1; params.Seed = 0; params.MIPGap = 0;
 sol = optimizeProb(prob, params, verbose);
 if ~checkSolution(sol)
     placeIdx = []; return;
