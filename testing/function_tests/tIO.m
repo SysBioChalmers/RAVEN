@@ -142,6 +142,18 @@ classdef tIO < RavenTestCase
             testCase.verifyNotEmpty(out);
         end
 
+        function checkFileExistenceAcceptsForwardSlashes(testCase)
+            % An absolute Windows path may be written with forward slashes:
+            % MATLAB accepts them everywhere, and anything handing RAVEN a path
+            % built by another tool is likely to use them. Treating such a path
+            % as relative appends the working directory and turns
+            % "C:/data/model.mat" into "C:\somewhere\C:\data\model.mat".
+            f = fullfile(testCase.ravenRoot,'testing','function_tests', ...
+                'test_data','ecoli_textbook.mat');
+            out = checkFileExistence(strrep(f,'\','/'), 1, false, true);
+            testCase.verifyNotEmpty(out);
+        end
+
         function cleanSheetTrimsComments(testCase)
             raw = {'#comment', '#comment'; 'a', 'b'; '', ''};
             out = cleanSheet(raw);
