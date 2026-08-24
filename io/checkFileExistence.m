@@ -47,8 +47,8 @@ end
 filesOriginal = files;
 
 %Make all full paths before check of file existence
-if ispc % full path starts like "C:\"
-    inCurrDir = cellfun(@isempty,regexpi(files,'^[a-z]\:\\'));
+if ispc % full path starts like "C:\" or "C:/", or is a UNC path "\\server\share"
+    inCurrDir = cellfun(@isempty,regexpi(files,'^([a-z]\:[\\\/]|\\\\)'));
 else %isunix full path starts like "/"
     inCurrDir = cellfun(@isempty,regexpi(files,'^\/'));
 end
