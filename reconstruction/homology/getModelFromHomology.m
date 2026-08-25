@@ -53,9 +53,15 @@ function [draftModel, hitGenes]=getModelFromHomology(models,blastStructure,...
 % maxE : double
 %     only look at genes with E-values <= this value (default 10^-30).
 % minLen : double
-%     only look at genes with alignment length >= this value (default 200).
+%     only look at genes with alignment length >= this value (default 100).
+%     Measured against KEGG and OMA orthology across four organisms: any
+%     value at or below 150 performs the same, while the previous 200
+%     discarded real orthologs without reducing the number of wrong ones.
 % minIde : double
 %     only look at genes with identity >= this value (default 40 (%)).
+%     The filter that decides the outcome, and 40 is the measured optimum
+%     once a wrongly transferred reaction is treated as worse than a missing
+%     one. maxE, by contrast, changes nothing between 10^-4 and 10^-50.
 % mapNewGenesToOld : logical
 %     determines how to match genes if not looking at only 1-1 orthologs.
 %     Either map the new genes to the old or old genes to new. The default
@@ -94,7 +100,7 @@ getModelFor=char(getModelFor);
 
 p=parseRAVENargs(varargin, {'preferredOrder',[]; 'strictness',1; ...
     'bidirectional',[]; 'bestHitsOnly',[]; 'scoreBy','bitscore'; ...
-    'onlyGenesInModels',false; 'maxE',10^-30; 'minLen',200; 'minIde',40; ...
+    'onlyGenesInModels',false; 'maxE',10^-30; 'minLen',100; 'minIde',40; ...
     'mapNewGenesToOld',true});
 preferredOrder=p.preferredOrder;
 if isempty(preferredOrder)
