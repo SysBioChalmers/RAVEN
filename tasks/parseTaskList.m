@@ -139,6 +139,12 @@ columns={'ID';'DESCRIPTION';'IN';'IN LB';'IN UB';'OUT';'OUT LB';'OUT UB';'EQU';'
 %Match the columns
 [I, colI]=ismember(columns,raw(1,:));
 
+%Only ID is required. Columns that are absent get index 0 from ismember, which
+%cannot be used to index raw, so point them at a spare empty column instead:
+%every optional field then reads as empty and its default applies.
+raw(:,end+1)={[]};
+colI(colI==0)=size(raw,2);
+
 %If read from  a text file, the numbers will be strings - fix that
 if convNumeric % in theory, this if should not be needed, the code should do nothing if all are already numeric. But it is kept as a safeguard.
     numericColumns = [0 0 0 1 1 0 1 1 0 1 1 0 1 1 0 0 0] == 1;
