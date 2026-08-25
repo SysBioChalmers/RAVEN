@@ -41,13 +41,13 @@ function result = gapFillTopological(model, universalModel, varargin)
 %
 % Returns
 % -------
-% result : struct with fields:
-%   .reachableMets   — logical vector (length nMets) marking producible mets
-%   .blockedMets     — cell array of metabolite IDs that cannot be reached
-%   .candidateRxns   — n-by-1 cell array of universal rxn ID lists, one
-%                      cell per blocked metabolite (same order as blockedMets)
-%   .pruningFraction — fraction of universal reactions pruned (not needed
-%                      for any blocked metabolite)
+% result : struct
+%     .reachableMets   — logical vector (length nMets) marking producible mets
+%     .blockedMets     — cell array of metabolite IDs that cannot be reached
+%     .candidateRxns   — n-by-1 cell array of universal rxn ID lists, one
+%                        cell per blocked metabolite (same order as blockedMets)
+%     .pruningFraction — fraction of universal reactions pruned (not needed
+%                        for any blocked metabolite)
 %
 % See also
 % --------
