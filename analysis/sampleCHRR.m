@@ -38,10 +38,10 @@ function [solutions, info] = sampleCHRR(model, nSamples, thinning, nBurnin, seed
 % -------
 % solutions : double
 %     nRxns-by-nSamples matrix of sampled flux distributions.
-% info : struct with fields:
-%   .nDimensions  — dimension of the sampled flux polytope
-%   .mveConverged — whether MVE rounding reached tolerance
-%   .fixedRxns    — IDs of reactions folded in as fixed
+% info : struct
+%     .nDimensions  — dimension of the sampled flux polytope
+%     .mveConverged — whether MVE rounding reached tolerance
+%     .fixedRxns    — IDs of reactions folded in as fixed
 %
 % See also
 % --------
