@@ -428,7 +428,7 @@ for i=1:numel(line_key)
                 model = readFieldValue(model, 'rxnDeltaG', tline_value, pos);
                 readList=''; miriamKey='';                
             case 'objective_coefficient'
-                model.c(pos,1) = 1;
+                model.c(pos,1) = str2double(tline_value);
                 readList=''; miriamKey='';
             case 'references'
                 model = readFieldValue(model, 'rxnReferences', tline_value, pos);
