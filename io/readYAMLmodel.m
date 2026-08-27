@@ -343,14 +343,26 @@ for i=1:numel(line_key)
                 readList=''; miriamKey='';
             case 'smiles'
                 % Top-level (legacy MATLAB) and inside-annotation
-                % (cobrapy / current writer) layouts both land here.
-                % Don't reset readList — preserves the annotation
+                % (cobrapy / current writer) layouts both land here. The
+                % current writer always emits smiles as a block list, even
+                % for a single value (matching cobrapy/geckopy, which read
+                % it as list[str]); a state distinct from 'annotation'
+                % ('smilesInAnnotation') reads that list so that once it
+                % ends this can resume annotation gathering rather than
+                % getting stuck treating every later line in the same
+                % annotation block as another smiles entry. A single-line
+                % "smiles: value" (legacy, or empty tline_value absent)
+                % doesn't reset readList — preserves the annotation
                 % gathering state if SMILES is nested inside the
                 % annotation block alongside other entries.
-                model = readFieldValue(model, 'metSmiles', tline_value, pos);
+                if isempty(tline_value)
+                    readList = 'smilesInAnnotation';
+                else
+                    model = readFieldValue(model, 'metSmiles', tline_value, pos);
+                end
             case 'deltaG'
                 model = readFieldValue(model, 'metDeltaG', tline_value, pos);
-                readList=''; miriamKey='';                                
+                readList=''; miriamKey='';
             case 'metFrom'
                 model = readFieldValue(model, 'metFrom', tline_value, pos);
                 readList=''; miriamKey='';
@@ -360,6 +372,20 @@ for i=1:numel(line_key)
                 switch readList
                     case 'annotation'
                         [metMiriams, miriamKey, metMirNo] = gatherAnnotation(pos,metMiriams,tline_key,tline_value,miriamKey,metMirNo);
+                    case 'smilesInAnnotation'
+                        % A bare list item ("- OC(=O)...") has no colon,
+                        % so tline_key is empty --- still inside the list.
+                        % Anything else is the annotation block's next
+                        % entry, not another smiles value: the list has
+                        % ended (RAVEN keeps only one smiles per
+                        % metabolite, so a second list item, if any,
+                        % simply overwrites the first).
+                        if isempty(tline_key)
+                            model = readFieldValue(model, 'metSmiles', regexprep(tline_value,'^ +- "?(.*)"?$','$1'), pos);
+                        else
+                            readList = 'annotation';
+                            [metMiriams, miriamKey, metMirNo] = gatherAnnotation(pos,metMiriams,tline_key,tline_value,miriamKey,metMirNo);
+                        end
                     otherwise
                         error(['Unknown entry in yaml file: ' tline_raw])
                 end
