@@ -9,17 +9,6 @@ function writeYAMLmodel(model,varargin)
 % key. Output is byte-stable with raven_python's io.yaml.write_yaml_model
 % when called with the same model.
 %
-% This is RAVEN/raven-toolbox's own canonical layout, not a byte-for-byte
-% copy of vanilla cobrapy's: 2-space indentation, quoting only where YAML
-% requires it, annotation keys sorted alphabetically, optional fields
-% omitted when empty, and no line folding regardless of length. cobrapy
-% (through ruamel) wraps long scalars at a configured column, which is
-% both a fragile algorithm to reproduce outside ruamel itself and worse
-% for diffs (a one-word edit can reflow several lines); RAVEN and
-% raven-toolbox both simply write long values on one line. The structural
-% shape (keys, `!!omap` tags, nesting) still matches cobrapy's, so a file
-% written here reads back correctly in plain cobrapy too.
-%
 % Parameters
 % ----------
 % model : struct
@@ -373,11 +362,6 @@ end
 function s = formatFloat(x)
 % Format every numeric field the same way: a whole number still gets an
 % explicit ".0" (e.g. "1000.0", not "1000"; "2.0" for a charge, not "2").
-% One rule for every numeric field —
-% bounds, objective coefficients, stoichiometric coefficients, charge,
-% confidence_score, deltaG, kcat, mw, concs — rather than tracking which
-% of them cobra happens to treat as int vs float on its side, which
-% RAVEN's model struct (everything stored as double) cannot see anyway.
 if isinf(x)
     if x > 0
         s = '.inf';
