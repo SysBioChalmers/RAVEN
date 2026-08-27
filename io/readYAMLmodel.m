@@ -48,14 +48,30 @@ if verLessThan('matlab','9.9') %readlines introduced 2020b
 else
     line_raw=readlines(fileName);
 end
-% If entry is broken of multiple lines, concatenate. Assumes at least 6
-% leading spaces to avoid metaData to be concatenated.
-newLine=regexp(line_raw,'^ {6,}([\w\(\)].*)','tokenExtents');
+% If entry is broken over multiple lines (a folded scalar --- ruamel/cobrapy
+% wraps a plain or single-quoted scalar that would exceed its configured
+% width), concatenate the continuation onto the previous line. Assumes at
+% least 6 leading spaces to avoid metaData being concatenated.
+%
+% A continuation line is recognised by NOT starting with '- ': every real
+% entry in this format, at every nesting depth (including a nested list
+% under a key, e.g. an annotation sub-entry indented 6+ spaces), is itself
+% introduced with a literal leading dash, while a folded scalar's
+% continuation is raw text with no list-item marker of its own. This is the
+% actual distinguishing signal --- checking whether the continuation's first
+% character looked like a word character used to stand in for it, but that
+% missed any continuation starting with something else (e.g. a wrapped
+% scalar that happens to break right before a '#'), which fell through to
+% the "Unknown entry" error below instead of being joined.
+newLine=regexp(line_raw,'^ {6,}([^-\s].*)','tokenExtents');
 brokenLine=find(~cellfun('isempty',newLine));
 for i=flip(1:numel(brokenLine))
     extraLine = char(line_raw(brokenLine(i)));
     extraLine = extraLine(newLine{brokenLine(i)}{1}(1):end);
-    line_raw{brokenLine(i)-1} = strjoin({line_raw{brokenLine(i)-1},extraLine},' ');
+    % deblank, not strtrim: only the trailing whitespace is spurious (e.g.
+    % "- inchis: " with nothing after the colon on this line); the leading
+    % indentation must survive untouched for the key-detection regex below.
+    line_raw{brokenLine(i)-1} = strjoin({deblank(line_raw{brokenLine(i)-1}),extraLine},' ');
 end
 line_raw(brokenLine)=[];
 
@@ -63,8 +79,31 @@ line_key = regexprep(line_raw,'^ *-? ([^:]+)(:)($| .*)','$1');
 line_key = regexprep(line_key,'(.*!!omap)|(---)|( {4,}.*)','');
 
 line_value = regexprep(line_raw, '.*:$','');
-line_value = regexprep(line_value, '[^":]+: "?(.+)"?$','$1');
-line_value = regexprep(line_value, '(")|(^ {4,}- )','');
+% Captures everything after "key: " verbatim, quotes and all --- an
+% earlier version used an optional quote on each end ('"?(.+)"?$'),
+% but the trailing '"?' is just as happy matching zero characters, so
+% for a quoted value the closing quote slid into the capture (e.g.
+% 'm1"' instead of 'm1'). That leftover quote used to get mopped up by
+% a blanket "strip every quote character" pass; once that pass was
+% anchored to a matching pair (below, to stop eating a genuine
+% apostrophe in unquoted text) it no longer caught it. Simplest fix:
+% leave any wrapping quotes in place here and let that anchored-pair
+% strip remove them next --- it already handles both quote styles.
+line_value = regexprep(line_value, '[^":]+: (.+)$','$1');
+% Strips wrapping quotes, either style, but only a matching pair anchored
+% at both ends of the value --- not every quote character in it. ruamel
+% single-quotes anything YAML requires quoting (a value that would
+% otherwise parse as a date/number/boolean, or one containing a character
+% with special meaning), where RAVEN's own writer only ever double-quotes;
+% previously only a leading/trailing '"' was recognised at all, so a
+% ruamel-single-quoted value came back with both quote characters still
+% attached, e.g. reading back as "'[cytochrome c]-L-lysine'". Anchoring
+% (rather than a global strip) also fixes a latent version of the same bug
+% for double quotes: an unquoted value that happens to contain a genuine
+% apostrophe, e.g. "yeast's hexokinase reaction", must keep it --- only
+% the wrapping pair is a delimiter, not every quote-like character.
+line_value = regexprep(line_value, '^(["''])(.*)\1$','$2');
+line_value = regexprep(line_value, '^ {4,}- ','');
 line_value(strcmp(line_value,'''''')) = {''};
 line_value(strcmp(line_value,line_raw)) = {''};
 
@@ -304,14 +343,26 @@ for i=1:numel(line_key)
                 readList=''; miriamKey='';
             case 'smiles'
                 % Top-level (legacy MATLAB) and inside-annotation
-                % (cobrapy / current writer) layouts both land here.
-                % Don't reset readList — preserves the annotation
+                % (cobrapy / current writer) layouts both land here. The
+                % current writer always emits smiles as a block list, even
+                % for a single value (matching cobrapy/geckopy, which read
+                % it as list[str]); a state distinct from 'annotation'
+                % ('smilesInAnnotation') reads that list so that once it
+                % ends this can resume annotation gathering rather than
+                % getting stuck treating every later line in the same
+                % annotation block as another smiles entry. A single-line
+                % "smiles: value" (legacy, or empty tline_value absent)
+                % doesn't reset readList — preserves the annotation
                 % gathering state if SMILES is nested inside the
                 % annotation block alongside other entries.
-                model = readFieldValue(model, 'metSmiles', tline_value, pos);
+                if isempty(tline_value)
+                    readList = 'smilesInAnnotation';
+                else
+                    model = readFieldValue(model, 'metSmiles', tline_value, pos);
+                end
             case 'deltaG'
                 model = readFieldValue(model, 'metDeltaG', tline_value, pos);
-                readList=''; miriamKey='';                                
+                readList=''; miriamKey='';
             case 'metFrom'
                 model = readFieldValue(model, 'metFrom', tline_value, pos);
                 readList=''; miriamKey='';
@@ -321,6 +372,20 @@ for i=1:numel(line_key)
                 switch readList
                     case 'annotation'
                         [metMiriams, miriamKey, metMirNo] = gatherAnnotation(pos,metMiriams,tline_key,tline_value,miriamKey,metMirNo);
+                    case 'smilesInAnnotation'
+                        % A bare list item ("- OC(=O)...") has no colon,
+                        % so tline_key is empty --- still inside the list.
+                        % Anything else is the annotation block's next
+                        % entry, not another smiles value: the list has
+                        % ended (RAVEN keeps only one smiles per
+                        % metabolite, so a second list item, if any,
+                        % simply overwrites the first).
+                        if isempty(tline_key)
+                            model = readFieldValue(model, 'metSmiles', regexprep(tline_value,'^ +- "?(.*)"?$','$1'), pos);
+                        else
+                            readList = 'annotation';
+                            [metMiriams, miriamKey, metMirNo] = gatherAnnotation(pos,metMiriams,tline_key,tline_value,miriamKey,metMirNo);
+                        end
                     otherwise
                         error(['Unknown entry in yaml file: ' tline_raw])
                 end
@@ -384,9 +449,14 @@ for i=1:numel(line_key)
                 % way metabolite `smiles` is pulled out of the annotation
                 % block; the legacy top-level `eccodes` key above is still
                 % accepted for older files. A block list of codes follows
-                % when the value is empty (read via readList='eccodes').
+                % when the value is empty, read via a state distinct from
+                % the legacy 'eccodes' above ('eccodesInAnnotation', not
+                % 'eccodes') specifically so that once the list ends this
+                % can resume annotation gathering rather than getting
+                % stuck treating every later line in the same annotation
+                % block as another EC code.
                 if isempty(tline_value)
-                    readList = 'eccodes';
+                    readList = 'eccodesInAnnotation';
                 else
                     eccodes(ecCodeNo,1:2)={pos,tline_value};
                     ecCodeNo=ecCodeNo+1;
@@ -408,6 +478,21 @@ for i=1:numel(line_key)
                     case 'eccodes'
                         eccodes(ecCodeNo,1:2)={pos,regexprep(tline_value,'^ +- "?(.*)"?$','$1')};
                         ecCodeNo=ecCodeNo+1;
+                    case 'eccodesInAnnotation'
+                        % A bare list item ("- 1.1.2.4") has no colon, so
+                        % tline_key is empty --- still inside the list.
+                        % Anything else is the annotation block's next
+                        % entry (e.g. "kegg.reaction: ..."), not another
+                        % EC code: the list has ended, so resume normal
+                        % annotation gathering for this line and all that
+                        % follow, instead of silently absorbing them here.
+                        if isempty(tline_key)
+                            eccodes(ecCodeNo,1:2)={pos,regexprep(tline_value,'^ +- "?(.*)"?$','$1')};
+                            ecCodeNo=ecCodeNo+1;
+                        else
+                            readList = 'annotation';
+                            [rxnMiriams, miriamKey,rxnMirNo] = gatherAnnotation(pos,rxnMiriams,tline_key,tline_value,miriamKey,rxnMirNo);
+                        end
                     case 'subsystem'
                         subSystems(subSysNo,1:2)={pos,regexprep(tline_value,'^ +- "?(.*)"?$','$1')};
                         subSysNo=subSysNo+1;
@@ -419,7 +504,7 @@ for i=1:numel(line_key)
                         equatiNo=equatiNo+1;
                     otherwise
                         error(['Unknown entry in yaml file: ' tline_raw])
-                end                
+                end
         end; continue
     end
 
