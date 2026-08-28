@@ -90,6 +90,17 @@ line_value = regexprep(line_raw, '.*:$','');
 % leave any wrapping quotes in place here and let that anchored-pair
 % strip remove them next --- it already handles both quote styles.
 line_value = regexprep(line_value, '[^":]+: (.+)$','$1');
+% The list-marker strip must run before quote detection below, not after:
+% a quoted *list item* (e.g. a pubmed id under an annotation block,
+% `        - "10714900"`) still has its leading "- " attached at this
+% point, so the anchored ^".*"$/^'.*'$ checks --- which require the quote
+% to be the very first character --- would never match it, leaving the
+% quotes on the value uninspected and unescaped. Stripping the marker
+% first means a quoted list item's value starts directly with the quote
+% character, the same shape as a quoted `key: "value"` scalar, so the
+% existing anchored logic below already handles both without further
+% changes.
+line_value = regexprep(line_value, '^ {4,}- ','');
 % Strips wrapping quotes, either style, but only a matching pair anchored
 % at both ends of the value --- not every quote character in it. ruamel
 % single-quotes anything YAML requires quoting (a value that would
@@ -116,7 +127,6 @@ line_value(wasSingleQuoted) = strrep(line_value(wasSingleQuoted), '''''', '''');
 line_value(wasDoubleQuoted) = strrep(line_value(wasDoubleQuoted), '\\', char(1));
 line_value(wasDoubleQuoted) = strrep(line_value(wasDoubleQuoted), '\"', '"');
 line_value(wasDoubleQuoted) = strrep(line_value(wasDoubleQuoted), char(1), '\');
-line_value = regexprep(line_value, '^ {4,}- ','');
 line_value(strcmp(line_value,'''''')) = {''};
 line_value(strcmp(line_value,line_raw)) = {''};
 
