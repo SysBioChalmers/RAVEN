@@ -24,14 +24,15 @@
 <div class="box"><strong>checkFunctionUniqueness</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function status = checkFunctionUniqueness(altDirs) </strong></div>
+<div class="box"><strong>function status = checkFunctionUniqueness(varargin) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> checkFunctionUniqueness
    Checks whether RAVEN toolbox functions are unique across other
    toolboxes or user-created functions accessible in Matlab pathlist.
 
- Input:
+ Name-Value Arguments
+ --------------------
    altDirs     cell array of alternative directories with functions,
                should only be specified if this function is used for other
                purposes, NOT when looking for RAVEN toolbox functions.
@@ -48,114 +49,118 @@ This function calls:
 <li><a href="findRAVENroot.html" class="code" title="function [ravenPath, prevDir] = findRAVENroot()">findRAVENroot</a>	findRAVENroot</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="checkInstallation.html" class="code" title="function [currVer, installType] = checkInstallation(developMode,checkBinaries)">checkInstallation</a>	checkInstallation</li></ul>
+</ul>
 <!-- crossreference -->
 
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function status = checkFunctionUniqueness(altDirs)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function status = checkFunctionUniqueness(varargin)</a>
 0002 <span class="comment">% checkFunctionUniqueness</span>
 0003 <span class="comment">%   Checks whether RAVEN toolbox functions are unique across other</span>
 0004 <span class="comment">%   toolboxes or user-created functions accessible in Matlab pathlist.</span>
 0005 <span class="comment">%</span>
-0006 <span class="comment">% Input:</span>
-0007 <span class="comment">%   altDirs     cell array of alternative directories with functions,</span>
-0008 <span class="comment">%               should only be specified if this function is used for other</span>
-0009 <span class="comment">%               purposes, NOT when looking for RAVEN toolbox functions.</span>
-0010 <span class="comment">%</span>
-0011 <span class="comment">% Output:</span>
-0012 <span class="comment">%   status      true if all functions are unique, otherwise false</span>
-0013 <span class="comment">%</span>
-0014 <span class="comment">% Usage: checkFunctionUniqueness()</span>
-0015 
-0016 <span class="keyword">if</span> nargin&lt;1
-0017     <span class="comment">%Get the RAVEN path</span>
-0018     ravenDir=<a href="findRAVENroot.html" class="code" title="function [ravenPath, prevDir] = findRAVENroot()">findRAVENroot</a>();
-0019     
-0020     <span class="comment">%Now getting all RAVEN functions recursively;</span>
-0021     temp_res1=dir([ravenDir <span class="string">'/*/*.m'</span>]);
-0022     temp_res2=dir([ravenDir <span class="string">'/*/*/*.m'</span>]);
+0006 <span class="comment">% Name-Value Arguments</span>
+0007 <span class="comment">% --------------------</span>
+0008 <span class="comment">%   altDirs     cell array of alternative directories with functions,</span>
+0009 <span class="comment">%               should only be specified if this function is used for other</span>
+0010 <span class="comment">%               purposes, NOT when looking for RAVEN toolbox functions.</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">% Output:</span>
+0013 <span class="comment">%   status      true if all functions are unique, otherwise false</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">% Usage: checkFunctionUniqueness()</span>
+0016 
+0017 p=parseRAVENargs(varargin, {<span class="string">'altDirs'</span>,[]});
+0018 altDirs=p.altDirs;
+0019 
+0020 <span class="keyword">if</span> isempty(altDirs)
+0021     <span class="comment">%Get the RAVEN path</span>
+0022     ravenDir=<a href="findRAVENroot.html" class="code" title="function [ravenPath, prevDir] = findRAVENroot()">findRAVENroot</a>();
 0023     
-0024     ravenFunctions={temp_res1.name,temp_res2.name}';
-0025 <span class="keyword">else</span>
-0026     <span class="keyword">if</span> ispc
-0027         splitChar = <span class="string">';'</span>;
-0028     <span class="keyword">else</span>
-0029         splitChar = <span class="string">':'</span>;
-0030     <span class="keyword">end</span>
-0031     altDirs = strsplit(altDirs,splitChar)';
-0032     ravenFunctions={};
-0033     <span class="keyword">for</span> i=1:numel(altDirs)
-0034         temp_res=dir(fullfile(char(altDirs(i)),<span class="string">'*.m'</span>));
-0035         ravenFunctions = [ravenFunctions, temp_res.name];
-0036     <span class="keyword">end</span>
-0037     ravenFunctions=ravenFunctions';
-0038     ravenDir=altDirs;
-0039 <span class="keyword">end</span>
-0040 
-0041 <span class="comment">%startup.m is not a normal function, any startup.m in the path should run</span>
-0042 <span class="comment">%during startup, so duplicate use of this name is fine</span>
-0043 ravenFunctions=ravenFunctions(~ismember(ravenFunctions,<span class="string">'startup.m'</span>));
+0024     <span class="comment">%Now getting all RAVEN functions recursively;</span>
+0025     temp_res1=dir([ravenDir <span class="string">'/*/*.m'</span>]);
+0026     temp_res2=dir([ravenDir <span class="string">'/*/*/*.m'</span>]);
+0027     
+0028     ravenFunctions={temp_res1.name,temp_res2.name}';
+0029 <span class="keyword">else</span>
+0030     <span class="keyword">if</span> ispc
+0031         splitChar = <span class="string">';'</span>;
+0032     <span class="keyword">else</span>
+0033         splitChar = <span class="string">':'</span>;
+0034     <span class="keyword">end</span>
+0035     altDirs = strsplit(altDirs,splitChar)';
+0036     ravenFunctions={};
+0037     <span class="keyword">for</span> i=1:numel(altDirs)
+0038         temp_res=dir(fullfile(char(altDirs(i)),<span class="string">'*.m'</span>));
+0039         ravenFunctions = [ravenFunctions, temp_res.name];
+0040     <span class="keyword">end</span>
+0041     ravenFunctions=ravenFunctions';
+0042     ravenDir=altDirs;
+0043 <span class="keyword">end</span>
 0044 
-0045 <span class="comment">%Getting all the paths added to Matlab</span>
-0046 <span class="keyword">if</span> ispc
-0047     matlabPaths=regexp(path, <span class="string">';'</span>, <span class="string">'split'</span>)';
-0048 <span class="keyword">elseif</span> isunix
-0049     matlabPaths=regexp(path, <span class="string">':'</span>, <span class="string">'split'</span>)';
-0050 <span class="keyword">end</span>
-0051 
-0052 overlapPath={};
-0053 overlapFunctions={};
-0054 multiRaven=false;
-0055 multiFunction=false;
-0056 
-0057 <span class="keyword">for</span> i=1:numel(matlabPaths)
-0058     <span class="keyword">if</span> ~startsWith(matlabPaths{i},ravenDir)
-0059         temp_res=dir([matlabPaths{i} <span class="string">'/*.m'</span>]);
-0060         <span class="keyword">if</span> ~isempty(temp_res)
-0061             pathFunctions={temp_res.name}';
-0062         <span class="keyword">else</span>
-0063             pathFunctions=<span class="string">''</span>;
-0064         <span class="keyword">end</span>
-0065         <span class="keyword">if</span> ~isempty(pathFunctions) &amp;&amp; ~any(ismember(<span class="string">'Contents.m'</span>,pathFunctions))
-0066             <span class="keyword">if</span> any(ismember(ravenFunctions,pathFunctions))
-0067                 <span class="keyword">if</span> sum(ismember(ravenFunctions,pathFunctions))&gt;(numel(ravenFunctions)/4)
-0068                     multiRaven=true;
-0069                 <span class="keyword">else</span>
-0070                     multiFunction=true;
-0071                     overlapPath = [overlapPath, matlabPaths(i)];
-0072                     overlapFunctions = [overlapFunctions, {ravenFunctions(ismember(ravenFunctions,pathFunctions))}];
-0073                 <span class="keyword">end</span>
-0074             <span class="keyword">end</span>
-0075         <span class="keyword">end</span>
-0076     <span class="keyword">end</span>
-0077 <span class="keyword">end</span>
-0078 
-0079 <span class="keyword">if</span> multiRaven==true || multiFunction == true
-0080         <span class="keyword">if</span> nargout &gt; 0
-0081             status = false;
-0082         <span class="keyword">else</span>
-0083             fprintf(<span class="string">'Fail\n'</span>)
-0084         <span class="keyword">end</span>
-0085     <span class="keyword">if</span> multiRaven==true &amp;&amp; nargin &lt; 1
-0086         error([<span class="string">'Multiple RAVEN versions detected in MATLAB path. Remove all '</span>,<span class="keyword">...</span>
-0087                <span class="string">'RAVEN directories from the MATLAB path with removeRavenFromPath(), '</span>,<span class="keyword">...</span>
-0088                <span class="string">'or manually remove them. Afterwards, re-run checkInstallation'</span>]);
-0089     <span class="keyword">elseif</span> multiFunction == true
-0090         <span class="keyword">for</span> i=1:numel(overlapPath)
-0091             fprintf([<span class="string">'   Duplicate functions in '</span>,regexprep(overlapPath{i},<span class="string">'(\\)'</span>,<span class="string">'\\$1'</span>),<span class="string">'\n'</span>]);
-0092             fprintf([<span class="string">'     '</span> strjoin(overlapFunctions{i},<span class="string">'\n     '</span>) <span class="string">'\n'</span>]);
-0093         <span class="keyword">end</span>
-0094     fprintf(<span class="string">'   Resolve conflicting functions to avoid unexpected behaviour\n'</span>);
-0095     <span class="keyword">end</span>
-0096 <span class="keyword">else</span>
-0097     <span class="keyword">if</span> nargout &gt; 0
-0098         status = true;
-0099     <span class="keyword">else</span>
-0100         fprintf(<span class="string">'Pass\n'</span>)
-0101     <span class="keyword">end</span>
-0102 <span class="keyword">end</span></pre></div>
+0045 <span class="comment">%startup.m is not a normal function, any startup.m in the path should run</span>
+0046 <span class="comment">%during startup, so duplicate use of this name is fine</span>
+0047 ravenFunctions=ravenFunctions(~ismember(ravenFunctions,<span class="string">'startup.m'</span>));
+0048 
+0049 <span class="comment">%Getting all the paths added to Matlab</span>
+0050 <span class="keyword">if</span> ispc
+0051     matlabPaths=regexp(path, <span class="string">';'</span>, <span class="string">'split'</span>)';
+0052 <span class="keyword">elseif</span> isunix
+0053     matlabPaths=regexp(path, <span class="string">':'</span>, <span class="string">'split'</span>)';
+0054 <span class="keyword">end</span>
+0055 
+0056 overlapPath={};
+0057 overlapFunctions={};
+0058 multiRaven=false;
+0059 multiFunction=false;
+0060 
+0061 <span class="keyword">for</span> i=1:numel(matlabPaths)
+0062     <span class="keyword">if</span> ~startsWith(matlabPaths{i},ravenDir)
+0063         temp_res=dir([matlabPaths{i} <span class="string">'/*.m'</span>]);
+0064         <span class="keyword">if</span> ~isempty(temp_res)
+0065             pathFunctions={temp_res.name}';
+0066         <span class="keyword">else</span>
+0067             pathFunctions=<span class="string">''</span>;
+0068         <span class="keyword">end</span>
+0069         <span class="keyword">if</span> ~isempty(pathFunctions) &amp;&amp; ~any(ismember(<span class="string">'Contents.m'</span>,pathFunctions))
+0070             <span class="keyword">if</span> any(ismember(ravenFunctions,pathFunctions))
+0071                 <span class="keyword">if</span> sum(ismember(ravenFunctions,pathFunctions))&gt;(numel(ravenFunctions)/4)
+0072                     multiRaven=true;
+0073                 <span class="keyword">else</span>
+0074                     multiFunction=true;
+0075                     overlapPath = [overlapPath, matlabPaths(i)];
+0076                     overlapFunctions = [overlapFunctions, {ravenFunctions(ismember(ravenFunctions,pathFunctions))}];
+0077                 <span class="keyword">end</span>
+0078             <span class="keyword">end</span>
+0079         <span class="keyword">end</span>
+0080     <span class="keyword">end</span>
+0081 <span class="keyword">end</span>
+0082 
+0083 <span class="keyword">if</span> multiRaven==true || multiFunction == true
+0084         <span class="keyword">if</span> nargout &gt; 0
+0085             status = false;
+0086         <span class="keyword">else</span>
+0087             fprintf(<span class="string">'Fail\n'</span>)
+0088         <span class="keyword">end</span>
+0089     <span class="keyword">if</span> multiRaven==true &amp;&amp; isempty(altDirs)
+0090         error([<span class="string">'Multiple RAVEN versions detected in MATLAB path. Remove all '</span>,<span class="keyword">...</span>
+0091                <span class="string">'RAVEN directories from the MATLAB path with removeRavenFromPath(), '</span>,<span class="keyword">...</span>
+0092                <span class="string">'or manually remove them. Afterwards, re-run checkInstallation'</span>]);
+0093     <span class="keyword">elseif</span> multiFunction == true
+0094         <span class="keyword">for</span> i=1:numel(overlapPath)
+0095             fprintf([<span class="string">'   Duplicate functions in '</span>,regexprep(overlapPath{i},<span class="string">'(\\)'</span>,<span class="string">'\\$1'</span>),<span class="string">'\n'</span>]);
+0096             fprintf([<span class="string">'     '</span> strjoin(overlapFunctions{i},<span class="string">'\n     '</span>) <span class="string">'\n'</span>]);
+0097         <span class="keyword">end</span>
+0098     fprintf(<span class="string">'   Resolve conflicting functions to avoid unexpected behaviour\n'</span>);
+0099     <span class="keyword">end</span>
+0100 <span class="keyword">else</span>
+0101     <span class="keyword">if</span> nargout &gt; 0
+0102         status = true;
+0103     <span class="keyword">else</span>
+0104         fprintf(<span class="string">'Pass\n'</span>)
+0105     <span class="keyword">end</span>
+0106 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

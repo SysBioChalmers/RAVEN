@@ -24,7 +24,7 @@
 <div class="box"><strong>findDuplicateRxns  Find reactions that share identical stoichiometry.</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function pairs = findDuplicateRxns(model, ignoreDirection) </strong></div>
+<div class="box"><strong>function pairs = findDuplicateRxns(model, varargin) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> findDuplicateRxns  Find reactions that share identical stoichiometry.
@@ -40,7 +40,10 @@
  ----------
  model : struct
      RAVEN model struct.
- ignoreDirection : logical, optional
+
+ Name-Value Arguments
+ --------------------
+ ignoreDirection : logical
      treat A→B and B→A as duplicates (default true).
 
  Returns
@@ -68,7 +71,7 @@ This function is called by:
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function pairs = findDuplicateRxns(model, ignoreDirection)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function pairs = findDuplicateRxns(model, varargin)</a>
 0002 <span class="comment">% findDuplicateRxns  Find reactions that share identical stoichiometry.</span>
 0003 <span class="comment">%</span>
 0004 <span class="comment">% Counterpart of raven_python.manipulation.find_duplicate_reactions, and</span>
@@ -82,36 +85,55 @@ This function is called by:
 0012 <span class="comment">% ----------</span>
 0013 <span class="comment">% model : struct</span>
 0014 <span class="comment">%     RAVEN model struct.</span>
-0015 <span class="comment">% ignoreDirection : logical, optional</span>
-0016 <span class="comment">%     treat A→B and B→A as duplicates (default true).</span>
-0017 <span class="comment">%</span>
-0018 <span class="comment">% Returns</span>
-0019 <span class="comment">% -------</span>
-0020 <span class="comment">% pairs : double</span>
-0021 <span class="comment">%     Nx2 numeric array of reaction-index pairs (i, j) where reactions i</span>
-0022 <span class="comment">%     and j share the same (possibly negated) stoichiometry, with i &lt; j.</span>
-0023 <span class="comment">%     Empty if the model has no duplicates.</span>
-0024 <span class="comment">%</span>
-0025 <span class="comment">% Examples</span>
-0026 <span class="comment">% --------</span>
-0027 <span class="comment">%     pairs = findDuplicateRxns(model);</span>
-0028 <span class="comment">%     pairs = findDuplicateRxns(model, false);</span>
-0029 
-0030 <span class="keyword">if</span> nargin &lt; 2
-0031     ignoreDirection = true;
-0032 <span class="keyword">end</span>
-0033 
-0034 pairs = zeros(0, 2);
-0035 n = numel(model.rxns);
-0036 <span class="keyword">for</span> i = 1:n-1
-0037     <span class="keyword">for</span> j = i+1:n
-0038         <span class="keyword">if</span> isequal(model.S(:, i), model.S(:, j)) || <span class="keyword">...</span>
-0039                 (ignoreDirection &amp;&amp; isequal(model.S(:, i), -model.S(:, j)))
-0040             pairs(end+1, :) = [i, j]; <span class="comment">%#ok&lt;AGROW&gt;</span>
-0041         <span class="keyword">end</span>
-0042     <span class="keyword">end</span>
-0043 <span class="keyword">end</span>
-0044 <span class="keyword">end</span></pre></div>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% Name-Value Arguments</span>
+0017 <span class="comment">% --------------------</span>
+0018 <span class="comment">% ignoreDirection : logical</span>
+0019 <span class="comment">%     treat A→B and B→A as duplicates (default true).</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">% Returns</span>
+0022 <span class="comment">% -------</span>
+0023 <span class="comment">% pairs : double</span>
+0024 <span class="comment">%     Nx2 numeric array of reaction-index pairs (i, j) where reactions i</span>
+0025 <span class="comment">%     and j share the same (possibly negated) stoichiometry, with i &lt; j.</span>
+0026 <span class="comment">%     Empty if the model has no duplicates.</span>
+0027 <span class="comment">%</span>
+0028 <span class="comment">% Examples</span>
+0029 <span class="comment">% --------</span>
+0030 <span class="comment">%     pairs = findDuplicateRxns(model);</span>
+0031 <span class="comment">%     pairs = findDuplicateRxns(model, false);</span>
+0032 
+0033 p=parseRAVENargs(varargin, {<span class="string">'ignoreDirection'</span>,true});
+0034 ignoreDirection=p.ignoreDirection;
+0035 
+0036 S=full(model.S)';  <span class="comment">% nRxns x nMets</span>
+0037 
+0038 <span class="keyword">if</span> ignoreDirection
+0039     <span class="comment">% Canonical form: flip rows whose first nonzero entry is negative so</span>
+0040     <span class="comment">% that A-&gt;B and B-&gt;A hash to the same fingerprint.</span>
+0041     <span class="keyword">for</span> i=1:size(S,1)
+0042         k=find(S(i,:),1);
+0043         <span class="keyword">if</span> ~isempty(k) &amp;&amp; S(i,k)&lt;0
+0044             S(i,:)=-S(i,:);
+0045         <span class="keyword">end</span>
+0046     <span class="keyword">end</span>
+0047 <span class="keyword">end</span>
+0048 
+0049 [~,~,ic]=unique(S,<span class="string">'rows'</span>);  <span class="comment">% ic(i) = group label for reaction i</span>
+0050 
+0051 pairs=zeros(0,2);
+0052 <span class="keyword">for</span> g=1:max(ic)
+0053     idx=sort(find(ic==g));
+0054     <span class="keyword">for</span> ii=1:numel(idx)-1
+0055         <span class="keyword">for</span> jj=ii+1:numel(idx)
+0056             pairs(end+1,:)=[idx(ii),idx(jj)]; <span class="comment">%#ok&lt;AGROW&gt;</span>
+0057         <span class="keyword">end</span>
+0058     <span class="keyword">end</span>
+0059 <span class="keyword">end</span>
+0060 <span class="keyword">if</span> ~isempty(pairs)
+0061     pairs=sortrows(pairs);
+0062 <span class="keyword">end</span>
+0063 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

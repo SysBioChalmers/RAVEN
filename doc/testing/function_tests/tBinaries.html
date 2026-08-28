@@ -1,0 +1,94 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of tBinaries</title>
+  <meta name="keywords" content="tBinaries">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../index.html">Home</a> &gt;  <a href="#">testing</a> &gt; <a href="index.html">function_tests</a> &gt; tBinaries.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for testing\function_tests&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+
+<h1>tBinaries
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>This is a script file. </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre class="comment"></pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="tBinaries.html" class="code" title="">tBinaries</a>	</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="tBinaries.html" class="code" title="">tBinaries</a>	</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function blast(testCase)</a></li><li><a href="#_sub2" class="code">function diamond(testCase)</a></li><li><a href="#_sub3" class="code">function hmmer(testCase)</a></li><li><a href="#_sub4" class="code">function p = binPath(~, tool, name)</a></li><li><a href="#_sub5" class="code">function fetchAndRun(testCase, tool, name, versionArg)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre>0001 classdef <a href="tBinaries.html" class="code" title="">tBinaries</a> &lt; matlab.unittest.TestCase
+0002 <span class="comment">% tBinaries  On-demand download of RAVEN's external binaries from raven-data.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">%   Validates downloadRavenBinaries on the current platform: each tool is</span>
+0005 <span class="comment">%   fetched into software/&lt;tool&gt;/, the executable is present, and (for the CLI</span>
+0006 <span class="comment">%   tools) it actually runs. On macOS, running the downloaded binary also</span>
+0007 <span class="comment">%   confirms the Gatekeeper quarantine attribute was cleared.</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">%   Exercised on Linux and macOS by the &quot;binary-tests&quot; CI job. Requires network</span>
+0010 <span class="comment">%   access to https://github.com/SysBioChalmers/raven-data .</span>
+0011 
+0012     methods (Test)
+0013         <a name="_sub0" href="#_subfunctions" class="code">function blast(testCase)</a>
+0014             testCase.fetchAndRun(<span class="string">'blast+'</span>, <span class="string">'blastp'</span>, <span class="string">'-version'</span>);
+0015             testCase.verifyTrue(isfile(testCase.binPath(<span class="string">'blast+'</span>,<span class="string">'makeblastdb'</span>)), <span class="keyword">...</span>
+0016                 <span class="string">'makeblastdb not found after download'</span>);
+0017         <span class="keyword">end</span>
+0018 
+0019         <a name="_sub1" href="#_subfunctions" class="code">function diamond(testCase)</a>
+0020             testCase.fetchAndRun(<span class="string">'diamond'</span>, <span class="string">'diamond'</span>, <span class="string">'version'</span>);
+0021         <span class="keyword">end</span>
+0022 
+0023         <a name="_sub2" href="#_subfunctions" class="code">function hmmer(testCase)</a>
+0024             testCase.fetchAndRun(<span class="string">'hmmer'</span>, <span class="string">'hmmsearch'</span>, <span class="string">'-h'</span>);
+0025         <span class="keyword">end</span>
+0026     <span class="keyword">end</span>
+0027 
+0028     methods (Access = private)
+0029         <a name="_sub3" href="#_subfunctions" class="code">function p = binPath(~, tool, name)</a>
+0030             <span class="keyword">if</span> ispc; ext = <span class="string">'.exe'</span>; <span class="keyword">elseif</span> ismac; ext = <span class="string">'.mac'</span>; <span class="keyword">else</span>; ext = <span class="string">''</span>; <span class="keyword">end</span>
+0031             p = fullfile(findRAVENroot(),<span class="string">'software'</span>,tool,[name ext]);
+0032         <span class="keyword">end</span>
+0033 
+0034         <a name="_sub4" href="#_subfunctions" class="code">function fetchAndRun(testCase, tool, name, versionArg)</a>
+0035             <span class="comment">% Download the tool, then confirm the executable exists and runs.</span>
+0036             downloadRavenBinaries({tool});
+0037             exe = testCase.binPath(tool, name);
+0038             testCase.verifyTrue(isfile(exe), <span class="keyword">...</span>
+0039                 sprintf(<span class="string">'%s not found after download'</span>, name));
+0040             [status, ~] = system([<span class="string">'&quot;'</span> exe <span class="string">'&quot; '</span> versionArg]);
+0041             testCase.verifyEqual(status, 0, <span class="keyword">...</span>
+0042                 sprintf(<span class="string">'%s did not execute (exit status %d)'</span>, name, status));
+0043         <span class="keyword">end</span>
+0044     <span class="keyword">end</span>
+0045 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

@@ -24,7 +24,7 @@
 <div class="box"><strong>getRxnsInComp  Get the reactions in a specified compartment.</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function [I, rxnNames]=getRxnsInComp(model,comp,includePartial) </strong></div>
+<div class="box"><strong>function [I, rxnNames]=getRxnsInComp(model,comp,varargin) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> getRxnsInComp  Get the reactions in a specified compartment.
@@ -35,7 +35,10 @@
      a model structure.
  comp : char
      string with the compartment id.
- includePartial : logical, optional
+
+ Name-Value Arguments
+ --------------------
+ includePartial : logical
      true if reactions with metabolites in several compartments (normally
      transport reactions) should be included (default false).
 
@@ -63,7 +66,7 @@ This function is called by:
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [I, rxnNames]=getRxnsInComp(model,comp,includePartial)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [I, rxnNames]=getRxnsInComp(model,comp,varargin)</a>
 0002 <span class="comment">% getRxnsInComp  Get the reactions in a specified compartment.</span>
 0003 <span class="comment">%</span>
 0004 <span class="comment">% Parameters</span>
@@ -72,47 +75,49 @@ This function is called by:
 0007 <span class="comment">%     a model structure.</span>
 0008 <span class="comment">% comp : char</span>
 0009 <span class="comment">%     string with the compartment id.</span>
-0010 <span class="comment">% includePartial : logical, optional</span>
-0011 <span class="comment">%     true if reactions with metabolites in several compartments (normally</span>
-0012 <span class="comment">%     transport reactions) should be included (default false).</span>
-0013 <span class="comment">%</span>
-0014 <span class="comment">% Returns</span>
-0015 <span class="comment">% -------</span>
-0016 <span class="comment">% I : double</span>
-0017 <span class="comment">%     boolean vector of the reactions.</span>
-0018 <span class="comment">% rxnNames : cell</span>
-0019 <span class="comment">%     the names of the reactions.</span>
-0020 <span class="comment">%</span>
-0021 <span class="comment">% Examples</span>
-0022 <span class="comment">% --------</span>
-0023 <span class="comment">%     [I, rxnNames] = getRxnsInComp(model, comp, includePartial);</span>
-0024 
-0025 comp=char(comp);
-0026 <span class="keyword">if</span> nargin&lt;3
-0027     includePartial=false;
-0028 <span class="keyword">end</span>
-0029 
-0030 J=find(ismember(upper(model.comps),upper(comp)));
+0010 <span class="comment">%</span>
+0011 <span class="comment">% Name-Value Arguments</span>
+0012 <span class="comment">% --------------------</span>
+0013 <span class="comment">% includePartial : logical</span>
+0014 <span class="comment">%     true if reactions with metabolites in several compartments (normally</span>
+0015 <span class="comment">%     transport reactions) should be included (default false).</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">% Returns</span>
+0018 <span class="comment">% -------</span>
+0019 <span class="comment">% I : double</span>
+0020 <span class="comment">%     boolean vector of the reactions.</span>
+0021 <span class="comment">% rxnNames : cell</span>
+0022 <span class="comment">%     the names of the reactions.</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">% Examples</span>
+0025 <span class="comment">% --------</span>
+0026 <span class="comment">%     [I, rxnNames] = getRxnsInComp(model, comp, includePartial);</span>
+0027 
+0028 comp=char(comp);
+0029 p=parseRAVENargs(varargin, {<span class="string">'includePartial'</span>,false});
+0030 includePartial=p.includePartial;
 0031 
-0032 <span class="keyword">if</span> numel(J)~=1
-0033     EM=[<span class="string">'No unique match to compartment &quot;'</span> comp{1} <span class="string">'&quot;'</span>];
-0034     dispEM(EM);
-0035 <span class="keyword">end</span>
-0036 
-0037 K=model.metComps==J; <span class="comment">%Get all metabolites in the compartment</span>
+0032 J=find(ismember(upper(model.comps),upper(comp)));
+0033 
+0034 <span class="keyword">if</span> numel(J)~=1
+0035     EM=[<span class="string">'No unique match to compartment &quot;'</span> comp{1} <span class="string">'&quot;'</span>];
+0036     error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0037 <span class="keyword">end</span>
 0038 
-0039 S=model.S~=0;
+0039 K=model.metComps==J; <span class="comment">%Get all metabolites in the compartment</span>
 0040 
-0041 <span class="comment">%Find the reactions which involve any of the mets</span>
-0042 [~, I]=find(S(K,:));
-0043 I=unique(I);
-0044 
-0045 <span class="comment">%Then remove the ones which also include metabolites in other comps</span>
-0046 <span class="keyword">if</span> includePartial==false
-0047     I=I(sum(S(:,I))==sum(S(K,I)));
-0048 <span class="keyword">end</span>
-0049 rxnNames=model.rxnNames(I);
-0050 <span class="keyword">end</span></pre></div>
+0041 S=model.S~=0;
+0042 
+0043 <span class="comment">%Find the reactions which involve any of the mets</span>
+0044 [~, I]=find(S(K,:));
+0045 I=unique(I);
+0046 
+0047 <span class="comment">%Then remove the ones which also include metabolites in other comps</span>
+0048 <span class="keyword">if</span> includePartial==false
+0049     I=I(sum(S(:,I))==sum(S(K,I)));
+0050 <span class="keyword">end</span>
+0051 rxnNames=model.rxnNames(I);
+0052 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

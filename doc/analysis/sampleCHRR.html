@@ -1,0 +1,265 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of sampleCHRR</title>
+  <meta name="keywords" content="sampleCHRR">
+  <meta name="description" content="sampleCHRR  Coordinate Hit-and-Run with Rounding flux sampling.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">analysis</a> &gt; sampleCHRR.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for analysis&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>sampleCHRR
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>sampleCHRR  Coordinate Hit-and-Run with Rounding flux sampling.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [solutions, info] = sampleCHRR(model, nSamples, thinning, nBurnin, seed, fixedWidthTol) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> sampleCHRR  Coordinate Hit-and-Run with Rounding flux sampling.
+
+ Draws nSamples flux vectors approximately uniformly from the flux polytope
+ {v : S*v = 0, lb &lt;= v &lt;= ub}, using the CHRR algorithm (Haraldsdottir et al.
+ 2017, Bioinformatics 33:1741):
+
+   1. Reduce the polytope to a full-dimensional body via the nullspace of S
+      (v = v0 + N*x); reactions with ~zero flux range are folded into the
+      equality system so the reduced polytope is full-dimensional.
+   2. Round it with the maximum-volume inscribed ellipsoid (sampleMaxVolEllipse).
+      Rounding makes mixing independent of how elongated the polytope is, which
+      is the regime of enzyme-constrained (ecModel + proteomics) and
+      flux-measured models.
+   3. Walk the rounded polytope with coordinate hit-and-run and map back.
+
+ Set any constraints you want to condition on (e.g. a biomass lower bound or
+ measured exchange fluxes) on the model before calling.
+
+ Parameters
+ ----------
+ model : struct
+     a RAVEN model structure.
+ nSamples : double
+     number of flux vectors to return (default 1000).
+ thinning : double
+     Markov-chain steps between recorded samples (default 100).
+ nBurnin : double
+     burn-in steps discarded before the first recorded sample (default 1000).
+ seed : double
+     random seed for reproducibility (default: current RNG state).
+ fixedWidthTol : double
+     a reaction whose allowed flux range is narrower than this is treated as
+     stoichiometrically fixed and folded into the equality system, keeping the
+     reduced polytope full-dimensional (default 1e-7).
+
+ Returns
+ -------
+ solutions : double
+     nRxns-by-nSamples matrix of sampled flux distributions.
+ info : struct
+     .nDimensions  — dimension of the sampled flux polytope
+     .mveConverged — whether MVE rounding reached tolerance
+     .fixedRxns    — IDs of reactions folded in as fixed
+
+ See also
+ --------
+ <a href="randomSampling.html" class="code" title="function [solutions, goodRxns, info]=randomSampling(model,varargin)">randomSampling</a>, <a href="sampleACHR.html" class="code" title="function solutions = sampleACHR(model, nSamples, thinning, warmup, seed)">sampleACHR</a>, <a href="sampleMaxVolEllipse.html" class="code" title="function [x, E, converged] = sampleMaxVolEllipse(A, b, x0, maxiter, tol, reg)">sampleMaxVolEllipse</a></pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="getAllowedBounds.html" class="code" title="function [minFluxes, maxFluxes, exitFlags]=getAllowedBounds(model,varargin)">getAllowedBounds</a>	getAllowedBounds  Return the minimal and maximal fluxes through reactions.</li><li><a href="sampleChebyshevCenter.html" class="code" title="function x0 = sampleChebyshevCenter(A, b)">sampleChebyshevCenter</a>	sampleChebyshevCenter  Centre of the largest ball inscribed in a polytope.</li><li><a href="sampleMaxVolEllipse.html" class="code" title="function [x, E, converged] = sampleMaxVolEllipse(A, b, x0, maxiter, tol, reg)">sampleMaxVolEllipse</a>	sampleMaxVolEllipse  Maximum-volume inscribed ellipsoid of a polytope.</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="randomSampling.html" class="code" title="function [solutions, goodRxns, info]=randomSampling(model,varargin)">randomSampling</a>	randomSampling  Sample the flux solution space (entry point for all samplers).</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [solutions, info] = sampleCHRR(model, nSamples, thinning, nBurnin, seed, fixedWidthTol)</a>
+0002 <span class="comment">% sampleCHRR  Coordinate Hit-and-Run with Rounding flux sampling.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Draws nSamples flux vectors approximately uniformly from the flux polytope</span>
+0005 <span class="comment">% {v : S*v = 0, lb &lt;= v &lt;= ub}, using the CHRR algorithm (Haraldsdottir et al.</span>
+0006 <span class="comment">% 2017, Bioinformatics 33:1741):</span>
+0007 <span class="comment">%</span>
+0008 <span class="comment">%   1. Reduce the polytope to a full-dimensional body via the nullspace of S</span>
+0009 <span class="comment">%      (v = v0 + N*x); reactions with ~zero flux range are folded into the</span>
+0010 <span class="comment">%      equality system so the reduced polytope is full-dimensional.</span>
+0011 <span class="comment">%   2. Round it with the maximum-volume inscribed ellipsoid (sampleMaxVolEllipse).</span>
+0012 <span class="comment">%      Rounding makes mixing independent of how elongated the polytope is, which</span>
+0013 <span class="comment">%      is the regime of enzyme-constrained (ecModel + proteomics) and</span>
+0014 <span class="comment">%      flux-measured models.</span>
+0015 <span class="comment">%   3. Walk the rounded polytope with coordinate hit-and-run and map back.</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">% Set any constraints you want to condition on (e.g. a biomass lower bound or</span>
+0018 <span class="comment">% measured exchange fluxes) on the model before calling.</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% Parameters</span>
+0021 <span class="comment">% ----------</span>
+0022 <span class="comment">% model : struct</span>
+0023 <span class="comment">%     a RAVEN model structure.</span>
+0024 <span class="comment">% nSamples : double</span>
+0025 <span class="comment">%     number of flux vectors to return (default 1000).</span>
+0026 <span class="comment">% thinning : double</span>
+0027 <span class="comment">%     Markov-chain steps between recorded samples (default 100).</span>
+0028 <span class="comment">% nBurnin : double</span>
+0029 <span class="comment">%     burn-in steps discarded before the first recorded sample (default 1000).</span>
+0030 <span class="comment">% seed : double</span>
+0031 <span class="comment">%     random seed for reproducibility (default: current RNG state).</span>
+0032 <span class="comment">% fixedWidthTol : double</span>
+0033 <span class="comment">%     a reaction whose allowed flux range is narrower than this is treated as</span>
+0034 <span class="comment">%     stoichiometrically fixed and folded into the equality system, keeping the</span>
+0035 <span class="comment">%     reduced polytope full-dimensional (default 1e-7).</span>
+0036 <span class="comment">%</span>
+0037 <span class="comment">% Returns</span>
+0038 <span class="comment">% -------</span>
+0039 <span class="comment">% solutions : double</span>
+0040 <span class="comment">%     nRxns-by-nSamples matrix of sampled flux distributions.</span>
+0041 <span class="comment">% info : struct</span>
+0042 <span class="comment">%     .nDimensions  — dimension of the sampled flux polytope</span>
+0043 <span class="comment">%     .mveConverged — whether MVE rounding reached tolerance</span>
+0044 <span class="comment">%     .fixedRxns    — IDs of reactions folded in as fixed</span>
+0045 <span class="comment">%</span>
+0046 <span class="comment">% See also</span>
+0047 <span class="comment">% --------</span>
+0048 <span class="comment">% randomSampling, sampleACHR, sampleMaxVolEllipse</span>
+0049 
+0050 <span class="keyword">if</span> nargin &lt; 2 || isempty(nSamples);      nSamples = 1000;     <span class="keyword">end</span>
+0051 <span class="keyword">if</span> nargin &lt; 3 || isempty(thinning);      thinning = 100;      <span class="keyword">end</span>
+0052 <span class="keyword">if</span> nargin &lt; 4 || isempty(nBurnin);       nBurnin = 1000;      <span class="keyword">end</span>
+0053 <span class="keyword">if</span> nargin &lt; 5;                           seed = [];           <span class="keyword">end</span>
+0054 <span class="keyword">if</span> nargin &lt; 6 || isempty(fixedWidthTol); fixedWidthTol = 1e-7; <span class="keyword">end</span>
+0055 <span class="keyword">if</span> ~isempty(seed)
+0056     rng(seed);
+0057 <span class="keyword">end</span>
+0058 
+0059 nRxns = numel(model.rxns);
+0060 S  = full(model.S);
+0061 lb = model.lb(:);
+0062 ub = model.ub(:);
+0063 
+0064 <span class="comment">% ---- Fold implicitly-fixed reactions into equalities ----</span>
+0065 <span class="comment">% A reaction with ~zero flux range is determined by stoichiometry; keeping it as</span>
+0066 <span class="comment">% a box constraint would make the reduced polytope lower-dimensional and the MVE</span>
+0067 <span class="comment">% solve singular. Fix it at its (unique) value instead.</span>
+0068 [minF, maxF] = <a href="getAllowedBounds.html" class="code" title="function [minFluxes, maxFluxes, exitFlags]=getAllowedBounds(model,varargin)">getAllowedBounds</a>(model);
+0069 minF = minF(:); maxF = maxF(:);
+0070 width = maxF - minF;
+0071 fixed = width &lt; fixedWidthTol;
+0072 fixedVals = (maxF + minF) / 2;
+0073 fixedIdx = find(fixed);
+0074 
+0075 Aeq = S;
+0076 beq = zeros(size(S, 1), 1);
+0077 <span class="keyword">if</span> ~isempty(fixedIdx)
+0078     blk = zeros(numel(fixedIdx), nRxns);
+0079     <span class="keyword">for</span> k = 1:numel(fixedIdx)
+0080         blk(k, fixedIdx(k)) = 1;
+0081     <span class="keyword">end</span>
+0082     Aeq = [Aeq; blk];
+0083     beq = [beq; fixedVals(fixedIdx)];
+0084 <span class="keyword">end</span>
+0085 
+0086 <span class="comment">% Particular solution v0 and nullspace basis N: v = v0 + N*x.</span>
+0087 <span class="comment">% v0 is ANY particular solution; the sampled flux distribution is invariant to</span>
+0088 <span class="comment">% its choice and to the nullspace basis, so the minimum-norm solution used here</span>
+0089 <span class="comment">% and the Python reference's lstsq sample the same polytope.</span>
+0090 <span class="comment">% lsqminnorm rather than '\': Aeq is square whenever the number of metabolites</span>
+0091 <span class="comment">% plus the number of folded-in fixed reactions equals the number of reactions,</span>
+0092 <span class="comment">% and it is then rank-deficient, for which '\' returns NaN. Those NaNs travel</span>
+0093 <span class="comment">% into the polytope and surface much later as a misleading &quot;empty interior&quot;</span>
+0094 <span class="comment">% error from sampleChebyshevCenter.</span>
+0095 v0 = lsqminnorm(Aeq, beq);
+0096 N  = null(Aeq);
+0097 d  = size(N, 2);
+0098 
+0099 info = struct();
+0100 info.fixedRxns = model.rxns(fixedIdx);
+0101 
+0102 <span class="keyword">if</span> d == 0
+0103     <span class="comment">% Flux space is a single point — nothing to sample.</span>
+0104     solutions = repmat(v0, 1, nSamples);
+0105     info.nDimensions = 0;
+0106     info.mveConverged = true;
+0107     <span class="keyword">return</span>;
+0108 <span class="keyword">end</span>
+0109 
+0110 <span class="comment">% ---- Build the full-dimensional polytope in x (free reactions only) ----</span>
+0111 free = ~fixed;
+0112 Nf = N(free, :);
+0113 A_full = [Nf; -Nf];
+0114 b_full = [ub(free) - v0(free); v0(free) - lb(free)];
+0115 <span class="comment">% Drop rows whose direction vanished in the nullspace (constraint is constant).</span>
+0116 keep = sqrt(sum(A_full.^2, 2)) &gt; 1e-10;
+0117 A_full = A_full(keep, :);
+0118 b_full = b_full(keep);
+0119 
+0120 <span class="comment">% ---- Round with the MVE ----</span>
+0121 x0 = <a href="sampleChebyshevCenter.html" class="code" title="function x0 = sampleChebyshevCenter(A, b)">sampleChebyshevCenter</a>(A_full, b_full);
+0122 [center, E, converged] = <a href="sampleMaxVolEllipse.html" class="code" title="function [x, E, converged] = sampleMaxVolEllipse(A, b, x0, maxiter, tol, reg)">sampleMaxVolEllipse</a>(A_full, b_full, x0);
+0123 info.nDimensions = d;
+0124 info.mveConverged = converged;
+0125 <span class="keyword">if</span> ~converged
+0126     warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'%s'</span>, [<span class="string">'The maximum-volume ellipsoid rounding '</span> <span class="keyword">...</span>
+0127         <span class="string">'did not converge; the samples may be poorly mixed. Inspect the '</span> <span class="keyword">...</span>
+0128         <span class="string">'mveConverged field of the second output.'</span>]);
+0129 <span class="keyword">end</span>
+0130 
+0131 <span class="comment">% Rounded polytope {y : A_r*y &lt;= b_r}, which contains the unit ball.</span>
+0132 A_r = A_full * E;
+0133 b_r = b_full - A_full*center;
+0134 
+0135 <span class="comment">% ---- Coordinate hit-and-run on the rounded polytope ----</span>
+0136 y = zeros(d, 1);
+0137 s = b_r - A_r*y;                       <span class="comment">% maintained slack, &gt; 0 at start</span>
+0138 solutions = zeros(nRxns, nSamples);
+0139 rec = 0;
+0140 total = nBurnin + thinning*nSamples;
+0141 colTol = 1e-12;
+0142 
+0143 <span class="keyword">for</span> stepno = 1:total
+0144     j = randi(d);
+0145     col = A_r(:, j);
+0146     pos = col &gt; colTol;
+0147     neg = col &lt; -colTol;
+0148     ratios = s ./ col;
+0149     <span class="keyword">if</span> any(pos); tHi = min(ratios(pos)); <span class="keyword">else</span>; tHi = inf;  <span class="keyword">end</span>
+0150     <span class="keyword">if</span> any(neg); tLo = max(ratios(neg)); <span class="keyword">else</span>; tLo = -inf; <span class="keyword">end</span>
+0151     <span class="keyword">if</span> ~isfinite(tHi) || ~isfinite(tLo) || tHi &lt;= tLo
+0152         <span class="keyword">continue</span>;                      <span class="comment">% unbounded/degenerate coordinate; skip</span>
+0153     <span class="keyword">end</span>
+0154     t = tLo + rand*(tHi - tLo);
+0155     y(j) = y(j) + t;
+0156     s = s - col*t;
+0157 
+0158     <span class="keyword">if</span> stepno &gt; nBurnin &amp;&amp; mod(stepno - nBurnin, thinning) == 0
+0159         rec = rec + 1;
+0160         x = center + E*y;
+0161         solutions(:, rec) = v0 + N*x;
+0162     <span class="keyword">end</span>
+0163 <span class="keyword">end</span>
+0164 
+0165 <span class="keyword">if</span> rec &lt; nSamples
+0166     <span class="keyword">if</span> rec &gt;= 1
+0167         solutions(:, rec+1:end) = repmat(solutions(:, rec), 1, nSamples - rec);
+0168     <span class="keyword">else</span>
+0169         solutions = repmat(v0, 1, nSamples);
+0170     <span class="keyword">end</span>
+0171 <span class="keyword">end</span>
+0172 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

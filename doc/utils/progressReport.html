@@ -1,0 +1,360 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of progressReport</title>
+  <meta name="keywords" content="progressReport">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utils</a> &gt; progressReport.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utils&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>progressReport
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>This is a script file. </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"></pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="progressReport.html" class="code" title="">progressReport</a>	</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="progressReport.html" class="code" title="">progressReport</a>	</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function obj = progressReport(N, taskName)</a></li><li><a href="#_sub2" class="code">function count(obj)</a></li><li><a href="#_sub3" class="code">function update(obj, n)</a></li><li><a href="#_sub4" class="code">function done(obj)</a></li><li><a href="#_sub5" class="code">function delete(obj)</a></li><li><a href="#_sub6" class="code">function localUpdate(obj, v)</a></li><li><a href="#_sub7" class="code">function render(obj)</a></li><li><a href="#_sub8" class="code">function drawCli(obj, pct)</a></li><li><a href="#_sub9" class="code">function emitLog(obj, pct)</a></li><li><a href="#_sub10" class="code">function finishUp(obj)</a></li><li><a href="#_sub11" class="code">function mode = resolveProgressMode()</a></li><li><a href="#_sub12" class="code">function tf = inTestContext()</a></li><li><a href="#_sub13" class="code">function name = truncateName(name, maxLen)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 classdef <a href="progressReport.html" class="code" title="">progressReport</a> &lt; handle
+0002 <span class="comment">% progressReport  Universal progress reporting for RAVEN functions.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% A single progress-reporting API used across RAVEN. The rendering backend</span>
+0005 <span class="comment">% is selected automatically so that the same call works on an interactive</span>
+0006 <span class="comment">% desktop, a plain command-line session and a headless server, and is</span>
+0007 <span class="comment">% silenced during unit tests:</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">%   - 'gui'  : MATLAB waitbar (interactive desktop).</span>
+0010 <span class="comment">%   - 'cli'  : animated command-line bar (interactive terminal).</span>
+0011 <span class="comment">%   - 'log'  : plain milestone lines, e.g. &quot;Running BLAST: 30%&quot;. Contains no</span>
+0012 <span class="comment">%              control characters, so it stays readable in redirected logs</span>
+0013 <span class="comment">%              and on headless / -batch servers.</span>
+0014 <span class="comment">%   - 'none' : no output (during tests, or when disabled).</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% The backend can be forced with setRavenProgress, e.g. setRavenProgress('log')</span>
+0017 <span class="comment">% on a compute cluster, or setRavenProgress('off') to silence all progress</span>
+0018 <span class="comment">% reporting.</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% Usage</span>
+0021 <span class="comment">% -----</span>
+0022 <span class="comment">% For loops with one cheap-to-expensive iteration each, count one per pass:</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">%     PB = progressReport(N, 'Task name');   % before the loop</span>
+0025 <span class="comment">%     for i = 1:N</span>
+0026 <span class="comment">%         ...                                % loop body</span>
+0027 <span class="comment">%         PB.count;                          % or count(PB), also in parfor</span>
+0028 <span class="comment">%     end</span>
+0029 <span class="comment">%     PB.done;                               % optional; cleans up on early exit</span>
+0030 <span class="comment">%</span>
+0031 <span class="comment">% For very long loops over cheap iterations, set the absolute position at</span>
+0032 <span class="comment">% intervals to avoid per-iteration overhead:</span>
+0033 <span class="comment">%</span>
+0034 <span class="comment">%     PB = progressReport(N, 'Task name');</span>
+0035 <span class="comment">%     for i = 1:N</span>
+0036 <span class="comment">%         ...</span>
+0037 <span class="comment">%         if rem(i-1, 1000) == 0</span>
+0038 <span class="comment">%             PB.update(i);                  % or update(PB, i)</span>
+0039 <span class="comment">%         end</span>
+0040 <span class="comment">%     end</span>
+0041 <span class="comment">%     PB.done;</span>
+0042 <span class="comment">%</span>
+0043 <span class="comment">% Parameters</span>
+0044 <span class="comment">% ----------</span>
+0045 <span class="comment">% N : double</span>
+0046 <span class="comment">%     number of iterations the loop will perform (a positive integer).</span>
+0047 <span class="comment">% taskName : char, optional</span>
+0048 <span class="comment">%     label shown alongside the progress (default '').</span>
+0049 <span class="comment">%</span>
+0050 <span class="comment">% See also</span>
+0051 <span class="comment">% --------</span>
+0052 <span class="comment">% setRavenProgress</span>
+0053 
+0054     properties (SetAccess = private)
+0055         mode char            <span class="comment">% resolved backend: 'gui', 'cli', 'log' or 'none'</span>
+0056         N    double
+0057         taskName char
+0058     <span class="keyword">end</span>
+0059     properties (Access = private, Transient)
+0060         counter   = 0
+0061         lastPct   = -1       <span class="comment">% last percentage rendered</span>
+0062         logStep   = 10       <span class="comment">% percent between 'log' lines</span>
+0063         barWidth  = 30
+0064         prevLen   = 0        <span class="comment">% characters on the current 'cli' line</span>
+0065         guiHandle = []
+0066         Queue     = []       <span class="comment">% DataQueue for parfor counting</span>
+0067         Listener  = []
+0068         noPCT     = true
+0069         finished  = false
+0070     <span class="keyword">end</span>
+0071 
+0072     methods
+0073         <a name="_sub0" href="#_subfunctions" class="code">function obj = progressReport(N, taskName)</a>
+0074             <span class="keyword">if</span> nargin &lt; 2 || isempty(taskName)
+0075                 taskName = <span class="string">''</span>;
+0076             <span class="keyword">end</span>
+0077             obj.N = double(N);
+0078             obj.taskName = <a href="#_sub13" class="code" title="subfunction name = truncateName(name, maxLen)">truncateName</a>(char(taskName), 40);
+0079             obj.mode = <a href="#_sub11" class="code" title="subfunction mode = resolveProgressMode()">resolveProgressMode</a>();
+0080 
+0081             <span class="comment">% Nothing sensible to show for an empty or unknown-length loop.</span>
+0082             <span class="keyword">if</span> ~(isscalar(obj.N) &amp;&amp; isfinite(obj.N) &amp;&amp; obj.N &gt;= 1)
+0083                 obj.mode = <span class="string">'none'</span>;
+0084             <span class="keyword">end</span>
+0085             <span class="keyword">if</span> strcmp(obj.mode,<span class="string">'none'</span>)
+0086                 <span class="keyword">return</span>
+0087             <span class="keyword">end</span>
+0088 
+0089             obj.noPCT = isempty(ver(<span class="string">'parallel'</span>));
+0090             <span class="keyword">if</span> ~obj.noPCT
+0091                 obj.Queue = parallel.pool.DataQueue;
+0092                 obj.Listener = afterEach(obj.Queue, @(v) <a href="#_sub6" class="code" title="subfunction localUpdate(obj, v)">localUpdate</a>(obj, v));
+0093             <span class="keyword">end</span>
+0094 
+0095             <span class="comment">% Initial render.</span>
+0096             <span class="keyword">switch</span> obj.mode
+0097                 <span class="keyword">case</span> <span class="string">'gui'</span>
+0098                     name = obj.taskName;
+0099                     <span class="keyword">if</span> isempty(name); name = <span class="string">'Progress'</span>; <span class="keyword">end</span>
+0100                     <span class="keyword">try</span>
+0101                         obj.guiHandle = waitbar(0, <span class="string">'0%'</span>, <span class="string">'Name'</span>, name);
+0102                     <span class="keyword">catch</span>
+0103                         obj.mode = <span class="string">'log'</span>;   <span class="comment">% no display available</span>
+0104                         <a href="#_sub9" class="code" title="subfunction emitLog(obj, pct)">emitLog</a>(obj, 0);
+0105                     <span class="keyword">end</span>
+0106                     obj.lastPct = 0;
+0107                 <span class="keyword">case</span> <span class="string">'cli'</span>
+0108                     <a href="#_sub8" class="code" title="subfunction drawCli(obj, pct)">drawCli</a>(obj, 0);
+0109                     obj.lastPct = 0;
+0110                 <span class="keyword">case</span> <span class="string">'log'</span>
+0111                     <a href="#_sub9" class="code" title="subfunction emitLog(obj, pct)">emitLog</a>(obj, 0);
+0112                     obj.lastPct = 0;
+0113             <span class="keyword">end</span>
+0114         <span class="keyword">end</span>
+0115 
+0116         <a name="_sub1" href="#_subfunctions" class="code">function count(obj)</a>
+0117             <span class="comment">% Register one completed iteration.</span>
+0118             <span class="keyword">if</span> strcmp(obj.mode,<span class="string">'none'</span>)
+0119                 <span class="keyword">return</span>
+0120             <span class="keyword">end</span>
+0121             <span class="keyword">if</span> obj.noPCT || isempty(getCurrentJob)
+0122                 <a href="#_sub6" class="code" title="subfunction localUpdate(obj, v)">localUpdate</a>(obj, -1);       <span class="comment">% serial execution</span>
+0123             <span class="keyword">else</span>
+0124                 send(obj.Queue, -1);        <span class="comment">% parfor worker -&gt; client</span>
+0125             <span class="keyword">end</span>
+0126         <span class="keyword">end</span>
+0127 
+0128         <a name="_sub2" href="#_subfunctions" class="code">function update(obj, n)</a>
+0129             <span class="comment">% Set the absolute number of completed iterations to n.</span>
+0130             <span class="keyword">if</span> strcmp(obj.mode,<span class="string">'none'</span>)
+0131                 <span class="keyword">return</span>
+0132             <span class="keyword">end</span>
+0133             <span class="keyword">if</span> obj.noPCT || isempty(getCurrentJob)
+0134                 <a href="#_sub6" class="code" title="subfunction localUpdate(obj, v)">localUpdate</a>(obj, n);        <span class="comment">% serial execution</span>
+0135             <span class="keyword">else</span>
+0136                 send(obj.Queue, n);         <span class="comment">% parfor worker -&gt; client</span>
+0137             <span class="keyword">end</span>
+0138         <span class="keyword">end</span>
+0139 
+0140         <a name="_sub3" href="#_subfunctions" class="code">function done(obj)</a>
+0141             <span class="comment">% Finalise the bar (call when a loop may exit before reaching N).</span>
+0142             <a href="#_sub10" class="code" title="subfunction finishUp(obj)">finishUp</a>(obj);
+0143         <span class="keyword">end</span>
+0144     <span class="keyword">end</span>
+0145 
+0146     methods (Hidden = true)
+0147         <a name="_sub4" href="#_subfunctions" class="code">function delete(obj)</a>
+0148             <span class="keyword">if</span> ~isempty(obj.Queue)
+0149                 <a href="#_sub5" class="code" title="subfunction delete(obj)">delete</a>(obj.Queue);
+0150             <span class="keyword">end</span>
+0151             <a href="#_sub10" class="code" title="subfunction finishUp(obj)">finishUp</a>(obj);
+0152         <span class="keyword">end</span>
+0153     <span class="keyword">end</span>
+0154 
+0155     methods (Access = private)
+0156         <a name="_sub5" href="#_subfunctions" class="code">function localUpdate(obj, v)</a>
+0157             <span class="keyword">if</span> v &lt; 0
+0158                 obj.counter = obj.counter + 1;
+0159             <span class="keyword">else</span>
+0160                 obj.counter = max(obj.counter, v);
+0161             <span class="keyword">end</span>
+0162             <a href="#_sub7" class="code" title="subfunction render(obj)">render</a>(obj);
+0163         <span class="keyword">end</span>
+0164 
+0165         <a name="_sub6" href="#_subfunctions" class="code">function render(obj)</a>
+0166             <span class="keyword">if</span> obj.finished
+0167                 <span class="keyword">return</span>
+0168             <span class="keyword">end</span>
+0169             pct = min(100, floor(100 * obj.counter / obj.N));
+0170             <span class="keyword">switch</span> obj.mode
+0171                 <span class="keyword">case</span> <span class="string">'gui'</span>
+0172                     <span class="keyword">if</span> pct ~= obj.lastPct
+0173                         obj.lastPct = pct;
+0174                         <span class="keyword">if</span> ~isempty(obj.guiHandle) &amp;&amp; isvalid(obj.guiHandle)
+0175                             waitbar(pct/100, obj.guiHandle, sprintf(<span class="string">'%d%%'</span>, pct));
+0176                         <span class="keyword">end</span>
+0177                     <span class="keyword">end</span>
+0178                     <span class="keyword">if</span> obj.counter &gt;= obj.N; <a href="#_sub10" class="code" title="subfunction finishUp(obj)">finishUp</a>(obj); <span class="keyword">end</span>
+0179                 <span class="keyword">case</span> <span class="string">'cli'</span>
+0180                     <span class="keyword">if</span> pct ~= obj.lastPct
+0181                         obj.lastPct = pct;
+0182                         <a href="#_sub8" class="code" title="subfunction drawCli(obj, pct)">drawCli</a>(obj, pct);
+0183                     <span class="keyword">end</span>
+0184                     <span class="keyword">if</span> obj.counter &gt;= obj.N; <a href="#_sub10" class="code" title="subfunction finishUp(obj)">finishUp</a>(obj); <span class="keyword">end</span>
+0185                 <span class="keyword">case</span> <span class="string">'log'</span>
+0186                     <span class="keyword">if</span> pct &gt;= obj.lastPct + obj.logStep <span class="keyword">...</span>
+0187                             || (obj.counter &gt;= obj.N &amp;&amp; obj.lastPct &lt; 100)
+0188                         <span class="keyword">if</span> obj.counter &gt;= obj.N; pct = 100; <span class="keyword">end</span>
+0189                         obj.lastPct = pct;
+0190                         <a href="#_sub9" class="code" title="subfunction emitLog(obj, pct)">emitLog</a>(obj, pct);
+0191                     <span class="keyword">end</span>
+0192             <span class="keyword">end</span>
+0193         <span class="keyword">end</span>
+0194 
+0195         <a name="_sub7" href="#_subfunctions" class="code">function drawCli(obj, pct)</a>
+0196             nfill = round(obj.barWidth * pct / 100);
+0197             bar = [repmat(<span class="string">'#'</span>,1,nfill), repmat(<span class="string">'-'</span>,1,obj.barWidth-nfill)];
+0198             <span class="keyword">if</span> isempty(obj.taskName)
+0199                 s = sprintf(<span class="string">'[%s] %3d%%'</span>, bar, pct);
+0200             <span class="keyword">else</span>
+0201                 s = sprintf(<span class="string">'%s [%s] %3d%%'</span>, obj.taskName, bar, pct);
+0202             <span class="keyword">end</span>
+0203             fprintf(<span class="string">'%s%s'</span>, repmat(sprintf(<span class="string">'\b'</span>),1,obj.prevLen), s);
+0204             obj.prevLen = numel(s);
+0205         <span class="keyword">end</span>
+0206 
+0207         <a name="_sub8" href="#_subfunctions" class="code">function emitLog(obj, pct)</a>
+0208             <span class="keyword">if</span> isempty(obj.taskName)
+0209                 fprintf(<span class="string">'Progress: %d%%\n'</span>, pct);
+0210             <span class="keyword">else</span>
+0211                 fprintf(<span class="string">'%s: %d%%\n'</span>, obj.taskName, pct);
+0212             <span class="keyword">end</span>
+0213         <span class="keyword">end</span>
+0214 
+0215         <a name="_sub9" href="#_subfunctions" class="code">function finishUp(obj)</a>
+0216             <span class="keyword">if</span> obj.finished
+0217                 <span class="keyword">return</span>
+0218             <span class="keyword">end</span>
+0219             <span class="keyword">switch</span> obj.mode
+0220                 <span class="keyword">case</span> <span class="string">'gui'</span>
+0221                     <span class="keyword">if</span> ~isempty(obj.guiHandle) &amp;&amp; isvalid(obj.guiHandle)
+0222                         <a href="#_sub5" class="code" title="subfunction delete(obj)">delete</a>(obj.guiHandle);
+0223                     <span class="keyword">end</span>
+0224                 <span class="keyword">case</span> <span class="string">'cli'</span>
+0225                     <span class="keyword">if</span> obj.lastPct &lt; 100
+0226                         <a href="#_sub8" class="code" title="subfunction drawCli(obj, pct)">drawCli</a>(obj, 100);  <span class="comment">% show completion</span>
+0227                     <span class="keyword">end</span>
+0228                     <span class="keyword">if</span> obj.prevLen &gt; 0
+0229                         fprintf(<span class="string">'\n'</span>);      <span class="comment">% move off the progress line</span>
+0230                     <span class="keyword">end</span>
+0231                 <span class="keyword">case</span> <span class="string">'log'</span>
+0232                     <span class="keyword">if</span> obj.lastPct &lt; 100
+0233                         <a href="#_sub9" class="code" title="subfunction emitLog(obj, pct)">emitLog</a>(obj, 100);
+0234                     <span class="keyword">end</span>
+0235             <span class="keyword">end</span>
+0236             obj.finished = true;
+0237         <span class="keyword">end</span>
+0238     <span class="keyword">end</span>
+0239 <span class="keyword">end</span>
+0240 
+0241 <span class="comment">% ---------------------------- Local functions ----------------------------</span>
+0242 <a name="_sub10" href="#_subfunctions" class="code">function mode = resolveProgressMode()</a>
+0243 <span class="comment">% Decide the backend from the RAVEN preference, the test context and the</span>
+0244 <span class="comment">% runtime environment.</span>
+0245 mode = <span class="string">'auto'</span>;
+0246 <span class="keyword">try</span>
+0247     mode = char(getpref(<span class="string">'RAVEN'</span>,<span class="string">'progressBar'</span>,<span class="string">'auto'</span>));
+0248 <span class="keyword">catch</span>
+0249 <span class="keyword">end</span>
+0250 <span class="keyword">if</span> strcmpi(mode,<span class="string">'off'</span>)
+0251     mode = <span class="string">'none'</span>;
+0252 <span class="keyword">end</span>
+0253 <span class="keyword">if</span> ~strcmpi(mode,<span class="string">'auto'</span>)
+0254     <span class="keyword">if</span> ~ismember(lower(mode),{<span class="string">'gui'</span>,<span class="string">'cli'</span>,<span class="string">'log'</span>,<span class="string">'none'</span>})
+0255         mode = <span class="string">'cli'</span>;
+0256     <span class="keyword">end</span>
+0257     mode = lower(mode);
+0258     <span class="keyword">return</span>
+0259 <span class="keyword">end</span>
+0260 
+0261 <span class="comment">% 'auto': silence inside the test framework first.</span>
+0262 <span class="keyword">if</span> <a href="#_sub12" class="code" title="subfunction tf = inTestContext()">inTestContext</a>()
+0263     mode = <span class="string">'none'</span>;
+0264     <span class="keyword">return</span>
+0265 <span class="keyword">end</span>
+0266 
+0267 <span class="comment">% Headless / deployed / -batch -&gt; clean log lines.</span>
+0268 isBatch = false;
+0269 <span class="keyword">try</span>
+0270     isBatch = batchStartupOptionUsed;
+0271 <span class="keyword">catch</span>
+0272 <span class="keyword">end</span>
+0273 <span class="keyword">if</span> isBatch || isdeployed
+0274     mode = <span class="string">'log'</span>;
+0275     <span class="keyword">return</span>
+0276 <span class="keyword">end</span>
+0277 
+0278 <span class="comment">% Desktop available -&gt; GUI, otherwise an interactive terminal -&gt; CLI.</span>
+0279 hasDesktop = false;
+0280 <span class="keyword">try</span>
+0281     hasDesktop = usejava(<span class="string">'desktop'</span>);
+0282 <span class="keyword">catch</span>
+0283 <span class="keyword">end</span>
+0284 <span class="keyword">if</span> hasDesktop
+0285     mode = <span class="string">'gui'</span>;
+0286 <span class="keyword">else</span>
+0287     mode = <span class="string">'cli'</span>;
+0288 <span class="keyword">end</span>
+0289 <span class="keyword">end</span>
+0290 
+0291 <a name="_sub11" href="#_subfunctions" class="code">function tf = inTestContext()</a>
+0292 <span class="comment">% Best-effort detection of the matlab.unittest framework on the call stack.</span>
+0293 <span class="comment">% RavenTestCase also forces the preference to 'none', so the maintained</span>
+0294 <span class="comment">% suite is silenced even if this heuristic misses a frame.</span>
+0295 tf = false;
+0296 st = dbstack(<span class="string">'-completenames'</span>);
+0297 <span class="keyword">for</span> i = 1:numel(st)
+0298     <span class="keyword">if</span> contains(st(i).name,<span class="string">'matlab.unittest'</span>,<span class="string">'IgnoreCase'</span>,true) <span class="keyword">...</span>
+0299             || contains(st(i).name,<span class="string">'TestRunner'</span>,<span class="string">'IgnoreCase'</span>,true) <span class="keyword">...</span>
+0300             || contains(st(i).name,<span class="string">'runtests'</span>,<span class="string">'IgnoreCase'</span>,true)
+0301         tf = true;
+0302         <span class="keyword">return</span>
+0303     <span class="keyword">end</span>
+0304 <span class="keyword">end</span>
+0305 <span class="keyword">end</span>
+0306 
+0307 <a name="_sub12" href="#_subfunctions" class="code">function name = truncateName(name, maxLen)</a>
+0308 <span class="keyword">if</span> numel(name) &gt; maxLen
+0309     name = name(1:maxLen);
+0310 <span class="keyword">end</span>
+0311 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

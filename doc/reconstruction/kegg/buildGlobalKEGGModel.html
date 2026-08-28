@@ -1,0 +1,150 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of buildGlobalKEGGModel</title>
+  <meta name="keywords" content="buildGlobalKEGGModel">
+  <meta name="description" content="buildGlobalKEGGModel  Download and assemble the global KEGG model.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../index.html">Home</a> &gt;  <a href="../index.html">reconstruction</a> &gt; <a href="index.html">kegg</a> &gt; buildGlobalKEGGModel.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for reconstruction\kegg&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+
+<h1>buildGlobalKEGGModel
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>buildGlobalKEGGModel  Download and assemble the global KEGG model.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>function [model,KOModel,isSpontaneous,isUndefinedStoich,isIncomplete,isGeneral]=buildGlobalKEGGModel(ravenPath) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> buildGlobalKEGGModel  Download and assemble the global KEGG model.
+
+ Fetches the raven-data &lt;kegg version&gt;_core.tar.gz bundle (the
+ gene-free reference model plus the ko_reaction / organism_gene_ko /
+ rxn_flags relational tables --- see raven-toolbox's
+ docs/maintenance/kegg_data_format.md), then joins every organism's
+ genes onto the reference reactions through their shared KO ids. This
+ is the data getModelFromKEGG used to load from a pre-built
+ keggModel.mat; see RAVEN issue #704. The KEGG version is read from
+ keggDataVersion, not hardcoded here.
+
+ Parameters
+ ----------
+ ravenPath : char
+     the RAVEN root directory, as returned by findRAVENroot.
+
+ Returns
+ -------
+ model : struct
+     the full global KEGG model (all reactions/metabolites, genes and
+     rxnGeneMat spanning every KEGG organism). Callers narrow this down
+     to one organism (see getKEGGModelForOrganism).
+ KOModel : struct
+     a minimal model struct whose rxns are the KO ids linked to at
+     least one reaction (getKEGGModelForOrganism's HMM-search path uses
+     this as a KO id lookup table; nothing else of KOModel is read).
+ isSpontaneous, isUndefinedStoich, isIncomplete, isGeneral : cell arrays
+     reaction ids carrying the corresponding rxn_flags quality flag.</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="buildGlobalGPR.html" class="code" title="function [genes,rxnGeneMat]=buildGlobalGPR(rxns,koReaction,organismGeneKO)">buildGlobalGPR</a>	buildGlobalGPR  Join every KEGG organism's genes onto the reference</li><li><a href="keggDataVersion.html" class="code" title="function version=keggDataVersion()">keggDataVersion</a>	keggDataVersion  The raven-data release tag for KEGG artefacts.</li><li><a href="readKEGGTable.html" class="code" title="function tbl=readKEGGTable(gzFile)">readKEGGTable</a>	readKEGGTable  Read a gzipped KEGG relational table (published by</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="getModelFromKEGG.html" class="code" title="function [model,KOModel]=getModelFromKEGG(varargin)">getModelFromKEGG</a>	getModelFromKEGG  Load the global KEGG model.</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function ids=flaggedReactions(rxnFlags,column)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [model,KOModel,isSpontaneous,isUndefinedStoich,isIncomplete,isGeneral]=buildGlobalKEGGModel(ravenPath)</a>
+0002 <span class="comment">% buildGlobalKEGGModel  Download and assemble the global KEGG model.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Fetches the raven-data &lt;kegg version&gt;_core.tar.gz bundle (the</span>
+0005 <span class="comment">% gene-free reference model plus the ko_reaction / organism_gene_ko /</span>
+0006 <span class="comment">% rxn_flags relational tables --- see raven-toolbox's</span>
+0007 <span class="comment">% docs/maintenance/kegg_data_format.md), then joins every organism's</span>
+0008 <span class="comment">% genes onto the reference reactions through their shared KO ids. This</span>
+0009 <span class="comment">% is the data getModelFromKEGG used to load from a pre-built</span>
+0010 <span class="comment">% keggModel.mat; see RAVEN issue #704. The KEGG version is read from</span>
+0011 <span class="comment">% keggDataVersion, not hardcoded here.</span>
+0012 <span class="comment">%</span>
+0013 <span class="comment">% Parameters</span>
+0014 <span class="comment">% ----------</span>
+0015 <span class="comment">% ravenPath : char</span>
+0016 <span class="comment">%     the RAVEN root directory, as returned by findRAVENroot.</span>
+0017 <span class="comment">%</span>
+0018 <span class="comment">% Returns</span>
+0019 <span class="comment">% -------</span>
+0020 <span class="comment">% model : struct</span>
+0021 <span class="comment">%     the full global KEGG model (all reactions/metabolites, genes and</span>
+0022 <span class="comment">%     rxnGeneMat spanning every KEGG organism). Callers narrow this down</span>
+0023 <span class="comment">%     to one organism (see getKEGGModelForOrganism).</span>
+0024 <span class="comment">% KOModel : struct</span>
+0025 <span class="comment">%     a minimal model struct whose rxns are the KO ids linked to at</span>
+0026 <span class="comment">%     least one reaction (getKEGGModelForOrganism's HMM-search path uses</span>
+0027 <span class="comment">%     this as a KO id lookup table; nothing else of KOModel is read).</span>
+0028 <span class="comment">% isSpontaneous, isUndefinedStoich, isIncomplete, isGeneral : cell arrays</span>
+0029 <span class="comment">%     reaction ids carrying the corresponding rxn_flags quality flag.</span>
+0030 
+0031 kver=<a href="keggDataVersion.html" class="code" title="function version=keggDataVersion()">keggDataVersion</a>();
+0032 keggDir=fullfile(ravenPath,<span class="string">'reconstruction'</span>,<span class="string">'kegg'</span>);
+0033 archive=fetchRavenDataAsset(keggDir,kver,[kver <span class="string">'_core.tar.gz'</span>]);
+0034 
+0035 coreDir=fullfile(keggDir,[kver <span class="string">'_core'</span>]);
+0036 <span class="keyword">if</span> ~isfolder(coreDir)
+0037     fprintf(<span class="string">'Extracting the KEGG core artefacts... '</span>);
+0038     untar(archive,coreDir);
+0039     fprintf(<span class="string">'COMPLETE\n'</span>);
+0040 <span class="keyword">end</span>
+0041 
+0042 fprintf(<span class="string">'Reading the KEGG reference model... '</span>);
+0043 refFileGz=fullfile(coreDir,[kver <span class="string">'_reference_model.yml.gz'</span>]);
+0044 refFile=refFileGz(1:end-3);
+0045 <span class="keyword">if</span> ~isfile(refFile)
+0046     gunzip(refFileGz);
+0047 <span class="keyword">end</span>
+0048 model=readYAMLmodel(refFile);
+0049 fprintf(<span class="string">'COMPLETE\n'</span>);
+0050 
+0051 fprintf(<span class="string">'Reading the KEGG relational tables... '</span>);
+0052 koReaction=<a href="readKEGGTable.html" class="code" title="function tbl=readKEGGTable(gzFile)">readKEGGTable</a>(fullfile(coreDir,[kver <span class="string">'_ko_reaction.tsv.gz'</span>]));
+0053 rxnFlags=<a href="readKEGGTable.html" class="code" title="function tbl=readKEGGTable(gzFile)">readKEGGTable</a>(fullfile(coreDir,[kver <span class="string">'_rxn_flags.tsv.gz'</span>]));
+0054 organismGeneKO=<a href="readKEGGTable.html" class="code" title="function tbl=readKEGGTable(gzFile)">readKEGGTable</a>(fullfile(coreDir,[kver <span class="string">'_organism_gene_ko.tsv.gz'</span>]));
+0055 fprintf(<span class="string">'COMPLETE\n'</span>);
+0056 
+0057 isSpontaneous=<a href="#_sub1" class="code" title="subfunction ids=flaggedReactions(rxnFlags,column)">flaggedReactions</a>(rxnFlags,<span class="string">'spontaneous'</span>);
+0058 isUndefinedStoich=<a href="#_sub1" class="code" title="subfunction ids=flaggedReactions(rxnFlags,column)">flaggedReactions</a>(rxnFlags,<span class="string">'undefined_stoich'</span>);
+0059 isIncomplete=<a href="#_sub1" class="code" title="subfunction ids=flaggedReactions(rxnFlags,column)">flaggedReactions</a>(rxnFlags,<span class="string">'incomplete'</span>);
+0060 isGeneral=<a href="#_sub1" class="code" title="subfunction ids=flaggedReactions(rxnFlags,column)">flaggedReactions</a>(rxnFlags,<span class="string">'general'</span>);
+0061 
+0062 KOModel.id=<span class="string">'KOModel'</span>;
+0063 KOModel.description=<span class="string">'KEGG Orthology ids linked to at least one reaction'</span>;
+0064 KOModel.rxns=unique(koReaction.ko);
+0065 
+0066 fprintf(<span class="string">'Joining organism genes onto the reference reactions (this can take a while for the full KEGG gene set)... '</span>);
+0067 [model.genes,model.rxnGeneMat]=<a href="buildGlobalGPR.html" class="code" title="function [genes,rxnGeneMat]=buildGlobalGPR(rxns,koReaction,organismGeneKO)">buildGlobalGPR</a>(model.rxns,koReaction,organismGeneKO);
+0068 fprintf(<span class="string">'COMPLETE\n'</span>);
+0069 <span class="keyword">end</span>
+0070 
+0071 <a name="_sub1" href="#_subfunctions" class="code">function ids=flaggedReactions(rxnFlags,column)</a>
+0072 mask=strcmpi(rxnFlags.(column),<span class="string">'true'</span>) | strcmp(rxnFlags.(column),<span class="string">'1'</span>);
+0073 ids=rxnFlags.reaction(mask);
+0074 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

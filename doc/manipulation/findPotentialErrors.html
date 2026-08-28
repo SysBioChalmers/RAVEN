@@ -1,0 +1,177 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of findPotentialErrors</title>
+  <meta name="keywords" content="findPotentialErrors">
+  <meta name="description" content="findPotentialErrors  Identify reactions with non-DNF GPR rules.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">manipulation</a> &gt; findPotentialErrors.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for manipulation&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>findPotentialErrors
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>findPotentialErrors  Identify reactions with non-DNF GPR rules.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function issues=findPotentialErrors(model) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> findPotentialErrors  Identify reactions with non-DNF GPR rules.
+
+ Detects grRules that are not in disjunctive normal form (DNF) —
+ i.e. rules where an OR operator is nested inside an AND context.
+ Standard RAVEN format requires DNF: groups of genes that must all be
+ present together (enzyme complexes) are written as conjunctions, and
+ the reaction is catalysed by at least one complex (disjunction of
+ conjunctions).
+
+ Parameters
+ ----------
+ model : struct
+     a model structure with grRules and rxns fields.
+
+ Returns
+ -------
+ issues : struct
+     struct array — one element per problematic reaction — with fields:
+
+     - index  : double — 1-based index into model.rxns.
+     - rxn    : char   — reaction ID.
+     - grRule : char   — the problematic grRule string.
+     - reason : char   — short explanation.
+
+ Notes
+ -----
+ Detection walks the parse tree from parseGrRule rather than searching the
+ raw string, so gene IDs that contain substrings such as &quot;and&quot; or &quot;or&quot; do
+ not cause false positives or negatives.
+
+ A rule is non-DNF when an AND operator has an OR anywhere beneath it.
+ Bracketing alone never makes a rule non-DNF: &quot;((G1 and G2) or G3)&quot; and
+ &quot;(G1 or G2) or (G3 and G4)&quot; are both fine.
+ Use standardizeGrRules to attempt automatic repair.
+
+ Rules that cannot be parsed at all are reported as issues too, with the
+ parser's message as the reason.
+
+ Examples
+ --------
+     issues = findPotentialErrors(model);
+     if ~isempty(issues)
+         fprintf(&quot;%d reactions with non-DNF grRules\n&quot;, numel(issues));
+     end
+     indexes2check = vertcat(issues.index);</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="standardizeGrRules.html" class="code" title="function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,varargin)">standardizeGrRules</a>	standardizeGrRules  Standardize gene-reaction rules in a model.</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function issues=findPotentialErrors(model)</a>
+0002 <span class="comment">% findPotentialErrors  Identify reactions with non-DNF GPR rules.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Detects grRules that are not in disjunctive normal form (DNF) —</span>
+0005 <span class="comment">% i.e. rules where an OR operator is nested inside an AND context.</span>
+0006 <span class="comment">% Standard RAVEN format requires DNF: groups of genes that must all be</span>
+0007 <span class="comment">% present together (enzyme complexes) are written as conjunctions, and</span>
+0008 <span class="comment">% the reaction is catalysed by at least one complex (disjunction of</span>
+0009 <span class="comment">% conjunctions).</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% Parameters</span>
+0012 <span class="comment">% ----------</span>
+0013 <span class="comment">% model : struct</span>
+0014 <span class="comment">%     a model structure with grRules and rxns fields.</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% Returns</span>
+0017 <span class="comment">% -------</span>
+0018 <span class="comment">% issues : struct</span>
+0019 <span class="comment">%     struct array — one element per problematic reaction — with fields:</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">%     - index  : double — 1-based index into model.rxns.</span>
+0022 <span class="comment">%     - rxn    : char   — reaction ID.</span>
+0023 <span class="comment">%     - grRule : char   — the problematic grRule string.</span>
+0024 <span class="comment">%     - reason : char   — short explanation.</span>
+0025 <span class="comment">%</span>
+0026 <span class="comment">% Notes</span>
+0027 <span class="comment">% -----</span>
+0028 <span class="comment">% Detection walks the parse tree from parseGrRule rather than searching the</span>
+0029 <span class="comment">% raw string, so gene IDs that contain substrings such as &quot;and&quot; or &quot;or&quot; do</span>
+0030 <span class="comment">% not cause false positives or negatives.</span>
+0031 <span class="comment">%</span>
+0032 <span class="comment">% A rule is non-DNF when an AND operator has an OR anywhere beneath it.</span>
+0033 <span class="comment">% Bracketing alone never makes a rule non-DNF: &quot;((G1 and G2) or G3)&quot; and</span>
+0034 <span class="comment">% &quot;(G1 or G2) or (G3 and G4)&quot; are both fine.</span>
+0035 <span class="comment">% Use standardizeGrRules to attempt automatic repair.</span>
+0036 <span class="comment">%</span>
+0037 <span class="comment">% Rules that cannot be parsed at all are reported as issues too, with the</span>
+0038 <span class="comment">% parser's message as the reason.</span>
+0039 <span class="comment">%</span>
+0040 <span class="comment">% Examples</span>
+0041 <span class="comment">% --------</span>
+0042 <span class="comment">%     issues = findPotentialErrors(model);</span>
+0043 <span class="comment">%     if ~isempty(issues)</span>
+0044 <span class="comment">%         fprintf(&quot;%d reactions with non-DNF grRules\n&quot;, numel(issues));</span>
+0045 <span class="comment">%     end</span>
+0046 <span class="comment">%     indexes2check = vertcat(issues.index);</span>
+0047 
+0048 issues=struct(<span class="string">'index'</span>,{},<span class="string">'rxn'</span>,{},<span class="string">'grRule'</span>,{},<span class="string">'reason'</span>,{});
+0049 
+0050 <span class="keyword">if</span> ~isfield(model,<span class="string">'grRules'</span>) || ~isfield(model,<span class="string">'rxns'</span>)
+0051     <span class="keyword">return</span>
+0052 <span class="keyword">end</span>
+0053 
+0054 <span class="keyword">for</span> i=1:numel(model.grRules)
+0055     rule=strtrim(model.grRules{i});
+0056     <span class="keyword">if</span> isempty(rule)
+0057         <span class="keyword">continue</span>
+0058     <span class="keyword">end</span>
+0059 
+0060     <span class="keyword">try</span>
+0061         isDnf=isDnfGrRule(rule);
+0062     <span class="keyword">catch</span> ME
+0063         <span class="keyword">if</span> ~strcmp(ME.identifier,<span class="string">'RAVEN:badGrRule'</span>)
+0064             rethrow(ME)
+0065         <span class="keyword">end</span>
+0066         <span class="comment">% A rule that cannot be parsed is itself worth reporting: it is</span>
+0067         <span class="comment">% certainly not usable by the isoenzyme/complex reasoning, and</span>
+0068         <span class="comment">% silently skipping it would hide the very thing this function</span>
+0069         <span class="comment">% exists to surface.</span>
+0070         issues(end+1,1)=struct( <span class="keyword">...</span>
+0071             <span class="string">'index'</span>,  i, <span class="keyword">...</span>
+0072             <span class="string">'rxn'</span>,    model.rxns{i}, <span class="keyword">...</span>
+0073             <span class="string">'grRule'</span>, rule, <span class="keyword">...</span>
+0074             <span class="string">'reason'</span>, [<span class="string">'Cannot be parsed: '</span> ME.message]); <span class="comment">%#ok&lt;AGROW&gt;</span>
+0075         <span class="keyword">continue</span>
+0076     <span class="keyword">end</span>
+0077 
+0078     <span class="keyword">if</span> ~isDnf
+0079         issues(end+1,1)=struct( <span class="keyword">...</span>
+0080             <span class="string">'index'</span>,  i, <span class="keyword">...</span>
+0081             <span class="string">'rxn'</span>,    model.rxns{i}, <span class="keyword">...</span>
+0082             <span class="string">'grRule'</span>, rule, <span class="keyword">...</span>
+0083             <span class="string">'reason'</span>, <span class="string">'Non-DNF: OR operator nested inside AND context'</span>); <span class="comment">%#ok&lt;AGROW&gt;</span>
+0084     <span class="keyword">end</span>
+0085 <span class="keyword">end</span>
+0086 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

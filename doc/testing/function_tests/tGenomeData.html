@@ -1,0 +1,132 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of tGenomeData</title>
+  <meta name="keywords" content="tGenomeData">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../index.html">Home</a> &gt;  <a href="#">testing</a> &gt; <a href="index.html">function_tests</a> &gt; tGenomeData.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for testing\function_tests&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+
+<h1>tGenomeData
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>This is a script file. </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre class="comment"></pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="RavenTestCase.html" class="code" title="">RavenTestCase</a>	</li><li><a href="tGenomeData.html" class="code" title="">tGenomeData</a>	</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="tGenomeData.html" class="code" title="">tGenomeData</a>	</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function d = fixtureDir(testCase)</a></li><li><a href="#_sub2" class="code">function getGeneDataReadsEukaryote(testCase)</a></li><li><a href="#_sub3" class="code">function getGeneDataReadsProkaryote(testCase)</a></li><li><a href="#_sub4" class="code">function getGeneDataWritesNoFileByDefault(testCase)</a></li><li><a href="#_sub5" class="code">function renameModelGenesRenamesGenesAndGrRules(testCase)</a></li><li><a href="#_sub6" class="code">function downloadGenomeDataDownloads(testCase)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre>0001 classdef <a href="tGenomeData.html" class="code" title="">tGenomeData</a> &lt; <a href="RavenTestCase.html" class="code" title="">RavenTestCase</a>
+0002 <span class="comment">% tGenomeData  Tests for the genome-data utilities used in homology-based</span>
+0003 <span class="comment">%              reconstruction (downloadGenomeData, getGeneData,</span>
+0004 <span class="comment">%              renameModelGenes).</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">%   Parsing and renaming are tested offline with small GFF3/FASTA fixtures</span>
+0007 <span class="comment">%   (one eukaryote, one prokaryote). The NCBI download is guarded and skips</span>
+0008 <span class="comment">%   when there is no internet connection.</span>
+0009 
+0010     methods (Access = protected)
+0011         <a name="_sub0" href="#_subfunctions" class="code">function d = fixtureDir(testCase)</a>
+0012             d = fullfile(testCase.ravenRoot,<span class="string">'testing'</span>,<span class="string">'function_tests'</span>, <span class="keyword">...</span>
+0013                 <span class="string">'test_data'</span>,<span class="string">'genomeData'</span>);
+0014         <span class="keyword">end</span>
+0015     <span class="keyword">end</span>
+0016 
+0017     methods (Test)
+0018 
+0019         <a name="_sub1" href="#_subfunctions" class="code">function getGeneDataReadsEukaryote(testCase)</a>
+0020             <span class="comment">% gene -&gt; mRNA -&gt; CDS: the protein accession must come from the</span>
+0021             <span class="comment">% CDS protein_id (NP_), not the mRNA transcript (NM_), and the</span>
+0022             <span class="comment">% two CDS lines of one protein collapse to a single row.</span>
+0023             T = getGeneData(fullfile(testCase.fixtureDir(),<span class="string">'euk.gff'</span>));
+0024             testCase.verifyEqual(height(T), 2);
+0025             i1 = find(strcmp(T.locus_tag,<span class="string">'LT1'</span>),1);
+0026             testCase.verifyEqual(T.old_locus_tag{i1}, <span class="string">'OLD1'</span>);
+0027             testCase.verifyEqual(T.GeneID{i1}, <span class="string">'111'</span>);
+0028             testCase.verifyEqual(T.gene_name{i1}, <span class="string">'AAA'</span>);
+0029             testCase.verifyEqual(T.GenBank_protein{i1}, <span class="string">'NP_111.1'</span>);
+0030             i2 = find(strcmp(T.locus_tag,<span class="string">'LT2'</span>),1);
+0031             testCase.verifyEqual(T.GenBank_protein{i2}, <span class="string">'NP_222.1'</span>);
+0032         <span class="keyword">end</span>
+0033 
+0034         <a name="_sub2" href="#_subfunctions" class="code">function getGeneDataReadsProkaryote(testCase)</a>
+0035             <span class="comment">% gene -&gt; CDS directly.</span>
+0036             T = getGeneData(fullfile(testCase.fixtureDir(),<span class="string">'prok.gff'</span>));
+0037             testCase.verifyEqual(height(T), 1);
+0038             testCase.verifyEqual(T.locus_tag{1}, <span class="string">'b0001'</span>);
+0039             testCase.verifyEqual(T.GeneID{1}, <span class="string">'333'</span>);
+0040             testCase.verifyEqual(T.gene_name{1}, <span class="string">'ccc'</span>);
+0041             testCase.verifyEqual(T.GenBank_protein{1}, <span class="string">'WP_333.1'</span>);
+0042         <span class="keyword">end</span>
+0043 
+0044         <a name="_sub3" href="#_subfunctions" class="code">function getGeneDataWritesNoFileByDefault(testCase)</a>
+0045             prevFiles = dir(<span class="string">'geneData.tsv'</span>);
+0046             getGeneData(fullfile(testCase.fixtureDir(),<span class="string">'prok.gff'</span>));
+0047             testCase.verifyEqual(numel(dir(<span class="string">'geneData.tsv'</span>)), numel(prevFiles));
+0048         <span class="keyword">end</span>
+0049 
+0050         <a name="_sub4" href="#_subfunctions" class="code">function renameModelGenesRenamesGenesAndGrRules(testCase)</a>
+0051             model.id         = <span class="string">'test'</span>;
+0052             model.rxns       = {<span class="string">'r1'</span>; <span class="string">'r2'</span>};
+0053             model.genes      = {<span class="string">'LT1'</span>; <span class="string">'LT2'</span>};
+0054             model.grRules    = {<span class="string">'LT1'</span>; <span class="string">'LT1 or LT2'</span>};
+0055             model.rxnGeneMat = sparse([1 0; 1 1]);
+0056 
+0057             T = getGeneData(fullfile(testCase.fixtureDir(),<span class="string">'euk.gff'</span>));
+0058             evalc(<span class="string">'m2 = renameModelGenes(model, T, ''locus_tag'', ''gene_name'');'</span>);
+0059 
+0060             testCase.verifyEqual(sort(m2.genes), {<span class="string">'AAA'</span>; <span class="string">'BBB'</span>});
+0061             testCase.verifyFalse(any(contains(m2.grRules, <span class="string">'LT1'</span>)));
+0062             testCase.verifyTrue(any(contains(m2.grRules, <span class="string">'AAA'</span>)));
+0063             testCase.verifyTrue(any(contains(m2.grRules, <span class="string">'BBB'</span>)));
+0064             testCase.verifyEqual(size(m2.rxnGeneMat,2), numel(m2.genes));
+0065         <span class="keyword">end</span>
+0066 
+0067         <a name="_sub5" href="#_subfunctions" class="code">function downloadGenomeDataDownloads(testCase)</a>
+0068             <span class="comment">% Network test: download a small genome from NCBI Datasets.</span>
+0069             <span class="comment">% Skipped when there is no internet connection.</span>
+0070             d = tempname; mkdir(d);
+0071             testCase.addTeardown(@() rmdir(d,<span class="string">'s'</span>));
+0072             <span class="keyword">try</span>
+0073                 [gff, faa] = downloadGenomeData(<span class="string">'GCF_000005845.2'</span>, d, false);
+0074             <span class="keyword">catch</span> ME
+0075                 testCase.assumeFail([<span class="string">'Skipped, likely no internet connection: '</span> ME.message]);
+0076                 <span class="keyword">return</span>
+0077             <span class="keyword">end</span>
+0078             testCase.verifyTrue(isfile(gff));
+0079             testCase.verifyTrue(isfile(faa));
+0080         <span class="keyword">end</span>
+0081 
+0082     <span class="keyword">end</span>
+0083 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

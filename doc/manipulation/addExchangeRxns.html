@@ -24,7 +24,7 @@
 <div class="box"><strong>addExchangeRxns  Add exchange reactions for some metabolites.</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function [model, addedRxns]=addExchangeRxns(model,reactionType,mets) </strong></div>
+<div class="box"><strong>function [model, addedRxns]=addExchangeRxns(model,reactionType,varargin) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> addExchangeRxns  Add exchange reactions for some metabolites.
@@ -44,7 +44,10 @@
      - 'out'  : output reactions
      - 'both' : reversible input/output reactions. Positive direction
        corresponds to output
- mets : cell or logical or double, optional
+
+ Name-Value Arguments
+ --------------------
+ mets : cell or logical or double
      either a cell array of metabolite IDs, a logical vector with the same
      number of elements as metabolites in the model, or a vector of
      indexes to add for (default model.mets).
@@ -73,7 +76,7 @@ This function is called by:
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [model, addedRxns]=addExchangeRxns(model,reactionType,mets)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [model, addedRxns]=addExchangeRxns(model,reactionType,varargin)</a>
 0002 <span class="comment">% addExchangeRxns  Add exchange reactions for some metabolites.</span>
 0003 <span class="comment">%</span>
 0004 <span class="comment">% This is a faster version than addRxns when adding exchange reactions.</span>
@@ -91,98 +94,109 @@ This function is called by:
 0016 <span class="comment">%     - 'out'  : output reactions</span>
 0017 <span class="comment">%     - 'both' : reversible input/output reactions. Positive direction</span>
 0018 <span class="comment">%       corresponds to output</span>
-0019 <span class="comment">% mets : cell or logical or double, optional</span>
-0020 <span class="comment">%     either a cell array of metabolite IDs, a logical vector with the same</span>
-0021 <span class="comment">%     number of elements as metabolites in the model, or a vector of</span>
-0022 <span class="comment">%     indexes to add for (default model.mets).</span>
-0023 <span class="comment">%</span>
-0024 <span class="comment">% Returns</span>
-0025 <span class="comment">% -------</span>
-0026 <span class="comment">% model : struct</span>
-0027 <span class="comment">%     updated model structure.</span>
-0028 <span class="comment">% addedRxns : cell</span>
-0029 <span class="comment">%     ids of the added reactions.</span>
-0030 <span class="comment">%</span>
-0031 <span class="comment">% Examples</span>
-0032 <span class="comment">% --------</span>
-0033 <span class="comment">%     [model, addedRxns] = addExchangeRxns(model, reactionType, mets);</span>
-0034 
-0035 <span class="keyword">if</span> nargin&lt;3
-0036     mets=model.mets;
-0037 <span class="keyword">elseif</span> ~islogical(mets) &amp;&amp; ~isnumeric(mets)
-0038     mets=convertCharArray(mets);
-0039 <span class="keyword">end</span>
-0040 J=getIndexes(model,mets,<span class="string">'mets'</span>,false);
-0041 mets=model.mets(J);
-0042 
-0043 reactionType=char(upper(reactionType));
-0044 
-0045 <span class="comment">%Production is positive for OUT and BOTH</span>
-0046 <span class="keyword">if</span> strcmp(reactionType,<span class="string">'IN'</span>)
-0047     I=speye(numel(model.mets));
-0048 <span class="keyword">else</span>
-0049     I=speye(numel(model.mets))*-1;
-0050 <span class="keyword">end</span>
-0051 I=I(:,J);
-0052 
-0053 <span class="comment">%Add an I matrix which corresponds to production of all metabolites</span>
-0054 model.S=[model.S I];
-0055 <span class="keyword">if</span> strcmp(reactionType,<span class="string">'BOTH'</span>)
-0056     model.lb=[model.lb;ones(numel(J),1)*-1000];
-0057     model.rev=[model.rev;ones(numel(J),1)];
-0058 <span class="keyword">else</span>
-0059     model.lb=[model.lb;zeros(numel(J),1)];
-0060     model.rev=[model.rev;zeros(numel(J),1)];
-0061 <span class="keyword">end</span>
-0062 model.ub=[model.ub;ones(numel(J),1)*1000];
-0063 model.c=[model.c;zeros(numel(J),1)];
-0064 
-0065 filler=cell(numel(J),1);
-0066 filler(:)={<span class="string">''</span>};
-0067 addedRxns=strcat(<span class="string">'EXC_'</span>,reactionType,<span class="string">'_'</span>,mets);
-0068 addedRxnNames=strcat(model.metNames(J),<span class="string">' exchange ('</span>,reactionType,<span class="string">')'</span>);
-0069 model.rxns=[model.rxns;addedRxns];
-0070 model.rxnNames=[model.rxnNames;addedRxnNames];
-0071 
-0072 <span class="keyword">if</span> isfield(model,<span class="string">'eccodes'</span>)
-0073     model.eccodes=[model.eccodes;filler];
-0074 <span class="keyword">end</span>
-0075 <span class="keyword">if</span> isfield(model,<span class="string">'subSystems'</span>)
-0076     fillerSub = filler;
-0077     <span class="keyword">if</span> any(cellfun(@(x) iscell(x), model.subSystems))
-0078         fillerSub(:)={{<span class="string">''</span>}};
-0079     <span class="keyword">end</span>
-0080     model.subSystems=[model.subSystems;fillerSub];
-0081 <span class="keyword">end</span>
-0082 <span class="keyword">if</span> isfield(model,<span class="string">'grRules'</span>)
-0083     model.grRules=[model.grRules;filler];
-0084 <span class="keyword">end</span>
-0085 <span class="keyword">if</span> isfield(model,<span class="string">'rxnFrom'</span>)
-0086     model.rxnFrom=[model.rxnFrom;filler];
-0087 <span class="keyword">end</span>
-0088 <span class="keyword">if</span> isfield(model,<span class="string">'rxnMiriams'</span>)
-0089     model.rxnMiriams=[model.rxnMiriams;filler];
-0090 <span class="keyword">end</span>
-0091 <span class="keyword">if</span> isfield(model,<span class="string">'rxnGeneMat'</span>)
-0092     model.rxnGeneMat=[model.rxnGeneMat;sparse(numel(J),numel(model.genes))];
-0093 <span class="keyword">end</span>
-0094 <span class="keyword">if</span> isfield(model,<span class="string">'rxnComps'</span>)
-0095     model.rxnComps=[model.rxnComps;ones(numel(J),1)];
-0096     fprintf(<span class="string">'NOTE: The exchange reactions are assigned to the first compartment\n'</span>);
-0097 <span class="keyword">end</span>
-0098 <span class="keyword">if</span> isfield(model,<span class="string">'rxnNotes'</span>)
-0099     model.rxnNotes=[model.rxnNotes;filler];
-0100 <span class="keyword">end</span>
-0101 <span class="keyword">if</span> isfield(model,<span class="string">'rxnReferences'</span>)
-0102     model.rxnReferences=[model.rxnReferences;filler];
-0103 <span class="keyword">end</span>
-0104 <span class="keyword">if</span> isfield(model,<span class="string">'rxnConfidenceScores'</span>)
-0105     model.rxnConfidenceScores=[model.rxnConfidenceScores;NaN(numel(J),1)];
-0106 <span class="keyword">end</span>
-0107 <span class="keyword">if</span> isfield(model,<span class="string">'rxnDeltaG'</span>)
-0108     model.rxnDeltaG=[model.rxnDeltaG;NaN(numel(J),1)];
-0109 <span class="keyword">end</span>
-0110 <span class="keyword">end</span></pre></div>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% Name-Value Arguments</span>
+0021 <span class="comment">% --------------------</span>
+0022 <span class="comment">% mets : cell or logical or double</span>
+0023 <span class="comment">%     either a cell array of metabolite IDs, a logical vector with the same</span>
+0024 <span class="comment">%     number of elements as metabolites in the model, or a vector of</span>
+0025 <span class="comment">%     indexes to add for (default model.mets).</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">% Returns</span>
+0028 <span class="comment">% -------</span>
+0029 <span class="comment">% model : struct</span>
+0030 <span class="comment">%     updated model structure.</span>
+0031 <span class="comment">% addedRxns : cell</span>
+0032 <span class="comment">%     ids of the added reactions.</span>
+0033 <span class="comment">%</span>
+0034 <span class="comment">% Examples</span>
+0035 <span class="comment">% --------</span>
+0036 <span class="comment">%     [model, addedRxns] = addExchangeRxns(model, reactionType, mets);</span>
+0037 
+0038 p=parseRAVENargs(varargin, {<span class="string">'mets'</span>,[]});
+0039 mets=p.mets;
+0040 <span class="keyword">if</span> isempty(mets)
+0041     mets=model.mets;
+0042 <span class="keyword">elseif</span> ~islogical(mets) &amp;&amp; ~isnumeric(mets)
+0043     mets=convertCharArray(mets);
+0044 <span class="keyword">end</span>
+0045 J=getIndexes(model,mets,<span class="string">'mets'</span>,false);
+0046 mets=model.mets(J);
+0047 
+0048 reactionType=char(upper(reactionType));
+0049 
+0050 <span class="comment">%Production is positive for OUT and BOTH</span>
+0051 <span class="keyword">if</span> strcmp(reactionType,<span class="string">'IN'</span>)
+0052     I=speye(numel(model.mets));
+0053 <span class="keyword">else</span>
+0054     I=speye(numel(model.mets))*-1;
+0055 <span class="keyword">end</span>
+0056 I=I(:,J);
+0057 
+0058 <span class="comment">%Add an I matrix which corresponds to production of all metabolites</span>
+0059 model.S=[model.S I];
+0060 <span class="keyword">if</span> strcmp(reactionType,<span class="string">'BOTH'</span>)
+0061     model.lb=[model.lb;ones(numel(J),1)*-1000];
+0062     model.rev=[model.rev;ones(numel(J),1)];
+0063 <span class="keyword">else</span>
+0064     model.lb=[model.lb;zeros(numel(J),1)];
+0065     model.rev=[model.rev;zeros(numel(J),1)];
+0066 <span class="keyword">end</span>
+0067 model.ub=[model.ub;ones(numel(J),1)*1000];
+0068 model.c=[model.c;zeros(numel(J),1)];
+0069 
+0070 filler=cell(numel(J),1);
+0071 filler(:)={<span class="string">''</span>};
+0072 addedRxns=strcat(<span class="string">'EXC_'</span>,reactionType,<span class="string">'_'</span>,mets);
+0073 addedRxnNames=strcat(model.metNames(J),<span class="string">' exchange ('</span>,reactionType,<span class="string">')'</span>);
+0074 model.rxns=[model.rxns;addedRxns];
+0075 model.rxnNames=[model.rxnNames;addedRxnNames];
+0076 
+0077 <span class="keyword">if</span> isfield(model,<span class="string">'eccodes'</span>)
+0078     model.eccodes=[model.eccodes;filler];
+0079 <span class="keyword">end</span>
+0080 <span class="keyword">if</span> isfield(model,<span class="string">'subSystems'</span>)
+0081     fillerSub = filler;
+0082     <span class="keyword">if</span> any(cellfun(@(x) iscell(x), model.subSystems))
+0083         fillerSub(:)={{<span class="string">''</span>}};
+0084     <span class="keyword">end</span>
+0085     model.subSystems=[model.subSystems;fillerSub];
+0086 <span class="keyword">end</span>
+0087 <span class="keyword">if</span> isfield(model,<span class="string">'grRules'</span>)
+0088     model.grRules=[model.grRules;filler];
+0089 <span class="keyword">end</span>
+0090 <span class="keyword">if</span> isfield(model,<span class="string">'rxnFrom'</span>)
+0091     model.rxnFrom=[model.rxnFrom;filler];
+0092 <span class="keyword">end</span>
+0093 <span class="keyword">if</span> isfield(model,<span class="string">'rxnMiriams'</span>)
+0094     model.rxnMiriams=[model.rxnMiriams;filler];
+0095 <span class="keyword">end</span>
+0096 <span class="keyword">if</span> isfield(model,<span class="string">'rxnGeneMat'</span>)
+0097     model.rxnGeneMat=[model.rxnGeneMat;sparse(numel(J),numel(model.genes))];
+0098 <span class="keyword">end</span>
+0099 <span class="keyword">if</span> isfield(model,<span class="string">'rxnComps'</span>)
+0100     model.rxnComps=[model.rxnComps;ones(numel(J),1)];
+0101     fprintf(<span class="string">'NOTE: The exchange reactions are assigned to the first compartment\n'</span>);
+0102 <span class="keyword">end</span>
+0103 <span class="keyword">if</span> isfield(model,<span class="string">'rxnNotes'</span>)
+0104     model.rxnNotes=[model.rxnNotes;filler];
+0105 <span class="keyword">end</span>
+0106 <span class="keyword">if</span> isfield(model,<span class="string">'rxnReferences'</span>)
+0107     model.rxnReferences=[model.rxnReferences;filler];
+0108 <span class="keyword">end</span>
+0109 <span class="keyword">if</span> isfield(model,<span class="string">'rxnConfidenceScores'</span>)
+0110     model.rxnConfidenceScores=[model.rxnConfidenceScores;NaN(numel(J),1)];
+0111 <span class="keyword">end</span>
+0112 <span class="keyword">if</span> isfield(model,<span class="string">'rxnDeltaG'</span>)
+0113     model.rxnDeltaG=[model.rxnDeltaG;NaN(numel(J),1)];
+0114 <span class="keyword">end</span>
+0115 <span class="keyword">if</span> isfield(model,<span class="string">'pwys'</span>)
+0116     model.pwys=[model.pwys;filler];
+0117 <span class="keyword">end</span>
+0118 <span class="keyword">if</span> isfield(model,<span class="string">'spontaneous'</span>)
+0119     model.spontaneous=[model.spontaneous;false(numel(J),1)];
+0120 <span class="keyword">end</span>
+0121 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

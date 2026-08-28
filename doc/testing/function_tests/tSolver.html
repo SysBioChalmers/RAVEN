@@ -1,0 +1,122 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of tSolver</title>
+  <meta name="keywords" content="tSolver">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../index.html">Home</a> &gt;  <a href="#">testing</a> &gt; <a href="index.html">function_tests</a> &gt; tSolver.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for testing\function_tests&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+
+<h1>tSolver
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>This is a script file. </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre class="comment"></pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="RavenTestCase.html" class="code" title="">RavenTestCase</a>	</li><li><a href="tSolver.html" class="code" title="">tSolver</a>	</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="tSolver.html" class="code" title="">tSolver</a>	</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function setRavenSolverAcceptsGlpk(testCase)</a></li><li><a href="#_sub2" class="code">function setRavenSolverRejectsUnknown(testCase)</a></li><li><a href="#_sub3" class="code">function solveLPFindsOptimum(testCase)</a></li><li><a href="#_sub4" class="code">function solveLPMinimiseFluxes(testCase)</a></li><li><a href="#_sub5" class="code">function optimizeProbSolvesLP(testCase)</a></li><li><a href="#_sub6" class="code">function checkSolutionOnFeasibleProblem(testCase)</a></li><li><a href="#_sub7" class="code">function splitProbForConditioningReturnsProb(testCase)</a></li><li><a href="#_sub8" class="code">function qMOMAReturnsFluxVectors(testCase)</a></li><li><a href="#_sub9" class="code">function prob = modelLP(testCase)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre>0001 classdef <a href="tSolver.html" class="code" title="">tSolver</a> &lt; <a href="RavenTestCase.html" class="code" title="">RavenTestCase</a>
+0002 <span class="comment">% tSolver  Tests for the LP/QP solving and solver-configuration functions in solver/.</span>
+0003 
+0004     methods (Test)
+0005 
+0006         <a name="_sub0" href="#_subfunctions" class="code">function setRavenSolverAcceptsGlpk(testCase)</a>
+0007             testCase.verifyWarningFree(@() setRavenSolver(<span class="string">'glpk'</span>));
+0008         <span class="keyword">end</span>
+0009 
+0010         <a name="_sub1" href="#_subfunctions" class="code">function setRavenSolverRejectsUnknown(testCase)</a>
+0011             testCase.verifyError(@() setRavenSolver(<span class="string">'notarealsolver'</span>), ?MException);
+0012         <span class="keyword">end</span>
+0013 
+0014         <a name="_sub2" href="#_subfunctions" class="code">function solveLPFindsOptimum(testCase)</a>
+0015             sol = solveLP(testCase.model);
+0016             testCase.verifyEqual(sol.stat, 1);
+0017             testCase.verifyNumElements(sol.x, numel(testCase.model.rxns));
+0018             testCase.verifyEqual(sol.f, 0.87392, <span class="string">'AbsTol'</span>, 1e-3);
+0019         <span class="keyword">end</span>
+0020 
+0021         <a name="_sub3" href="#_subfunctions" class="code">function solveLPMinimiseFluxes(testCase)</a>
+0022             sol = solveLP(testCase.model, 1);
+0023             testCase.verifyEqual(sol.stat, 1);
+0024         <span class="keyword">end</span>
+0025 
+0026         <a name="_sub4" href="#_subfunctions" class="code">function optimizeProbSolvesLP(testCase)</a>
+0027             res = optimizeProb(testCase.modelLP());
+0028             testCase.verifyClass(res, <span class="string">'struct'</span>);
+0029             testCase.verifyTrue(isfield(res, <span class="string">'obj'</span>));
+0030         <span class="keyword">end</span>
+0031 
+0032         <a name="_sub5" href="#_subfunctions" class="code">function checkSolutionOnFeasibleProblem(testCase)</a>
+0033             res = optimizeProb(testCase.modelLP());
+0034             [isFeasible, isOptimal] = checkSolution(res);
+0035             testCase.verifyTrue(logical(isFeasible));
+0036             testCase.verifyTrue(logical(isOptimal));
+0037         <span class="keyword">end</span>
+0038 
+0039         <a name="_sub6" href="#_subfunctions" class="code">function splitProbForConditioningReturnsProb(testCase)</a>
+0040             [p2, condInfo] = splitProbForConditioning(testCase.modelLP(), 1e6); <span class="comment">%#ok&lt;ASGLU&gt;</span>
+0041             testCase.verifyClass(p2, <span class="string">'struct'</span>);
+0042         <span class="keyword">end</span>
+0043 
+0044         <a name="_sub7" href="#_subfunctions" class="code">function qMOMAReturnsFluxVectors(testCase)</a>
+0045             testCase.assumeDependency(exist(<span class="string">'quadprog'</span>,<span class="string">'file'</span>)==2, <span class="keyword">...</span>
+0046                 <span class="string">'Optimization Toolbox (quadprog)'</span>);
+0047             model2 = setParam(testCase.model, <span class="string">'eq'</span>, testCase.model.rxns(1), 0);
+0048             evalc(<span class="string">'[fA, fB, flag] = qMOMA(testCase.model, model2);'</span>);
+0049             testCase.verifyNumElements(fA, numel(testCase.model.rxns));
+0050             testCase.verifyNumElements(fB, numel(testCase.model.rxns));
+0051         <span class="keyword">end</span>
+0052 
+0053     <span class="keyword">end</span>
+0054 
+0055     methods (Access = private)
+0056         <a name="_sub8" href="#_subfunctions" class="code">function prob = modelLP(testCase)</a>
+0057             <span class="comment">% Build the COBRA-style LP problem for the test model exactly as</span>
+0058             <span class="comment">% solveLP does, so the low-level solver functions get a valid input.</span>
+0059             m = testCase.model;
+0060             nMets = size(m.S, 1);
+0061             prob = [];
+0062             prob.c = [m.c * -1; zeros(nMets, 1)];
+0063             prob.b = zeros(nMets, 1);
+0064             prob.lb = [m.lb; m.b(:, 1)];
+0065             prob.ub = [m.ub; m.b(:, min(size(m.b, 2), 2))];
+0066             prob.csense = repmat(<span class="string">'E'</span>, 1, numel(prob.b));
+0067             prob.osense = 1;
+0068             prob.vartype = repmat(<span class="string">'C'</span>, 1, numel(prob.c));
+0069             prob.A = [m.S, -speye(nMets)];
+0070             prob.a = m.S;
+0071         <span class="keyword">end</span>
+0072     <span class="keyword">end</span>
+0073 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

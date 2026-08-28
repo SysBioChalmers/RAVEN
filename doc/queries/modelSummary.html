@@ -1,0 +1,210 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of modelSummary</title>
+  <meta name="keywords" content="modelSummary">
+  <meta name="description" content="modelSummary  Print a concise overview of a RAVEN model and its flux state.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">queries</a> &gt; modelSummary.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for queries&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>modelSummary
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>modelSummary  Print a concise overview of a RAVEN model and its flux state.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function modelSummary(model, varargin) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> modelSummary  Print a concise overview of a RAVEN model and its flux state.
+
+ Prints model dimensions, the objective function, and — when a flux vector
+ is supplied — the objective value plus all net exchange fluxes partitioned
+ into uptake and secretion. Inspired by COBRApy's model.summary().
+
+ Parameters
+ ----------
+ model : struct
+     RAVEN model structure.
+
+ Name-Value Arguments
+ --------------------
+ fluxes : double
+     flux vector (length = numel(model.rxns)). When provided, shows the
+     objective value and the exchange-flux summary (default []).
+ cutoff : double
+     minimum absolute net exchange flux to include (default 1e-8).
+ nMax : double
+     maximum exchange reactions displayed per direction (default 20).
+
+ Examples
+ --------
+     modelSummary(model)
+     modelSummary(model, 'fluxes', sol.x)
+     modelSummary(model, 'fluxes', sol.x, 'nMax', 10)</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="getExchangeRxns.html" class="code" title="function [exchangeRxns, exchangeRxnsIndexes, exchangedMets]=getExchangeRxns(model,varargin)">getExchangeRxns</a>	getExchangeRxns  Retrieve the exchange reactions from a model.</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function printSection_(title, rows, nMax, W)</a></li><li><a href="#_sub2" class="code">function s = metLabel_(model, metIdx)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function modelSummary(model, varargin)</a>
+0002 <span class="comment">% modelSummary  Print a concise overview of a RAVEN model and its flux state.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Prints model dimensions, the objective function, and — when a flux vector</span>
+0005 <span class="comment">% is supplied — the objective value plus all net exchange fluxes partitioned</span>
+0006 <span class="comment">% into uptake and secretion. Inspired by COBRApy's model.summary().</span>
+0007 <span class="comment">%</span>
+0008 <span class="comment">% Parameters</span>
+0009 <span class="comment">% ----------</span>
+0010 <span class="comment">% model : struct</span>
+0011 <span class="comment">%     RAVEN model structure.</span>
+0012 <span class="comment">%</span>
+0013 <span class="comment">% Name-Value Arguments</span>
+0014 <span class="comment">% --------------------</span>
+0015 <span class="comment">% fluxes : double</span>
+0016 <span class="comment">%     flux vector (length = numel(model.rxns)). When provided, shows the</span>
+0017 <span class="comment">%     objective value and the exchange-flux summary (default []).</span>
+0018 <span class="comment">% cutoff : double</span>
+0019 <span class="comment">%     minimum absolute net exchange flux to include (default 1e-8).</span>
+0020 <span class="comment">% nMax : double</span>
+0021 <span class="comment">%     maximum exchange reactions displayed per direction (default 20).</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">% Examples</span>
+0024 <span class="comment">% --------</span>
+0025 <span class="comment">%     modelSummary(model)</span>
+0026 <span class="comment">%     modelSummary(model, 'fluxes', sol.x)</span>
+0027 <span class="comment">%     modelSummary(model, 'fluxes', sol.x, 'nMax', 10)</span>
+0028 
+0029 p = parseRAVENargs(varargin, {<span class="string">'fluxes'</span>,[]; <span class="string">'cutoff'</span>,1e-8; <span class="string">'nMax'</span>,20});
+0030 fluxes = p.fluxes;
+0031 cutoff = p.cutoff;
+0032 nMax   = p.nMax;
+0033 
+0034 nRxns  = numel(model.rxns);
+0035 nMets  = numel(model.mets);
+0036 nGenes = 0; <span class="keyword">if</span> isfield(model,<span class="string">'genes'</span>), nGenes = numel(model.genes); <span class="keyword">end</span>
+0037 nComps = 0; <span class="keyword">if</span> isfield(model,<span class="string">'comps'</span>), nComps = numel(model.comps); <span class="keyword">end</span>
+0038 
+0039 W   = 62;
+0040 bar = repmat(<span class="string">'='</span>, 1, W);
+0041 sep = repmat(<span class="string">'-'</span>, 1, W);
+0042 
+0043 fprintf(<span class="string">'%s\n'</span>, bar);
+0044 modelID = <span class="string">''</span>; <span class="keyword">if</span> isfield(model,<span class="string">'id'</span>) &amp;&amp; ~isempty(model.id), modelID = model.id; <span class="keyword">end</span>
+0045 <span class="keyword">if</span> isfield(model,<span class="string">'name'</span>) &amp;&amp; ~isempty(model.name)
+0046     fprintf(<span class="string">'  %s  (%s)\n'</span>, model.name, modelID);
+0047 <span class="keyword">elseif</span> ~isempty(modelID)
+0048     fprintf(<span class="string">'  %s\n'</span>, modelID);
+0049 <span class="keyword">else</span>
+0050     fprintf(<span class="string">'  (unnamed model)\n'</span>);
+0051 <span class="keyword">end</span>
+0052 fprintf(<span class="string">'%s\n'</span>, bar);
+0053 fprintf(<span class="string">'  %-15s %5d    %-15s %5d\n'</span>, <span class="string">'Reactions:'</span>,  nRxns, <span class="string">'Metabolites:'</span>,  nMets);
+0054 fprintf(<span class="string">'  %-15s %5d    %-15s %5d\n'</span>, <span class="string">'Genes:'</span>,      nGenes,<span class="string">'Compartments:'</span>, nComps);
+0055 fprintf(<span class="string">'%s\n'</span>, sep);
+0056 
+0057 <span class="comment">% Objective</span>
+0058 objIdx = find(model.c ~= 0);
+0059 <span class="keyword">if</span> isempty(objIdx)
+0060     fprintf(<span class="string">'  Objective: (none)\n'</span>);
+0061 <span class="keyword">else</span>
+0062     fprintf(<span class="string">'  Objective:\n'</span>);
+0063     <span class="keyword">for</span> i = 1:numel(objIdx)
+0064         j = objIdx(i);
+0065         rName = <span class="string">''</span>;
+0066         <span class="keyword">if</span> isfield(model,<span class="string">'rxnNames'</span>) &amp;&amp; j &lt;= numel(model.rxnNames) &amp;&amp; ~isempty(model.rxnNames{j})
+0067             rName = [<span class="string">' ('</span> model.rxnNames{j} <span class="string">')'</span>];
+0068         <span class="keyword">end</span>
+0069         fprintf(<span class="string">'    %+.4g \xD7 %s%s\n'</span>, model.c(j), model.rxns{j}, rName);
+0070     <span class="keyword">end</span>
+0071 <span class="keyword">end</span>
+0072 
+0073 <span class="keyword">if</span> isempty(fluxes)
+0074     fprintf(<span class="string">'%s\n'</span>, bar);
+0075     <span class="keyword">return</span>
+0076 <span class="keyword">end</span>
+0077 
+0078 objVal = model.c' * fluxes;
+0079 fprintf(<span class="string">'  Objective value: %.6g\n'</span>, objVal);
+0080 fprintf(<span class="string">'%s\n'</span>, sep);
+0081 
+0082 <span class="comment">% Classify exchange fluxes</span>
+0083 [~, exchIdx] = <a href="getExchangeRxns.html" class="code" title="function [exchangeRxns, exchangeRxnsIndexes, exchangedMets]=getExchangeRxns(model,varargin)">getExchangeRxns</a>(model);
+0084 
+0085 upRows  = {};   <span class="comment">% {metLabel, rxnID, absFlux}</span>
+0086 outRows = {};
+0087 
+0088 <span class="keyword">for</span> i = 1:numel(exchIdx)
+0089     f = fluxes(exchIdx(i));
+0090     <span class="keyword">if</span> abs(f) &lt; cutoff, <span class="keyword">continue</span>; <span class="keyword">end</span>
+0091     col = model.S(:, exchIdx(i));
+0092     m = find(col, 1);           <span class="comment">% exchange reactions have exactly one metabolite</span>
+0093     <span class="keyword">if</span> isempty(m), <span class="keyword">continue</span>; <span class="keyword">end</span>
+0094     netProd = full(col(m)) * f; <span class="comment">% positive = metabolite secreted; full() avoids sparse scalar in cell</span>
+0095     mLabel  = <a href="#_sub2" class="code" title="subfunction s = metLabel_(model, metIdx)">metLabel_</a>(model, m);
+0096     rID     = model.rxns{exchIdx(i)};
+0097     <span class="keyword">if</span> netProd &gt; 0
+0098         outRows{end+1} = {mLabel, rID, netProd};   <span class="comment">%#ok&lt;AGROW&gt;</span>
+0099     <span class="keyword">else</span>
+0100         upRows{end+1}  = {mLabel, rID, -netProd};  <span class="comment">%#ok&lt;AGROW&gt;</span>
+0101     <span class="keyword">end</span>
+0102 <span class="keyword">end</span>
+0103 
+0104 <a href="#_sub1" class="code" title="subfunction printSection_(title, rows, nMax, W)">printSection_</a>(<span class="string">'  UPTAKE'</span>,    upRows,  nMax, W);
+0105 <a href="#_sub1" class="code" title="subfunction printSection_(title, rows, nMax, W)">printSection_</a>(<span class="string">'  SECRETION'</span>, outRows, nMax, W);
+0106 fprintf(<span class="string">'%s\n'</span>, bar);
+0107 <span class="keyword">end</span>
+0108 
+0109 <span class="comment">%--------------------------------------------------------------------------</span>
+0110 <a name="_sub1" href="#_subfunctions" class="code">function printSection_(title, rows, nMax, W)</a>
+0111     fprintf(<span class="string">'\n%s\n'</span>, title);
+0112     fprintf(<span class="string">'  %-26s  %-20s  %10s\n'</span>, <span class="string">'Metabolite'</span>, <span class="string">'Reaction'</span>, <span class="string">'Flux'</span>);
+0113     fprintf(<span class="string">'  %s\n'</span>, repmat(<span class="string">'-'</span>, 1, W-2));
+0114     <span class="keyword">if</span> isempty(rows)
+0115         fprintf(<span class="string">'  (none)\n'</span>);
+0116         <span class="keyword">return</span>
+0117     <span class="keyword">end</span>
+0118     vals = cellfun(@(r) r{3}, rows);
+0119     [~, si] = sort(vals, <span class="string">'descend'</span>);
+0120     rows = rows(si);
+0121     <span class="keyword">for</span> i = 1:min(numel(rows), nMax)
+0122         fprintf(<span class="string">'  %-26s  %-20s  %10.4g\n'</span>, rows{i}{1}, rows{i}{2}, rows{i}{3});
+0123     <span class="keyword">end</span>
+0124     <span class="keyword">if</span> numel(rows) &gt; nMax
+0125         fprintf(<span class="string">'  ... (%d more, use nMax to show all)\n'</span>, numel(rows) - nMax);
+0126     <span class="keyword">end</span>
+0127 <span class="keyword">end</span>
+0128 
+0129 <a name="_sub2" href="#_subfunctions" class="code">function s = metLabel_(model, metIdx)</a>
+0130     <span class="keyword">if</span> isfield(model,<span class="string">'metNames'</span>) &amp;&amp; ~isempty(model.metNames{metIdx})
+0131         s = model.metNames{metIdx};
+0132     <span class="keyword">else</span>
+0133         s = model.mets{metIdx};
+0134     <span class="keyword">end</span>
+0135     <span class="keyword">if</span> numel(s) &gt; 26, s = [s(1:23) <span class="string">'...'</span>]; <span class="keyword">end</span>
+0136 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

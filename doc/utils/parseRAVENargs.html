@@ -1,0 +1,251 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of parseRAVENargs</title>
+  <meta name="keywords" content="parseRAVENargs">
+  <meta name="description" content="parseRAVENargs  Resolve optional arguments passed positionally or by name.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utils</a> &gt; parseRAVENargs.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utils&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>parseRAVENargs
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>parseRAVENargs  Resolve optional arguments passed positionally or by name.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function args = parseRAVENargs(rawArgs, spec) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> parseRAVENargs  Resolve optional arguments passed positionally or by name.
+
+ Helper that lets a RAVEN function accept its optional arguments either in
+ the traditional positional order, as name-value pairs, or as a mix of
+ leading positional values followed by name-value pairs. The required
+ leading arguments stay explicit in the function signature; the optional
+ tail is collected into varargin and passed here together with a
+ specification of the optional parameters.
+
+ Parameters
+ ----------
+ rawArgs : cell
+     the varargin of the function, i.e. whatever was supplied after the required
+     positional arguments.
+ spec : cell
+     an N-by-2 or N-by-3 cell array describing the optional parameters, one
+     per row:
+
+     - column 1 : parameter name (char).
+     - column 2 : default value, used when the parameter is not supplied.
+     - column 3 : optional validator, a function handle that is called with
+       the resolved value and should error on an invalid value (e.g. one of
+       the utils/emptyOr* helpers). Use [] for no validation.
+
+ Returns
+ -------
+ args : struct
+     a struct with one field per parameter name, holding the resolved value.
+
+ Notes
+ -----
+ Calling convention is resolved as follows:
+
+   1. If rawArgs is empty, all parameters take their defaults.
+   2. The first element in rawArgs that is a string matching a known
+      parameter name marks position k. Everything before k is treated
+      as positional (assigned left-to-right by the order in spec).
+      Everything from k onward must form valid name-value pairs: an even
+      count where every name-position element is a known parameter name.
+   3. If no such position exists (no element is a matching string), or the
+      trailing section from k does not form valid name-value pairs, the
+      entire rawArgs is treated as positional.
+
+ This means three styles are accepted interchangeably:
+
+     f(model, v1, v2)                   % purely positional
+     f(model, &quot;p1&quot;, v1, &quot;p2&quot;, v2)       % purely named
+     f(model, v1, &quot;p2&quot;, v2, &quot;p3&quot;, v3)   % hybrid: v1 positional, rest named
+
+ When a positional value could itself be a string that equals a parameter
+ name, use the explicit name-value form for that argument to avoid
+ ambiguity.
+
+ Examples
+ --------
+     % inside exportToExcelFormat(model, varargin):
+     p = parseRAVENargs(varargin, { ...
+         &quot;fileName&quot;, []; ...
+         &quot;sortIds&quot;,  false});
+     fileName = p.fileName;
+     sortIds  = p.sortIds;
+
+     % the caller may use any of these:
+     exportToExcelFormat(model, &quot;model.xlsx&quot;, true)              % positional
+     exportToExcelFormat(model, &quot;sortIds&quot;, true)                 % named
+     exportToExcelFormat(model, &quot;model.xlsx&quot;, &quot;sortIds&quot;, true)   % hybrid</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function args = parseRAVENargs(rawArgs, spec)</a>
+0002 <span class="comment">% parseRAVENargs  Resolve optional arguments passed positionally or by name.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Helper that lets a RAVEN function accept its optional arguments either in</span>
+0005 <span class="comment">% the traditional positional order, as name-value pairs, or as a mix of</span>
+0006 <span class="comment">% leading positional values followed by name-value pairs. The required</span>
+0007 <span class="comment">% leading arguments stay explicit in the function signature; the optional</span>
+0008 <span class="comment">% tail is collected into varargin and passed here together with a</span>
+0009 <span class="comment">% specification of the optional parameters.</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% Parameters</span>
+0012 <span class="comment">% ----------</span>
+0013 <span class="comment">% rawArgs : cell</span>
+0014 <span class="comment">%     the varargin of the function, i.e. whatever was supplied after the required</span>
+0015 <span class="comment">%     positional arguments.</span>
+0016 <span class="comment">% spec : cell</span>
+0017 <span class="comment">%     an N-by-2 or N-by-3 cell array describing the optional parameters, one</span>
+0018 <span class="comment">%     per row:</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">%     - column 1 : parameter name (char).</span>
+0021 <span class="comment">%     - column 2 : default value, used when the parameter is not supplied.</span>
+0022 <span class="comment">%     - column 3 : optional validator, a function handle that is called with</span>
+0023 <span class="comment">%       the resolved value and should error on an invalid value (e.g. one of</span>
+0024 <span class="comment">%       the utils/emptyOr* helpers). Use [] for no validation.</span>
+0025 <span class="comment">%</span>
+0026 <span class="comment">% Returns</span>
+0027 <span class="comment">% -------</span>
+0028 <span class="comment">% args : struct</span>
+0029 <span class="comment">%     a struct with one field per parameter name, holding the resolved value.</span>
+0030 <span class="comment">%</span>
+0031 <span class="comment">% Notes</span>
+0032 <span class="comment">% -----</span>
+0033 <span class="comment">% Calling convention is resolved as follows:</span>
+0034 <span class="comment">%</span>
+0035 <span class="comment">%   1. If rawArgs is empty, all parameters take their defaults.</span>
+0036 <span class="comment">%   2. The first element in rawArgs that is a string matching a known</span>
+0037 <span class="comment">%      parameter name marks position k. Everything before k is treated</span>
+0038 <span class="comment">%      as positional (assigned left-to-right by the order in spec).</span>
+0039 <span class="comment">%      Everything from k onward must form valid name-value pairs: an even</span>
+0040 <span class="comment">%      count where every name-position element is a known parameter name.</span>
+0041 <span class="comment">%   3. If no such position exists (no element is a matching string), or the</span>
+0042 <span class="comment">%      trailing section from k does not form valid name-value pairs, the</span>
+0043 <span class="comment">%      entire rawArgs is treated as positional.</span>
+0044 <span class="comment">%</span>
+0045 <span class="comment">% This means three styles are accepted interchangeably:</span>
+0046 <span class="comment">%</span>
+0047 <span class="comment">%     f(model, v1, v2)                   % purely positional</span>
+0048 <span class="comment">%     f(model, &quot;p1&quot;, v1, &quot;p2&quot;, v2)       % purely named</span>
+0049 <span class="comment">%     f(model, v1, &quot;p2&quot;, v2, &quot;p3&quot;, v3)   % hybrid: v1 positional, rest named</span>
+0050 <span class="comment">%</span>
+0051 <span class="comment">% When a positional value could itself be a string that equals a parameter</span>
+0052 <span class="comment">% name, use the explicit name-value form for that argument to avoid</span>
+0053 <span class="comment">% ambiguity.</span>
+0054 <span class="comment">%</span>
+0055 <span class="comment">% Examples</span>
+0056 <span class="comment">% --------</span>
+0057 <span class="comment">%     % inside exportToExcelFormat(model, varargin):</span>
+0058 <span class="comment">%     p = parseRAVENargs(varargin, { ...</span>
+0059 <span class="comment">%         &quot;fileName&quot;, []; ...</span>
+0060 <span class="comment">%         &quot;sortIds&quot;,  false});</span>
+0061 <span class="comment">%     fileName = p.fileName;</span>
+0062 <span class="comment">%     sortIds  = p.sortIds;</span>
+0063 <span class="comment">%</span>
+0064 <span class="comment">%     % the caller may use any of these:</span>
+0065 <span class="comment">%     exportToExcelFormat(model, &quot;model.xlsx&quot;, true)              % positional</span>
+0066 <span class="comment">%     exportToExcelFormat(model, &quot;sortIds&quot;, true)                 % named</span>
+0067 <span class="comment">%     exportToExcelFormat(model, &quot;model.xlsx&quot;, &quot;sortIds&quot;, true)   % hybrid</span>
+0068 
+0069 <span class="keyword">if</span> nargin &lt; 2 || isempty(spec)
+0070     error(<span class="string">'parseRAVENargs:noSpec'</span>, <span class="string">'A parameter specification is required.'</span>);
+0071 <span class="keyword">end</span>
+0072 
+0073 names = spec(:, 1);
+0074 defaults = spec(:, 2);
+0075 hasValidators = size(spec, 2) &gt;= 3;
+0076 
+0077 <span class="comment">% Seed every parameter with its default.</span>
+0078 args = struct();
+0079 <span class="keyword">for</span> i = 1:numel(names)
+0080     args.(names{i}) = defaults{i};
+0081 <span class="keyword">end</span>
+0082 
+0083 <span class="keyword">if</span> ~isempty(rawArgs)
+0084     <span class="comment">% Find which elements are strings matching a known parameter name.</span>
+0085     isParamName = cellfun(@(x) (ischar(x) || isstring(x)) &amp;&amp; isscalar(string(x)) &amp;&amp; <span class="keyword">...</span>
+0086                           any(strcmpi(x, names)), rawArgs);
+0087 
+0088     <span class="comment">% Position of the first parameter-name string — where name-value begins.</span>
+0089     nvStart = find(isParamName, 1);
+0090 
+0091     nvOK = false;
+0092     <span class="keyword">if</span> ~isempty(nvStart)
+0093         nv = rawArgs(nvStart:end);
+0094         <span class="comment">% Valid name-value section: even count, all name-position elements</span>
+0095         <span class="comment">% are known parameter names.</span>
+0096         nvOK = mod(numel(nv), 2) == 0 &amp;&amp; <span class="keyword">...</span>
+0097                all(cellfun(@(x) (ischar(x) || isstring(x)) &amp;&amp; isscalar(string(x)) &amp;&amp; <span class="keyword">...</span>
+0098                    any(strcmpi(x, names)), nv(1:2:end)));
+0099     <span class="keyword">end</span>
+0100 
+0101     <span class="keyword">if</span> ~isempty(nvStart) &amp;&amp; nvOK
+0102         <span class="comment">% Assign leading positional arguments (may be zero when nvStart == 1).</span>
+0103         nPos = nvStart - 1;
+0104         <span class="keyword">if</span> nPos &gt; numel(names)
+0105             error(<span class="string">'parseRAVENargs:tooManyArgs'</span>, <span class="keyword">...</span>
+0106                 <span class="string">'Too many positional arguments: expected at most %d, got %d.'</span>, <span class="keyword">...</span>
+0107                 numel(names), nPos);
+0108         <span class="keyword">end</span>
+0109         <span class="keyword">for</span> k = 1:nPos
+0110             args.(names{k}) = rawArgs{k};
+0111         <span class="keyword">end</span>
+0112         <span class="comment">% Assign name-value pairs.</span>
+0113         nv = rawArgs(nvStart:end);
+0114         <span class="keyword">for</span> k = 1:2:numel(nv)
+0115             args.(names{strcmpi(nv{k}, names)}) = nv{k + 1};
+0116         <span class="keyword">end</span>
+0117     <span class="keyword">else</span>
+0118         <span class="comment">% Purely positional.</span>
+0119         <span class="keyword">if</span> numel(rawArgs) &gt; numel(names)
+0120             error(<span class="string">'parseRAVENargs:tooManyArgs'</span>, <span class="keyword">...</span>
+0121                 <span class="string">'Too many positional arguments: expected at most %d, got %d.'</span>, <span class="keyword">...</span>
+0122                 numel(names), numel(rawArgs));
+0123         <span class="keyword">end</span>
+0124         <span class="keyword">for</span> k = 1:numel(rawArgs)
+0125             args.(names{k}) = rawArgs{k};
+0126         <span class="keyword">end</span>
+0127     <span class="keyword">end</span>
+0128 <span class="keyword">end</span>
+0129 
+0130 <span class="comment">% Apply optional validators.</span>
+0131 <span class="keyword">if</span> hasValidators
+0132     <span class="keyword">for</span> i = 1:numel(names)
+0133         validator = spec{i, 3};
+0134         <span class="keyword">if</span> ~isempty(validator)
+0135             validator(args.(names{i}));
+0136         <span class="keyword">end</span>
+0137     <span class="keyword">end</span>
+0138 <span class="keyword">end</span>
+0139 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

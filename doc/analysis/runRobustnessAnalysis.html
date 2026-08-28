@@ -24,7 +24,7 @@
 <div class="box"><strong>runRobustnessAnalysis  Perform robustness analysis for a reaction and objective.</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function [controlFlux, objFlux] = runRobustnessAnalysis(model, controlRxn, nPoints, objRxn, plotRedCost) </strong></div>
+<div class="box"><strong>function [controlFlux, objFlux] = runRobustnessAnalysis(model, controlRxn, varargin) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> runRobustnessAnalysis  Perform robustness analysis for a reaction and objective.
@@ -38,12 +38,15 @@
      a model structure.
  controlRxn : char
      reaction of interest whose value is to be controlled.
- nPoints : double, optional
+
+ Name-Value Arguments
+ --------------------
+ nPoints : double
      number of points to show on plot (default 20).
- objRxn : char, optional
+ objRxn : char
      reaction identifier of objective to be maximized (default uses the
      objective defined in the model).
- plotRedCost : logical, optional
+ plotRedCost : logical
      whether reduced cost should also be plotted (default false).
 
  Returns
@@ -77,7 +80,7 @@ This function is called by:
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [controlFlux, objFlux] = runRobustnessAnalysis(model, controlRxn, nPoints, objRxn, plotRedCost)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [controlFlux, objFlux] = runRobustnessAnalysis(model, controlRxn, varargin)</a>
 0002 <span class="comment">% runRobustnessAnalysis  Perform robustness analysis for a reaction and objective.</span>
 0003 <span class="comment">%</span>
 0004 <span class="comment">% Performs robustness analysis for a reaction of interest and an objective</span>
@@ -89,80 +92,81 @@ This function is called by:
 0010 <span class="comment">%     a model structure.</span>
 0011 <span class="comment">% controlRxn : char</span>
 0012 <span class="comment">%     reaction of interest whose value is to be controlled.</span>
-0013 <span class="comment">% nPoints : double, optional</span>
-0014 <span class="comment">%     number of points to show on plot (default 20).</span>
-0015 <span class="comment">% objRxn : char, optional</span>
-0016 <span class="comment">%     reaction identifier of objective to be maximized (default uses the</span>
-0017 <span class="comment">%     objective defined in the model).</span>
-0018 <span class="comment">% plotRedCost : logical, optional</span>
-0019 <span class="comment">%     whether reduced cost should also be plotted (default false).</span>
-0020 <span class="comment">%</span>
-0021 <span class="comment">% Returns</span>
-0022 <span class="comment">% -------</span>
-0023 <span class="comment">% controlFlux : double</span>
-0024 <span class="comment">%     flux values of the reaction of interest, ranging from its minimum to</span>
-0025 <span class="comment">%     its maximum value.</span>
-0026 <span class="comment">% objFlux : double</span>
-0027 <span class="comment">%     optimal values of objective reaction at each control reaction flux</span>
-0028 <span class="comment">%     value.</span>
-0029 <span class="comment">%</span>
-0030 <span class="comment">% Examples</span>
-0031 <span class="comment">% --------</span>
-0032 <span class="comment">%     [controlFlux, objFlux] = runRobustnessAnalysis(model, controlRxn, ...</span>
-0033 <span class="comment">%         nPoints, objRxn);</span>
-0034 <span class="comment">%</span>
-0035 <span class="comment">% Notes</span>
-0036 <span class="comment">% -----</span>
-0037 <span class="comment">% Modified from COBRA Toolbox robustnessAnalysis.m.</span>
-0038 
-0039 <span class="keyword">if</span> nargin &lt; 3
-0040     nPoints = 20;
-0041 <span class="keyword">end</span>
-0042 <span class="keyword">if</span> nargin &lt; 4
-0043     baseModel = model;
-0044 <span class="keyword">else</span>
-0045     baseModel = setParam(model,<span class="string">'obj'</span>,objRxn,1);
-0046 <span class="keyword">end</span>
-0047 <span class="keyword">if</span> nargin &lt; 5
-0048     plotRedCost = false;
-0049 <span class="keyword">end</span>
-0050 
-0051 <span class="keyword">if</span> any(ismember(model.rxns,controlRxn))
-0052     controlRxnIdx = getIndexes(model,controlRxn,<span class="string">'rxns'</span>);
-0053     tmpModel = setParam(model,<span class="string">'obj'</span>,controlRxnIdx,1);
-0054     solMax = solveLP(tmpModel);
-0055     solMax = solMax.x(logical(tmpModel.c));
-0056     tmpModel.c = -tmpModel.c;
-0057     solMin = solveLP(tmpModel);
-0058     solMin = solMin.x(logical(tmpModel.c));
-0059 <span class="keyword">else</span>
-0060     error(<span class="string">'Control reaction does not exist!'</span>);
-0061 <span class="keyword">end</span>
-0062 
-0063 objFlux = zeros(nPoints,1);
-0064 redCost = zeros(nPoints,1);
-0065 controlFlux = linspace(solMin,solMax,nPoints)';
-0066 
+0013 <span class="comment">%</span>
+0014 <span class="comment">% Name-Value Arguments</span>
+0015 <span class="comment">% --------------------</span>
+0016 <span class="comment">% nPoints : double</span>
+0017 <span class="comment">%     number of points to show on plot (default 20).</span>
+0018 <span class="comment">% objRxn : char</span>
+0019 <span class="comment">%     reaction identifier of objective to be maximized (default uses the</span>
+0020 <span class="comment">%     objective defined in the model).</span>
+0021 <span class="comment">% plotRedCost : logical</span>
+0022 <span class="comment">%     whether reduced cost should also be plotted (default false).</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">% Returns</span>
+0025 <span class="comment">% -------</span>
+0026 <span class="comment">% controlFlux : double</span>
+0027 <span class="comment">%     flux values of the reaction of interest, ranging from its minimum to</span>
+0028 <span class="comment">%     its maximum value.</span>
+0029 <span class="comment">% objFlux : double</span>
+0030 <span class="comment">%     optimal values of objective reaction at each control reaction flux</span>
+0031 <span class="comment">%     value.</span>
+0032 <span class="comment">%</span>
+0033 <span class="comment">% Examples</span>
+0034 <span class="comment">% --------</span>
+0035 <span class="comment">%     [controlFlux, objFlux] = runRobustnessAnalysis(model, controlRxn, ...</span>
+0036 <span class="comment">%         nPoints, objRxn);</span>
+0037 <span class="comment">%</span>
+0038 <span class="comment">% Notes</span>
+0039 <span class="comment">% -----</span>
+0040 <span class="comment">% Modified from COBRA Toolbox robustnessAnalysis.m.</span>
+0041 
+0042 p=parseRAVENargs(varargin, {<span class="string">'nPoints'</span>,20; <span class="string">'objRxn'</span>,[]; <span class="string">'plotRedCost'</span>,false});
+0043 nPoints=p.nPoints;
+0044 objRxn=p.objRxn;
+0045 plotRedCost=p.plotRedCost;
+0046 <span class="keyword">if</span> isempty(objRxn)
+0047     baseModel = model;
+0048 <span class="keyword">else</span>
+0049     baseModel = setParam(model,<span class="string">'obj'</span>,objRxn,1);
+0050 <span class="keyword">end</span>
+0051 
+0052 <span class="keyword">if</span> any(ismember(model.rxns,controlRxn))
+0053     controlRxnIdx = getIndexes(model,controlRxn,<span class="string">'rxns'</span>);
+0054     tmpModel = setParam(model,<span class="string">'obj'</span>,controlRxnIdx,1);
+0055     solMax = solveLP(tmpModel);
+0056     solMax = solMax.x(logical(tmpModel.c));
+0057     tmpModel.c = -tmpModel.c;
+0058     solMin = solveLP(tmpModel);
+0059     solMin = solMin.x(logical(tmpModel.c));
+0060 <span class="keyword">else</span>
+0061     error(<span class="string">'Control reaction does not exist!'</span>);
+0062 <span class="keyword">end</span>
+0063 
+0064 objFlux = zeros(nPoints,1);
+0065 redCost = zeros(nPoints,1);
+0066 controlFlux = linspace(solMin,solMax,nPoints)';
 0067 
-0068 PB = ProgressBar2(length(controlFlux),<span class="string">'Running robustness analysis'</span>,<span class="string">'cli'</span>);
-0069 <span class="keyword">for</span> i=1:length(controlFlux)
-0070     modelControlled = setParam(baseModel,<span class="string">'eq'</span>,controlRxnIdx,controlFlux(i));
-0071     solControlled = solveLP(modelControlled);
-0072     objFlux(i) = solControlled.x(logical(modelControlled.c));
-0073     redCost(i) = solControlled.rCost(controlRxnIdx);
-0074     count(PB);
-0075 <span class="keyword">end</span>
-0076 
-0077 <span class="keyword">if</span> plotRedCost
-0078     yyaxis right
-0079     plot(controlFlux,redCost)
-0080     ylabel([strrep(controlRxn,<span class="string">'_'</span>,<span class="string">'-'</span>) <span class="string">' reduced cost'</span>]);
-0081     yyaxis left
-0082 <span class="keyword">end</span>
-0083 plot(controlFlux,objFlux)
-0084 xlabel(strrep(controlRxn,<span class="string">'_'</span>,<span class="string">'-'</span>));
-0085 ylabel(<span class="string">'Objective'</span>);
-0086 <span class="keyword">end</span></pre></div>
+0068 
+0069 PB = progressReport(length(controlFlux),<span class="string">'Running robustness analysis'</span>);
+0070 <span class="keyword">for</span> i=1:length(controlFlux)
+0071     modelControlled = setParam(baseModel,<span class="string">'eq'</span>,controlRxnIdx,controlFlux(i));
+0072     solControlled = solveLP(modelControlled);
+0073     objFlux(i) = solControlled.x(logical(modelControlled.c));
+0074     redCost(i) = solControlled.rCost(controlRxnIdx);
+0075     count(PB);
+0076 <span class="keyword">end</span>
+0077 
+0078 <span class="keyword">if</span> plotRedCost
+0079     yyaxis right
+0080     plot(controlFlux,redCost)
+0081     ylabel([strrep(controlRxn,<span class="string">'_'</span>,<span class="string">'-'</span>) <span class="string">' reduced cost'</span>]);
+0082     yyaxis left
+0083 <span class="keyword">end</span>
+0084 plot(controlFlux,objFlux)
+0085 xlabel(strrep(controlRxn,<span class="string">'_'</span>,<span class="string">'-'</span>));
+0086 ylabel(<span class="string">'Objective'</span>);
+0087 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

@@ -1,0 +1,403 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of writeExcel</title>
+  <meta name="keywords" content="writeExcel">
+  <meta name="description" content="writeExcel  Write one or more sheets to an .xlsx (Office Open XML) file.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">io</a> &gt; writeExcel.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for io&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>writeExcel
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>writeExcel  Write one or more sheets to an .xlsx (Office Open XML) file.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function writeExcel(fileName,sheets) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> writeExcel  Write one or more sheets to an .xlsx (Office Open XML) file.
+
+ Writes data to one or more worksheets of an .xlsx file. Each sheet can
+ have a bold header row (frozen at the top), column widths and per-column
+ number formats. Numeric, text and logical cell values are supported;
+ empty values are written as blank cells.
+
+ Parameters
+ ----------
+ fileName : char
+     path of the .xlsx file to write. An existing file is overwritten.
+ sheets : struct
+     struct array, one element per worksheet, with fields:
+       name : char
+           the worksheet name (truncated to 31 characters; the characters
+           []*?/\: are removed).
+       data : cell
+           cell matrix with the cell values. Supported value types are char
+           (text), numeric scalar, logical, and empty (written as a blank
+           cell).
+       header : cell, optional
+           column captions written as a bold, frozen first row above the
+           data (default none).
+       widths : double, optional
+           vector of column widths in character units (default: column
+           widths are left to the spreadsheet application).
+       isIntegers : logical, optional
+           if true numeric cells use the '0' number format, otherwise
+           '##0.00' (default true).
+       colFormats : cell, optional
+           per-column number-format codes that override the sheet default
+           for individual columns (default none).
+
+ Examples
+ --------
+     s.name='SHEET1'; s.header={'ID','VALUE'}; s.data={'a',1;'b',2};
+     writeExcel('out.xlsx',s);
+
+ See also
+ --------
+ <a href="exportToExcelFormat.html" class="code" title="function exportToExcelFormat(model,varargin)">exportToExcelFormat</a></pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="exportToExcelFormat.html" class="code" title="function exportToExcelFormat(model,varargin)">exportToExcelFormat</a>	exportToExcelFormat  Export a model to the Microsoft Excel model format.</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function xml=worksheetXml(s,formatCodes)</a></li><li><a href="#_sub2" class="code">function xml=stylesXml(formatCodes)</a></li><li><a href="#_sub3" class="code">function xml=workbookXml(S)</a></li><li><a href="#_sub4" class="code">function xml=workbookRels(nSheets)</a></li><li><a href="#_sub5" class="code">function xml=contentTypes(nSheets)</a></li><li><a href="#_sub6" class="code">function xml=rootRels()</a></li><li><a href="#_sub7" class="code">function writePart(path,str)</a></li><li><a href="#_sub8" class="code">function s=xmlEscape(s)</a></li><li><a href="#_sub9" class="code">function t=toText(v)</a></li><li><a href="#_sub10" class="code">function L=colLetter(n)</a></li><li><a href="#_sub11" class="code">function name=cleanSheetName(name)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function writeExcel(fileName,sheets)</a>
+0002 <span class="comment">% writeExcel  Write one or more sheets to an .xlsx (Office Open XML) file.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Writes data to one or more worksheets of an .xlsx file. Each sheet can</span>
+0005 <span class="comment">% have a bold header row (frozen at the top), column widths and per-column</span>
+0006 <span class="comment">% number formats. Numeric, text and logical cell values are supported;</span>
+0007 <span class="comment">% empty values are written as blank cells.</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% Parameters</span>
+0010 <span class="comment">% ----------</span>
+0011 <span class="comment">% fileName : char</span>
+0012 <span class="comment">%     path of the .xlsx file to write. An existing file is overwritten.</span>
+0013 <span class="comment">% sheets : struct</span>
+0014 <span class="comment">%     struct array, one element per worksheet, with fields:</span>
+0015 <span class="comment">%       name : char</span>
+0016 <span class="comment">%           the worksheet name (truncated to 31 characters; the characters</span>
+0017 <span class="comment">%           []*?/\: are removed).</span>
+0018 <span class="comment">%       data : cell</span>
+0019 <span class="comment">%           cell matrix with the cell values. Supported value types are char</span>
+0020 <span class="comment">%           (text), numeric scalar, logical, and empty (written as a blank</span>
+0021 <span class="comment">%           cell).</span>
+0022 <span class="comment">%       header : cell, optional</span>
+0023 <span class="comment">%           column captions written as a bold, frozen first row above the</span>
+0024 <span class="comment">%           data (default none).</span>
+0025 <span class="comment">%       widths : double, optional</span>
+0026 <span class="comment">%           vector of column widths in character units (default: column</span>
+0027 <span class="comment">%           widths are left to the spreadsheet application).</span>
+0028 <span class="comment">%       isIntegers : logical, optional</span>
+0029 <span class="comment">%           if true numeric cells use the '0' number format, otherwise</span>
+0030 <span class="comment">%           '##0.00' (default true).</span>
+0031 <span class="comment">%       colFormats : cell, optional</span>
+0032 <span class="comment">%           per-column number-format codes that override the sheet default</span>
+0033 <span class="comment">%           for individual columns (default none).</span>
+0034 <span class="comment">%</span>
+0035 <span class="comment">% Examples</span>
+0036 <span class="comment">% --------</span>
+0037 <span class="comment">%     s.name='SHEET1'; s.header={'ID','VALUE'}; s.data={'a',1;'b',2};</span>
+0038 <span class="comment">%     writeExcel('out.xlsx',s);</span>
+0039 <span class="comment">%</span>
+0040 <span class="comment">% See also</span>
+0041 <span class="comment">% --------</span>
+0042 <span class="comment">% exportToExcelFormat</span>
+0043 
+0044 <span class="comment">%Normalise the sheet structs and collect the set of number-format codes used</span>
+0045 <span class="comment">%across all sheets, so each distinct format gets a single style entry.</span>
+0046 formatCodes={};
+0047 S=struct(<span class="string">'name'</span>,{},<span class="string">'header'</span>,{},<span class="string">'data'</span>,{},<span class="string">'widths'</span>,{},<span class="string">'defFmt'</span>,{},<span class="string">'colFmt'</span>,{});
+0048 <span class="keyword">for</span> k=1:numel(sheets)
+0049     in=sheets(k);
+0050     S(k).name=<a href="#_sub11" class="code" title="subfunction name=cleanSheetName(name)">cleanSheetName</a>(in.name);
+0051     <span class="keyword">if</span> isfield(in,<span class="string">'header'</span>); S(k).header=in.header; <span class="keyword">else</span>; S(k).header={}; <span class="keyword">end</span>
+0052     S(k).data=in.data;
+0053     <span class="keyword">if</span> isfield(in,<span class="string">'widths'</span>); S(k).widths=in.widths; <span class="keyword">else</span>; S(k).widths=[]; <span class="keyword">end</span>
+0054     <span class="keyword">if</span> isfield(in,<span class="string">'isIntegers'</span>) &amp;&amp; ~isempty(in.isIntegers) &amp;&amp; ~in.isIntegers
+0055         S(k).defFmt=<span class="string">'##0.00'</span>;
+0056     <span class="keyword">else</span>
+0057         S(k).defFmt=<span class="string">'0'</span>;
+0058     <span class="keyword">end</span>
+0059     <span class="keyword">if</span> isfield(in,<span class="string">'colFormats'</span>); S(k).colFmt=in.colFormats; <span class="keyword">else</span>; S(k).colFmt={}; <span class="keyword">end</span>
+0060 
+0061     nCols=size(S(k).data,2);
+0062     <span class="keyword">if</span> ~isempty(S(k).header); nCols=max(nCols,numel(S(k).header)); <span class="keyword">end</span>
+0063     <span class="keyword">for</span> c=1:nCols
+0064         <span class="keyword">if</span> c&lt;=numel(S(k).colFmt) &amp;&amp; ~isempty(S(k).colFmt{c})
+0065             fc=S(k).colFmt{c};
+0066         <span class="keyword">else</span>
+0067             fc=S(k).defFmt;
+0068         <span class="keyword">end</span>
+0069         <span class="keyword">if</span> ~any(strcmp(fc,formatCodes)); formatCodes{end+1}=fc; <span class="keyword">end</span> <span class="comment">%#ok&lt;AGROW&gt;</span>
+0070     <span class="keyword">end</span>
+0071 <span class="keyword">end</span>
+0072 
+0073 <span class="comment">%Build the parts in a temporary directory, then zip them into the .xlsx.</span>
+0074 tmpDir=tempname;
+0075 mkdir(tmpDir);
+0076 mkdir(fullfile(tmpDir,<span class="string">'_rels'</span>));
+0077 mkdir(fullfile(tmpDir,<span class="string">'xl'</span>));
+0078 mkdir(fullfile(tmpDir,<span class="string">'xl'</span>,<span class="string">'_rels'</span>));
+0079 mkdir(fullfile(tmpDir,<span class="string">'xl'</span>,<span class="string">'worksheets'</span>));
+0080 
+0081 <a href="#_sub7" class="code" title="subfunction writePart(path,str)">writePart</a>(fullfile(tmpDir,<span class="string">'[Content_Types].xml'</span>),<a href="#_sub5" class="code" title="subfunction xml=contentTypes(nSheets)">contentTypes</a>(numel(S)));
+0082 <a href="#_sub7" class="code" title="subfunction writePart(path,str)">writePart</a>(fullfile(tmpDir,<span class="string">'_rels'</span>,<span class="string">'.rels'</span>),<a href="#_sub6" class="code" title="subfunction xml=rootRels()">rootRels</a>());
+0083 <a href="#_sub7" class="code" title="subfunction writePart(path,str)">writePart</a>(fullfile(tmpDir,<span class="string">'xl'</span>,<span class="string">'workbook.xml'</span>),<a href="#_sub3" class="code" title="subfunction xml=workbookXml(S)">workbookXml</a>(S));
+0084 <a href="#_sub7" class="code" title="subfunction writePart(path,str)">writePart</a>(fullfile(tmpDir,<span class="string">'xl'</span>,<span class="string">'_rels'</span>,<span class="string">'workbook.xml.rels'</span>),<a href="#_sub4" class="code" title="subfunction xml=workbookRels(nSheets)">workbookRels</a>(numel(S)));
+0085 <a href="#_sub7" class="code" title="subfunction writePart(path,str)">writePart</a>(fullfile(tmpDir,<span class="string">'xl'</span>,<span class="string">'styles.xml'</span>),<a href="#_sub2" class="code" title="subfunction xml=stylesXml(formatCodes)">stylesXml</a>(formatCodes));
+0086 <span class="keyword">for</span> k=1:numel(S)
+0087     <a href="#_sub7" class="code" title="subfunction writePart(path,str)">writePart</a>(fullfile(tmpDir,<span class="string">'xl'</span>,<span class="string">'worksheets'</span>,sprintf(<span class="string">'sheet%d.xml'</span>,k)), <span class="keyword">...</span>
+0088         <a href="#_sub1" class="code" title="subfunction xml=worksheetXml(s,formatCodes)">worksheetXml</a>(S(k),formatCodes));
+0089 <span class="keyword">end</span>
+0090 
+0091 <span class="comment">%Pack the parts. zip() preserves the relative paths when called from inside</span>
+0092 <span class="comment">%the staging directory, which is exactly the layout an .xlsx requires.</span>
+0093 zipTmp=[tempname <span class="string">'.zip'</span>];
+0094 oldDir=cd(tmpDir);
+0095 cleanup=onCleanup(@()cd(oldDir));
+0096 zip(zipTmp,{<span class="string">'[Content_Types].xml'</span>,<span class="string">'_rels'</span>,<span class="string">'xl'</span>});
+0097 clear cleanup
+0098 <span class="keyword">if</span> isfile(fileName); delete(fileName); <span class="keyword">end</span>
+0099 movefile(zipTmp,fileName);
+0100 rmdir(tmpDir,<span class="string">'s'</span>);
+0101 <span class="keyword">end</span>
+0102 
+0103 <span class="comment">% -------------------------------------------------------------------------</span>
+0104 
+0105 <a name="_sub1" href="#_subfunctions" class="code">function xml=worksheetXml(s,formatCodes)</a>
+0106 data=s.data;
+0107 header=s.header;
+0108 hasHeader=~isempty(header);
+0109 nRows=size(data,1);
+0110 nCols=size(data,2);
+0111 <span class="keyword">if</span> hasHeader; nCols=max(nCols,numel(header)); <span class="keyword">end</span>
+0112 
+0113 <span class="comment">%Per-column style index into cellXfs (numeric/logical cells only); strings</span>
+0114 <span class="comment">%use the default style 0 and headers the bold style 1.</span>
+0115 colStyle=zeros(1,nCols);
+0116 <span class="keyword">for</span> c=1:nCols
+0117     <span class="keyword">if</span> c&lt;=numel(s.colFmt) &amp;&amp; ~isempty(s.colFmt{c}); fc=s.colFmt{c}; <span class="keyword">else</span>; fc=s.defFmt; <span class="keyword">end</span>
+0118     colStyle(c)=1+find(strcmp(fc,formatCodes),1); <span class="comment">%0=default,1=bold,2..=formats</span>
+0119 <span class="keyword">end</span>
+0120 
+0121 rows=cell(1,hasHeader+nRows);
+0122 ri=0;
+0123 <span class="keyword">if</span> hasHeader
+0124     ri=ri+1;
+0125     cells=cell(1,numel(header));
+0126     <span class="keyword">for</span> c=1:numel(header)
+0127         cells{c}=sprintf(<span class="string">'&lt;c r=&quot;%s1&quot; t=&quot;inlineStr&quot; s=&quot;1&quot;&gt;&lt;is&gt;&lt;t xml:space=&quot;preserve&quot;&gt;%s&lt;/t&gt;&lt;/is&gt;&lt;/c&gt;'</span>, <span class="keyword">...</span>
+0128             <a href="#_sub10" class="code" title="subfunction L=colLetter(n)">colLetter</a>(c),<a href="#_sub8" class="code" title="subfunction s=xmlEscape(s)">xmlEscape</a>(<a href="#_sub9" class="code" title="subfunction t=toText(v)">toText</a>(header{c})));
+0129     <span class="keyword">end</span>
+0130     rows{ri}=[<span class="string">'&lt;row r=&quot;1&quot;&gt;'</span> strjoin(cells,<span class="string">''</span>) <span class="string">'&lt;/row&gt;'</span>];
+0131 <span class="keyword">end</span>
+0132 <span class="keyword">for</span> r=1:nRows
+0133     rnum=r+hasHeader;
+0134     cells=cell(1,nCols);
+0135     m=0;
+0136     <span class="keyword">for</span> c=1:nCols
+0137         v=data{r,c};
+0138         <span class="keyword">if</span> iscell(v) &amp;&amp; ~isempty(v); v=v{1}; <span class="keyword">end</span> <span class="comment">%tolerate {value,list} cells</span>
+0139         <span class="keyword">if</span> isempty(v); <span class="keyword">continue</span>; <span class="keyword">end</span>
+0140         ref=sprintf(<span class="string">'%s%d'</span>,<a href="#_sub10" class="code" title="subfunction L=colLetter(n)">colLetter</a>(c),rnum);
+0141         <span class="keyword">if</span> ischar(v) || isstring(v)
+0142             cellStr=sprintf(<span class="string">'&lt;c r=&quot;%s&quot; t=&quot;inlineStr&quot;&gt;&lt;is&gt;&lt;t xml:space=&quot;preserve&quot;&gt;%s&lt;/t&gt;&lt;/is&gt;&lt;/c&gt;'</span>, <span class="keyword">...</span>
+0143                 ref,<a href="#_sub8" class="code" title="subfunction s=xmlEscape(s)">xmlEscape</a>(char(v)));
+0144         <span class="keyword">elseif</span> islogical(v)
+0145             cellStr=sprintf(<span class="string">'&lt;c r=&quot;%s&quot; t=&quot;b&quot; s=&quot;%d&quot;&gt;&lt;v&gt;%d&lt;/v&gt;&lt;/c&gt;'</span>,ref,colStyle(c),v(1));
+0146         <span class="keyword">elseif</span> isnumeric(v)
+0147             <span class="keyword">if</span> ~isscalar(v) || isnan(v); <span class="keyword">continue</span>; <span class="keyword">end</span>
+0148             cellStr=sprintf(<span class="string">'&lt;c r=&quot;%s&quot; s=&quot;%d&quot;&gt;&lt;v&gt;%.15g&lt;/v&gt;&lt;/c&gt;'</span>,ref,colStyle(c),v);
+0149         <span class="keyword">else</span>
+0150             cellStr=sprintf(<span class="string">'&lt;c r=&quot;%s&quot; t=&quot;inlineStr&quot;&gt;&lt;is&gt;&lt;t xml:space=&quot;preserve&quot;&gt;%s&lt;/t&gt;&lt;/is&gt;&lt;/c&gt;'</span>, <span class="keyword">...</span>
+0151                 ref,<a href="#_sub8" class="code" title="subfunction s=xmlEscape(s)">xmlEscape</a>(<a href="#_sub9" class="code" title="subfunction t=toText(v)">toText</a>(v)));
+0152         <span class="keyword">end</span>
+0153         m=m+1;
+0154         cells{m}=cellStr;
+0155     <span class="keyword">end</span>
+0156     rows{ri+r}=sprintf(<span class="string">'&lt;row r=&quot;%d&quot;&gt;%s&lt;/row&gt;'</span>,rnum,strjoin(cells(1:m),<span class="string">''</span>));
+0157 <span class="keyword">end</span>
+0158 
+0159 lastRow=max(hasHeader+nRows,1);
+0160 dimRef=sprintf(<span class="string">'A1:%s%d'</span>,<a href="#_sub10" class="code" title="subfunction L=colLetter(n)">colLetter</a>(max(nCols,1)),lastRow);
+0161 
+0162 <span class="keyword">if</span> hasHeader
+0163     views=[<span class="string">'&lt;sheetViews&gt;&lt;sheetView workbookViewId=&quot;0&quot;&gt;'</span> <span class="keyword">...</span>
+0164         <span class="string">'&lt;pane ySplit=&quot;1&quot; topLeftCell=&quot;A2&quot; activePane=&quot;bottomLeft&quot; state=&quot;frozen&quot;/&gt;'</span> <span class="keyword">...</span>
+0165         <span class="string">'&lt;selection pane=&quot;bottomLeft&quot; activeCell=&quot;A2&quot; sqref=&quot;A2&quot;/&gt;'</span> <span class="keyword">...</span>
+0166         <span class="string">'&lt;/sheetView&gt;&lt;/sheetViews&gt;'</span>];
+0167 <span class="keyword">else</span>
+0168     views=<span class="string">'&lt;sheetViews&gt;&lt;sheetView workbookViewId=&quot;0&quot;/&gt;&lt;/sheetViews&gt;'</span>;
+0169 <span class="keyword">end</span>
+0170 
+0171 cols=<span class="string">''</span>;
+0172 <span class="keyword">if</span> ~isempty(s.widths)
+0173     parts=cell(1,numel(s.widths));
+0174     <span class="keyword">for</span> c=1:numel(s.widths)
+0175         parts{c}=sprintf(<span class="string">'&lt;col min=&quot;%d&quot; max=&quot;%d&quot; width=&quot;%.2f&quot; customWidth=&quot;1&quot;/&gt;'</span>,c,c,s.widths(c));
+0176     <span class="keyword">end</span>
+0177     cols=[<span class="string">'&lt;cols&gt;'</span> strjoin(parts,<span class="string">''</span>) <span class="string">'&lt;/cols&gt;'</span>];
+0178 <span class="keyword">end</span>
+0179 
+0180 xml=[<span class="string">'&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;yes&quot;?&gt;'</span> <span class="keyword">...</span>
+0181     <span class="string">'&lt;worksheet xmlns=&quot;http://schemas.openxmlformats.org/spreadsheetml/2006/main&quot;'</span> <span class="keyword">...</span>
+0182     <span class="string">' xmlns:r=&quot;http://schemas.openxmlformats.org/officeDocument/2006/relationships&quot;&gt;'</span> <span class="keyword">...</span>
+0183     sprintf(<span class="string">'&lt;dimension ref=&quot;%s&quot;/&gt;'</span>,dimRef) views cols <span class="keyword">...</span>
+0184     <span class="string">'&lt;sheetData&gt;'</span> strjoin(rows,<span class="string">''</span>) <span class="string">'&lt;/sheetData&gt;&lt;/worksheet&gt;'</span>];
+0185 <span class="keyword">end</span>
+0186 
+0187 <span class="comment">% -------------------------------------------------------------------------</span>
+0188 
+0189 <a name="_sub2" href="#_subfunctions" class="code">function xml=stylesXml(formatCodes)</a>
+0190 <span class="comment">%Custom number formats start at id 164 (ids below are reserved/built-in).</span>
+0191 numFmts=<span class="string">''</span>;
+0192 <span class="keyword">for</span> i=1:numel(formatCodes)
+0193     numFmts=[numFmts sprintf(<span class="string">'&lt;numFmt numFmtId=&quot;%d&quot; formatCode=&quot;%s&quot;/&gt;'</span>, <span class="keyword">...</span>
+0194         163+i,<a href="#_sub8" class="code" title="subfunction s=xmlEscape(s)">xmlEscape</a>(formatCodes{i}))]; <span class="comment">%#ok&lt;AGROW&gt;</span>
+0195 <span class="keyword">end</span>
+0196 <span class="keyword">if</span> ~isempty(numFmts)
+0197     numFmts=sprintf(<span class="string">'&lt;numFmts count=&quot;%d&quot;&gt;%s&lt;/numFmts&gt;'</span>,numel(formatCodes),numFmts);
+0198 <span class="keyword">end</span>
+0199 
+0200 <span class="comment">%cellXfs: 0=default (general,normal), 1=bold header, 2..=number formats.</span>
+0201 xfs=<span class="string">'&lt;xf numFmtId=&quot;0&quot; fontId=&quot;0&quot; fillId=&quot;0&quot; borderId=&quot;0&quot; xfId=&quot;0&quot;/&gt;'</span>;
+0202 xfs=[xfs <span class="string">'&lt;xf numFmtId=&quot;0&quot; fontId=&quot;1&quot; fillId=&quot;0&quot; borderId=&quot;0&quot; xfId=&quot;0&quot; applyFont=&quot;1&quot;/&gt;'</span>];
+0203 <span class="keyword">for</span> i=1:numel(formatCodes)
+0204     xfs=[xfs sprintf([<span class="string">'&lt;xf numFmtId=&quot;%d&quot; fontId=&quot;0&quot; fillId=&quot;0&quot; borderId=&quot;0&quot;'</span> <span class="keyword">...</span>
+0205         <span class="string">' xfId=&quot;0&quot; applyNumberFormat=&quot;1&quot;/&gt;'</span>],163+i)]; <span class="comment">%#ok&lt;AGROW&gt;</span>
+0206 <span class="keyword">end</span>
+0207 
+0208 xml=[<span class="string">'&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;yes&quot;?&gt;'</span> <span class="keyword">...</span>
+0209     <span class="string">'&lt;styleSheet xmlns=&quot;http://schemas.openxmlformats.org/spreadsheetml/2006/main&quot;&gt;'</span> <span class="keyword">...</span>
+0210     numFmts <span class="keyword">...</span>
+0211     <span class="string">'&lt;fonts count=&quot;2&quot;&gt;'</span> <span class="keyword">...</span>
+0212     <span class="string">'&lt;font&gt;&lt;sz val=&quot;11&quot;/&gt;&lt;name val=&quot;Calibri&quot;/&gt;&lt;/font&gt;'</span> <span class="keyword">...</span>
+0213     <span class="string">'&lt;font&gt;&lt;b/&gt;&lt;sz val=&quot;11&quot;/&gt;&lt;name val=&quot;Calibri&quot;/&gt;&lt;/font&gt;'</span> <span class="keyword">...</span>
+0214     <span class="string">'&lt;/fonts&gt;'</span> <span class="keyword">...</span>
+0215     <span class="string">'&lt;fills count=&quot;2&quot;&gt;'</span> <span class="keyword">...</span>
+0216     <span class="string">'&lt;fill&gt;&lt;patternFill patternType=&quot;none&quot;/&gt;&lt;/fill&gt;'</span> <span class="keyword">...</span>
+0217     <span class="string">'&lt;fill&gt;&lt;patternFill patternType=&quot;gray125&quot;/&gt;&lt;/fill&gt;'</span> <span class="keyword">...</span>
+0218     <span class="string">'&lt;/fills&gt;'</span> <span class="keyword">...</span>
+0219     <span class="string">'&lt;borders count=&quot;1&quot;&gt;&lt;border/&gt;&lt;/borders&gt;'</span> <span class="keyword">...</span>
+0220     <span class="string">'&lt;cellStyleXfs count=&quot;1&quot;&gt;&lt;xf numFmtId=&quot;0&quot; fontId=&quot;0&quot; fillId=&quot;0&quot; borderId=&quot;0&quot;/&gt;&lt;/cellStyleXfs&gt;'</span> <span class="keyword">...</span>
+0221     sprintf(<span class="string">'&lt;cellXfs count=&quot;%d&quot;&gt;'</span>,2+numel(formatCodes)) xfs <span class="string">'&lt;/cellXfs&gt;'</span> <span class="keyword">...</span>
+0222     <span class="string">'&lt;cellStyles count=&quot;1&quot;&gt;&lt;cellStyle name=&quot;Normal&quot; xfId=&quot;0&quot; builtinId=&quot;0&quot;/&gt;&lt;/cellStyles&gt;'</span> <span class="keyword">...</span>
+0223     <span class="string">'&lt;/styleSheet&gt;'</span>];
+0224 <span class="keyword">end</span>
+0225 
+0226 <a name="_sub3" href="#_subfunctions" class="code">function xml=workbookXml(S)</a>
+0227 tags=cell(1,numel(S));
+0228 <span class="keyword">for</span> k=1:numel(S)
+0229     tags{k}=sprintf(<span class="string">'&lt;sheet name=&quot;%s&quot; sheetId=&quot;%d&quot; r:id=&quot;rId%d&quot;/&gt;'</span>, <span class="keyword">...</span>
+0230         <a href="#_sub8" class="code" title="subfunction s=xmlEscape(s)">xmlEscape</a>(S(k).name),k,k);
+0231 <span class="keyword">end</span>
+0232 xml=[<span class="string">'&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;yes&quot;?&gt;'</span> <span class="keyword">...</span>
+0233     <span class="string">'&lt;workbook xmlns=&quot;http://schemas.openxmlformats.org/spreadsheetml/2006/main&quot;'</span> <span class="keyword">...</span>
+0234     <span class="string">' xmlns:r=&quot;http://schemas.openxmlformats.org/officeDocument/2006/relationships&quot;&gt;'</span> <span class="keyword">...</span>
+0235     <span class="string">'&lt;sheets&gt;'</span> strjoin(tags,<span class="string">''</span>) <span class="string">'&lt;/sheets&gt;&lt;/workbook&gt;'</span>];
+0236 <span class="keyword">end</span>
+0237 
+0238 <a name="_sub4" href="#_subfunctions" class="code">function xml=workbookRels(nSheets)</a>
+0239 rels=cell(1,nSheets+1);
+0240 <span class="keyword">for</span> k=1:nSheets
+0241     rels{k}=sprintf([<span class="string">'&lt;Relationship Id=&quot;rId%d&quot; Type=&quot;http://schemas.openxmlformats.org'</span> <span class="keyword">...</span>
+0242         <span class="string">'/officeDocument/2006/relationships/worksheet&quot; Target=&quot;worksheets/sheet%d.xml&quot;/&gt;'</span>],k,k);
+0243 <span class="keyword">end</span>
+0244 rels{nSheets+1}=sprintf([<span class="string">'&lt;Relationship Id=&quot;rId%d&quot; Type=&quot;http://schemas.openxmlformats.org'</span> <span class="keyword">...</span>
+0245     <span class="string">'/officeDocument/2006/relationships/styles&quot; Target=&quot;styles.xml&quot;/&gt;'</span>],nSheets+1);
+0246 xml=[<span class="string">'&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;yes&quot;?&gt;'</span> <span class="keyword">...</span>
+0247     <span class="string">'&lt;Relationships xmlns=&quot;http://schemas.openxmlformats.org/package/2006/relationships&quot;&gt;'</span> <span class="keyword">...</span>
+0248     strjoin(rels,<span class="string">''</span>) <span class="string">'&lt;/Relationships&gt;'</span>];
+0249 <span class="keyword">end</span>
+0250 
+0251 <a name="_sub5" href="#_subfunctions" class="code">function xml=contentTypes(nSheets)</a>
+0252 overrides=cell(1,nSheets);
+0253 <span class="keyword">for</span> k=1:nSheets
+0254     overrides{k}=sprintf([<span class="string">'&lt;Override PartName=&quot;/xl/worksheets/sheet%d.xml&quot;'</span> <span class="keyword">...</span>
+0255         <span class="string">' ContentType=&quot;application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml&quot;/&gt;'</span>],k);
+0256 <span class="keyword">end</span>
+0257 xml=[<span class="string">'&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;yes&quot;?&gt;'</span> <span class="keyword">...</span>
+0258     <span class="string">'&lt;Types xmlns=&quot;http://schemas.openxmlformats.org/package/2006/content-types&quot;&gt;'</span> <span class="keyword">...</span>
+0259     <span class="string">'&lt;Default Extension=&quot;rels&quot; ContentType=&quot;application/vnd.openxmlformats-package.relationships+xml&quot;/&gt;'</span> <span class="keyword">...</span>
+0260     <span class="string">'&lt;Default Extension=&quot;xml&quot; ContentType=&quot;application/xml&quot;/&gt;'</span> <span class="keyword">...</span>
+0261     <span class="string">'&lt;Override PartName=&quot;/xl/workbook.xml&quot; ContentType=&quot;application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml&quot;/&gt;'</span> <span class="keyword">...</span>
+0262     <span class="string">'&lt;Override PartName=&quot;/xl/styles.xml&quot; ContentType=&quot;application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml&quot;/&gt;'</span> <span class="keyword">...</span>
+0263     strjoin(overrides,<span class="string">''</span>) <span class="string">'&lt;/Types&gt;'</span>];
+0264 <span class="keyword">end</span>
+0265 
+0266 <a name="_sub6" href="#_subfunctions" class="code">function xml=rootRels()</a>
+0267 xml=[<span class="string">'&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;yes&quot;?&gt;'</span> <span class="keyword">...</span>
+0268     <span class="string">'&lt;Relationships xmlns=&quot;http://schemas.openxmlformats.org/package/2006/relationships&quot;&gt;'</span> <span class="keyword">...</span>
+0269     <span class="string">'&lt;Relationship Id=&quot;rId1&quot; Type=&quot;http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument&quot;'</span> <span class="keyword">...</span>
+0270     <span class="string">' Target=&quot;xl/workbook.xml&quot;/&gt;&lt;/Relationships&gt;'</span>];
+0271 <span class="keyword">end</span>
+0272 
+0273 <span class="comment">% -------------------------------------------------------------------------</span>
+0274 
+0275 <a name="_sub7" href="#_subfunctions" class="code">function writePart(path,str)</a>
+0276 fid=fopen(path,<span class="string">'w'</span>,<span class="string">'n'</span>,<span class="string">'UTF-8'</span>);
+0277 <span class="keyword">if</span> fid==-1; error(<span class="string">'writeExcel: could not open ''%s'' for writing.'</span>,path); <span class="keyword">end</span>
+0278 fwrite(fid,str,<span class="string">'char'</span>);
+0279 fclose(fid);
+0280 <span class="keyword">end</span>
+0281 
+0282 <a name="_sub8" href="#_subfunctions" class="code">function s=xmlEscape(s)</a>
+0283 s=strrep(s,<span class="string">'&amp;'</span>,<span class="string">'&amp;amp;'</span>);
+0284 s=strrep(s,<span class="string">'&lt;'</span>,<span class="string">'&amp;lt;'</span>);
+0285 s=strrep(s,<span class="string">'&gt;'</span>,<span class="string">'&amp;gt;'</span>);
+0286 <span class="comment">%Strip characters that are illegal in XML 1.0 (keep tab, LF, CR).</span>
+0287 s=regexprep(s,<span class="string">'[\x00-\x08\x0B\x0C\x0E-\x1F]'</span>,<span class="string">''</span>);
+0288 <span class="keyword">end</span>
+0289 
+0290 <a name="_sub9" href="#_subfunctions" class="code">function t=toText(v)</a>
+0291 <span class="keyword">if</span> ischar(v)
+0292     t=v;
+0293 <span class="keyword">elseif</span> isstring(v)
+0294     t=char(v);
+0295 <span class="keyword">elseif</span> islogical(v)
+0296     <span class="keyword">if</span> v(1); t=<span class="string">'TRUE'</span>; <span class="keyword">else</span>; t=<span class="string">'FALSE'</span>; <span class="keyword">end</span>
+0297 <span class="keyword">else</span>
+0298     t=num2str(v);
+0299 <span class="keyword">end</span>
+0300 <span class="keyword">end</span>
+0301 
+0302 <a name="_sub10" href="#_subfunctions" class="code">function L=colLetter(n)</a>
+0303 L=<span class="string">''</span>;
+0304 <span class="keyword">while</span> n&gt;0
+0305     r=mod(n-1,26);
+0306     L=[char(<span class="string">'A'</span>+r) L]; <span class="comment">%#ok&lt;AGROW&gt;</span>
+0307     n=floor((n-1)/26);
+0308 <span class="keyword">end</span>
+0309 <span class="keyword">end</span>
+0310 
+0311 <a name="_sub11" href="#_subfunctions" class="code">function name=cleanSheetName(name)</a>
+0312 name=regexprep(name,<span class="string">'[\[\]\*\?/\\:]'</span>,<span class="string">''</span>);
+0313 <span class="keyword">if</span> numel(name)&gt;31; name=name(1:31); <span class="keyword">end</span>
+0314 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

@@ -1,0 +1,191 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of deltaGCSV</title>
+  <meta name="keywords" content="deltaGCSV">
+  <meta name="description" content="deltaGCSV  Load or save metDeltaG and rxnDeltaG via CSV files.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">annotation</a> &gt; deltaGCSV.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for annotation&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>deltaGCSV
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>deltaGCSV  Load or save metDeltaG and rxnDeltaG via CSV files.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function model = deltaGCSV(model, direction, varargin) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> deltaGCSV  Load or save metDeltaG and rxnDeltaG via CSV files.
+
+ Consolidates loadDeltaGfromCSV and saveDeltaGtoCSV into a single function.
+ Mirrors raven_python.annotation.load_delta_g_csv /save_delta_g_csv.
+
+ Each CSV is a two-column table: identifier, deltaG. On load, rows whose
+ identifier is not in the model are silently skipped. Pass '' for either
+ metCsv or rxnCsv to skip that side.
+
+ Parameters
+ ----------
+ model : struct
+     RAVEN model struct.
+ direction : char
+     'load' to populate model fields from CSV; 'save' to write them out.
+
+ Name-Value Arguments
+ --------------------
+ metCsv : char
+     Path to the metabolite deltaG CSV, or '' to skip.
+ rxnCsv : char
+     Path to the reaction deltaG CSV, or '' to skip.
+ verbose : logical
+     Print a confirmation line per file written (save only; default false).
+ missingValue : double
+     On load, a CSV value equal to this (within a small relative tolerance)
+     means &quot;no measurement&quot; and is left as NaN instead of being stored
+     literally -- e.g. yeast-GEM's own side-car CSVs use 10000000.0 for
+     this. Default 10000000.0, matching raven_toolbox's DELTA_G_MISSING, so
+     that both implementations drop yeast-GEM's sentinel rows out of the box
+     (no real deltaG, in kJ/mol, takes this value). Pass [] to disable and
+     store every matched value literally, including the sentinel.
+
+ Returns
+ -------
+ model : struct
+     Updated model struct (unchanged for save direction).
+
+ Examples
+ --------
+     model = deltaGCSV(model, 'load', 'data/met_dG.csv', 'data/rxn_dG.csv');
+     deltaGCSV(model, 'save', 'data/met_dG.csv', 'data/rxn_dG.csv');
+     model = deltaGCSV(model, 'load', 'metCsv', 'data/met_dG.csv', 'missingValue', []);</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function model=loadField(model, fieldname, ids, csvPath, missingValue)</a></li><li><a href="#_sub2" class="code">function saveField(model, fieldname, ids, csvPath, verbose)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function model = deltaGCSV(model, direction, varargin)</a>
+0002 <span class="comment">% deltaGCSV  Load or save metDeltaG and rxnDeltaG via CSV files.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Consolidates loadDeltaGfromCSV and saveDeltaGtoCSV into a single function.</span>
+0005 <span class="comment">% Mirrors raven_python.annotation.load_delta_g_csv /save_delta_g_csv.</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% Each CSV is a two-column table: identifier, deltaG. On load, rows whose</span>
+0008 <span class="comment">% identifier is not in the model are silently skipped. Pass '' for either</span>
+0009 <span class="comment">% metCsv or rxnCsv to skip that side.</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% Parameters</span>
+0012 <span class="comment">% ----------</span>
+0013 <span class="comment">% model : struct</span>
+0014 <span class="comment">%     RAVEN model struct.</span>
+0015 <span class="comment">% direction : char</span>
+0016 <span class="comment">%     'load' to populate model fields from CSV; 'save' to write them out.</span>
+0017 <span class="comment">%</span>
+0018 <span class="comment">% Name-Value Arguments</span>
+0019 <span class="comment">% --------------------</span>
+0020 <span class="comment">% metCsv : char</span>
+0021 <span class="comment">%     Path to the metabolite deltaG CSV, or '' to skip.</span>
+0022 <span class="comment">% rxnCsv : char</span>
+0023 <span class="comment">%     Path to the reaction deltaG CSV, or '' to skip.</span>
+0024 <span class="comment">% verbose : logical</span>
+0025 <span class="comment">%     Print a confirmation line per file written (save only; default false).</span>
+0026 <span class="comment">% missingValue : double</span>
+0027 <span class="comment">%     On load, a CSV value equal to this (within a small relative tolerance)</span>
+0028 <span class="comment">%     means &quot;no measurement&quot; and is left as NaN instead of being stored</span>
+0029 <span class="comment">%     literally -- e.g. yeast-GEM's own side-car CSVs use 10000000.0 for</span>
+0030 <span class="comment">%     this. Default 10000000.0, matching raven_toolbox's DELTA_G_MISSING, so</span>
+0031 <span class="comment">%     that both implementations drop yeast-GEM's sentinel rows out of the box</span>
+0032 <span class="comment">%     (no real deltaG, in kJ/mol, takes this value). Pass [] to disable and</span>
+0033 <span class="comment">%     store every matched value literally, including the sentinel.</span>
+0034 <span class="comment">%</span>
+0035 <span class="comment">% Returns</span>
+0036 <span class="comment">% -------</span>
+0037 <span class="comment">% model : struct</span>
+0038 <span class="comment">%     Updated model struct (unchanged for save direction).</span>
+0039 <span class="comment">%</span>
+0040 <span class="comment">% Examples</span>
+0041 <span class="comment">% --------</span>
+0042 <span class="comment">%     model = deltaGCSV(model, 'load', 'data/met_dG.csv', 'data/rxn_dG.csv');</span>
+0043 <span class="comment">%     deltaGCSV(model, 'save', 'data/met_dG.csv', 'data/rxn_dG.csv');</span>
+0044 <span class="comment">%     model = deltaGCSV(model, 'load', 'metCsv', 'data/met_dG.csv', 'missingValue', []);</span>
+0045 
+0046 direction=char(direction);
+0047 p=parseRAVENargs(varargin, {<span class="string">'metCsv'</span>,<span class="string">''</span>; <span class="string">'rxnCsv'</span>,<span class="string">''</span>; <span class="string">'verbose'</span>,false; <span class="string">'missingValue'</span>,1e7});
+0048 metCsv=p.metCsv;
+0049 rxnCsv=p.rxnCsv;
+0050 verbose=p.verbose;
+0051 missingValue=p.missingValue;
+0052 
+0053 <span class="keyword">switch</span> direction
+0054     <span class="keyword">case</span> <span class="string">'load'</span>
+0055         model=<a href="#_sub1" class="code" title="subfunction model=loadField(model, fieldname, ids, csvPath, missingValue)">loadField</a>(model, <span class="string">'metDeltaG'</span>, model.mets, metCsv, missingValue);
+0056         model=<a href="#_sub1" class="code" title="subfunction model=loadField(model, fieldname, ids, csvPath, missingValue)">loadField</a>(model, <span class="string">'rxnDeltaG'</span>, model.rxns, rxnCsv, missingValue);
+0057     <span class="keyword">case</span> <span class="string">'save'</span>
+0058         <a href="#_sub2" class="code" title="subfunction saveField(model, fieldname, ids, csvPath, verbose)">saveField</a>(model, <span class="string">'metDeltaG'</span>, model.mets, metCsv, verbose);
+0059         <a href="#_sub2" class="code" title="subfunction saveField(model, fieldname, ids, csvPath, verbose)">saveField</a>(model, <span class="string">'rxnDeltaG'</span>, model.rxns, rxnCsv, verbose);
+0060     <span class="keyword">otherwise</span>
+0061         error(<span class="string">'direction must be ''load'' or ''save'''</span>);
+0062 <span class="keyword">end</span>
+0063 <span class="keyword">end</span>
+0064 
+0065 <a name="_sub1" href="#_subfunctions" class="code">function model=loadField(model, fieldname, ids, csvPath, missingValue)</a>
+0066 <span class="keyword">if</span> isempty(csvPath); <span class="keyword">return</span>; <span class="keyword">end</span>
+0067 <span class="keyword">if</span> isfield(model, fieldname)
+0068     disp([<span class="string">'Existing '</span> fieldname <span class="string">' field will be overwritten.'</span>])
+0069 <span class="keyword">else</span>
+0070     model.(fieldname)=nan(numel(ids),1);
+0071 <span class="keyword">end</span>
+0072 G=readtable(csvPath);
+0073 values=G.(G.Properties.VariableNames{2});
+0074 <span class="keyword">if</span> ~isempty(missingValue)
+0075     isMissing=abs(values-missingValue)&lt;=1e-9*max(abs(values),abs(missingValue));
+0076     values(isMissing)=NaN;
+0077 <span class="keyword">end</span>
+0078 [a, b]=ismember(ids, G.(G.Properties.VariableNames{1}));
+0079 model.(fieldname)(a)=values(b(a));
+0080 <span class="keyword">if</span> any(~a)
+0081     fprintf([<span class="string">'Not all identifiers are matched to %s; the latter\n'</span> <span class="keyword">...</span>
+0082              <span class="string">'file might have to be supplemented with deltaG values for new entries.\n'</span>], <span class="keyword">...</span>
+0083              csvPath);
+0084 <span class="keyword">end</span>
+0085 <span class="keyword">end</span>
+0086 
+0087 <a name="_sub2" href="#_subfunctions" class="code">function saveField(model, fieldname, ids, csvPath, verbose)</a>
+0088 <span class="keyword">if</span> isempty(csvPath); <span class="keyword">return</span>; <span class="keyword">end</span>
+0089 <span class="keyword">if</span> ~isfield(model, fieldname)
+0090     <span class="keyword">if</span> verbose
+0091         fprintf(<span class="string">'No %s field found, %s will not be changed.\n'</span>, fieldname, csvPath);
+0092     <span class="keyword">end</span>
+0093 <span class="keyword">else</span>
+0094     G=array2table([ids, num2cell(model.(fieldname))]);
+0095     writetable(G, csvPath);
+0096     <span class="keyword">if</span> verbose
+0097         fprintf(<span class="string">'Wrote %s\n'</span>, csvPath);
+0098     <span class="keyword">end</span>
+0099 <span class="keyword">end</span>
+0100 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

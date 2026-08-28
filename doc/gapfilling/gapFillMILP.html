@@ -1,0 +1,382 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of gapFillMILP</title>
+  <meta name="keywords" content="gapFillMILP">
+  <meta name="description" content="gapFillMILP  Objective-based gap-filling via a global growth-floor MILP.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">gapfilling</a> &gt; gapFillMILP.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for gapfilling&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>gapFillMILP
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>gapFillMILP  Objective-based gap-filling via a global growth-floor MILP.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [addedRxns, reversedRxns, newModel, exitFlag] = gapFillMILP(model, universalModel, varargin) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> gapFillMILP  Objective-based gap-filling via a global growth-floor MILP.
+
+ Finds the minimum-cost set of modifications to make the model's objective
+ (biomass) &gt;= minGrowth. Supports two repair mechanisms from Kumar et al.
+ 2007 (Bioinformatics 23:1626-1635):
+   1. Directionality reversal of existing draft reactions (binary y_rev)
+   2. Addition of reactions from a universal database (binary y_db)
+
+ The universal model should contain all candidate reactions, including
+ exchange and transport reactions if those repair classes are desired.
+
+ This is a SINGLE-level MILP (not bilevel). It is computationally more
+ expensive than gapFillFastLP but supports the directionality-reversal
+ repair mechanism and directly optimises for objective feasibility.
+
+ Parameters
+ ----------
+ model : struct
+     draft RAVEN model to be gap-filled.
+ universalModel : struct
+     universal reaction database (RAVEN model).
+
+ Optional name-value parameters
+ --------------------------------
+ 'minGrowth' (default [])
+     minimum objective value to achieve. If empty, runs FBA on the merged
+     model and uses 10% of the maximum as the floor.
+ 'weights' (default [1 2 3 4])
+     cost weights [w_rev w_db w_exch w_trans]. w_rev is the cost per
+     reversed draft reaction; w_db is the cost per added universal
+     reaction. w_exch and w_trans are reserved for future use when
+     exchange and transport reactions are tracked separately.
+ 'bigM' (default 1000)
+     Big-M constant for coupling constraints. Must be larger than any
+     expected flux magnitude.
+ 'params' (default [])
+     solver parameter struct passed to optimizeProb. Fields such as
+     params.TimeLimit and params.intTol can be used to tune the MILP.
+ 'verbose' (default true)
+     print progress messages.
+
+ Returns
+ -------
+ addedRxns : cell
+     reaction IDs from universalModel that are selected by the MILP.
+ reversedRxns : cell
+     draft reaction IDs whose directionality is reversed by the MILP.
+ newModel : struct
+     model with addedRxns incorporated and reversedRxns bounds updated
+     (lb set to -bigM for reversed reactions).
+ exitFlag : double
+     1 = optimal, -1 = infeasible, -2 = timeout or other failure.
+
+ See also
+ --------
+ <a href="gapFillFastLP.html" class="code" title="function [addedRxns, newModel, cannotConnect] = gapFillFastLP(model, universalModel, varargin)">gapFillFastLP</a>, <a href="gapFillTopological.html" class="code" title="function result = gapFillTopological(model, universalModel, varargin)">gapFillTopological</a>, <a href="fillGaps.html" class="code" title="function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(model,models,varargin)">fillGaps</a></pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="fillGaps.html" class="code" title="function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(model,models,varargin)">fillGaps</a>	fillGaps  Use template model(s) to fill gaps in a model.</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [addedRxns, reversedRxns, newModel, exitFlag] = gapFillMILP(model, universalModel, varargin)</a>
+0002 <span class="comment">% gapFillMILP  Objective-based gap-filling via a global growth-floor MILP.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Finds the minimum-cost set of modifications to make the model's objective</span>
+0005 <span class="comment">% (biomass) &gt;= minGrowth. Supports two repair mechanisms from Kumar et al.</span>
+0006 <span class="comment">% 2007 (Bioinformatics 23:1626-1635):</span>
+0007 <span class="comment">%   1. Directionality reversal of existing draft reactions (binary y_rev)</span>
+0008 <span class="comment">%   2. Addition of reactions from a universal database (binary y_db)</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% The universal model should contain all candidate reactions, including</span>
+0011 <span class="comment">% exchange and transport reactions if those repair classes are desired.</span>
+0012 <span class="comment">%</span>
+0013 <span class="comment">% This is a SINGLE-level MILP (not bilevel). It is computationally more</span>
+0014 <span class="comment">% expensive than gapFillFastLP but supports the directionality-reversal</span>
+0015 <span class="comment">% repair mechanism and directly optimises for objective feasibility.</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">% Parameters</span>
+0018 <span class="comment">% ----------</span>
+0019 <span class="comment">% model : struct</span>
+0020 <span class="comment">%     draft RAVEN model to be gap-filled.</span>
+0021 <span class="comment">% universalModel : struct</span>
+0022 <span class="comment">%     universal reaction database (RAVEN model).</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">% Optional name-value parameters</span>
+0025 <span class="comment">% --------------------------------</span>
+0026 <span class="comment">% 'minGrowth' (default [])</span>
+0027 <span class="comment">%     minimum objective value to achieve. If empty, runs FBA on the merged</span>
+0028 <span class="comment">%     model and uses 10% of the maximum as the floor.</span>
+0029 <span class="comment">% 'weights' (default [1 2 3 4])</span>
+0030 <span class="comment">%     cost weights [w_rev w_db w_exch w_trans]. w_rev is the cost per</span>
+0031 <span class="comment">%     reversed draft reaction; w_db is the cost per added universal</span>
+0032 <span class="comment">%     reaction. w_exch and w_trans are reserved for future use when</span>
+0033 <span class="comment">%     exchange and transport reactions are tracked separately.</span>
+0034 <span class="comment">% 'bigM' (default 1000)</span>
+0035 <span class="comment">%     Big-M constant for coupling constraints. Must be larger than any</span>
+0036 <span class="comment">%     expected flux magnitude.</span>
+0037 <span class="comment">% 'params' (default [])</span>
+0038 <span class="comment">%     solver parameter struct passed to optimizeProb. Fields such as</span>
+0039 <span class="comment">%     params.TimeLimit and params.intTol can be used to tune the MILP.</span>
+0040 <span class="comment">% 'verbose' (default true)</span>
+0041 <span class="comment">%     print progress messages.</span>
+0042 <span class="comment">%</span>
+0043 <span class="comment">% Returns</span>
+0044 <span class="comment">% -------</span>
+0045 <span class="comment">% addedRxns : cell</span>
+0046 <span class="comment">%     reaction IDs from universalModel that are selected by the MILP.</span>
+0047 <span class="comment">% reversedRxns : cell</span>
+0048 <span class="comment">%     draft reaction IDs whose directionality is reversed by the MILP.</span>
+0049 <span class="comment">% newModel : struct</span>
+0050 <span class="comment">%     model with addedRxns incorporated and reversedRxns bounds updated</span>
+0051 <span class="comment">%     (lb set to -bigM for reversed reactions).</span>
+0052 <span class="comment">% exitFlag : double</span>
+0053 <span class="comment">%     1 = optimal, -1 = infeasible, -2 = timeout or other failure.</span>
+0054 <span class="comment">%</span>
+0055 <span class="comment">% See also</span>
+0056 <span class="comment">% --------</span>
+0057 <span class="comment">% gapFillFastLP, gapFillTopological, fillGaps</span>
+0058 
+0059 <span class="comment">% ---- Parse optional arguments ----</span>
+0060 p = inputParser();
+0061 addParameter(p, <span class="string">'minGrowth'</span>, [],  @(x) isempty(x) || isnumeric(x));
+0062 addParameter(p, <span class="string">'weights'</span>,   [1 2 3 4], @isnumeric);
+0063 addParameter(p, <span class="string">'bigM'</span>,      1000,      @isnumeric);
+0064 addParameter(p, <span class="string">'params'</span>,    [],        @(x) isempty(x) || isstruct(x));
+0065 addParameter(p, <span class="string">'verbose'</span>,   true,      @islogical);
+0066 parse(p, varargin{:});
+0067 minGrowth = p.Results.minGrowth;
+0068 weights   = p.Results.weights;
+0069 M         = p.Results.bigM;
+0070 params    = p.Results.params;
+0071 verbose   = p.Results.verbose;
+0072 
+0073 w_rev = weights(1);
+0074 w_db  = weights(2);
+0075 
+0076 <span class="comment">% ---- Initialise outputs ----</span>
+0077 addedRxns    = {};
+0078 reversedRxns = {};
+0079 newModel     = model;
+0080 exitFlag     = -1;
+0081 
+0082 <span class="comment">% Check that the model has an objective</span>
+0083 <span class="keyword">if</span> all(model.c == 0)
+0084     error(<span class="string">'gapFillMILP: model has no objective function. Set model.c.'</span>);
+0085 <span class="keyword">end</span>
+0086 
+0087 <span class="comment">% ---- Merge draft + universal database ----</span>
+0088 mergedModel = mergeModels({model; universalModel});
+0089 nMergedMets = numel(mergedModel.mets);
+0090 nMergedRxns = numel(mergedModel.rxns);
+0091 
+0092 <span class="comment">% Identify draft reactions in the merged model</span>
+0093 isDraft = ismember(mergedModel.rxns, model.rxns);
+0094 isUniv  = ~isDraft;
+0095 
+0096 <span class="comment">% Universal reactions that can carry flux (non-trivially blocked)</span>
+0097 canCarry = (mergedModel.ub &gt; 0 | mergedModel.lb &lt; 0);
+0098 isUniv   = isUniv &amp; canCarry;
+0099 univIdx  = find(isUniv);     <span class="comment">% positions in merged model</span>
+0100 nUniv    = numel(univIdx);
+0101 
+0102 <span class="comment">% Reversal candidates: draft reactions that are currently irreversible</span>
+0103 <span class="comment">% (lb &gt;= 0). Reversing their directionality means allowing negative flux.</span>
+0104 revCandMask = isDraft &amp; mergedModel.lb &gt;= 0;
+0105 revCandIdx  = find(revCandMask);   <span class="comment">% positions in merged model</span>
+0106 nRev        = numel(revCandIdx);
+0107 
+0108 <span class="keyword">if</span> verbose
+0109     fprintf(<span class="string">'gapFillMILP: merged model has %d mets, %d rxns (%d draft, %d universal).\n'</span>, <span class="keyword">...</span>
+0110         nMergedMets, nMergedRxns, sum(isDraft), nUniv);
+0111     fprintf(<span class="string">'gapFillMILP: %d reversal candidates, %d database candidates.\n'</span>, nRev, nUniv);
+0112 <span class="keyword">end</span>
+0113 
+0114 <span class="comment">% ---- Determine minGrowth ----</span>
+0115 <span class="keyword">if</span> isempty(minGrowth)
+0116     <span class="comment">% Run FBA on merged model (unconstrained) to get max growth.</span>
+0117     probFBA.A      = mergedModel.S;
+0118     probFBA.a      = probFBA.A;
+0119     probFBA.b      = zeros(nMergedMets, 1);
+0120     probFBA.csense = repmat(<span class="string">'E'</span>, 1, nMergedMets);
+0121     probFBA.c      = -mergedModel.c;   <span class="comment">% negate: osense=1 minimises</span>
+0122     probFBA.osense = 1;
+0123     probFBA.lb     = mergedModel.lb;
+0124     probFBA.ub     = mergedModel.ub;
+0125     probFBA.vartype = repmat(<span class="string">'C'</span>, 1, nMergedRxns);
+0126     solFBA = optimizeProb(probFBA, params, false);
+0127     <span class="keyword">if</span> ~checkSolution(solFBA)
+0128         <span class="keyword">if</span> verbose
+0129             fprintf(<span class="string">'gapFillMILP: FBA on merged model is infeasible — cannot gap-fill.\n'</span>);
+0130         <span class="keyword">end</span>
+0131         <span class="keyword">return</span>;
+0132     <span class="keyword">end</span>
+0133     maxGrowth = mergedModel.c' * solFBA.full(1:nMergedRxns);
+0134     <span class="keyword">if</span> maxGrowth &lt;= 0
+0135         <span class="keyword">if</span> verbose
+0136             fprintf(<span class="string">'gapFillMILP: merged model objective is non-positive (%.4g). Cannot gap-fill.\n'</span>, <span class="keyword">...</span>
+0137                 maxGrowth);
+0138         <span class="keyword">end</span>
+0139         <span class="keyword">return</span>;
+0140     <span class="keyword">end</span>
+0141     minGrowth = 0.1 * maxGrowth;
+0142     <span class="keyword">if</span> verbose
+0143         fprintf(<span class="string">'gapFillMILP: setting minGrowth = %.4g (10%% of max %.4g).\n'</span>, minGrowth, maxGrowth);
+0144     <span class="keyword">end</span>
+0145 <span class="keyword">end</span>
+0146 
+0147 <span class="comment">% ---- Build MILP ----</span>
+0148 <span class="comment">% Variable ordering:</span>
+0149 <span class="comment">%   cols 1 : nMergedRxns          → v (all fluxes, continuous)</span>
+0150 <span class="comment">%   cols nMergedRxns+1 : +nRev    → y_rev (binary, directionality reversal)</span>
+0151 <span class="comment">%   cols nMergedRxns+nRev+1 : end → y_db  (binary, universal reactions)</span>
+0152 nVar = nMergedRxns + nRev + nUniv;
+0153 
+0154 <span class="comment">% --- Variable bounds ---</span>
+0155 lb = mergedModel.lb;
+0156 ub = mergedModel.ub;
+0157 
+0158 <span class="comment">% Relax reversal candidates to allow negative flux (Big-M on lower bound)</span>
+0159 lb(revCandIdx) = -M;
+0160 
+0161 <span class="comment">% Universal reactions: allow them to be forced to 0 (extend lb toward 0)</span>
+0162 lb(univIdx) = min(mergedModel.lb(univIdx), 0);
+0163 
+0164 <span class="comment">% Binary variable bounds</span>
+0165 lb = [lb; zeros(nRev + nUniv, 1)];
+0166 ub = [ub; ones(nRev + nUniv, 1)];
+0167 
+0168 <span class="comment">% --- Objective ---</span>
+0169 c = zeros(nVar, 1);
+0170 c(nMergedRxns + 1 : nMergedRxns + nRev)  = w_rev;  <span class="comment">% y_rev cost</span>
+0171 c(nMergedRxns + nRev + 1 : end)           = w_db;   <span class="comment">% y_db cost</span>
+0172 
+0173 <span class="comment">% --- Constraint blocks ---</span>
+0174 <span class="comment">% (1) Steady state: S * v = 0   [nMergedMets rows, 'E']</span>
+0175 A_SS = [mergedModel.S, sparse(nMergedMets, nRev + nUniv)];
+0176 
+0177 <span class="comment">% (2) Growth floor: c' * v &gt;= minGrowth   [1 row, 'G']</span>
+0178 A_growth = [sparse(mergedModel.c'), sparse(1, nRev + nUniv)];
+0179 
+0180 <span class="comment">% (3) Universal upper coupling: v_k - ub_k * y_db_k &lt;= 0   [nUniv rows, 'L']</span>
+0181 <span class="comment">%     (forces v_k &lt;= 0 when y_db_k = 0)</span>
+0182 yDbCols = nMergedRxns + nRev + (1:nUniv);
+0183 A_uniUp = sparse(<span class="keyword">...</span>
+0184     [1:nUniv, 1:nUniv], <span class="keyword">...</span>
+0185     [univIdx(:)', yDbCols], <span class="keyword">...</span>
+0186     [ones(1, nUniv), -mergedModel.ub(univIdx)'], <span class="keyword">...</span>
+0187     nUniv, nVar);
+0188 
+0189 <span class="comment">% (4) Universal lower coupling: v_k - lb_k * y_db_k &gt;= 0   [nUniv rows, 'G']</span>
+0190 <span class="comment">%     (forces v_k &gt;= 0 when y_db_k = 0; together with (3): v_k = 0 when y_db_k = 0)</span>
+0191 A_uniLo = sparse(<span class="keyword">...</span>
+0192     [1:nUniv, 1:nUniv], <span class="keyword">...</span>
+0193     [univIdx(:)', yDbCols], <span class="keyword">...</span>
+0194     [ones(1, nUniv), -mergedModel.lb(univIdx)'], <span class="keyword">...</span>
+0195     nUniv, nVar);
+0196 
+0197 <span class="comment">% (5) Reversal coupling: v_j + M * y_rev_j &gt;= 0   [nRev rows, 'G']</span>
+0198 <span class="comment">%     (forces v_j &gt;= 0 when y_rev_j = 0, i.e., preserves original irreversibility)</span>
+0199 yRevCols = nMergedRxns + (1:nRev);
+0200 A_rev = sparse(<span class="keyword">...</span>
+0201     [1:nRev, 1:nRev], <span class="keyword">...</span>
+0202     [revCandIdx(:)', yRevCols], <span class="keyword">...</span>
+0203     [ones(1, nRev), M * ones(1, nRev)], <span class="keyword">...</span>
+0204     nRev, nVar);
+0205 
+0206 <span class="comment">% --- Assemble ---</span>
+0207 prob.A = [A_SS; A_growth; A_uniUp; A_uniLo; A_rev];
+0208 prob.a = prob.A;
+0209 prob.b = [zeros(nMergedMets, 1); minGrowth; <span class="keyword">...</span>
+0210           zeros(nUniv, 1); zeros(nUniv, 1); zeros(nRev, 1)];
+0211 prob.csense = [repmat(<span class="string">'E'</span>, 1, nMergedMets), <span class="string">'G'</span>, <span class="keyword">...</span>
+0212                repmat(<span class="string">'L'</span>, 1, nUniv), <span class="keyword">...</span>
+0213                repmat(<span class="string">'G'</span>, 1, nUniv + nRev)];
+0214 prob.c      = c;
+0215 prob.osense = 1;   <span class="comment">% minimise weighted sum of binary variables</span>
+0216 prob.lb     = lb;
+0217 prob.ub     = ub;
+0218 prob.vartype = repmat(<span class="string">'C'</span>, 1, nVar);
+0219 prob.vartype(nMergedRxns + 1 : end) = <span class="string">'B'</span>;   <span class="comment">% y_rev and y_db are binary</span>
+0220 
+0221 <span class="keyword">if</span> isempty(params)
+0222     params.intTol   = 1e-9;
+0223     params.TimeLimit = 600;
+0224 <span class="keyword">end</span>
+0225 
+0226 <span class="comment">% ---- Solve ----</span>
+0227 <span class="keyword">if</span> verbose
+0228     fprintf(<span class="string">'gapFillMILP: solving MILP (%d vars, %d binary, %d constraints)...\n'</span>, <span class="keyword">...</span>
+0229         nVar, nRev + nUniv, size(prob.A, 1));
+0230 <span class="keyword">end</span>
+0231 sol = optimizeProb(prob, params, verbose);
+0232 
+0233 <span class="keyword">if</span> ~checkSolution(sol)
+0234     <span class="keyword">if</span> verbose
+0235         fprintf(<span class="string">'gapFillMILP: MILP infeasible or timed out.\n'</span>);
+0236     <span class="keyword">end</span>
+0237     exitFlag = -1;
+0238     <span class="keyword">return</span>;
+0239 <span class="keyword">end</span>
+0240 
+0241 <span class="comment">% ---- Extract solution ----</span>
+0242 binThreshold = 1e-3;
+0243 yRev = sol.full(nMergedRxns + 1 : nMergedRxns + nRev);
+0244 yDb  = sol.full(nMergedRxns + nRev + 1 : end);
+0245 
+0246 revSelected = revCandIdx(yRev &gt; binThreshold);
+0247 dbSelected  = univIdx(yDb &gt; binThreshold);
+0248 
+0249 <span class="comment">% Map back to original IDs</span>
+0250 reversedRxns = mergedModel.rxns(revSelected);
+0251 addedRxns    = mergedModel.rxns(dbSelected);
+0252 <span class="comment">% Keep only universal reaction IDs (filtered by name)</span>
+0253 addedRxns = addedRxns(ismember(addedRxns, universalModel.rxns));
+0254 
+0255 <span class="keyword">if</span> verbose
+0256     fprintf(<span class="string">'gapFillMILP: reversed %d draft reaction(s), added %d universal reaction(s).\n'</span>, <span class="keyword">...</span>
+0257         numel(reversedRxns), numel(addedRxns));
+0258 <span class="keyword">end</span>
+0259 
+0260 <span class="comment">% ---- Build new model ----</span>
+0261 newModel = model;
+0262 
+0263 <span class="comment">% Apply directionality reversals: allow negative flux</span>
+0264 <span class="keyword">for</span> k = 1:numel(reversedRxns)
+0265     rxnPos = find(getIndexes(newModel, reversedRxns(k), <span class="string">'rxns'</span>, true));
+0266     <span class="keyword">if</span> ~isempty(rxnPos)
+0267         newModel.lb(rxnPos) = -M;
+0268         newModel.rev(rxnPos) = 1;
+0269     <span class="keyword">end</span>
+0270 <span class="keyword">end</span>
+0271 
+0272 <span class="comment">% Add universal reactions</span>
+0273 <span class="keyword">if</span> ~isempty(addedRxns)
+0274     trimmedUniv = removeReactions(universalModel, <span class="keyword">...</span>
+0275         setdiff(universalModel.rxns, addedRxns));
+0276     newModel = mergeModels({newModel; trimmedUniv});
+0277 <span class="keyword">end</span>
+0278 
+0279 exitFlag = 1;
+0280 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of tReconstruction</title>
+  <meta name="keywords" content="tReconstruction">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../index.html">Home</a> &gt;  <a href="#">testing</a> &gt; <a href="index.html">function_tests</a> &gt; tReconstruction.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for testing\function_tests&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+
+<h1>tReconstruction
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>This is a script file. </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre class="comment"></pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="RavenTestCase.html" class="code" title="">RavenTestCase</a>	</li><li><a href="tReconstruction.html" class="code" title="">tReconstruction</a>	</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="tReconstruction.html" class="code" title="">tReconstruction</a>	</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function guessCompositionRuns(testCase)</a></li><li><a href="#_sub2" class="code">function makeFakeBlastStructureReturnsStruct(testCase)</a></li><li><a href="#_sub3" class="code">function getModelFromHomologyBuildsDraft(testCase)</a></li><li><a href="#_sub4" class="code">function getWSLpathReturnsPath(testCase)</a></li><li><a href="#_sub5" class="code">function getBlastRunsWhenAvailable(testCase)</a></li><li><a href="#_sub6" class="code">function getDiamondRunsWhenAvailable(testCase)</a></li><li><a href="#_sub7" class="code">function getKEGGModelForOrganismNeedsData(testCase)</a></li><li><a href="#_sub8" class="code">function getModelFromKEGGNeedsData(testCase)</a></li><li><a href="#_sub9" class="code">function buildGlobalGPRJoinsGenesThroughSharedKO(testCase)</a></li><li><a href="#_sub10" class="code">function getPhylDistNeedsData(testCase)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre>0001 classdef <a href="tReconstruction.html" class="code" title="">tReconstruction</a> &lt; <a href="RavenTestCase.html" class="code" title="">RavenTestCase</a>
+0002 <span class="comment">% tReconstruction  Tests for the de-novo reconstruction functions in reconstruction/.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">%   Homology and KEGG reconstruction depend on external binaries (BLAST+,</span>
+0005 <span class="comment">%   DIAMOND) and on a local KEGG dump / aligners. Those are guarded and skip</span>
+0006 <span class="comment">%   when unavailable; the self-contained functions are tested directly.</span>
+0007 
+0008     methods (Test)
+0009 
+0010         <a name="_sub0" href="#_subfunctions" class="code">function guessCompositionRuns(testCase)</a>
+0011             evalc(<span class="string">'[m2, guessed] = guessComposition(testCase.model);'</span>);
+0012             testCase.verifyClass(m2, <span class="string">'struct'</span>);
+0013         <span class="keyword">end</span>
+0014 
+0015         <a name="_sub1" href="#_subfunctions" class="code">function makeFakeBlastStructureReturnsStruct(testCase)</a>
+0016             <span class="comment">% makeFakeBlastStructure requires at least 10 ortholog pairs.</span>
+0017             ol = [testCase.model.genes(1:10), strcat(<span class="string">'t_'</span>, testCase.model.genes(1:10))];
+0018             bs = makeFakeBlastStructure(ol, <span class="string">'srcModel'</span>, <span class="string">'tgtOrg'</span>);
+0019             testCase.verifyClass(bs, <span class="string">'struct'</span>);
+0020         <span class="keyword">end</span>
+0021 
+0022         <a name="_sub2" href="#_subfunctions" class="code">function getModelFromHomologyBuildsDraft(testCase)</a>
+0023             src = testCase.model; src.id = <span class="string">'srcModel'</span>;
+0024             n = min(20, numel(src.genes));
+0025             ol = [src.genes(1:n), strcat(<span class="string">'t_'</span>, src.genes(1:n))];
+0026             bs = makeFakeBlastStructure(ol, <span class="string">'srcModel'</span>, <span class="string">'tgtOrg'</span>);
+0027             evalc(<span class="string">'draft = getModelFromHomology({src}, bs, ''tgtOrg'');'</span>);
+0028             testCase.verifyClass(draft, <span class="string">'struct'</span>);
+0029         <span class="keyword">end</span>
+0030 
+0031         <a name="_sub3" href="#_subfunctions" class="code">function getWSLpathReturnsPath(testCase)</a>
+0032             p = getWSLpath(<span class="string">'C:\foo\bar'</span>);
+0033             testCase.verifyTrue(ischar(p) || isstring(p));
+0034         <span class="keyword">end</span>
+0035 
+0036         <a name="_sub4" href="#_subfunctions" class="code">function getBlastRunsWhenAvailable(testCase)</a>
+0037             fa1 = fullfile(testCase.ravenRoot,<span class="string">'testing'</span>,<span class="string">'function_tests'</span>,<span class="string">'test_data'</span>,<span class="string">'human_galactosidases.fa'</span>);
+0038             fa2 = fullfile(testCase.ravenRoot,<span class="string">'testing'</span>,<span class="string">'function_tests'</span>,<span class="string">'test_data'</span>,<span class="string">'yeast_galactosidases.fa'</span>);
+0039             testCase.assumeDependency(exist(fa1,<span class="string">'file'</span>)==2, <span class="string">'test FASTA files'</span>);
+0040             ok = true;
+0041             <span class="keyword">try</span>, evalc(<span class="string">'bs = getBlast(''human'', fa1, {''yeast''}, {fa2});'</span>); <span class="keyword">catch</span>, ok = false; <span class="keyword">end</span>
+0042             testCase.assumeTrue(ok, <span class="string">'BLAST+ binary not functional in this environment'</span>);
+0043             testCase.verifyClass(bs, <span class="string">'struct'</span>);
+0044         <span class="keyword">end</span>
+0045 
+0046         <a name="_sub5" href="#_subfunctions" class="code">function getDiamondRunsWhenAvailable(testCase)</a>
+0047             fa1 = fullfile(testCase.ravenRoot,<span class="string">'testing'</span>,<span class="string">'function_tests'</span>,<span class="string">'test_data'</span>,<span class="string">'human_galactosidases.fa'</span>);
+0048             fa2 = fullfile(testCase.ravenRoot,<span class="string">'testing'</span>,<span class="string">'function_tests'</span>,<span class="string">'test_data'</span>,<span class="string">'yeast_galactosidases.fa'</span>);
+0049             testCase.assumeDependency(exist(fa1,<span class="string">'file'</span>)==2, <span class="string">'test FASTA files'</span>);
+0050             ok = true;
+0051             <span class="keyword">try</span>, evalc(<span class="string">'bs = getDiamond(''human'', fa1, {''yeast''}, {fa2});'</span>); <span class="keyword">catch</span>, ok = false; <span class="keyword">end</span>
+0052             testCase.assumeTrue(ok, <span class="string">'DIAMOND binary not functional in this environment'</span>);
+0053             testCase.verifyClass(bs, <span class="string">'struct'</span>);
+0054         <span class="keyword">end</span>
+0055 
+0056         <a name="_sub6" href="#_subfunctions" class="code">function getKEGGModelForOrganismNeedsData(testCase)</a>
+0057             testCase.assumeFail(<span class="string">'Requires keggModel.mat and an HMM library from raven-data.'</span>);
+0058         <span class="keyword">end</span>
+0059 
+0060         <a name="_sub7" href="#_subfunctions" class="code">function getModelFromKEGGNeedsData(testCase)</a>
+0061             matFile = fullfile(testCase.ravenRoot, <span class="string">'reconstruction'</span>, <span class="string">'kegg'</span>, <span class="string">'keggModel.mat'</span>);
+0062             testCase.assumeFalse(exist(matFile, <span class="string">'file'</span>) == 2, <span class="keyword">...</span>
+0063                 <span class="string">'keggModel.mat is present; skipping the build-from-artefacts path.'</span>);
+0064             testCase.assumeFail(<span class="string">'Downloads and assembles the full KEGG artefact set from raven-data; not run automatically.'</span>);
+0065         <span class="keyword">end</span>
+0066 
+0067         <a name="_sub8" href="#_subfunctions" class="code">function buildGlobalGPRJoinsGenesThroughSharedKO(testCase)</a>
+0068             <span class="comment">% Offline unit test of the join at the core of buildGlobalKEGGModel:</span>
+0069             <span class="comment">% two reactions sharing a KO, a KO used by two organisms' genes, and</span>
+0070             <span class="comment">% a reaction with no KO at all (should end up with no genes).</span>
+0071             rxns = {<span class="string">'R1'</span>; <span class="string">'R2'</span>; <span class="string">'R3'</span>};
+0072             koReaction = table({<span class="string">'K1'</span>; <span class="string">'K1'</span>; <span class="string">'K2'</span>}, {<span class="string">'R1'</span>; <span class="string">'R2'</span>; <span class="string">'R2'</span>}, <span class="keyword">...</span>
+0073                 <span class="string">'VariableNames'</span>, {<span class="string">'ko'</span>, <span class="string">'reaction'</span>});
+0074             organismGeneKO = table({<span class="string">'a'</span>; <span class="string">'a'</span>; <span class="string">'b'</span>}, {<span class="string">'g1'</span>; <span class="string">'g2'</span>; <span class="string">'g1'</span>}, {<span class="string">'K1'</span>; <span class="string">'K2'</span>; <span class="string">'K1'</span>}, <span class="keyword">...</span>
+0075                 <span class="string">'VariableNames'</span>, {<span class="string">'organism'</span>, <span class="string">'gene'</span>, <span class="string">'ko'</span>});
+0076             [genes, rxnGeneMat] = buildGlobalGPR(rxns, koReaction, organismGeneKO);
+0077             testCase.verifyEqual(genes, {<span class="string">'a:g1'</span>; <span class="string">'a:g2'</span>; <span class="string">'b:g1'</span>});
+0078             expected = [1 0 1; 1 1 1; 0 0 0];
+0079             testCase.verifyEqual(full(rxnGeneMat), expected);
+0080         <span class="keyword">end</span>
+0081 
+0082         <a name="_sub9" href="#_subfunctions" class="code">function getPhylDistNeedsData(testCase)</a>
+0083             distFile = fullfile(testCase.ravenRoot, <span class="string">'reconstruction'</span>, <span class="string">'kegg'</span>, <span class="string">'keggPhylDist.mat'</span>);
+0084             testCase.assumeFalse(exist(distFile, <span class="string">'file'</span>) == 2, <span class="keyword">...</span>
+0085                 <span class="string">'keggPhylDist.mat is present; skipping error-path test.'</span>);
+0086             testCase.verifyError(@() getPhylDist(), <span class="string">'getPhylDist:noData'</span>);
+0087         <span class="keyword">end</span>
+0088 
+0089     <span class="keyword">end</span>
+0090 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

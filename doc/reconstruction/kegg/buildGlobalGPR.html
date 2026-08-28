@@ -1,0 +1,125 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of buildGlobalGPR</title>
+  <meta name="keywords" content="buildGlobalGPR">
+  <meta name="description" content="buildGlobalGPR  Join every KEGG organism's genes onto the reference">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../index.html">Home</a> &gt;  <a href="../index.html">reconstruction</a> &gt; <a href="index.html">kegg</a> &gt; buildGlobalGPR.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for reconstruction\kegg&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+
+<h1>buildGlobalGPR
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>buildGlobalGPR  Join every KEGG organism's genes onto the reference</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>function [genes,rxnGeneMat]=buildGlobalGPR(rxns,koReaction,organismGeneKO) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> buildGlobalGPR  Join every KEGG organism's genes onto the reference
+ reactions through their shared KO (KEGG Orthology) ids.
+
+ Builds two sparse gene-KO / KO-reaction incidence matrices sharing one
+ KO axis, and multiplies them, rather than expanding the join row by
+ row --- organismGeneKO can carry millions of rows (every gene of every
+ KEGG organism), so a per-row loop is not viable.
+
+ Parameters
+ ----------
+ rxns : cell array
+     the reference model's reaction ids (model.rxns), in model order.
+ koReaction : table
+     the ko_reaction table (columns 'ko', 'reaction') from readKEGGTable.
+ organismGeneKO : table
+     the organism_gene_ko table (columns 'organism', 'gene', 'ko') from
+     readKEGGTable.
+
+ Returns
+ -------
+ genes : cell array
+     sorted unique 'organism:gene' identifiers.
+ rxnGeneMat : sparse double
+     numel(rxns) x numel(genes); rxnGeneMat(i,j)=1 when gene j shares at
+     least one KO with reaction i.</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="buildGlobalKEGGModel.html" class="code" title="function [model,KOModel,isSpontaneous,isUndefinedStoich,isIncomplete,isGeneral]=buildGlobalKEGGModel(ravenPath)">buildGlobalKEGGModel</a>	buildGlobalKEGGModel  Download and assemble the global KEGG model.</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [genes,rxnGeneMat]=buildGlobalGPR(rxns,koReaction,organismGeneKO)</a>
+0002 <span class="comment">% buildGlobalGPR  Join every KEGG organism's genes onto the reference</span>
+0003 <span class="comment">% reactions through their shared KO (KEGG Orthology) ids.</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% Builds two sparse gene-KO / KO-reaction incidence matrices sharing one</span>
+0006 <span class="comment">% KO axis, and multiplies them, rather than expanding the join row by</span>
+0007 <span class="comment">% row --- organismGeneKO can carry millions of rows (every gene of every</span>
+0008 <span class="comment">% KEGG organism), so a per-row loop is not viable.</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% Parameters</span>
+0011 <span class="comment">% ----------</span>
+0012 <span class="comment">% rxns : cell array</span>
+0013 <span class="comment">%     the reference model's reaction ids (model.rxns), in model order.</span>
+0014 <span class="comment">% koReaction : table</span>
+0015 <span class="comment">%     the ko_reaction table (columns 'ko', 'reaction') from readKEGGTable.</span>
+0016 <span class="comment">% organismGeneKO : table</span>
+0017 <span class="comment">%     the organism_gene_ko table (columns 'organism', 'gene', 'ko') from</span>
+0018 <span class="comment">%     readKEGGTable.</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% Returns</span>
+0021 <span class="comment">% -------</span>
+0022 <span class="comment">% genes : cell array</span>
+0023 <span class="comment">%     sorted unique 'organism:gene' identifiers.</span>
+0024 <span class="comment">% rxnGeneMat : sparse double</span>
+0025 <span class="comment">%     numel(rxns) x numel(genes); rxnGeneMat(i,j)=1 when gene j shares at</span>
+0026 <span class="comment">%     least one KO with reaction i.</span>
+0027 
+0028 <span class="comment">%Map each ko_reaction row onto the reference model's own reaction order;</span>
+0029 <span class="comment">%rows naming a reaction absent from rxns (should not happen for a</span>
+0030 <span class="comment">%consistent artefact set, but be defensive) are dropped.</span>
+0031 [inModel,rxnIdx]=ismember(koReaction.reaction,rxns);
+0032 koCol=koReaction.ko(inModel);
+0033 rxnIdxCol=rxnIdx(inModel);
+0034 
+0035 <span class="comment">%Shared KO axis for both incidence matrices below.</span>
+0036 [kos,~,koGroupForRxnRow]=unique(koCol);
+0037 numKOs=numel(kos);
+0038 numRxns=numel(rxns);
+0039 koRxn=sparse(koGroupForRxnRow,rxnIdxCol,1,numKOs,numRxns);
+0040 
+0041 <span class="comment">%'organism:gene' identifiers, one row per (organism,gene,ko) triple. A</span>
+0042 <span class="comment">%gene can carry more than one KO, so genes are de-duplicated separately.</span>
+0043 geneId=strcat(organismGeneKO.organism,<span class="string">':'</span>,organismGeneKO.gene);
+0044 [genes,~,geneRowIdx]=unique(geneId);
+0045 numGenes=numel(genes);
+0046 
+0047 <span class="comment">%Rows whose KO is not linked to any reaction cannot contribute a gene-</span>
+0048 <span class="comment">%reaction edge; drop them (organism_gene_ko is published pre-restricted</span>
+0049 <span class="comment">%to linked KOs, so this is normally a no-op).</span>
+0050 [inKOs,koIdxForGeneRow]=ismember(organismGeneKO.ko,kos);
+0051 geneKO=sparse(geneRowIdx(inKOs),koIdxForGeneRow(inKOs),1,numGenes,numKOs);
+0052 
+0053 rxnGeneMat=double((geneKO*koRxn)'&gt;0);
+0054 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

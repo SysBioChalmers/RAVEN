@@ -1,0 +1,485 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of assignCompartments</title>
+  <meta name="keywords" content="assignCompartments">
+  <meta name="description" content="assignCompartments  Assign reactions to compartments by a functionality-constrained MILP.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">localization</a> &gt; assignCompartments.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for localization&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>assignCompartments
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>assignCompartments  Assign reactions to compartments by a functionality-constrained MILP.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [outModel, placement, addedTransports, exitFlag] = assignCompartments(model, GSS, reactionsToRelocate, varargin) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> assignCompartments  Assign reactions to compartments by a functionality-constrained MILP.
+
+ Deterministic alternative to predictLocalization: a single MILP places the requested reactions
+ into compartments to agree with localization scores (GSS) WHILE keeping the model's objective
+ (biomass) producible. Because functionality is a hard constraint, a reaction is placed against
+ its own top score whenever the network needs it there (pathway coherence emerges from requiring
+ flux, not from a heuristic). Mono-localization: each reaction is placed in exactly one
+ compartment; a gene still spans compartments when it catalyses reactions placed in different ones.
+
+ The model is merged to a single compartment first (like predictLocalization); the MILP then
+ re-distributes the relocatable reactions across the compartments named in GSS, adding passive
+ transports (defaultCompartment &lt;-&gt; c) where needed.
+
+ Parameters
+ ----------
+ model : struct
+     a RAVEN model with an objective (model.c) and grRules. Multiple compartments are merged.
+ GSS : struct
+     gene scoring structure (genes, compartments, scores) as from parseScores. GSS.compartments
+     are the target compartment labels and must include defaultCompartment.
+ reactionsToRelocate : cell
+     reaction ids to (re)place. Boundary reactions and the objective reaction are always pinned.
+
+ Name-Value Arguments
+ --------------------
+ defaultCompartment : char
+     compartment that transports route through (usually cytosol); must be in GSS.compartments.
+ transportCost : double (default 0.5)
+     cost per added inter-compartment transport.
+ multiCompartmentPenalty : double (default 0.5)
+     cost per extra compartment a gene ends up in.
+ minGrowth : double (default [] = 10%% of the unconstrained optimum)
+     required objective flux.
+ transportable : cell (default [] = all)
+     metabolite ids (merged-model names) that may receive transports. Restricting it forces
+     functionality-driven placement of reactions whose substrates are confined.
+ bigM : double (default 1000)
+     Big-M for flux gating.
+ verbose : logical (default true)
+
+ Returns
+ -------
+ outModel : struct
+     the compartmentalised model (objective still producible).
+ placement : struct
+     .rxns and .compartment (the assigned compartment id per relocated reaction).
+ addedTransports : struct
+     .mets and .compartment for the transports the MILP added.
+ exitFlag : double
+     1 = optimal, -1 = infeasible/failed.
+
+ See also
+ --------
+ <a href="predictLocalization.html" class="code" title="function [outModel, geneLocalization, transportStruct, scores,removedRxns] = predictLocalization(model, GSS,defaultCompartment, varargin)">predictLocalization</a>, <a href="parseScores.html" class="code" title="function GSS = parseScores(inputFile, varargin)">parseScores</a>, gapFillMILP</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function outModel = i_applyAssignment(model, placement, addedTransports, comps, defaultCompartment)</a></li><li><a href="#_sub2" class="code">function [outModel, idx] = i_metInComp(outModel, model, srcMetRow, comp)</a></li><li><a href="#_sub3" class="code">function outModel = i_addTransport(outModel, model, metId, comp, defaultCompartment)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [outModel, placement, addedTransports, exitFlag] = assignCompartments(model, GSS, reactionsToRelocate, varargin)</a>
+0002 <span class="comment">% assignCompartments  Assign reactions to compartments by a functionality-constrained MILP.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Deterministic alternative to predictLocalization: a single MILP places the requested reactions</span>
+0005 <span class="comment">% into compartments to agree with localization scores (GSS) WHILE keeping the model's objective</span>
+0006 <span class="comment">% (biomass) producible. Because functionality is a hard constraint, a reaction is placed against</span>
+0007 <span class="comment">% its own top score whenever the network needs it there (pathway coherence emerges from requiring</span>
+0008 <span class="comment">% flux, not from a heuristic). Mono-localization: each reaction is placed in exactly one</span>
+0009 <span class="comment">% compartment; a gene still spans compartments when it catalyses reactions placed in different ones.</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% The model is merged to a single compartment first (like predictLocalization); the MILP then</span>
+0012 <span class="comment">% re-distributes the relocatable reactions across the compartments named in GSS, adding passive</span>
+0013 <span class="comment">% transports (defaultCompartment &lt;-&gt; c) where needed.</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">% Parameters</span>
+0016 <span class="comment">% ----------</span>
+0017 <span class="comment">% model : struct</span>
+0018 <span class="comment">%     a RAVEN model with an objective (model.c) and grRules. Multiple compartments are merged.</span>
+0019 <span class="comment">% GSS : struct</span>
+0020 <span class="comment">%     gene scoring structure (genes, compartments, scores) as from parseScores. GSS.compartments</span>
+0021 <span class="comment">%     are the target compartment labels and must include defaultCompartment.</span>
+0022 <span class="comment">% reactionsToRelocate : cell</span>
+0023 <span class="comment">%     reaction ids to (re)place. Boundary reactions and the objective reaction are always pinned.</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">% Name-Value Arguments</span>
+0026 <span class="comment">% --------------------</span>
+0027 <span class="comment">% defaultCompartment : char</span>
+0028 <span class="comment">%     compartment that transports route through (usually cytosol); must be in GSS.compartments.</span>
+0029 <span class="comment">% transportCost : double (default 0.5)</span>
+0030 <span class="comment">%     cost per added inter-compartment transport.</span>
+0031 <span class="comment">% multiCompartmentPenalty : double (default 0.5)</span>
+0032 <span class="comment">%     cost per extra compartment a gene ends up in.</span>
+0033 <span class="comment">% minGrowth : double (default [] = 10%% of the unconstrained optimum)</span>
+0034 <span class="comment">%     required objective flux.</span>
+0035 <span class="comment">% transportable : cell (default [] = all)</span>
+0036 <span class="comment">%     metabolite ids (merged-model names) that may receive transports. Restricting it forces</span>
+0037 <span class="comment">%     functionality-driven placement of reactions whose substrates are confined.</span>
+0038 <span class="comment">% bigM : double (default 1000)</span>
+0039 <span class="comment">%     Big-M for flux gating.</span>
+0040 <span class="comment">% verbose : logical (default true)</span>
+0041 <span class="comment">%</span>
+0042 <span class="comment">% Returns</span>
+0043 <span class="comment">% -------</span>
+0044 <span class="comment">% outModel : struct</span>
+0045 <span class="comment">%     the compartmentalised model (objective still producible).</span>
+0046 <span class="comment">% placement : struct</span>
+0047 <span class="comment">%     .rxns and .compartment (the assigned compartment id per relocated reaction).</span>
+0048 <span class="comment">% addedTransports : struct</span>
+0049 <span class="comment">%     .mets and .compartment for the transports the MILP added.</span>
+0050 <span class="comment">% exitFlag : double</span>
+0051 <span class="comment">%     1 = optimal, -1 = infeasible/failed.</span>
+0052 <span class="comment">%</span>
+0053 <span class="comment">% See also</span>
+0054 <span class="comment">% --------</span>
+0055 <span class="comment">% predictLocalization, parseScores, gapFillMILP</span>
+0056 
+0057 p = parseRAVENargs(varargin, {<span class="string">'defaultCompartment'</span>,[]; <span class="string">'transportCost'</span>,0.5; <span class="keyword">...</span>
+0058     <span class="string">'multiCompartmentPenalty'</span>,0.5; <span class="string">'minGrowth'</span>,[]; <span class="string">'transportable'</span>,[]; <span class="string">'bigM'</span>,1000; <span class="string">'verbose'</span>,true});
+0059 defaultCompartment = char(p.defaultCompartment);
+0060 transportCost = p.transportCost;
+0061 multiPen = p.multiCompartmentPenalty;
+0062 minGrowth = p.minGrowth;
+0063 M = p.bigM;
+0064 verbose = p.verbose;
+0065 
+0066 outModel = model; placement = struct(<span class="string">'rxns'</span>,{{}},<span class="string">'compartment'</span>,{{}});
+0067 addedTransports = struct(<span class="string">'mets'</span>,{{}},<span class="string">'compartment'</span>,{{}}); exitFlag = -1;
+0068 
+0069 <span class="keyword">if</span> all(model.c == 0)
+0070     error(<span class="string">'RAVEN:badInput'</span>,<span class="string">'model has no objective (set model.c).'</span>);
+0071 <span class="keyword">end</span>
+0072 comps = GSS.compartments(:);
+0073 <span class="keyword">if</span> ~ismember(defaultCompartment, comps)
+0074     error(<span class="string">'RAVEN:badInput'</span>,<span class="string">'defaultCompartment ''%s'' not in GSS.compartments.'</span>, defaultCompartment);
+0075 <span class="keyword">end</span>
+0076 
+0077 <span class="comment">% Merge to a single compartment so every metabolite has one identity; relocations and transports</span>
+0078 <span class="comment">% are then expressed relative to defaultCompartment.</span>
+0079 <span class="keyword">if</span> numel(model.comps) &gt; 1
+0080     model = mergeCompartments(model, true, true);
+0081 <span class="keyword">end</span>
+0082 nMet = numel(model.mets);
+0083 biomassIdx = find(model.c ~= 0, 1);
+0084 
+0085 <span class="comment">% Determine min growth from the merged (single-compartment) model</span>
+0086 <span class="keyword">if</span> isempty(minGrowth)
+0087     sol = solveLP(model);
+0088     <span class="keyword">if</span> isempty(sol.f) || sol.f &lt;= 0
+0089         error(<span class="string">'RAVEN:badInput'</span>,<span class="string">'merged model does not grow; pass minGrowth.'</span>);
+0090     <span class="keyword">end</span>
+0091     minGrowth = 0.1 * sol.f;
+0092 <span class="keyword">end</span>
+0093 
+0094 <span class="comment">% ---- scope: movable vs pinned ----</span>
+0095 isBoundary = (sum(model.S ~= 0, 1)' == 1);   <span class="comment">% one-metabolite reactions</span>
+0096 relocate = ismember(model.rxns, reactionsToRelocate);
+0097 movableMask = relocate &amp; ~isBoundary;
+0098 movableMask(biomassIdx) = false;
+0099 movIdx = find(movableMask);
+0100 pinIdx = find(~movableMask);
+0101 nMov = numel(movIdx); nPin = numel(pinIdx); nC = numel(comps);
+0102 defC = find(strcmp(comps, defaultCompartment));
+0103 
+0104 <span class="comment">% Genes in scope: those on movable reactions that have a row in GSS</span>
+0105 [gInGSS, gssRow] = ismember(model.genes, GSS.genes);
+0106 geneOnMov = any(model.rxnGeneMat(movIdx, :) ~= 0, 1)';
+0107 scopeMask = gInGSS &amp; geneOnMov;
+0108 geneIdx = find(scopeMask);
+0109 nGene = numel(geneIdx);
+0110 score = zeros(nGene, nC);   <span class="comment">% gene x compartment score, columns aligned to comps</span>
+0111 <span class="keyword">for</span> gi = 1:nGene
+0112     score(gi, :) = GSS.scores(gssRow(geneIdx(gi)), :);
+0113 <span class="keyword">end</span>
+0114 
+0115 <span class="comment">% Transportable metabolites (touched by movable reactions)</span>
+0116 movMetMask = any(model.S(:, movIdx) ~= 0, 2);
+0117 <span class="keyword">if</span> isnumeric(p.transportable) &amp;&amp; isempty(p.transportable)
+0118     transpMet = find(movMetMask);   <span class="comment">% default ([]): all movable metabolites transportable</span>
+0119 <span class="keyword">else</span>
+0120     transpMet = find(movMetMask &amp; ismember(model.mets, p.transportable));  <span class="comment">% a (possibly empty) set</span>
+0121 <span class="keyword">end</span>
+0122 <span class="comment">% transport variables only for non-default compartments</span>
+0123 trPairs = [];   <span class="comment">% [metRow, compCol]</span>
+0124 <span class="keyword">for</span> ci = 1:nC
+0125     <span class="keyword">if</span> ci == defC; <span class="keyword">continue</span>; <span class="keyword">end</span>
+0126     trPairs = [trPairs; [transpMet, repmat(ci, numel(transpMet), 1)]]; <span class="comment">%#ok&lt;AGROW&gt;</span>
+0127 <span class="keyword">end</span>
+0128 nTr = size(trPairs, 1);
+0129 
+0130 <span class="keyword">if</span> verbose
+0131     fprintf(<span class="string">'assignCompartments: %d movable, %d pinned reactions, %d genes, %d compartments, %d transports.\n'</span>, <span class="keyword">...</span>
+0132         nMov, nPin, nGene, nC, nTr);
+0133 <span class="keyword">end</span>
+0134 
+0135 <span class="comment">% ---- variable layout (columns) ----</span>
+0136 <span class="comment">% fmove[mov,c]  : nMov*nC continuous</span>
+0137 <span class="comment">% fpin[pin]     : nPin    continuous</span>
+0138 <span class="comment">% ftr[tr]       : nTr     continuous</span>
+0139 <span class="comment">% x[mov,c]      : nMov*nC binary</span>
+0140 <span class="comment">% y[gene,c]     : nGene*nC binary</span>
+0141 <span class="comment">% t[tr]         : nTr     binary</span>
+0142 oFmove = 0;            nFmove = nMov*nC;
+0143 oFpin  = oFmove+nFmove; nFpin = nPin;
+0144 oFtr   = oFpin+nFpin;   <span class="comment">% nTr</span>
+0145 oX     = oFtr+nTr;     nX = nMov*nC;
+0146 oY     = oX+nX;        nY = nGene*nC;
+0147 oT     = oY+nY;        <span class="comment">% nTr</span>
+0148 nVar   = oT+nTr;
+0149 fmoveCol = @(mi,ci) oFmove + (mi-1)*nC + ci;
+0150 xCol     = @(mi,ci) oX     + (mi-1)*nC + ci;
+0151 yCol     = @(gi,ci) oY     + (gi-1)*nC + ci;
+0152 
+0153 <span class="comment">% ---- bounds ----</span>
+0154 lb = zeros(nVar,1); ub = zeros(nVar,1);
+0155 <span class="keyword">for</span> k = 1:nMov
+0156     r = movIdx(k);
+0157     <span class="keyword">for</span> ci = 1:nC
+0158         lb(fmoveCol(k,ci)) = min(model.lb(r),0); ub(fmoveCol(k,ci)) = max(model.ub(r),0);
+0159     <span class="keyword">end</span>
+0160 <span class="keyword">end</span>
+0161 lb(oFpin+(1:nPin)) = model.lb(pinIdx); ub(oFpin+(1:nPin)) = model.ub(pinIdx);
+0162 lb(oFtr+(1:nTr)) = -M; ub(oFtr+(1:nTr)) = M;
+0163 lb(oX+(1:nX)) = 0; ub(oX+(1:nX)) = 1;
+0164 lb(oY+(1:nY)) = 0; ub(oY+(1:nY)) = 1;
+0165 lb(oT+(1:nTr)) = 0; ub(oT+(1:nTr)) = 1;
+0166 
+0167 <span class="comment">% ---- node balance: S over (met, compartment) ----</span>
+0168 <span class="comment">% node row index = (metRow-1)*nC + ci</span>
+0169 nNode = nMet*nC;
+0170 nodeRow = @(mr,ci) (mr-1)*nC + ci;
+0171 ri = []; ci_ = []; vv = [];
+0172 <span class="comment">% movable: metabolites placed in c</span>
+0173 <span class="keyword">for</span> k = 1:nMov
+0174     r = movIdx(k);
+0175     mrows = find(model.S(:,r) ~= 0);
+0176     <span class="keyword">for</span> ci = 1:nC
+0177         <span class="keyword">for</span> mm = mrows'
+0178             ri(end+1)=nodeRow(mm,ci); ci_(end+1)=fmoveCol(k,ci); vv(end+1)=model.S(mm,r); <span class="comment">%#ok&lt;AGROW&gt;</span>
+0179         <span class="keyword">end</span>
+0180     <span class="keyword">end</span>
+0181 <span class="keyword">end</span>
+0182 <span class="comment">% pinned: metabolites in defaultCompartment</span>
+0183 <span class="keyword">for</span> k = 1:nPin
+0184     r = pinIdx(k);
+0185     mrows = find(model.S(:,r) ~= 0);
+0186     <span class="keyword">for</span> mm = mrows'
+0187         ri(end+1)=nodeRow(mm,defC); ci_(end+1)=oFpin+k; vv(end+1)=model.S(mm,r); <span class="comment">%#ok&lt;AGROW&gt;</span>
+0188     <span class="keyword">end</span>
+0189 <span class="keyword">end</span>
+0190 <span class="comment">% transports: -1 at (met,default), +1 at (met,c)</span>
+0191 <span class="keyword">for</span> k = 1:nTr
+0192     mm = trPairs(k,1); cc = trPairs(k,2);
+0193     ri(end+1)=nodeRow(mm,defC); ci_(end+1)=oFtr+k; vv(end+1)=-1; <span class="comment">%#ok&lt;AGROW&gt;</span>
+0194     ri(end+1)=nodeRow(mm,cc);   ci_(end+1)=oFtr+k; vv(end+1)=+1; <span class="comment">%#ok&lt;AGROW&gt;</span>
+0195 <span class="keyword">end</span>
+0196 A_node = sparse(ri, ci_, vv, nNode, nVar);
+0197 keepNode = any(A_node ~= 0, 2);          <span class="comment">% drop empty nodes</span>
+0198 A_node = A_node(keepNode, :);
+0199 nNodeKept = size(A_node,1);
+0200 
+0201 <span class="comment">% ---- flux gating: lb*x &lt;= fmove &lt;= ub*x ----</span>
+0202 giR=[]; giC=[]; giV=[]; row=0; gUb=[]; gLb=[];
+0203 <span class="keyword">for</span> k=1:nMov
+0204     r=movIdx(k);
+0205     <span class="keyword">for</span> ci=1:nC
+0206         row=row+1;  <span class="comment">% ub: fmove - ub*x &lt;= 0</span>
+0207         giR(end+1)=row; giC(end+1)=fmoveCol(k,ci); giV(end+1)=1; <span class="comment">%#ok&lt;AGROW&gt;</span>
+0208         giR(end+1)=row; giC(end+1)=xCol(k,ci); giV(end+1)=-max(model.ub(r),0); <span class="comment">%#ok&lt;AGROW&gt;</span>
+0209         gUb(end+1)=0; <span class="comment">%#ok&lt;AGROW&gt;</span>
+0210     <span class="keyword">end</span>
+0211 <span class="keyword">end</span>
+0212 A_gub = sparse(giR,giC,giV,row,nVar); b_gub=zeros(row,1);
+0213 giR=[]; giC=[]; giV=[]; row=0;
+0214 <span class="keyword">for</span> k=1:nMov
+0215     r=movIdx(k);
+0216     <span class="keyword">for</span> ci=1:nC
+0217         row=row+1;  <span class="comment">% lb: fmove - lb*x &gt;= 0</span>
+0218         giR(end+1)=row; giC(end+1)=fmoveCol(k,ci); giV(end+1)=1; <span class="comment">%#ok&lt;AGROW&gt;</span>
+0219         giR(end+1)=row; giC(end+1)=xCol(k,ci); giV(end+1)=-min(model.lb(r),0); <span class="comment">%#ok&lt;AGROW&gt;</span>
+0220     <span class="keyword">end</span>
+0221 <span class="keyword">end</span>
+0222 A_glb = sparse(giR,giC,giV,row,nVar); b_glb=zeros(row,1);
+0223 
+0224 <span class="comment">% ---- transport gating: -M*t &lt;= ftr &lt;= M*t ----</span>
+0225 tR=[];tC=[];tV=[];
+0226 <span class="keyword">for</span> k=1:nTr
+0227     tR(end+1)=k; tC(end+1)=oFtr+k; tV(end+1)=1; tR(end+1)=k; tC(end+1)=oT+k; tV(end+1)=-M; <span class="comment">%#ok&lt;AGROW&gt;</span>
+0228 <span class="keyword">end</span>
+0229 A_tub = sparse(tR,tC,tV,nTr,nVar);  <span class="comment">% ftr - M*t &lt;= 0</span>
+0230 tR=[];tC=[];tV=[];
+0231 <span class="keyword">for</span> k=1:nTr
+0232     tR(end+1)=k; tC(end+1)=oFtr+k; tV(end+1)=1; tR(end+1)=k; tC(end+1)=oT+k; tV(end+1)=M; <span class="comment">%#ok&lt;AGROW&gt;</span>
+0233 <span class="keyword">end</span>
+0234 A_tlb = sparse(tR,tC,tV,nTr,nVar);  <span class="comment">% ftr + M*t &gt;= 0</span>
+0235 
+0236 <span class="comment">% ---- placement: sum_c x[mov,c] = 1 ----</span>
+0237 pR=[];pC=[];pV=[];
+0238 <span class="keyword">for</span> k=1:nMov
+0239     <span class="keyword">for</span> ci=1:nC; pR(end+1)=k; pC(end+1)=xCol(k,ci); pV(end+1)=1; <span class="keyword">end</span> <span class="comment">%#ok&lt;AGROW&gt;</span>
+0240 <span class="keyword">end</span>
+0241 A_place=sparse(pR,pC,pV,nMov,nVar); b_place=ones(nMov,1);
+0242 
+0243 <span class="comment">% ---- gene coupling x[r,c] &lt;= y[g,c]; gene-has y&lt;=sum x; gene1 sum_c y&gt;=1 ----</span>
+0244 cR=[];cC=[];cV=[];row=0;
+0245 <span class="keyword">for</span> k=1:nMov
+0246     gOn=find(model.rxnGeneMat(movIdx(k),:)~=0);
+0247     <span class="keyword">for</span> g=gOn
+0248         gi=find(geneIdx==g,1); <span class="keyword">if</span> isempty(gi); <span class="keyword">continue</span>; <span class="keyword">end</span>
+0249         <span class="keyword">for</span> ci=1:nC
+0250             row=row+1; cR(end+1)=row; cC(end+1)=xCol(k,ci); cV(end+1)=1;
+0251             cR(end+1)=row; cC(end+1)=yCol(gi,ci); cV(end+1)=-1; <span class="comment">%#ok&lt;AGROW&gt;</span>
+0252         <span class="keyword">end</span>
+0253     <span class="keyword">end</span>
+0254 <span class="keyword">end</span>
+0255 A_couple=sparse(cR,cC,cV,row,nVar); b_couple=zeros(row,1);
+0256 <span class="comment">% gene-has: y[g,c] - sum_{r of g} x[r,c] &lt;= 0</span>
+0257 hR=[];hC=[];hV=[];row=0;
+0258 <span class="keyword">for</span> gi=1:nGene
+0259     g=geneIdx(gi);
+0260     rOfG=find(model.rxnGeneMat(movIdx,g)~=0)';  <span class="comment">% indices into movIdx</span>
+0261     <span class="keyword">for</span> ci=1:nC
+0262         row=row+1; hR(end+1)=row; hC(end+1)=yCol(gi,ci); hV(end+1)=1;
+0263         <span class="keyword">for</span> k=rOfG; hR(end+1)=row; hC(end+1)=xCol(k,ci); hV(end+1)=-1; <span class="keyword">end</span> <span class="comment">%#ok&lt;AGROW&gt;</span>
+0264     <span class="keyword">end</span>
+0265 <span class="keyword">end</span>
+0266 A_has=sparse(hR,hC,hV,row,nVar); b_has=zeros(row,1);
+0267 <span class="comment">% gene1: sum_c y[g,c] &gt;= 1</span>
+0268 g1R=[];g1C=[];g1V=[];
+0269 <span class="keyword">for</span> gi=1:nGene
+0270     <span class="keyword">for</span> ci=1:nC; g1R(end+1)=gi; g1C(end+1)=yCol(gi,ci); g1V(end+1)=1; <span class="keyword">end</span> <span class="comment">%#ok&lt;AGROW&gt;</span>
+0271 <span class="keyword">end</span>
+0272 A_gene1=sparse(g1R,g1C,g1V,nGene,nVar); b_gene1=ones(nGene,1);
+0273 
+0274 <span class="comment">% ---- growth: fpin[biomass] &gt;= minGrowth ----</span>
+0275 pinBio = find(pinIdx==biomassIdx,1);
+0276 A_grow = sparse(1, oFpin+pinBio, 1, 1, nVar); b_grow = minGrowth;
+0277 
+0278 <span class="comment">% ---- objective: max sum score*y - multiPen*sum y - transportCost*sum t ----</span>
+0279 c = zeros(nVar,1);
+0280 <span class="keyword">for</span> gi=1:nGene
+0281     <span class="keyword">for</span> ci=1:nC; c(yCol(gi,ci)) = c(yCol(gi,ci)) + score(gi,ci) - multiPen; <span class="keyword">end</span>
+0282 <span class="keyword">end</span>
+0283 <span class="keyword">if</span> isscalar(transportCost); tcost = repmat(transportCost,nTr,1); <span class="keyword">else</span>; tcost = transportCost(trPairs(:,1)); <span class="keyword">end</span>
+0284 c(oT+(1:nTr)) = c(oT+(1:nTr)) - tcost(:);
+0285 
+0286 <span class="comment">% ---- assemble ----</span>
+0287 prob.A = [A_node; A_gub; A_glb; A_tub; A_tlb; A_place; A_couple; A_has; A_gene1; A_grow];
+0288 prob.a = prob.A;
+0289 prob.b = [zeros(nNodeKept,1); b_gub; b_glb; zeros(nTr,1); zeros(nTr,1); b_place; b_couple; b_has; b_gene1; b_grow];
+0290 prob.csense = [repmat(<span class="string">'E'</span>,1,nNodeKept), repmat(<span class="string">'L'</span>,1,numel(b_gub)), repmat(<span class="string">'G'</span>,1,numel(b_glb)), <span class="keyword">...</span>
+0291                repmat(<span class="string">'L'</span>,1,nTr), repmat(<span class="string">'G'</span>,1,nTr), repmat(<span class="string">'E'</span>,1,nMov), <span class="keyword">...</span>
+0292                repmat(<span class="string">'L'</span>,1,numel(b_couple)), repmat(<span class="string">'L'</span>,1,numel(b_has)), repmat(<span class="string">'G'</span>,1,nGene), <span class="string">'G'</span>];
+0293 prob.c = -c;          <span class="comment">% optimizeProb minimises; we maximise c</span>
+0294 prob.osense = 1;
+0295 prob.lb = lb; prob.ub = ub;
+0296 prob.vartype = repmat(<span class="string">'C'</span>,1,nVar);
+0297 prob.vartype(oX+(1:nX)) = <span class="string">'B'</span>;
+0298 prob.vartype(oY+(1:nY)) = <span class="string">'B'</span>;
+0299 prob.vartype(oT+(1:nTr)) = <span class="string">'B'</span>;
+0300 
+0301 params.intTol = 1e-9; params.TimeLimit = 1000;
+0302 sol = optimizeProb(prob, params, verbose);
+0303 <span class="keyword">if</span> ~checkSolution(sol)
+0304     <span class="keyword">if</span> verbose; fprintf(<span class="string">'assignCompartments: MILP infeasible or failed.\n'</span>); <span class="keyword">end</span>
+0305     <span class="keyword">return</span>;
+0306 <span class="keyword">end</span>
+0307 
+0308 <span class="comment">% ---- extract ----</span>
+0309 xval = sol.full(oX+(1:nX));
+0310 placeRxns = {}; placeComp = {};
+0311 <span class="keyword">for</span> k=1:nMov
+0312     [~,ci] = max(xval((k-1)*nC + (1:nC)));
+0313     placeRxns{end+1} = model.rxns{movIdx(k)}; placeComp{end+1} = comps{ci}; <span class="comment">%#ok&lt;AGROW&gt;</span>
+0314 <span class="keyword">end</span>
+0315 placement.rxns = placeRxns(:); placement.compartment = placeComp(:);
+0316 tval = sol.full(oT+(1:nTr));
+0317 sel = find(tval &gt; 0.5);
+0318 addedTransports.mets = model.mets(trPairs(sel,1));
+0319 addedTransports.compartment = comps(trPairs(sel,2));
+0320 exitFlag = 1;
+0321 
+0322 outModel = <a href="#_sub1" class="code" title="subfunction outModel = i_applyAssignment(model, placement, addedTransports, comps, defaultCompartment)">i_applyAssignment</a>(model, placement, addedTransports, comps, defaultCompartment);
+0323 <span class="keyword">end</span>
+0324 
+0325 <span class="comment">% ------------------------------------------------------------------- apply</span>
+0326 <a name="_sub1" href="#_subfunctions" class="code">function outModel = i_applyAssignment(model, placement, addedTransports, comps, defaultCompartment)</a>
+0327 <span class="comment">% Build the compartmentalised model: relabel each placed reaction's metabolites into its</span>
+0328 <span class="comment">% compartment (creating per-compartment metabolite copies) and add the requested transports.</span>
+0329 outModel = model;
+0330 <span class="comment">% ensure all target compartments exist</span>
+0331 <span class="keyword">for</span> ci = 1:numel(comps)
+0332     <span class="keyword">if</span> ~ismember(comps{ci}, outModel.comps)
+0333         outModel.comps{end+1,1} = comps{ci};
+0334         <span class="keyword">if</span> isfield(outModel,<span class="string">'compNames'</span>); outModel.compNames{end+1,1} = comps{ci}; <span class="keyword">end</span>
+0335     <span class="keyword">end</span>
+0336 <span class="keyword">end</span>
+0337 <span class="comment">% metabolite (baseName, compartment) -&gt; index, seeded with existing</span>
+0338 metKey = strcat(model.metNames, <span class="string">'###'</span>, model.comps(model.metComps));
+0339 <span class="keyword">for</span> k = 1:numel(placement.rxns)
+0340     r = find(strcmp(outModel.rxns, placement.rxns{k}), 1);
+0341     comp = placement.compartment{k};
+0342     mrows = find(model.S(:, find(strcmp(model.rxns,placement.rxns{k}),1)) ~= 0); <span class="comment">%#ok&lt;*FNDSB&gt;</span>
+0343     <span class="keyword">for</span> mm = mrows'
+0344         [outModel, newMet] = <a href="#_sub2" class="code" title="subfunction [outModel, idx] = i_metInComp(outModel, model, srcMetRow, comp)">i_metInComp</a>(outModel, model, mm, comp);
+0345         outModel.S(newMet, r) = model.S(mm, find(strcmp(model.rxns,placement.rxns{k}),1));
+0346         <span class="keyword">if</span> ~isequal(newMet, mm); outModel.S(mm, r) = 0; <span class="keyword">end</span>
+0347     <span class="keyword">end</span>
+0348 <span class="keyword">end</span>
+0349 <span class="keyword">for</span> k = 1:numel(addedTransports.mets)
+0350     outModel = <a href="#_sub3" class="code" title="subfunction outModel = i_addTransport(outModel, model, metId, comp, defaultCompartment)">i_addTransport</a>(outModel, model, addedTransports.mets{k}, addedTransports.compartment{k}, defaultCompartment);
+0351 <span class="keyword">end</span>
+0352 <span class="keyword">end</span>
+0353 
+0354 <a name="_sub2" href="#_subfunctions" class="code">function [outModel, idx] = i_metInComp(outModel, model, srcMetRow, comp)</a>
+0355 ci = find(strcmp(outModel.comps, comp), 1);
+0356 name = model.metNames{srcMetRow};
+0357 cand = find(strcmp(outModel.metNames, name) &amp; outModel.metComps == ci, 1);
+0358 <span class="keyword">if</span> ~isempty(cand); idx = cand; <span class="keyword">return</span>; <span class="keyword">end</span>   <span class="comment">% reuse existing per-compartment metabolite</span>
+0359 newId = [model.mets{srcMetRow} <span class="string">'_'</span> comp];
+0360 outModel.mets{end+1,1} = newId;
+0361 outModel.metNames{end+1,1} = name;
+0362 outModel.metComps(end+1,1) = ci;
+0363 outModel.S(end+1, :) = 0;
+0364 <span class="keyword">if</span> isfield(outModel,<span class="string">'b'</span>); outModel.b(end+1,1) = 0; <span class="keyword">end</span>
+0365 idx = numel(outModel.mets);
+0366 <span class="keyword">end</span>
+0367 
+0368 <a name="_sub3" href="#_subfunctions" class="code">function outModel = i_addTransport(outModel, model, metId, comp, defaultCompartment)</a>
+0369 srcRow = find(strcmp(model.mets, metId), 1);
+0370 <span class="keyword">if</span> isempty(srcRow); <span class="keyword">return</span>; <span class="keyword">end</span>
+0371 [outModel, dRow] = <a href="#_sub2" class="code" title="subfunction [outModel, idx] = i_metInComp(outModel, model, srcMetRow, comp)">i_metInComp</a>(outModel, model, srcRow, defaultCompartment);
+0372 [outModel, cRow] = <a href="#_sub2" class="code" title="subfunction [outModel, idx] = i_metInComp(outModel, model, srcMetRow, comp)">i_metInComp</a>(outModel, model, srcRow, comp);
+0373 trId = [<span class="string">'tr_'</span> model.metNames{srcRow} <span class="string">'_'</span> comp];
+0374 <span class="keyword">if</span> any(strcmp(outModel.rxns, trId)); <span class="keyword">return</span>; <span class="keyword">end</span>
+0375 outModel.rxns{end+1,1} = trId;
+0376 outModel.S(:, end+1) = 0; outModel.S(dRow, end) = -1; outModel.S(cRow, end) = 1;
+0377 outModel.lb(end+1,1) = -1000; outModel.ub(end+1,1) = 1000;
+0378 <span class="keyword">if</span> isfield(outModel,<span class="string">'rev'</span>); outModel.rev(end+1,1) = 1; <span class="keyword">end</span>
+0379 <span class="keyword">if</span> isfield(outModel,<span class="string">'c'</span>); outModel.c(end+1,1) = 0; <span class="keyword">end</span>
+0380 <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnNames'</span>); outModel.rxnNames{end+1,1} = trId; <span class="keyword">end</span>
+0381 <span class="keyword">if</span> isfield(outModel,<span class="string">'grRules'</span>); outModel.grRules{end+1,1} = <span class="string">''</span>; <span class="keyword">end</span>
+0382 <span class="keyword">if</span> isfield(outModel,<span class="string">'rxnGeneMat'</span>); outModel.rxnGeneMat(end+1,:) = 0; <span class="keyword">end</span>
+0383 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

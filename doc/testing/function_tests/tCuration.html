@@ -1,0 +1,145 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of tCuration</title>
+  <meta name="keywords" content="tCuration">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../index.html">Home</a> &gt;  <a href="#">testing</a> &gt; <a href="index.html">function_tests</a> &gt; tCuration.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for testing\function_tests&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+
+<h1>tCuration
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>This is a script file. </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre class="comment"></pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="RavenTestCase.html" class="code" title="">RavenTestCase</a>	</li><li><a href="tCuration.html" class="code" title="">tCuration</a>	</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="tCuration.html" class="code" title="">tCuration</a>	</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function curateModelFromTablesKeepsSupersetReaction(testCase)</a></li><li><a href="#_sub2" class="code">function curateModelFromTablesOverwritesExactDuplicate(testCase)</a></li><li><a href="#_sub3" class="code">function model = toyModel()</a></li><li><a href="#_sub4" class="code">function [coeffsF, infoF] = writeRxnTables(testCase, metNames, coeffs)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre>0001 classdef <a href="tCuration.html" class="code" title="">tCuration</a> &lt; <a href="RavenTestCase.html" class="code" title="">RavenTestCase</a>
+0002 <span class="comment">% tCuration  Tests for the table-driven curation functions in curation/.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">%   curateModelFromTables reads its mets/genes/rxns input from tab-delimited</span>
+0005 <span class="comment">%   files; the tests below write those files to a temporary directory.</span>
+0006 
+0007     methods (Test)
+0008 
+0009         <a name="_sub0" href="#_subfunctions" class="code">function curateModelFromTablesKeepsSupersetReaction(testCase)</a>
+0010             <span class="comment">% A model reaction that uses the candidate's metabolites *and*</span>
+0011             <span class="comment">% others is a different reaction, not a duplicate: adding</span>
+0012             <span class="comment">% A + B -&gt; C to a model holding A + B -&gt; C + H must leave the</span>
+0013             <span class="comment">% existing reaction alone and add the candidate separately.</span>
+0014             model = tCuration.toyModel();
+0015             [coeffsF, infoF] = tCuration.writeRxnTables(testCase, <span class="keyword">...</span>
+0016                 {<span class="string">'A'</span>,<span class="string">'B'</span>,<span class="string">'C'</span>}, [-1 -1 1]);
+0017             evalc([<span class="string">'out = curateModelFromTables(model,''none'',''rxnsCoeffs'','</span> <span class="keyword">...</span>
+0018                 <span class="string">'coeffsF,''rxnsInfo'',infoF);'</span>]);
+0019 
+0020             testCase.verifyNumElements(out.rxns, 2);
+0021             <span class="comment">% The existing reaction keeps its name and its fourth metabolite</span>
+0022             testCase.verifyEqual(out.rxnNames{1}, <span class="string">'ATP hydrolysis with proton'</span>);
+0023             testCase.verifyNumElements(find(out.S(:,1)), 4);
+0024             <span class="comment">% The candidate is added as a new reaction</span>
+0025             testCase.verifyEqual(out.rxnNames{2}, <span class="string">'newRxn'</span>);
+0026             testCase.verifyNumElements(find(out.S(:,2)), 3);
+0027         <span class="keyword">end</span>
+0028 
+0029         <a name="_sub1" href="#_subfunctions" class="code">function curateModelFromTablesOverwritesExactDuplicate(testCase)</a>
+0030             <span class="comment">% An exact stoichiometric match is still treated as the same</span>
+0031             <span class="comment">% reaction and has its annotation overwritten.</span>
+0032             model = tCuration.toyModel();
+0033             [coeffsF, infoF] = tCuration.writeRxnTables(testCase, <span class="keyword">...</span>
+0034                 {<span class="string">'A'</span>,<span class="string">'B'</span>,<span class="string">'C'</span>,<span class="string">'H'</span>}, [-1 -1 1 1]);
+0035             evalc([<span class="string">'out = curateModelFromTables(model,''none'',''rxnsCoeffs'','</span> <span class="keyword">...</span>
+0036                 <span class="string">'coeffsF,''rxnsInfo'',infoF);'</span>]);
+0037 
+0038             testCase.verifyNumElements(out.rxns, 1);
+0039             testCase.verifyEqual(out.rxnNames{1}, <span class="string">'newRxn'</span>);
+0040         <span class="keyword">end</span>
+0041 
+0042     <span class="keyword">end</span>
+0043 
+0044     methods (Static, Access = private)
+0045 
+0046         <a name="_sub2" href="#_subfunctions" class="code">function model = toyModel()</a>
+0047             <span class="comment">% Single reaction: A + B -&gt; C + H, all in one compartment.</span>
+0048             model = struct();
+0049             model.id        = <span class="string">'toy'</span>;
+0050             model.rxns      = {<span class="string">'R1'</span>};
+0051             model.rxnNames  = {<span class="string">'ATP hydrolysis with proton'</span>};
+0052             model.mets      = {<span class="string">'m1'</span>;<span class="string">'m2'</span>;<span class="string">'m3'</span>;<span class="string">'m4'</span>};
+0053             model.metNames  = {<span class="string">'A'</span>;<span class="string">'B'</span>;<span class="string">'C'</span>;<span class="string">'H'</span>};
+0054             model.comps     = {<span class="string">'c'</span>};
+0055             model.compNames = {<span class="string">'cytosol'</span>};
+0056             model.metComps  = [1;1;1;1];
+0057             model.S         = sparse([-1;-1;1;1]);
+0058             model.lb        = 0;
+0059             model.ub        = 1000;
+0060             model.rev       = 0;
+0061             model.c         = 0;
+0062             model.b         = zeros(4,1);
+0063             model.genes     = {};
+0064             model.grRules   = {<span class="string">''</span>};
+0065             model.rxnGeneMat= sparse(1,0);
+0066             model.metFormulas = {<span class="string">''</span>;<span class="string">''</span>;<span class="string">''</span>;<span class="string">''</span>};
+0067             model.subSystems  = {{<span class="string">''</span>}};
+0068             model.eccodes     = {<span class="string">''</span>};
+0069             model.rxnNotes    = {<span class="string">''</span>};
+0070             model.rxnReferences = {<span class="string">''</span>};
+0071             model.rxnConfidenceScores = 0;
+0072         <span class="keyword">end</span>
+0073 
+0074         <a name="_sub3" href="#_subfunctions" class="code">function [coeffsF, infoF] = writeRxnTables(testCase, metNames, coeffs)</a>
+0075             <span class="comment">% Write a one-reaction rxnsCoeffs/rxnsInfo pair for 'newRxn'.</span>
+0076             d = tempname; mkdir(d);
+0077             testCase.addTeardown(@() rmdir(d,<span class="string">'s'</span>));
+0078             coeffsF = fullfile(d,<span class="string">'coeffs.tsv'</span>);
+0079             infoF   = fullfile(d,<span class="string">'info.tsv'</span>);
+0080 
+0081             fid = fopen(coeffsF,<span class="string">'w'</span>);
+0082             fprintf(fid,<span class="string">'rxnIdx\trxnNames\tmetNames\tcomps\tcoefficient\n'</span>);
+0083             <span class="keyword">for</span> i=1:numel(metNames)
+0084                 fprintf(fid,<span class="string">'1\tnewRxn\t%s\tc\t%d\n'</span>, metNames{i}, coeffs(i));
+0085             <span class="keyword">end</span>
+0086             fclose(fid);
+0087 
+0088             fid = fopen(infoF,<span class="string">'w'</span>);
+0089             fprintf(fid,[<span class="string">'rxnIdx\trxnNames\tgrRules\tlb\tub\trev\tsubSystems\t'</span> <span class="keyword">...</span>
+0090                 <span class="string">'eccodes\trxnNotes\trxnReferences\trxnConfidenceScores\n'</span>]);
+0091             fprintf(fid,<span class="string">'1\tnewRxn\t\t0\t1000\t0\t\t\t\t\t\n'</span>);
+0092             fclose(fid);
+0093         <span class="keyword">end</span>
+0094 
+0095     <span class="keyword">end</span>
+0096 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

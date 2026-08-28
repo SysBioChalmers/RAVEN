@@ -1,0 +1,119 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of sampleChebyshevCenter</title>
+  <meta name="keywords" content="sampleChebyshevCenter">
+  <meta name="description" content="sampleChebyshevCenter  Centre of the largest ball inscribed in a polytope.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">analysis</a> &gt; sampleChebyshevCenter.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for analysis&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>sampleChebyshevCenter
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>sampleChebyshevCenter  Centre of the largest ball inscribed in a polytope.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function x0 = sampleChebyshevCenter(A, b) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> sampleChebyshevCenter  Centre of the largest ball inscribed in a polytope.
+
+ Solves the LP  max r  s.t.  a_i'*x + ||a_i||*r &lt;= b_i,  r &gt;= 0, giving a
+ strictly interior point of {x : A*x &lt;= b}. Used to initialise the
+ interior-point MVE solver (sampleMaxVolEllipse) inside sampleCHRR.
+
+ Parameters
+ ----------
+ A : double
+     m-by-n constraint matrix.
+ b : double
+     m-by-1 right-hand side.
+
+ Returns
+ -------
+ x0 : double
+     n-by-1 Chebyshev centre (strictly interior point).
+
+ See also
+ --------
+ <a href="sampleMaxVolEllipse.html" class="code" title="function [x, E, converged] = sampleMaxVolEllipse(A, b, x0, maxiter, tol, reg)">sampleMaxVolEllipse</a>, <a href="sampleCHRR.html" class="code" title="function [solutions, info] = sampleCHRR(model, nSamples, thinning, nBurnin, seed, fixedWidthTol)">sampleCHRR</a></pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="sampleCHRR.html" class="code" title="function [solutions, info] = sampleCHRR(model, nSamples, thinning, nBurnin, seed, fixedWidthTol)">sampleCHRR</a>	sampleCHRR  Coordinate Hit-and-Run with Rounding flux sampling.</li><li><a href="sampleMaxVolEllipse.html" class="code" title="function [x, E, converged] = sampleMaxVolEllipse(A, b, x0, maxiter, tol, reg)">sampleMaxVolEllipse</a>	sampleMaxVolEllipse  Maximum-volume inscribed ellipsoid of a polytope.</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function x0 = sampleChebyshevCenter(A, b)</a>
+0002 <span class="comment">% sampleChebyshevCenter  Centre of the largest ball inscribed in a polytope.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Solves the LP  max r  s.t.  a_i'*x + ||a_i||*r &lt;= b_i,  r &gt;= 0, giving a</span>
+0005 <span class="comment">% strictly interior point of {x : A*x &lt;= b}. Used to initialise the</span>
+0006 <span class="comment">% interior-point MVE solver (sampleMaxVolEllipse) inside sampleCHRR.</span>
+0007 <span class="comment">%</span>
+0008 <span class="comment">% Parameters</span>
+0009 <span class="comment">% ----------</span>
+0010 <span class="comment">% A : double</span>
+0011 <span class="comment">%     m-by-n constraint matrix.</span>
+0012 <span class="comment">% b : double</span>
+0013 <span class="comment">%     m-by-1 right-hand side.</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">% Returns</span>
+0016 <span class="comment">% -------</span>
+0017 <span class="comment">% x0 : double</span>
+0018 <span class="comment">%     n-by-1 Chebyshev centre (strictly interior point).</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% See also</span>
+0021 <span class="comment">% --------</span>
+0022 <span class="comment">% sampleMaxVolEllipse, sampleCHRR</span>
+0023 
+0024 [m, n] = size(A);
+0025 b = b(:);
+0026 norms = sqrt(sum(A.^2, 2));
+0027 
+0028 <span class="comment">% Variables [x (n, free); r (1, &gt;=0)]; minimise -r (maximises the ball radius).</span>
+0029 prob.A      = [A, norms];
+0030 prob.a      = prob.A;
+0031 prob.b      = b;
+0032 prob.csense = repmat(<span class="string">'L'</span>, 1, m);
+0033 prob.c      = [zeros(n, 1); -1];
+0034 prob.osense = 1;                       <span class="comment">% minimise</span>
+0035 prob.lb     = [-inf(n, 1); 0];
+0036 prob.ub     = [ inf(n, 1); inf];
+0037 prob.vartype = repmat(<span class="string">'C'</span>, 1, n + 1);
+0038 
+0039 sol = optimizeProb(prob, [], false);
+0040 <span class="keyword">if</span> ~checkSolution(sol)
+0041     error(<span class="string">'RAVEN:sampling'</span>, <span class="keyword">...</span>
+0042         <span class="string">'sampleChebyshevCenter: LP infeasible — flux polytope has empty interior.'</span>);
+0043 <span class="keyword">end</span>
+0044 
+0045 x0 = sol.full(1:n);
+0046 r  = sol.full(n + 1);
+0047 <span class="keyword">if</span> r &lt;= 1e-12
+0048     error(<span class="string">'RAVEN:sampling'</span>, <span class="keyword">...</span>
+0049         [<span class="string">'sampleChebyshevCenter: flux polytope has empty interior '</span> <span class="keyword">...</span>
+0050          <span class="string">'(it is lower-dimensional than detected).'</span>]);
+0051 <span class="keyword">end</span>
+0052 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

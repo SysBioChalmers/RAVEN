@@ -1,0 +1,113 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of tAssignCompartments</title>
+  <meta name="keywords" content="tAssignCompartments">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../index.html">Home</a> &gt;  <a href="#">testing</a> &gt; <a href="index.html">function_tests</a> &gt; tAssignCompartments.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for testing\function_tests&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+
+<h1>tAssignCompartments
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>This is a script file. </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre class="comment"></pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="RavenTestCase.html" class="code" title="">RavenTestCase</a>	</li><li><a href="tAssignCompartments.html" class="code" title="">tAssignCompartments</a>	</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="tAssignCompartments.html" class="code" title="">tAssignCompartments</a>	</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function functionalityOverridesScore(testCase)</a></li><li><a href="#_sub2" class="code">function scoreRespectedWhenFunctional(testCase)</a></li><li><a href="#_sub3" class="code">function infeasibleGrowthFloorReported(testCase)</a></li><li><a href="#_sub4" class="code">function model = toy()</a></li><li><a href="#_sub5" class="code">function GSS = gss()</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre>0001 classdef <a href="tAssignCompartments.html" class="code" title="">tAssignCompartments</a> &lt; <a href="RavenTestCase.html" class="code" title="">RavenTestCase</a>
+0002 <span class="comment">% tAssignCompartments  Tests for the functionality-constrained compartment-assignment MILP.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">%   Uses a tiny single-compartment toy: EX_A (uptake) -&gt; r1: A-&gt;B -&gt; bio: B-&gt; (objective), with</span>
+0005 <span class="comment">%   gene g1 (on r1) scored higher for a hypothetical compartment 'm' than for the cytosol 'c'.</span>
+0006 <span class="comment">%   The decisive checks are that the functionality constraint can override the localization score</span>
+0007 <span class="comment">%   and that the returned model stays able to grow. Requires a MILP solver.</span>
+0008 
+0009     methods (Test)
+0010 
+0011         <a name="_sub0" href="#_subfunctions" class="code">function functionalityOverridesScore(testCase)</a>
+0012             testCase.assumeMILPSolver();
+0013             model = tAssignCompartments.toy();
+0014             GSS = tAssignCompartments.gss();
+0015             <span class="comment">% B is non-transportable, so placing r1 in 'm' would strand B where biomass (in 'c')</span>
+0016             <span class="comment">% cannot reach it -&gt; r1 must stay in 'c', against g1's higher 'm' score.</span>
+0017             evalc([<span class="string">'[oModel, place, ~, eFlag] = assignCompartments(model, GSS, {''r1''}, '</span> <span class="keyword">...</span>
+0018                    <span class="string">'''defaultCompartment'', ''c'', ''transportable'', {}, ''verbose'', false);'</span>]);
+0019             testCase.verifyEqual(eFlag, 1);
+0020             testCase.verifyEqual(place.compartment{1}, <span class="string">'c'</span>);
+0021             sol = solveLP(oModel);
+0022             testCase.verifyGreaterThan(sol.f, 1e-6);          <span class="comment">% applied model still grows</span>
+0023         <span class="keyword">end</span>
+0024 
+0025         <a name="_sub1" href="#_subfunctions" class="code">function scoreRespectedWhenFunctional(testCase)</a>
+0026             testCase.assumeMILPSolver();
+0027             model = tAssignCompartments.toy();
+0028             GSS = tAssignCompartments.gss();
+0029             <span class="comment">% Transports allowed and cheap -&gt; r1 can follow its score to 'm' and stay functional.</span>
+0030             evalc([<span class="string">'[oModel, place, trans, eFlag] = assignCompartments(model, GSS, {''r1''}, '</span> <span class="keyword">...</span>
+0031                    <span class="string">'''defaultCompartment'', ''c'', ''transportCost'', 0.1, ''verbose'', false);'</span>]);
+0032             testCase.verifyEqual(eFlag, 1);
+0033             testCase.verifyEqual(place.compartment{1}, <span class="string">'m'</span>);
+0034             testCase.verifyGreaterThan(numel(trans.mets), 0); <span class="comment">% transports were added</span>
+0035             sol = solveLP(oModel);
+0036             testCase.verifyGreaterThan(sol.f, 1e-6);
+0037         <span class="keyword">end</span>
+0038 
+0039         <a name="_sub2" href="#_subfunctions" class="code">function infeasibleGrowthFloorReported(testCase)</a>
+0040             testCase.assumeMILPSolver();
+0041             model = tAssignCompartments.toy();
+0042             GSS = tAssignCompartments.gss();
+0043             evalc([<span class="string">'[~, ~, ~, eFlag] = assignCompartments(model, GSS, {''r1''}, '</span> <span class="keyword">...</span>
+0044                    <span class="string">'''defaultCompartment'', ''c'', ''minGrowth'', 1e6, ''verbose'', false);'</span>]);
+0045             testCase.verifyEqual(eFlag, -1);                  <span class="comment">% growth floor unreachable</span>
+0046         <span class="keyword">end</span>
+0047 
+0048     <span class="keyword">end</span>
+0049 
+0050     methods (Static)
+0051         <a name="_sub3" href="#_subfunctions" class="code">function model = toy()</a>
+0052             model.id=<span class="string">'toy'</span>; model.comps={<span class="string">'c'</span>}; model.compNames={<span class="string">'cytoplasm'</span>};
+0053             model.mets={<span class="string">'A_c'</span>;<span class="string">'B_c'</span>}; model.metNames={<span class="string">'A'</span>;<span class="string">'B'</span>}; model.metComps=[1;1];
+0054             model.S=sparse([-1 -1 0; 0 1 -1]);     <span class="comment">% [A;B] x [EX_A r1 bio]</span>
+0055             model.rxns={<span class="string">'EX_A'</span>;<span class="string">'r1'</span>;<span class="string">'bio'</span>}; model.rxnNames=model.rxns;
+0056             model.lb=[-10;0;0]; model.ub=[1000;1000;1000]; model.rev=[1;0;0];
+0057             model.c=[0;0;1]; model.b=zeros(2,1);
+0058             model.genes={<span class="string">'g1'</span>}; model.grRules={<span class="string">''</span>;<span class="string">'g1'</span>;<span class="string">''</span>}; model.rxnGeneMat=sparse([0;1;0]);
+0059         <span class="keyword">end</span>
+0060         <a name="_sub4" href="#_subfunctions" class="code">function GSS = gss()</a>
+0061             GSS.genes={<span class="string">'g1'</span>}; GSS.compartments={<span class="string">'c'</span>;<span class="string">'m'</span>}; GSS.scores=[0.4 0.9];
+0062         <span class="keyword">end</span>
+0063     <span class="keyword">end</span>
+0064 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

@@ -24,7 +24,7 @@
 <div class="box"><strong>curateModelFromTables  Curate or add mets, rxns and genes from tables.</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function newModel=curateModelFromTables(model,metsInfo,genesInfo,rxnsCoeffs,rxnsInfo,metPrefix,rxnPrefix) </strong></div>
+<div class="box"><strong>function newModel=curateModelFromTables(model,metsInfo,varargin) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> curateModelFromTables  Curate or add mets, rxns and genes from tables.
@@ -50,6 +50,9 @@
      Path to a *.tsv file with metabolite information, or 'none' to skip
      metabolite curation. Columns: metNames, comps, formula, charge,
      inchi, metNotes, then any number of MIRIAM-namespace columns.
+
+ Name-Value Arguments
+ --------------------
  genesInfo : char
      Path to a *.tsv file with gene information, or 'none'. Columns:
      genes, geneShortNames, then MIRIAM.
@@ -61,10 +64,10 @@
      Path to a *.tsv file with reaction information, or 'none'. Columns:
      rxnIdx, rxnNames, grRules, lb, ub, rev, subSystems, eccodes,
      rxnNotes, rxnReferences, rxnConfidenceScores, then MIRIAM.
- metPrefix : char, optional
+ metPrefix : char
      Prefix used to mint fresh metabolite ids (e.g. 's_' for yeast-GEM,
      'M_' for the cobrapy/BiGG default) (default 'M_').
- rxnPrefix : char, optional
+ rxnPrefix : char
      Prefix used to mint fresh reaction ids (default 'R_').
 
  Returns
@@ -99,7 +102,7 @@ This function is called by:
 <li><a href="#_sub1" class="code">function newModel = extractAndAddMiriam(model,raw,inputIndex,modelIndex,type)</a></li></ul>
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function newModel=curateModelFromTables(model,metsInfo,genesInfo,rxnsCoeffs,rxnsInfo,metPrefix,rxnPrefix)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function newModel=curateModelFromTables(model,metsInfo,varargin)</a>
 0002 <span class="comment">% curateModelFromTables  Curate or add mets, rxns and genes from tables.</span>
 0003 <span class="comment">%</span>
 0004 <span class="comment">% Curate existing and/or add new metabolites, reactions and genes from</span>
@@ -123,338 +126,347 @@ This function is called by:
 0022 <span class="comment">%     Path to a *.tsv file with metabolite information, or 'none' to skip</span>
 0023 <span class="comment">%     metabolite curation. Columns: metNames, comps, formula, charge,</span>
 0024 <span class="comment">%     inchi, metNotes, then any number of MIRIAM-namespace columns.</span>
-0025 <span class="comment">% genesInfo : char</span>
-0026 <span class="comment">%     Path to a *.tsv file with gene information, or 'none'. Columns:</span>
-0027 <span class="comment">%     genes, geneShortNames, then MIRIAM.</span>
-0028 <span class="comment">% rxnsCoeffs : char</span>
-0029 <span class="comment">%     Path to a *.tsv file with reaction stoichiometric coefficients, or</span>
-0030 <span class="comment">%     'none'. Columns: rxnIdx, rxnNames, metNames, comps, coefficient. One</span>
-0031 <span class="comment">%     row per (reaction, metabolite) pair.</span>
-0032 <span class="comment">% rxnsInfo : char</span>
-0033 <span class="comment">%     Path to a *.tsv file with reaction information, or 'none'. Columns:</span>
-0034 <span class="comment">%     rxnIdx, rxnNames, grRules, lb, ub, rev, subSystems, eccodes,</span>
-0035 <span class="comment">%     rxnNotes, rxnReferences, rxnConfidenceScores, then MIRIAM.</span>
-0036 <span class="comment">% metPrefix : char, optional</span>
-0037 <span class="comment">%     Prefix used to mint fresh metabolite ids (e.g. 's_' for yeast-GEM,</span>
-0038 <span class="comment">%     'M_' for the cobrapy/BiGG default) (default 'M_').</span>
-0039 <span class="comment">% rxnPrefix : char, optional</span>
-0040 <span class="comment">%     Prefix used to mint fresh reaction ids (default 'R_').</span>
-0041 <span class="comment">%</span>
-0042 <span class="comment">% Returns</span>
-0043 <span class="comment">% -------</span>
-0044 <span class="comment">% newModel : struct</span>
-0045 <span class="comment">%     Curated RAVEN model structure.</span>
-0046 <span class="comment">%</span>
-0047 <span class="comment">% Examples</span>
-0048 <span class="comment">% --------</span>
-0049 <span class="comment">%     newModel = curateModelFromTables(model, metsInfo, genesInfo, ...</span>
-0050 <span class="comment">%                     rxnsCoeffs, rxnsInfo, metPrefix, rxnPrefix);</span>
-0051 <span class="comment">%</span>
-0052 <span class="comment">% Notes</span>
-0053 <span class="comment">% -----</span>
-0054 <span class="comment">% The 'everything after the core columns is MIRIAM' convention applies to</span>
-0055 <span class="comment">% all three info tables: any column whose header is not one of the listed</span>
-0056 <span class="comment">% core fields is treated as a MIRIAM annotation namespace and stored on</span>
-0057 <span class="comment">% the matching entity.</span>
-0058 
-0059 <span class="keyword">if</span> nargin==4
-0060     error(<span class="string">'Provide both a ''rxnsInfo'' and a ''rxnsCoeffs'' file'</span>)
-0061 <span class="keyword">end</span>
-0062 <span class="keyword">if</span> nargin&lt;4
-0063     rxnsInfo=<span class="string">'none'</span>;
-0064     rxnsCoeffs=<span class="string">'none'</span>;
-0065 <span class="keyword">end</span>
-0066 <span class="keyword">if</span> nargin&lt;3
-0067     genesInfo=<span class="string">'none'</span>;
-0068 <span class="keyword">end</span>
-0069 <span class="keyword">if</span> nargin&lt;6 || isempty(metPrefix)
-0070     metPrefix = <span class="string">'M_'</span>;
-0071 <span class="keyword">end</span>
-0072 <span class="keyword">if</span> nargin&lt;7 || isempty(rxnPrefix)
-0073     rxnPrefix = <span class="string">'R_'</span>;
-0074 <span class="keyword">end</span>
-0075 newModel=model;
-0076 
-0077 <span class="comment">%% Metabolites</span>
-0078 <span class="keyword">if</span> ~strcmp(metsInfo,<span class="string">'none'</span>)
-0079     fid = fopen(metsInfo);
-0080     raw = textscan(fid,[<span class="string">'%q'</span> repmat(<span class="string">' %q'</span>,1,17)],<span class="string">'Delimiter'</span>,<span class="string">'\t'</span>);
-0081     fclose(fid);
-0082     metsToAdd.metNames      = raw{1}(2:end);
-0083     metsToAdd.compartments  = raw{2}(2:end);
-0084     metsToAdd.metFormulas   = raw{3}(2:end);
-0085     metsToAdd.metCharges    = cellfun(@str2num,raw{4}(2:end),<span class="string">'UniformOutput'</span>,false);
-0086     emptyEntry = cellfun(@isempty,metsToAdd.metCharges);
-0087     <span class="keyword">if</span> all(emptyEntry)
-0088         metsToAdd           = rmfield(metsToAdd,<span class="string">'metCharges'</span>);
-0089     <span class="keyword">elseif</span> any(emptyEntry) <span class="comment">% If some charges are given, assume 0 for those without charges specified</span>
-0090         metsToAdd.metCharges(emptyEntry) = {0};
-0091         metsToAdd.metCharges = cell2mat(metsToAdd.metCharges);
-0092     <span class="keyword">else</span>
+0025 <span class="comment">%</span>
+0026 <span class="comment">% Name-Value Arguments</span>
+0027 <span class="comment">% --------------------</span>
+0028 <span class="comment">% genesInfo : char</span>
+0029 <span class="comment">%     Path to a *.tsv file with gene information, or 'none'. Columns:</span>
+0030 <span class="comment">%     genes, geneShortNames, then MIRIAM.</span>
+0031 <span class="comment">% rxnsCoeffs : char</span>
+0032 <span class="comment">%     Path to a *.tsv file with reaction stoichiometric coefficients, or</span>
+0033 <span class="comment">%     'none'. Columns: rxnIdx, rxnNames, metNames, comps, coefficient. One</span>
+0034 <span class="comment">%     row per (reaction, metabolite) pair.</span>
+0035 <span class="comment">% rxnsInfo : char</span>
+0036 <span class="comment">%     Path to a *.tsv file with reaction information, or 'none'. Columns:</span>
+0037 <span class="comment">%     rxnIdx, rxnNames, grRules, lb, ub, rev, subSystems, eccodes,</span>
+0038 <span class="comment">%     rxnNotes, rxnReferences, rxnConfidenceScores, then MIRIAM.</span>
+0039 <span class="comment">% metPrefix : char</span>
+0040 <span class="comment">%     Prefix used to mint fresh metabolite ids (e.g. 's_' for yeast-GEM,</span>
+0041 <span class="comment">%     'M_' for the cobrapy/BiGG default) (default 'M_').</span>
+0042 <span class="comment">% rxnPrefix : char</span>
+0043 <span class="comment">%     Prefix used to mint fresh reaction ids (default 'R_').</span>
+0044 <span class="comment">%</span>
+0045 <span class="comment">% Returns</span>
+0046 <span class="comment">% -------</span>
+0047 <span class="comment">% newModel : struct</span>
+0048 <span class="comment">%     Curated RAVEN model structure.</span>
+0049 <span class="comment">%</span>
+0050 <span class="comment">% Examples</span>
+0051 <span class="comment">% --------</span>
+0052 <span class="comment">%     newModel = curateModelFromTables(model, metsInfo, genesInfo, ...</span>
+0053 <span class="comment">%                     rxnsCoeffs, rxnsInfo, metPrefix, rxnPrefix);</span>
+0054 <span class="comment">%</span>
+0055 <span class="comment">% Notes</span>
+0056 <span class="comment">% -----</span>
+0057 <span class="comment">% The 'everything after the core columns is MIRIAM' convention applies to</span>
+0058 <span class="comment">% all three info tables: any column whose header is not one of the listed</span>
+0059 <span class="comment">% core fields is treated as a MIRIAM annotation namespace and stored on</span>
+0060 <span class="comment">% the matching entity.</span>
+0061 
+0062 p=parseRAVENargs(varargin, {<span class="string">'genesInfo'</span>,<span class="string">'none'</span>; <span class="string">'rxnsCoeffs'</span>,<span class="string">'none'</span>; <span class="string">'rxnsInfo'</span>,<span class="string">'none'</span>; <span class="string">'metPrefix'</span>,[]; <span class="string">'rxnPrefix'</span>,[]});
+0063 genesInfo=p.genesInfo;
+0064 rxnsCoeffs=p.rxnsCoeffs;
+0065 rxnsInfo=p.rxnsInfo;
+0066 metPrefix=p.metPrefix;
+0067 <span class="keyword">if</span> isempty(metPrefix)
+0068     metPrefix = <span class="string">'M_'</span>;
+0069 <span class="keyword">end</span>
+0070 rxnPrefix=p.rxnPrefix;
+0071 <span class="keyword">if</span> isempty(rxnPrefix)
+0072     rxnPrefix = <span class="string">'R_'</span>;
+0073 <span class="keyword">end</span>
+0074 <span class="keyword">if</span> xor(strcmp(rxnsCoeffs,<span class="string">'none'</span>), strcmp(rxnsInfo,<span class="string">'none'</span>))
+0075     error(<span class="string">'Provide both a ''rxnsInfo'' and a ''rxnsCoeffs'' file'</span>)
+0076 <span class="keyword">end</span>
+0077 newModel=model;
+0078 
+0079 <span class="comment">%% Metabolites</span>
+0080 <span class="keyword">if</span> ~strcmp(metsInfo,<span class="string">'none'</span>)
+0081     fid = fopen(metsInfo);
+0082     raw = textscan(fid,[<span class="string">'%q'</span> repmat(<span class="string">' %q'</span>,1,17)],<span class="string">'Delimiter'</span>,<span class="string">'\t'</span>);
+0083     fclose(fid);
+0084     metsToAdd.metNames      = raw{1}(2:end);
+0085     metsToAdd.compartments  = raw{2}(2:end);
+0086     metsToAdd.metFormulas   = raw{3}(2:end);
+0087     metsToAdd.metCharges    = cellfun(@str2num,raw{4}(2:end),<span class="string">'UniformOutput'</span>,false);
+0088     emptyEntry = cellfun(@isempty,metsToAdd.metCharges);
+0089     <span class="keyword">if</span> all(emptyEntry)
+0090         metsToAdd           = rmfield(metsToAdd,<span class="string">'metCharges'</span>);
+0091     <span class="keyword">elseif</span> any(emptyEntry) <span class="comment">% If some charges are given, assume 0 for those without charges specified</span>
+0092         metsToAdd.metCharges(emptyEntry) = {0};
 0093         metsToAdd.metCharges = cell2mat(metsToAdd.metCharges);
-0094     <span class="keyword">end</span>
-0095     metsToAdd.inchis        = raw{5}(2:end);
-0096     metsToAdd.metNotes      = raw{6}(2:end);
-0097     
-0098     <span class="comment">% Check if metabolite already exists (check by metName[comp])</span>
-0099     existingMets            = [];
-0100     existingMetsIdx         = [];
-0101     newMets                 = [];
-0102     <span class="keyword">for</span> i=1:numel(metsToAdd.metNames)
-0103         metIdx              = find(strcmp(newModel.metNames,metsToAdd.metNames{i}));
-0104         existMet            = strcmp(metsToAdd.compartments{i},newModel.comps(newModel.metComps(metIdx)));
-0105         <span class="keyword">if</span> any(existMet)
-0106             existingMets    = [existingMets, i];
-0107             existingMetsIdx = [existingMetsIdx, metIdx(existMet)];
-0108         <span class="keyword">else</span>
-0109             newMets    = [newMets, i];
-0110         <span class="keyword">end</span>
-0111     <span class="keyword">end</span>
-0112     
-0113     <span class="comment">% Overwrite annotation of existing entries</span>
-0114     <span class="keyword">if</span> any(existingMets)
-0115         <span class="keyword">if</span> isfield(newModel,<span class="string">'metFormulas'</span>)
-0116             newModel.metFormulas(existingMetsIdx)  = metsToAdd.metFormulas(existingMets);
-0117         <span class="keyword">end</span>
-0118         <span class="keyword">if</span> isfield(newModel,<span class="string">'metCharges'</span>) &amp;&amp; isfield(metsToAdd,<span class="string">'metCharges'</span>)
-0119             newModel.metCharges(existingMetsIdx)   = metsToAdd.metCharges(existingMets);
-0120         <span class="keyword">end</span>
-0121         <span class="keyword">if</span> isfield(newModel,<span class="string">'inchis'</span>)
-0122             newModel.inchis(existingMetsIdx)       = metsToAdd.inchis(existingMets);
-0123         <span class="keyword">end</span>
-0124         newModel = <a href="#_sub1" class="code" title="subfunction newModel = extractAndAddMiriam(model,raw,inputIndex,modelIndex,type)">extractAndAddMiriam</a>(newModel,raw(7:end),existingMets,existingMetsIdx,<span class="string">'met'</span>);
-0125         warning([<span class="string">'The following metabolites are already present in the model, '</span><span class="keyword">...</span>
-0126             <span class="string">'their annotation will be overwritten to match the metsInfo file. '</span><span class="keyword">...</span>
-0127             <span class="string">'If you do not particularly want to curate their annotations, it '</span><span class="keyword">...</span>
-0128             <span class="string">'would be better to removes these metabolites from metsInfo:\n\t\t%s'</span>],<span class="keyword">...</span>
-0129             strjoin(strcat(metsToAdd.metNames(existingMets),<span class="string">'['</span>,metsToAdd.compartments(existingMets),<span class="string">']'</span>),<span class="string">'\n\t\t'</span>));
-0130     <span class="keyword">end</span>
-0131     
-0132     <span class="comment">% Continue with new metabolites</span>
-0133     <span class="keyword">if</span> numel(newMets)&gt;0
-0134         metsToAdd.metNames(existingMets)        = [];
-0135         metsToAdd.compartments(existingMets)    = [];
-0136         metsToAdd.metFormulas(existingMets)     = [];
-0137         <span class="keyword">if</span> all(cellfun(@isempty,metsToAdd.metFormulas))
-0138             metsToAdd = rmfield(metsToAdd,<span class="string">'metFormulas'</span>);
-0139         <span class="keyword">end</span>
-0140         <span class="keyword">if</span> isfield(metsToAdd,<span class="string">'metCharges'</span>)
-0141             metsToAdd.metCharges(existingMets)    = [];
-0142         <span class="keyword">end</span>
-0143         metsToAdd.inchis(existingMets)          = [];
-0144         <span class="keyword">if</span> all(cellfun(@isempty,metsToAdd.inchis))
-0145             metsToAdd = rmfield(metsToAdd,<span class="string">'inchis'</span>);
-0146         <span class="keyword">end</span>
-0147         metsToAdd.metNotes(existingMets)        = [];
-0148         <span class="keyword">if</span> all(cellfun(@isempty,metsToAdd.metNotes))
-0149             metsToAdd = rmfield(metsToAdd,<span class="string">'metNotes'</span>);
-0150         <span class="keyword">end</span>
-0151         <span class="comment">% Add metabolites</span>
-0152         newModel        = addMets(newModel,metsToAdd,true,metPrefix);
-0153         addedIdx        = numel(newModel.mets)-numel(newMets)+1:numel(newModel.mets);
-0154         newModel        = <a href="#_sub1" class="code" title="subfunction newModel = extractAndAddMiriam(model,raw,inputIndex,modelIndex,type)">extractAndAddMiriam</a>(newModel,raw(7:end),newMets,addedIdx,<span class="string">'met'</span>);
-0155     <span class="keyword">end</span>
-0156 <span class="keyword">end</span>
-0157 <span class="comment">%% Genes</span>
-0158 <span class="keyword">if</span> ~strcmp(genesInfo,<span class="string">'none'</span>)
-0159     <span class="comment">% Gather all data, first about reaction stoichiometries...</span>
-0160     fid = fopen(genesInfo);
-0161     raw = textscan(fid,[<span class="string">'%q'</span> repmat(<span class="string">' %q'</span>,1,10)],<span class="string">'Delimiter'</span>,<span class="string">'\t'</span>);
-0162     fclose(fid);
-0163     genesToAdd.genes            = raw{1}(2:end);
-0164     genesToAdd.geneShortNames   = raw{2}(2:end);
-0165 
-0166     [~,notNewGene,existingGene] = intersect(genesToAdd.genes,newModel.genes);
-0167     <span class="keyword">if</span> ~isempty(notNewGene)
-0168         warning([<span class="string">'The following genes are already present in the model, their annotation '</span><span class="keyword">...</span>
-0169             <span class="string">'will be overwritten to match the genesInfo file: \n\t\t%s'</span>],<span class="keyword">...</span>
-0170             strjoin(genesToAdd.genes(notNewGene),<span class="string">'\n\t\t'</span>));
-0171         <span class="keyword">if</span> isfield(newModel,<span class="string">'geneShortNames'</span>)
-0172             newModel.geneShortNames(existingGene) = genesToAdd.geneShortNames(notNewGene);
-0173         <span class="keyword">end</span>
-0174         newModel = <a href="#_sub1" class="code" title="subfunction newModel = extractAndAddMiriam(model,raw,inputIndex,modelIndex,type)">extractAndAddMiriam</a>(newModel,raw(3:end),notNewGene,existingGene,<span class="string">'gene'</span>);
-0175     <span class="keyword">end</span>
-0176     
-0177     <span class="comment">% Continue with new genes</span>
-0178     toAdd               = 1:numel(genesToAdd.genes);
-0179     toAdd(notNewGene)   = [];
-0180     <span class="keyword">if</span> ~isempty(toAdd)
-0181         genesToAdd.genes            = genesToAdd.genes(toAdd);
-0182         genesToAdd.geneShortNames   = genesToAdd.geneShortNames(toAdd);
-0183         <span class="keyword">if</span> all(cellfun(@isempty,genesToAdd.geneShortNames))
-0184             genesToAdd = rmfield(genesToAdd,<span class="string">'geneShortNames'</span>);
-0185         <span class="keyword">end</span>
-0186         <span class="comment">% Add genes</span>
-0187         newModel = addGenesRaven(newModel,genesToAdd);
-0188         addedIdx = numel(newModel.genes)-numel(toAdd)+1:numel(newModel.genes);
-0189         newModel = <a href="#_sub1" class="code" title="subfunction newModel = extractAndAddMiriam(model,raw,inputIndex,modelIndex,type)">extractAndAddMiriam</a>(newModel,raw(3:end),toAdd,addedIdx,<span class="string">'gene'</span>);
-0190     <span class="keyword">end</span>
-0191 <span class="keyword">end</span>
-0192 <span class="comment">%% Reactions</span>
-0193 <span class="keyword">if</span> ~any(strcmp({rxnsCoeffs,rxnsInfo},<span class="string">'none'</span>))
-0194     <span class="comment">% Gather all data, first about reaction stoichiometries...</span>
-0195     fid = fopen(rxnsCoeffs);
-0196     raw = textscan(fid,<span class="string">'%q %q %q %q %f'</span>,<span class="string">'Delimiter'</span>,<span class="string">'\t'</span>,<span class="string">'HeaderLines'</span>,1);
-0197     fclose(fid);
-0198     rxnCheck.coeffsIdx = str2double(raw{1});
-0199     rxns.rxnNames   = raw{2};
-0200     rxns.metNames   = raw{3};
-0201     rxns.comps      = raw{4};
-0202     rxns.coeffs     = raw{5};
-0203     rxnCheck.coeffs = strcat(raw{1},<span class="string">'***'</span>,rxns.rxnNames);
-0204 
-0205     <span class="comment">% ... and then additional reaction-specific data.</span>
-0206     fid = fopen(rxnsInfo);
-0207     raw = textscan(fid,[<span class="string">'%q'</span> repmat(<span class="string">' %q'</span>,1,20)],<span class="string">'Delimiter'</span>,<span class="string">'\t'</span>);
-0208     fclose(fid);
-0209     rxnCheck.rxnsIdx = str2double(raw{1}(2:end));
-0210     rxnCheck.rxns = strcat(raw{1}(2:end),<span class="string">'***'</span>,raw{2}(2:end));
-0211     
-0212     notMatching = setxor(rxnCheck.coeffs,rxnCheck.rxns);
-0213     <span class="keyword">if</span> numel(notMatching)&gt;1
-0214         error([<span class="string">'The following reactions ánd/or their indices are not matched '</span><span class="keyword">...</span>
-0215             <span class="string">'between the rxnsInfo and rxnsCoeffs files:\n\t\t%s'</span>],<span class="keyword">...</span>
-0216             strjoin(regexprep(notMatching,<span class="string">'^\d+***'</span>,<span class="string">''</span>),<span class="string">'\n\t\t'</span>))
-0217     <span class="keyword">end</span>
-0218     
-0219     rxnsToAdd.rxnNames              = raw{2}(2:end);
-0220     rxnsToAdd.grRules               = raw{3}(2:end);
-0221     rxnsToAdd.lb                    = cellfun(@str2num,raw{4}(2:end));
-0222     rxnsToAdd.ub                    = cellfun(@str2num,raw{5}(2:end));
-0223     rxnsToAdd.rev                   = cellfun(@str2num,raw{6}(2:end));
-0224     rxnsToAdd.subSystems            = raw{7}(2:end);
-0225     rxnsToAdd.eccodes               = raw{8}(2:end);
-0226     rxnsToAdd.rxnNotes              = raw{9}(2:end);
-0227     rxnsToAdd.rxnReferences         = raw{10}(2:end);
-0228     rxnsToAdd.rxnConfidenceScores   = cellfun(@str2num,raw{11}(2:end),<span class="string">'UniformOutput'</span>,false);
-0229     emptyEntry = cellfun(@isempty,rxnsToAdd.rxnConfidenceScores);
-0230     <span class="keyword">if</span> all(emptyEntry)
-0231         rxnsToAdd           = rmfield(rxnsToAdd,<span class="string">'rxnConfidenceScores'</span>);
-0232     <span class="keyword">elseif</span> any(emptyEntry) <span class="comment">% If some rxnConfidenceScores are given, assume 0 for those without rxnConfidenceScores specified</span>
-0233         rxnsToAdd.rxnConfidenceScores(emptyEntry) = {0};
-0234         rxnsToAdd.rxnConfidenceScores = cell2mat(rxnsToAdd.rxnConfidenceScores);
-0235     <span class="keyword">else</span>
+0094     <span class="keyword">else</span>
+0095         metsToAdd.metCharges = cell2mat(metsToAdd.metCharges);
+0096     <span class="keyword">end</span>
+0097     metsToAdd.inchis        = raw{5}(2:end);
+0098     metsToAdd.metNotes      = raw{6}(2:end);
+0099     
+0100     <span class="comment">% Check if metabolite already exists (check by metName[comp])</span>
+0101     existingMets            = [];
+0102     existingMetsIdx         = [];
+0103     newMets                 = [];
+0104     <span class="keyword">for</span> i=1:numel(metsToAdd.metNames)
+0105         metIdx              = find(strcmp(newModel.metNames,metsToAdd.metNames{i}));
+0106         existMet            = strcmp(metsToAdd.compartments{i},newModel.comps(newModel.metComps(metIdx)));
+0107         <span class="keyword">if</span> any(existMet)
+0108             existingMets    = [existingMets, i];
+0109             existingMetsIdx = [existingMetsIdx, metIdx(existMet)];
+0110         <span class="keyword">else</span>
+0111             newMets    = [newMets, i];
+0112         <span class="keyword">end</span>
+0113     <span class="keyword">end</span>
+0114     
+0115     <span class="comment">% Overwrite annotation of existing entries</span>
+0116     <span class="keyword">if</span> any(existingMets)
+0117         <span class="keyword">if</span> isfield(newModel,<span class="string">'metFormulas'</span>)
+0118             newModel.metFormulas(existingMetsIdx)  = metsToAdd.metFormulas(existingMets);
+0119         <span class="keyword">end</span>
+0120         <span class="keyword">if</span> isfield(newModel,<span class="string">'metCharges'</span>) &amp;&amp; isfield(metsToAdd,<span class="string">'metCharges'</span>)
+0121             newModel.metCharges(existingMetsIdx)   = metsToAdd.metCharges(existingMets);
+0122         <span class="keyword">end</span>
+0123         <span class="keyword">if</span> isfield(newModel,<span class="string">'inchis'</span>)
+0124             newModel.inchis(existingMetsIdx)       = metsToAdd.inchis(existingMets);
+0125         <span class="keyword">end</span>
+0126         newModel = <a href="#_sub1" class="code" title="subfunction newModel = extractAndAddMiriam(model,raw,inputIndex,modelIndex,type)">extractAndAddMiriam</a>(newModel,raw(7:end),existingMets,existingMetsIdx,<span class="string">'met'</span>);
+0127         warning([<span class="string">'The following metabolites are already present in the model, '</span><span class="keyword">...</span>
+0128             <span class="string">'their annotation will be overwritten to match the metsInfo file. '</span><span class="keyword">...</span>
+0129             <span class="string">'If you do not particularly want to curate their annotations, it '</span><span class="keyword">...</span>
+0130             <span class="string">'would be better to removes these metabolites from metsInfo:\n\t\t%s'</span>],<span class="keyword">...</span>
+0131             strjoin(strcat(metsToAdd.metNames(existingMets),<span class="string">'['</span>,metsToAdd.compartments(existingMets),<span class="string">']'</span>),<span class="string">'\n\t\t'</span>));
+0132     <span class="keyword">end</span>
+0133     
+0134     <span class="comment">% Continue with new metabolites</span>
+0135     <span class="keyword">if</span> numel(newMets)&gt;0
+0136         metsToAdd.metNames(existingMets)        = [];
+0137         metsToAdd.compartments(existingMets)    = [];
+0138         metsToAdd.metFormulas(existingMets)     = [];
+0139         <span class="keyword">if</span> all(cellfun(@isempty,metsToAdd.metFormulas))
+0140             metsToAdd = rmfield(metsToAdd,<span class="string">'metFormulas'</span>);
+0141         <span class="keyword">end</span>
+0142         <span class="keyword">if</span> isfield(metsToAdd,<span class="string">'metCharges'</span>)
+0143             metsToAdd.metCharges(existingMets)    = [];
+0144         <span class="keyword">end</span>
+0145         metsToAdd.inchis(existingMets)          = [];
+0146         <span class="keyword">if</span> all(cellfun(@isempty,metsToAdd.inchis))
+0147             metsToAdd = rmfield(metsToAdd,<span class="string">'inchis'</span>);
+0148         <span class="keyword">end</span>
+0149         metsToAdd.metNotes(existingMets)        = [];
+0150         <span class="keyword">if</span> all(cellfun(@isempty,metsToAdd.metNotes))
+0151             metsToAdd = rmfield(metsToAdd,<span class="string">'metNotes'</span>);
+0152         <span class="keyword">end</span>
+0153         <span class="comment">% Add metabolites</span>
+0154         newModel        = addMets(newModel,metsToAdd,true,metPrefix);
+0155         addedIdx        = numel(newModel.mets)-numel(newMets)+1:numel(newModel.mets);
+0156         newModel        = <a href="#_sub1" class="code" title="subfunction newModel = extractAndAddMiriam(model,raw,inputIndex,modelIndex,type)">extractAndAddMiriam</a>(newModel,raw(7:end),newMets,addedIdx,<span class="string">'met'</span>);
+0157     <span class="keyword">end</span>
+0158 <span class="keyword">end</span>
+0159 <span class="comment">%% Genes</span>
+0160 <span class="keyword">if</span> ~strcmp(genesInfo,<span class="string">'none'</span>)
+0161     <span class="comment">% Gather all data, first about reaction stoichiometries...</span>
+0162     fid = fopen(genesInfo);
+0163     raw = textscan(fid,[<span class="string">'%q'</span> repmat(<span class="string">' %q'</span>,1,10)],<span class="string">'Delimiter'</span>,<span class="string">'\t'</span>);
+0164     fclose(fid);
+0165     genesToAdd.genes            = raw{1}(2:end);
+0166     genesToAdd.geneShortNames   = raw{2}(2:end);
+0167 
+0168     [~,notNewGene,existingGene] = intersect(genesToAdd.genes,newModel.genes);
+0169     <span class="keyword">if</span> ~isempty(notNewGene)
+0170         warning([<span class="string">'The following genes are already present in the model, their annotation '</span><span class="keyword">...</span>
+0171             <span class="string">'will be overwritten to match the genesInfo file: \n\t\t%s'</span>],<span class="keyword">...</span>
+0172             strjoin(genesToAdd.genes(notNewGene),<span class="string">'\n\t\t'</span>));
+0173         <span class="keyword">if</span> isfield(newModel,<span class="string">'geneShortNames'</span>)
+0174             newModel.geneShortNames(existingGene) = genesToAdd.geneShortNames(notNewGene);
+0175         <span class="keyword">end</span>
+0176         newModel = <a href="#_sub1" class="code" title="subfunction newModel = extractAndAddMiriam(model,raw,inputIndex,modelIndex,type)">extractAndAddMiriam</a>(newModel,raw(3:end),notNewGene,existingGene,<span class="string">'gene'</span>);
+0177     <span class="keyword">end</span>
+0178     
+0179     <span class="comment">% Continue with new genes</span>
+0180     toAdd               = 1:numel(genesToAdd.genes);
+0181     toAdd(notNewGene)   = [];
+0182     <span class="keyword">if</span> ~isempty(toAdd)
+0183         genesToAdd.genes            = genesToAdd.genes(toAdd);
+0184         genesToAdd.geneShortNames   = genesToAdd.geneShortNames(toAdd);
+0185         <span class="keyword">if</span> all(cellfun(@isempty,genesToAdd.geneShortNames))
+0186             genesToAdd = rmfield(genesToAdd,<span class="string">'geneShortNames'</span>);
+0187         <span class="keyword">end</span>
+0188         <span class="comment">% Add genes</span>
+0189         newModel = addGenesRaven(newModel,genesToAdd);
+0190         addedIdx = numel(newModel.genes)-numel(toAdd)+1:numel(newModel.genes);
+0191         newModel = <a href="#_sub1" class="code" title="subfunction newModel = extractAndAddMiriam(model,raw,inputIndex,modelIndex,type)">extractAndAddMiriam</a>(newModel,raw(3:end),toAdd,addedIdx,<span class="string">'gene'</span>);
+0192     <span class="keyword">end</span>
+0193 <span class="keyword">end</span>
+0194 <span class="comment">%% Reactions</span>
+0195 <span class="keyword">if</span> ~any(strcmp({rxnsCoeffs,rxnsInfo},<span class="string">'none'</span>))
+0196     <span class="comment">% Gather all data, first about reaction stoichiometries...</span>
+0197     fid = fopen(rxnsCoeffs);
+0198     raw = textscan(fid,<span class="string">'%q %q %q %q %f'</span>,<span class="string">'Delimiter'</span>,<span class="string">'\t'</span>,<span class="string">'HeaderLines'</span>,1);
+0199     fclose(fid);
+0200     rxnCheck.coeffsIdx = str2double(raw{1});
+0201     rxns.rxnNames   = raw{2};
+0202     rxns.metNames   = raw{3};
+0203     rxns.comps      = raw{4};
+0204     rxns.coeffs     = raw{5};
+0205     rxnCheck.coeffs = strcat(raw{1},<span class="string">'***'</span>,rxns.rxnNames);
+0206 
+0207     <span class="comment">% ... and then additional reaction-specific data.</span>
+0208     fid = fopen(rxnsInfo);
+0209     raw = textscan(fid,[<span class="string">'%q'</span> repmat(<span class="string">' %q'</span>,1,20)],<span class="string">'Delimiter'</span>,<span class="string">'\t'</span>);
+0210     fclose(fid);
+0211     rxnCheck.rxnsIdx = str2double(raw{1}(2:end));
+0212     rxnCheck.rxns = strcat(raw{1}(2:end),<span class="string">'***'</span>,raw{2}(2:end));
+0213     
+0214     notMatching = setxor(rxnCheck.coeffs,rxnCheck.rxns);
+0215     <span class="keyword">if</span> numel(notMatching)&gt;1
+0216         error([<span class="string">'The following reactions ánd/or their indices are not matched '</span><span class="keyword">...</span>
+0217             <span class="string">'between the rxnsInfo and rxnsCoeffs files:\n\t\t%s'</span>],<span class="keyword">...</span>
+0218             strjoin(regexprep(notMatching,<span class="string">'^\d+***'</span>,<span class="string">''</span>),<span class="string">'\n\t\t'</span>))
+0219     <span class="keyword">end</span>
+0220     
+0221     rxnsToAdd.rxnNames              = raw{2}(2:end);
+0222     rxnsToAdd.grRules               = raw{3}(2:end);
+0223     rxnsToAdd.lb                    = cellfun(@str2num,raw{4}(2:end));
+0224     rxnsToAdd.ub                    = cellfun(@str2num,raw{5}(2:end));
+0225     rxnsToAdd.rev                   = cellfun(@str2num,raw{6}(2:end));
+0226     rxnsToAdd.subSystems            = raw{7}(2:end);
+0227     rxnsToAdd.eccodes               = raw{8}(2:end);
+0228     rxnsToAdd.rxnNotes              = raw{9}(2:end);
+0229     rxnsToAdd.rxnReferences         = raw{10}(2:end);
+0230     rxnsToAdd.rxnConfidenceScores   = cellfun(@str2num,raw{11}(2:end),<span class="string">'UniformOutput'</span>,false);
+0231     emptyEntry = cellfun(@isempty,rxnsToAdd.rxnConfidenceScores);
+0232     <span class="keyword">if</span> all(emptyEntry)
+0233         rxnsToAdd           = rmfield(rxnsToAdd,<span class="string">'rxnConfidenceScores'</span>);
+0234     <span class="keyword">elseif</span> any(emptyEntry) <span class="comment">% If some rxnConfidenceScores are given, assume 0 for those without rxnConfidenceScores specified</span>
+0235         rxnsToAdd.rxnConfidenceScores(emptyEntry) = {0};
 0236         rxnsToAdd.rxnConfidenceScores = cell2mat(rxnsToAdd.rxnConfidenceScores);
-0237     <span class="keyword">end</span>
-0238     
-0239     existingRxn=[];
-0240     notNewRxn=[];
-0241     <span class="keyword">for</span> i=1:numel(rxnCheck.rxnsIdx)
-0242         rxnRows                     = find(rxnCheck.rxnsIdx(i)==rxnCheck.coeffsIdx);
-0243         rxnsToAdd.mets{i,1}         = cell(1,1);
-0244         rxnsToAdd.stoichCoeffs{i,1} = cell(1,1);
-0245         <span class="keyword">for</span> j=1:numel(rxnRows)
-0246             newMetComp = [rxns.metNames{rxnRows(j)}, <span class="string">'['</span>, rxns.comps{rxnRows(j)}, <span class="string">']'</span>];
-0247             <span class="keyword">try</span>
-0248                 newMetComp = getIndexes(newModel,newMetComp,<span class="string">'metcomps'</span>);
-0249             <span class="keyword">catch</span>
-0250                 error([<span class="string">'Not all metabolites in reaction &quot;%s&quot; are present in the '</span><span class="keyword">...</span>
-0251                     <span class="string">'model or in the provided table with new metabolites.'</span>],rxnsToAdd.rxnNames{i})
-0252             <span class="keyword">end</span>
-0253             rxnsToAdd.mets{i}(j) = newModel.mets(newMetComp);
-0254             rxnsToAdd.stoichCoeffs{i}{j} = rxns.coeffs(rxnRows(j));
-0255         <span class="keyword">end</span>
-0256         rxnsToAdd.stoichCoeffs{i}=cell2mat(rxnsToAdd.stoichCoeffs{i});
-0257         <span class="comment">%Check if the reaction not already exists, by stoichiometry of its</span>
-0258         <span class="comment">%products and reactants</span>
-0259         modelCoeffs         = transpose(newModel.S(getIndexes(newModel,rxnsToAdd.mets{i},<span class="string">'mets'</span>),:));
-0260         modelCoeffs2        = find(~all(modelCoeffs==0,2));
-0261         modelCoeffs         = modelCoeffs(modelCoeffs2,:);
-0262         [~, duplicateRxn]   = intersect(modelCoeffs,rxnsToAdd.stoichCoeffs{i},<span class="string">'rows'</span>);
-0263         <span class="keyword">if</span> ~isempty(duplicateRxn)
-0264             existingRxn     = [existingRxn,modelCoeffs2(duplicateRxn)];
-0265             notNewRxn       = [notNewRxn,i];
-0266         <span class="keyword">end</span>
-0267     <span class="keyword">end</span>
-0268     
-0269     <span class="comment">% If some reactions already existed, then replace its information</span>
-0270     <span class="keyword">if</span> ~isempty(existingRxn)
-0271         warning([<span class="string">'The following reactions are the same as existing model '</span><span class="keyword">...</span>
-0272             <span class="string">'reactions, their annotation will be overwritten to match the '</span><span class="keyword">...</span>
-0273             <span class="string">'rxnCoeffs file: \n\t\t(Existing reaction ID): New reaction name\n\t\t%s'</span>],<span class="keyword">...</span>
-0274             strjoin(strcat(<span class="string">'('</span>,newModel.rxns(existingRxn),{<span class="string">'): '</span>},rxnsToAdd.rxnNames(notNewRxn)),<span class="string">'\n\t\t'</span>));
-0275         newModel.rxnNames(existingRxn) = rxnsToAdd.rxnNames(notNewRxn);
-0276         newModel.lb(existingRxn)       = rxnsToAdd.lb(notNewRxn);
-0277         newModel.ub(existingRxn)       = rxnsToAdd.ub(notNewRxn);
-0278         newModel.rev(existingRxn)      = rxnsToAdd.rev(notNewRxn);
-0279         <span class="keyword">if</span> isfield(newModel,<span class="string">'subSystems'</span>)
-0280             newModel.subSystems(existingRxn)    = rxnsToAdd.subSystems(notNewRxn);
-0281         <span class="keyword">end</span>
-0282         <span class="keyword">if</span> isfield(newModel,<span class="string">'eccodes'</span>)
-0283             newModel.eccodes(existingRxn)       = rxnsToAdd.eccodes(notNewRxn);
-0284         <span class="keyword">end</span>
-0285         <span class="keyword">if</span> isfield(newModel,<span class="string">'rxnNotes'</span>)
-0286             newModel.rxnNotes(existingRxn)      = rxnsToAdd.rxnNotes(notNewRxn);
-0287         <span class="keyword">end</span>
-0288         <span class="keyword">if</span> isfield(newModel,<span class="string">'rxnConfidenceScores'</span>) &amp;&amp; isfield(rxnsToAdd,<span class="string">'rxnConfidenceScores'</span>)
-0289             newModel.rxnConfidenceScores(existingRxn) = rxnsToAdd.rxnConfidenceScores(notNewRxn);
+0237     <span class="keyword">else</span>
+0238         rxnsToAdd.rxnConfidenceScores = cell2mat(rxnsToAdd.rxnConfidenceScores);
+0239     <span class="keyword">end</span>
+0240     
+0241     existingRxn=[];
+0242     notNewRxn=[];
+0243     <span class="keyword">for</span> i=1:numel(rxnCheck.rxnsIdx)
+0244         rxnRows                     = find(rxnCheck.rxnsIdx(i)==rxnCheck.coeffsIdx);
+0245         rxnsToAdd.mets{i,1}         = cell(1,1);
+0246         rxnsToAdd.stoichCoeffs{i,1} = cell(1,1);
+0247         <span class="keyword">for</span> j=1:numel(rxnRows)
+0248             newMetComp = [rxns.metNames{rxnRows(j)}, <span class="string">'['</span>, rxns.comps{rxnRows(j)}, <span class="string">']'</span>];
+0249             <span class="keyword">try</span>
+0250                 newMetComp = getIndexes(newModel,newMetComp,<span class="string">'metcomps'</span>);
+0251             <span class="keyword">catch</span>
+0252                 error([<span class="string">'Not all metabolites in reaction &quot;%s&quot; are present in the '</span><span class="keyword">...</span>
+0253                     <span class="string">'model or in the provided table with new metabolites.'</span>],rxnsToAdd.rxnNames{i})
+0254             <span class="keyword">end</span>
+0255             rxnsToAdd.mets{i}(j) = newModel.mets(newMetComp);
+0256             rxnsToAdd.stoichCoeffs{i}{j} = rxns.coeffs(rxnRows(j));
+0257         <span class="keyword">end</span>
+0258         rxnsToAdd.stoichCoeffs{i}=cell2mat(rxnsToAdd.stoichCoeffs{i});
+0259         <span class="comment">%Check if the reaction not already exists, by stoichiometry of its</span>
+0260         <span class="comment">%products and reactants</span>
+0261         metIdx              = getIndexes(newModel,rxnsToAdd.mets{i},<span class="string">'mets'</span>);
+0262         modelCoeffs         = transpose(newModel.S(metIdx,:));
+0263         modelCoeffs2        = find(~all(modelCoeffs==0,2));
+0264         <span class="comment">% Only reactions built from exactly these metabolites can be</span>
+0265         <span class="comment">% duplicates. Any model reaction that also involves other</span>
+0266         <span class="comment">% metabolites projects onto the same row of coefficients, but is a</span>
+0267         <span class="comment">% different reaction and must not be overwritten.</span>
+0268         sameSupport         = full(sum(newModel.S(:,modelCoeffs2)~=0,1))' == numel(metIdx);
+0269         modelCoeffs2        = modelCoeffs2(sameSupport);
+0270         modelCoeffs         = modelCoeffs(modelCoeffs2,:);
+0271         [~, duplicateRxn]   = intersect(modelCoeffs,rxnsToAdd.stoichCoeffs{i},<span class="string">'rows'</span>);
+0272         <span class="keyword">if</span> ~isempty(duplicateRxn)
+0273             existingRxn     = [existingRxn,modelCoeffs2(duplicateRxn)];
+0274             notNewRxn       = [notNewRxn,i];
+0275         <span class="keyword">end</span>
+0276     <span class="keyword">end</span>
+0277     
+0278     <span class="comment">% If some reactions already existed, then replace its information</span>
+0279     <span class="keyword">if</span> ~isempty(existingRxn)
+0280         warning([<span class="string">'The following reactions are the same as existing model '</span><span class="keyword">...</span>
+0281             <span class="string">'reactions, their annotation will be overwritten to match the '</span><span class="keyword">...</span>
+0282             <span class="string">'rxnCoeffs file: \n\t\t(Existing reaction ID): New reaction name\n\t\t%s'</span>],<span class="keyword">...</span>
+0283             strjoin(strcat(<span class="string">'('</span>,newModel.rxns(existingRxn),{<span class="string">'): '</span>},rxnsToAdd.rxnNames(notNewRxn)),<span class="string">'\n\t\t'</span>));
+0284         newModel.rxnNames(existingRxn) = rxnsToAdd.rxnNames(notNewRxn);
+0285         newModel.lb(existingRxn)       = rxnsToAdd.lb(notNewRxn);
+0286         newModel.ub(existingRxn)       = rxnsToAdd.ub(notNewRxn);
+0287         newModel.rev(existingRxn)      = rxnsToAdd.rev(notNewRxn);
+0288         <span class="keyword">if</span> isfield(newModel,<span class="string">'subSystems'</span>)
+0289             newModel.subSystems(existingRxn)    = rxnsToAdd.subSystems(notNewRxn);
 0290         <span class="keyword">end</span>
-0291         emptyEntries = cellfun(@isempty,rxnsToAdd.grRules);
-0292         <span class="keyword">if</span> ~all(emptyEntries)
-0293             newModel    = changeGrRules(newModel,newModel.rxns(existingRxn(~emptyEntries)),rxnsToAdd.grRules(notNewRxn(~emptyEntries)),true);
-0294         <span class="keyword">end</span>        
-0295         newModel    = <a href="#_sub1" class="code" title="subfunction newModel = extractAndAddMiriam(model,raw,inputIndex,modelIndex,type)">extractAndAddMiriam</a>(newModel,raw(11:end),notNewRxn,existingRxn,<span class="string">'rxn'</span>);
-0296     <span class="keyword">end</span>
-0297     
-0298     <span class="comment">% Continue with new reactions</span>
-0299     toAdd               = 1:numel(rxnsToAdd.rxnNames);
-0300     toAdd(notNewRxn)    = [];
-0301     <span class="keyword">if</span> ~isempty(toAdd)
-0302         rxnsToAdd.rxnNames      = rxnsToAdd.rxnNames(toAdd);
-0303         rxnsToAdd.lb            = rxnsToAdd.lb(toAdd);
-0304         rxnsToAdd.ub            = rxnsToAdd.ub(toAdd);
-0305         rxnsToAdd.rev           = rxnsToAdd.rev(toAdd);
-0306         rxnsToAdd.subSystems    = rxnsToAdd.subSystems(toAdd);
-0307         <span class="keyword">if</span> all(cellfun(@isempty,rxnsToAdd.subSystems))
-0308             rxnsToAdd = rmfield(rxnsToAdd,<span class="string">'subSystems'</span>);
-0309         <span class="keyword">end</span>
-0310         rxnsToAdd.eccodes       = rxnsToAdd.eccodes(toAdd);
-0311         <span class="keyword">if</span> all(cellfun(@isempty,rxnsToAdd.eccodes))
-0312             rxnsToAdd = rmfield(rxnsToAdd,<span class="string">'eccodes'</span>);
-0313         <span class="keyword">end</span>
-0314         rxnsToAdd.rxnNotes      = rxnsToAdd.rxnNotes(toAdd);
-0315         <span class="keyword">if</span> all(cellfun(@isempty,rxnsToAdd.rxnNotes))
-0316             rxnsToAdd = rmfield(rxnsToAdd,<span class="string">'rxnNotes'</span>);
-0317         <span class="keyword">end</span>
-0318         <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'rxnConfidenceScores'</span>)
-0319             rxnsToAdd.rxnConfidenceScores = rxnsToAdd.rxnConfidenceScores(toAdd);
-0320         <span class="keyword">end</span>
-0321         rxnsToAdd.rxnReferences = rxnsToAdd.rxnReferences(toAdd);
-0322         <span class="keyword">if</span> all(cellfun(@isempty,rxnsToAdd.rxnReferences))
-0323             rxnsToAdd = rmfield(rxnsToAdd,<span class="string">'rxnReferences'</span>);
-0324         <span class="keyword">end</span>
-0325         rxnsToAdd.grRules       = rxnsToAdd.grRules(toAdd);
-0326         rxnsToAdd.mets          = rxnsToAdd.mets(toAdd);
-0327         rxnsToAdd.stoichCoeffs  = rxnsToAdd.stoichCoeffs(toAdd);
-0328         rxnsToAdd.rxns          = generateNewIds(model,<span class="string">'rxns'</span>,rxnPrefix,numel(rxnsToAdd.rxnNames));
-0329         
-0330         newModel        = addRxns(newModel,rxnsToAdd,1,[],false,false);
-0331         rxnsModelIdx    = numel(newModel.rxns)-numel(toAdd)+1:numel(newModel.rxns);
-0332         newModel        = <a href="#_sub1" class="code" title="subfunction newModel = extractAndAddMiriam(model,raw,inputIndex,modelIndex,type)">extractAndAddMiriam</a>(newModel,raw(11:end),toAdd,rxnsModelIdx,<span class="string">'rxn'</span>);
-0333     <span class="keyword">end</span>
-0334 <span class="keyword">end</span>
-0335 <span class="keyword">end</span>
-0336 
-0337 <a name="_sub1" href="#_subfunctions" class="code">function newModel = extractAndAddMiriam(model,raw,inputIndex,modelIndex,type)</a>
-0338 newModel=model;
-0339 miriamName              = cell(numel(inputIndex),1);
-0340 miriamValues            = cell(1,numel(inputIndex));
-0341 <span class="keyword">for</span> i=1:numel(raw)
-0342     miriamName{i}                       = raw{i}{1};
-0343     miriamValues(1:numel(inputIndex),i) = raw{i}(inputIndex+1);
+0291         <span class="keyword">if</span> isfield(newModel,<span class="string">'eccodes'</span>)
+0292             newModel.eccodes(existingRxn)       = rxnsToAdd.eccodes(notNewRxn);
+0293         <span class="keyword">end</span>
+0294         <span class="keyword">if</span> isfield(newModel,<span class="string">'rxnNotes'</span>)
+0295             newModel.rxnNotes(existingRxn)      = rxnsToAdd.rxnNotes(notNewRxn);
+0296         <span class="keyword">end</span>
+0297         <span class="keyword">if</span> isfield(newModel,<span class="string">'rxnConfidenceScores'</span>) &amp;&amp; isfield(rxnsToAdd,<span class="string">'rxnConfidenceScores'</span>)
+0298             newModel.rxnConfidenceScores(existingRxn) = rxnsToAdd.rxnConfidenceScores(notNewRxn);
+0299         <span class="keyword">end</span>
+0300         emptyEntries = cellfun(@isempty,rxnsToAdd.grRules);
+0301         <span class="keyword">if</span> ~all(emptyEntries)
+0302             newModel    = changeGrRules(newModel,newModel.rxns(existingRxn(~emptyEntries)),rxnsToAdd.grRules(notNewRxn(~emptyEntries)),true);
+0303         <span class="keyword">end</span>        
+0304         newModel    = <a href="#_sub1" class="code" title="subfunction newModel = extractAndAddMiriam(model,raw,inputIndex,modelIndex,type)">extractAndAddMiriam</a>(newModel,raw(11:end),notNewRxn,existingRxn,<span class="string">'rxn'</span>);
+0305     <span class="keyword">end</span>
+0306     
+0307     <span class="comment">% Continue with new reactions</span>
+0308     toAdd               = 1:numel(rxnsToAdd.rxnNames);
+0309     toAdd(notNewRxn)    = [];
+0310     <span class="keyword">if</span> ~isempty(toAdd)
+0311         rxnsToAdd.rxnNames      = rxnsToAdd.rxnNames(toAdd);
+0312         rxnsToAdd.lb            = rxnsToAdd.lb(toAdd);
+0313         rxnsToAdd.ub            = rxnsToAdd.ub(toAdd);
+0314         rxnsToAdd.rev           = rxnsToAdd.rev(toAdd);
+0315         rxnsToAdd.subSystems    = rxnsToAdd.subSystems(toAdd);
+0316         <span class="keyword">if</span> all(cellfun(@isempty,rxnsToAdd.subSystems))
+0317             rxnsToAdd = rmfield(rxnsToAdd,<span class="string">'subSystems'</span>);
+0318         <span class="keyword">end</span>
+0319         rxnsToAdd.eccodes       = rxnsToAdd.eccodes(toAdd);
+0320         <span class="keyword">if</span> all(cellfun(@isempty,rxnsToAdd.eccodes))
+0321             rxnsToAdd = rmfield(rxnsToAdd,<span class="string">'eccodes'</span>);
+0322         <span class="keyword">end</span>
+0323         rxnsToAdd.rxnNotes      = rxnsToAdd.rxnNotes(toAdd);
+0324         <span class="keyword">if</span> all(cellfun(@isempty,rxnsToAdd.rxnNotes))
+0325             rxnsToAdd = rmfield(rxnsToAdd,<span class="string">'rxnNotes'</span>);
+0326         <span class="keyword">end</span>
+0327         <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'rxnConfidenceScores'</span>)
+0328             rxnsToAdd.rxnConfidenceScores = rxnsToAdd.rxnConfidenceScores(toAdd);
+0329         <span class="keyword">end</span>
+0330         rxnsToAdd.rxnReferences = rxnsToAdd.rxnReferences(toAdd);
+0331         <span class="keyword">if</span> all(cellfun(@isempty,rxnsToAdd.rxnReferences))
+0332             rxnsToAdd = rmfield(rxnsToAdd,<span class="string">'rxnReferences'</span>);
+0333         <span class="keyword">end</span>
+0334         rxnsToAdd.grRules       = rxnsToAdd.grRules(toAdd);
+0335         rxnsToAdd.mets          = rxnsToAdd.mets(toAdd);
+0336         rxnsToAdd.stoichCoeffs  = rxnsToAdd.stoichCoeffs(toAdd);
+0337         rxnsToAdd.rxns          = generateNewIds(model,<span class="string">'rxns'</span>,rxnPrefix,numel(rxnsToAdd.rxnNames));
+0338         
+0339         newModel        = addRxns(newModel,rxnsToAdd,1,[],false,false);
+0340         rxnsModelIdx    = numel(newModel.rxns)-numel(toAdd)+1:numel(newModel.rxns);
+0341         newModel        = <a href="#_sub1" class="code" title="subfunction newModel = extractAndAddMiriam(model,raw,inputIndex,modelIndex,type)">extractAndAddMiriam</a>(newModel,raw(11:end),toAdd,rxnsModelIdx,<span class="string">'rxn'</span>);
+0342     <span class="keyword">end</span>
+0343 <span class="keyword">end</span>
 0344 <span class="keyword">end</span>
-0345 emptyMiriam     =   all(cellfun(@isempty,miriamValues),1);
-0346 miriamName(emptyMiriam)     = [];
-0347 miriamValues(:,emptyMiriam) = [];
-0348 <span class="keyword">if</span> ~isfield(newModel,[type <span class="string">'Miriams'</span>]);
-0349     newModel.([type <span class="string">'Miriams'</span>])=cell(numel(newModel.([type <span class="string">'s'</span>])),1);
-0350 <span class="keyword">end</span>
-0351 <span class="keyword">if</span> ~isempty(miriamName)
-0352     <span class="keyword">for</span> i=1:numel(miriamName)
-0353         newModel = editMiriam(newModel,type,modelIndex,miriamName{i},miriamValues(:,i),<span class="string">'replace'</span>);
-0354     <span class="keyword">end</span>
-0355 <span class="keyword">end</span>
-0356 <span class="keyword">end</span></pre></div>
+0345 
+0346 <a name="_sub1" href="#_subfunctions" class="code">function newModel = extractAndAddMiriam(model,raw,inputIndex,modelIndex,type)</a>
+0347 newModel=model;
+0348 miriamName              = cell(numel(inputIndex),1);
+0349 miriamValues            = cell(1,numel(inputIndex));
+0350 <span class="keyword">for</span> i=1:numel(raw)
+0351     miriamName{i}                       = raw{i}{1};
+0352     miriamValues(1:numel(inputIndex),i) = raw{i}(inputIndex+1);
+0353 <span class="keyword">end</span>
+0354 emptyMiriam     =   all(cellfun(@isempty,miriamValues),1);
+0355 miriamName(emptyMiriam)     = [];
+0356 miriamValues(:,emptyMiriam) = [];
+0357 <span class="keyword">if</span> ~isfield(newModel,[type <span class="string">'Miriams'</span>]);
+0358     newModel.([type <span class="string">'Miriams'</span>])=cell(numel(newModel.([type <span class="string">'s'</span>])),1);
+0359 <span class="keyword">end</span>
+0360 <span class="keyword">if</span> ~isempty(miriamName)
+0361     <span class="keyword">for</span> i=1:numel(miriamName)
+0362         newModel = editMiriam(newModel,type,modelIndex,miriamName{i},miriamValues(:,i),<span class="string">'replace'</span>);
+0363     <span class="keyword">end</span>
+0364 <span class="keyword">end</span>
+0365 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

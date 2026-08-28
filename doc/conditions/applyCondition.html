@@ -190,57 +190,73 @@ This function is called by:
 0088     <span class="keyword">if</span> isfield(cp, <span class="string">'charge_balance_met'</span>)
 0089         balanceIdx = find(strcmp(model.mets, cp.charge_balance_met));
 0090         model.S(balanceIdx, cofacIdx) = 0;
-0091         model.S(balanceIdx, cofacIdx) = <span class="keyword">...</span>
-0092             -sum(model.S(:, cofacIdx) .* model.metCharges, <span class="string">'omitnan'</span>);
-0093     <span class="keyword">end</span>
-0094 <span class="keyword">end</span>
-0095 
-0096 <span class="comment">% --- Step 3: biomass stoichiometry delta ------------------------------</span>
-0097 <span class="keyword">if</span> isfield(cond, <span class="string">'biomass_stoichiometry_delta'</span>)
-0098     delta = cond.biomass_stoichiometry_delta;
-0099     bioIdx = getIndexes(model, delta.rxn_id, <span class="string">'rxns'</span>);
-0100     <span class="keyword">if</span> isfield(delta, <span class="string">'add'</span>)
-0101         <span class="keyword">for</span> i = 1:numel(delta.add)
-0102             entry = delta.add{i};
-0103             metIdx = getIndexes(model, entry.met, <span class="string">'mets'</span>);
-0104             model.S(metIdx, bioIdx) = full(model.S(metIdx, bioIdx)) + entry.coef;
-0105         <span class="keyword">end</span>
-0106     <span class="keyword">end</span>
-0107 <span class="keyword">end</span>
-0108 
-0109 <span class="comment">% --- Step 4: bounds ---------------------------------------------------</span>
-0110 nUptake = 0;
-0111 <span class="keyword">if</span> isfield(cond, <span class="string">'bounds'</span>)
-0112     <span class="keyword">for</span> i = 1:numel(cond.bounds)
-0113         b = cond.bounds{i};
-0114         rxnIdx = find(strcmp(model.rxns, b.rxn));
-0115         <span class="keyword">if</span> isempty(rxnIdx)
-0116             warning(<span class="string">'applyCondition:missingRxn'</span>, <span class="keyword">...</span>
-0117                 <span class="string">'Reaction %s not found in model; skipping.'</span>, b.rxn);
-0118             <span class="keyword">continue</span>;
-0119         <span class="keyword">end</span>
-0120         <span class="keyword">if</span> isfield(b, <span class="string">'lb'</span>)
-0121             model.lb(rxnIdx) = b.lb;
-0122             <span class="keyword">if</span> b.lb == -1000
-0123                 nUptake = nUptake + 1;
-0124             <span class="keyword">end</span>
-0125         <span class="keyword">end</span>
-0126         <span class="keyword">if</span> isfield(b, <span class="string">'ub'</span>)
-0127             model.ub(rxnIdx) = b.ub;
-0128         <span class="keyword">end</span>
-0129     <span class="keyword">end</span>
-0130 <span class="keyword">end</span>
-0131 
-0132 <span class="comment">% --- Step 5: uptake sanity check --------------------------------------</span>
-0133 <span class="keyword">if</span> isfield(cond, <span class="string">'expected_uptake_count'</span>)
-0134     <span class="keyword">if</span> nUptake ~= cond.expected_uptake_count
-0135         warning(<span class="string">'applyCondition:uptakeCountMismatch'</span>, <span class="keyword">...</span>
-0136             <span class="string">'Expected %d uptake reactions, applied %d. Some may be missing from the model.'</span>, <span class="keyword">...</span>
-0137             cond.expected_uptake_count, nUptake);
-0138     <span class="keyword">end</span>
-0139 <span class="keyword">end</span>
-0140 
-0141 <span class="keyword">end</span></pre></div>
+0091         <span class="comment">% Only the participating metabolites may be summed: S is sparse and</span>
+0092         <span class="comment">% 0*NaN is NaN, while 'omitnan' would treat an unset charge as</span>
+0093         <span class="comment">% neutral and silently write the wrong balancing coefficient.</span>
+0094         metIdx = find(model.S(:, cofacIdx));
+0095         <span class="keyword">if</span> ~isfield(model, <span class="string">'metCharges'</span>)
+0096             error(<span class="string">'applyCondition:noCharges'</span>, <span class="keyword">...</span>
+0097                 [<span class="string">'Cannot charge balance %s: the model has no metCharges '</span> <span class="keyword">...</span>
+0098                  <span class="string">'field.'</span>], cp.rxn_id);
+0099         <span class="keyword">end</span>
+0100         unknown = metIdx(isnan(model.metCharges(metIdx)));
+0101         <span class="keyword">if</span> ~isempty(unknown)
+0102             error(<span class="string">'applyCondition:unknownCharge'</span>, <span class="keyword">...</span>
+0103                 [<span class="string">'Cannot charge balance %s: the following metabolites have '</span> <span class="keyword">...</span>
+0104                  <span class="string">'no charge, so the charge balance is unknown rather than '</span> <span class="keyword">...</span>
+0105                  <span class="string">'zero:\n\t%s'</span>], cp.rxn_id, strjoin(model.mets(unknown), <span class="string">', '</span>));
+0106         <span class="keyword">end</span>
+0107         model.S(balanceIdx, cofacIdx) = <span class="keyword">...</span>
+0108             -sum(full(model.S(metIdx, cofacIdx)) .* model.metCharges(metIdx));
+0109     <span class="keyword">end</span>
+0110 <span class="keyword">end</span>
+0111 
+0112 <span class="comment">% --- Step 3: biomass stoichiometry delta ------------------------------</span>
+0113 <span class="keyword">if</span> isfield(cond, <span class="string">'biomass_stoichiometry_delta'</span>)
+0114     delta = cond.biomass_stoichiometry_delta;
+0115     bioIdx = getIndexes(model, delta.rxn_id, <span class="string">'rxns'</span>);
+0116     <span class="keyword">if</span> isfield(delta, <span class="string">'add'</span>)
+0117         <span class="keyword">for</span> i = 1:numel(delta.add)
+0118             entry = delta.add{i};
+0119             metIdx = getIndexes(model, entry.met, <span class="string">'mets'</span>);
+0120             model.S(metIdx, bioIdx) = full(model.S(metIdx, bioIdx)) + entry.coef;
+0121         <span class="keyword">end</span>
+0122     <span class="keyword">end</span>
+0123 <span class="keyword">end</span>
+0124 
+0125 <span class="comment">% --- Step 4: bounds ---------------------------------------------------</span>
+0126 nUptake = 0;
+0127 <span class="keyword">if</span> isfield(cond, <span class="string">'bounds'</span>)
+0128     <span class="keyword">for</span> i = 1:numel(cond.bounds)
+0129         b = cond.bounds{i};
+0130         rxnIdx = find(strcmp(model.rxns, b.rxn));
+0131         <span class="keyword">if</span> isempty(rxnIdx)
+0132             warning(<span class="string">'applyCondition:missingRxn'</span>, <span class="keyword">...</span>
+0133                 <span class="string">'Reaction %s not found in model; skipping.'</span>, b.rxn);
+0134             <span class="keyword">continue</span>;
+0135         <span class="keyword">end</span>
+0136         <span class="keyword">if</span> isfield(b, <span class="string">'lb'</span>)
+0137             model.lb(rxnIdx) = b.lb;
+0138             <span class="keyword">if</span> b.lb == -1000
+0139                 nUptake = nUptake + 1;
+0140             <span class="keyword">end</span>
+0141         <span class="keyword">end</span>
+0142         <span class="keyword">if</span> isfield(b, <span class="string">'ub'</span>)
+0143             model.ub(rxnIdx) = b.ub;
+0144         <span class="keyword">end</span>
+0145     <span class="keyword">end</span>
+0146 <span class="keyword">end</span>
+0147 
+0148 <span class="comment">% --- Step 5: uptake sanity check --------------------------------------</span>
+0149 <span class="keyword">if</span> isfield(cond, <span class="string">'expected_uptake_count'</span>)
+0150     <span class="keyword">if</span> nUptake ~= cond.expected_uptake_count
+0151         warning(<span class="string">'applyCondition:uptakeCountMismatch'</span>, <span class="keyword">...</span>
+0152             <span class="string">'Expected %d uptake reactions, applied %d. Some may be missing from the model.'</span>, <span class="keyword">...</span>
+0153             cond.expected_uptake_count, nUptake);
+0154     <span class="keyword">end</span>
+0155 <span class="keyword">end</span>
+0156 
+0157 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

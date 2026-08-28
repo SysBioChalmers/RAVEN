@@ -1,0 +1,162 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of getUniProtScores</title>
+  <meta name="keywords" content="getUniProtScores">
+  <meta name="description" content="getUniProtScores  Fetch curated subcellular locations from UniProt -&gt; gene scoring structure.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">localization</a> &gt; getUniProtScores.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for localization&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>getUniProtScores
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>getUniProtScores  Fetch curated subcellular locations from UniProt -&gt; gene scoring structure.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function GSS = getUniProtScores(organism, varargin) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> getUniProtScores  Fetch curated subcellular locations from UniProt -&gt; gene scoring structure.
+
+ Queries the UniProtKB REST API for an organism's &quot;Subcellular location&quot; annotations and parses
+ them into the GSS consumed by predictLocalization (no manual export needed). UniProt's curated
+ location is qualitative, so each annotated compartment gets score 1.0 (a multi-located protein
+ lands in several). Requires an internet connection.
+
+ Parameters
+ ----------
+ organism : double or char
+     a UniProt organism / taxonomy id (e.g. 559292 for S. cerevisiae S288C).
+
+ Name-Value Arguments
+ --------------------
+ idField : char
+     which identifier becomes the gene id: 'gene_oln' (ordered locus / ORF, the default, which
+     matches yeast-GEM), 'accession', or 'gene_primary'.
+ reviewed : logical
+     restrict to curated Swiss-Prot entries (default true).
+ compartmentMap : containers.Map
+     label -&gt; compartment id and location vocabulary (default defaultCompartmentMap).
+ extraQuery : char
+     an additional UniProt query clause, ANDed into the query (e.g. 'gene:CIT1').
+
+ Returns
+ -------
+ GSS : struct
+     a gene scoring structure for predictLocalization.
+
+ Examples
+ --------
+     GSS = getUniProtScores(559292);                       % all reviewed S. cerevisiae proteins
+     GSS = getUniProtScores(559292, 'idField', 'accession');
+
+ See also
+ --------
+ <a href="parseScores.html" class="code" title="function GSS = parseScores(inputFile, varargin)">parseScores</a>, <a href="predictLocalization.html" class="code" title="function [outModel, geneLocalization, transportStruct, scores,removedRxns] = predictLocalization(model, GSS,defaultCompartment, varargin)">predictLocalization</a>, <a href="defaultCompartmentMap.html" class="code" title="function map = defaultCompartmentMap()">defaultCompartmentMap</a></pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="defaultCompartmentMap.html" class="code" title="function map = defaultCompartmentMap()">defaultCompartmentMap</a>	defaultCompartmentMap  Default predictor/database compartment label -> model compartment id.</li><li><a href="parseScores.html" class="code" title="function GSS = parseScores(inputFile, varargin)">parseScores</a>	parseScores  Parse predictor / database output into a gene scoring structure (GSS).</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function i_deleteIfExists(f)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function GSS = getUniProtScores(organism, varargin)</a>
+0002 <span class="comment">% getUniProtScores  Fetch curated subcellular locations from UniProt -&gt; gene scoring structure.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Queries the UniProtKB REST API for an organism's &quot;Subcellular location&quot; annotations and parses</span>
+0005 <span class="comment">% them into the GSS consumed by predictLocalization (no manual export needed). UniProt's curated</span>
+0006 <span class="comment">% location is qualitative, so each annotated compartment gets score 1.0 (a multi-located protein</span>
+0007 <span class="comment">% lands in several). Requires an internet connection.</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% Parameters</span>
+0010 <span class="comment">% ----------</span>
+0011 <span class="comment">% organism : double or char</span>
+0012 <span class="comment">%     a UniProt organism / taxonomy id (e.g. 559292 for S. cerevisiae S288C).</span>
+0013 <span class="comment">%</span>
+0014 <span class="comment">% Name-Value Arguments</span>
+0015 <span class="comment">% --------------------</span>
+0016 <span class="comment">% idField : char</span>
+0017 <span class="comment">%     which identifier becomes the gene id: 'gene_oln' (ordered locus / ORF, the default, which</span>
+0018 <span class="comment">%     matches yeast-GEM), 'accession', or 'gene_primary'.</span>
+0019 <span class="comment">% reviewed : logical</span>
+0020 <span class="comment">%     restrict to curated Swiss-Prot entries (default true).</span>
+0021 <span class="comment">% compartmentMap : containers.Map</span>
+0022 <span class="comment">%     label -&gt; compartment id and location vocabulary (default defaultCompartmentMap).</span>
+0023 <span class="comment">% extraQuery : char</span>
+0024 <span class="comment">%     an additional UniProt query clause, ANDed into the query (e.g. 'gene:CIT1').</span>
+0025 <span class="comment">%</span>
+0026 <span class="comment">% Returns</span>
+0027 <span class="comment">% -------</span>
+0028 <span class="comment">% GSS : struct</span>
+0029 <span class="comment">%     a gene scoring structure for predictLocalization.</span>
+0030 <span class="comment">%</span>
+0031 <span class="comment">% Examples</span>
+0032 <span class="comment">% --------</span>
+0033 <span class="comment">%     GSS = getUniProtScores(559292);                       % all reviewed S. cerevisiae proteins</span>
+0034 <span class="comment">%     GSS = getUniProtScores(559292, 'idField', 'accession');</span>
+0035 <span class="comment">%</span>
+0036 <span class="comment">% See also</span>
+0037 <span class="comment">% --------</span>
+0038 <span class="comment">% parseScores, predictLocalization, defaultCompartmentMap</span>
+0039 
+0040 p = parseRAVENargs(varargin, {<span class="string">'idField'</span>,<span class="string">'gene_oln'</span>; <span class="string">'reviewed'</span>,true; <span class="keyword">...</span>
+0041                               <span class="string">'compartmentMap'</span>,[]; <span class="string">'extraQuery'</span>,[]});
+0042 idField = char(p.idField);
+0043 <span class="keyword">if</span> ~any(strcmp(idField, {<span class="string">'gene_oln'</span>,<span class="string">'accession'</span>,<span class="string">'gene_primary'</span>}))
+0044     error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'idField must be gene_oln, accession, or gene_primary'</span>);
+0045 <span class="keyword">end</span>
+0046 
+0047 query = [<span class="string">'organism_id:'</span> char(string(organism))];
+0048 <span class="keyword">if</span> p.reviewed; query = [query <span class="string">' AND reviewed:true'</span>]; <span class="keyword">end</span>
+0049 <span class="keyword">if</span> ~isempty(p.extraQuery); query = [query <span class="string">' AND ('</span> char(p.extraQuery) <span class="string">')'</span>]; <span class="keyword">end</span>
+0050 
+0051 <span class="comment">% Put the chosen id field first so parseScores reads it as the gene id column.</span>
+0052 fields = [idField <span class="string">',cc_subcellular_location'</span>];
+0053 outFile = [tempname <span class="string">'.tsv'</span>];
+0054 cleanup = onCleanup(@() <a href="#_sub1" class="code" title="subfunction i_deleteIfExists(f)">i_deleteIfExists</a>(outFile)); <span class="comment">%#ok&lt;NASGU&gt; — removes temp file on return/error</span>
+0055 websave(outFile, <span class="string">'https://rest.uniprot.org/uniprotkb/stream'</span>, <span class="keyword">...</span>
+0056         <span class="string">'query'</span>, query, <span class="string">'format'</span>, <span class="string">'tsv'</span>, <span class="string">'fields'</span>, fields, weboptions(<span class="string">'Timeout'</span>, 120));
+0057 
+0058 <span class="comment">% The UniProt /stream endpoint gzip-compresses the body and MATLAB does not auto-decompress it,</span>
+0059 <span class="comment">% so detect the gzip magic bytes and inflate before parsing.</span>
+0060 fid = fopen(outFile, <span class="string">'r'</span>);
+0061 magic = fread(fid, 2, <span class="string">'uint8'</span>)';
+0062 fclose(fid);
+0063 <span class="keyword">if</span> isequal(magic, [31 139])
+0064     gz = [outFile <span class="string">'.gz'</span>];
+0065     movefile(outFile, gz);
+0066     gunzip(gz);                 <span class="comment">% writes outFile (drops the .gz extension)</span>
+0067     delete(gz);
+0068 <span class="keyword">end</span>
+0069 
+0070 map = p.compartmentMap;
+0071 <span class="keyword">if</span> isempty(map); map = <a href="defaultCompartmentMap.html" class="code" title="function map = defaultCompartmentMap()">defaultCompartmentMap</a>(); <span class="keyword">end</span>
+0072 GSS = <a href="parseScores.html" class="code" title="function GSS = parseScores(inputFile, varargin)">parseScores</a>(outFile, <span class="string">'predictor'</span>, <span class="string">'uniprot'</span>, <span class="string">'compartmentMap'</span>, map);
+0073 <span class="keyword">end</span>
+0074 
+0075 <a name="_sub1" href="#_subfunctions" class="code">function i_deleteIfExists(f)</a>
+0076 <span class="keyword">if</span> isfile(f); delete(f); <span class="keyword">end</span>
+0077 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>
