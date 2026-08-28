@@ -133,7 +133,12 @@ for i = 1:length(model.rxns)
 end
 
 %Genes:
-if isfield(model,'genes')
+% Omit the whole section for an empty gene list, same as an absent
+% genes field: writing a bare `- genes:` with nothing following parses
+% as `genes: null`, not an empty list, and crashes readers that assume
+% a present key means a list (raven_toolbox.io.read_yaml_model among
+% them).
+if isfield(model,'genes') && ~isempty(model.genes)
     fprintf(fid,'- genes:\n');
     for i = 1:length(model.genes)
         fprintf(fid,'  - !!omap\n');
