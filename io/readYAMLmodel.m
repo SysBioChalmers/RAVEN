@@ -102,7 +102,20 @@ line_value = regexprep(line_value, '[^":]+: (.+)$','$1');
 % for double quotes: an unquoted value that happens to contain a genuine
 % apostrophe, e.g. "yeast's hexokinase reaction", must keep it --- only
 % the wrapping pair is a delimiter, not every quote-like character.
+wasSingleQuoted = ~cellfun('isempty', regexp(line_value, '^''.*''$', 'once'));
+wasDoubleQuoted = ~cellfun('isempty', regexp(line_value, '^".*"$', 'once'));
 line_value = regexprep(line_value, '^(["''])(.*)\1$','$2');
+% Undo each quote style's own escaping so the reader recovers the exact
+% original text: single-quoted YAML doubles a literal apostrophe ('' -> ');
+% double-quoted YAML backslash-escapes a literal backslash and double quote
+% (\\ -> \, \" -> "). The backslash pass goes through a sentinel character
+% first so an escaped backslash immediately followed by an escaped quote
+% (\\\" in the file, a literal \" in the value) round-trips correctly
+% instead of the second pass misreading the first's output.
+line_value(wasSingleQuoted) = strrep(line_value(wasSingleQuoted), '''''', '''');
+line_value(wasDoubleQuoted) = strrep(line_value(wasDoubleQuoted), '\\', char(1));
+line_value(wasDoubleQuoted) = strrep(line_value(wasDoubleQuoted), '\"', '"');
+line_value(wasDoubleQuoted) = strrep(line_value(wasDoubleQuoted), char(1), '\');
 line_value = regexprep(line_value, '^ {4,}- ','');
 line_value(strcmp(line_value,'''''')) = {''};
 line_value(strcmp(line_value,line_raw)) = {''};
