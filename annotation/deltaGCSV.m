@@ -27,8 +27,10 @@ function model = deltaGCSV(model, direction, varargin)
 %     On load, a CSV value equal to this (within a small relative tolerance)
 %     means "no measurement" and is left as NaN instead of being stored
 %     literally -- e.g. yeast-GEM's own side-car CSVs use 10000000.0 for
-%     this. Default [] (disabled): every matched value is stored as-is,
-%     including one equal to whatever would otherwise be treated as missing.
+%     this. Default 10000000.0, matching raven_toolbox's DELTA_G_MISSING, so
+%     that both implementations drop yeast-GEM's sentinel rows out of the box
+%     (no real deltaG, in kJ/mol, takes this value). Pass [] to disable and
+%     store every matched value literally, including the sentinel.
 %
 % Returns
 % -------
@@ -39,10 +41,10 @@ function model = deltaGCSV(model, direction, varargin)
 % --------
 %     model = deltaGCSV(model, 'load', 'data/met_dG.csv', 'data/rxn_dG.csv');
 %     deltaGCSV(model, 'save', 'data/met_dG.csv', 'data/rxn_dG.csv');
-%     model = deltaGCSV(model, 'load', 'metCsv', 'data/met_dG.csv', 'missingValue', 10000000.0);
+%     model = deltaGCSV(model, 'load', 'metCsv', 'data/met_dG.csv', 'missingValue', []);
 
 direction=char(direction);
-p=parseRAVENargs(varargin, {'metCsv',''; 'rxnCsv',''; 'verbose',false; 'missingValue',[]});
+p=parseRAVENargs(varargin, {'metCsv',''; 'rxnCsv',''; 'verbose',false; 'missingValue',1e7});
 metCsv=p.metCsv;
 rxnCsv=p.rxnCsv;
 verbose=p.verbose;

@@ -42,5 +42,33 @@ classdef tAnnotation < RavenTestCase
             testCase.verifyEqual(m2.rxnDeltaG, m.rxnDeltaG, 'AbsTol', 1e-6);
         end
 
+        function deltaGCsvDropsSentinelByDefault(testCase)
+            % Default missingValue is 1e7, matching raven_toolbox's
+            % DELTA_G_MISSING: yeast-GEM's "no measurement" sentinel loads as
+            % NaN, not as a real deltaG.
+            m = testCase.model;
+            metCsv = [tempname '.csv'];
+            testCase.addTeardown(@() delete(metCsv));
+            fid = fopen(metCsv, 'w');
+            fprintf(fid, 'Var1,Var2\n%s,-42.5\n%s,10000000.0\n', m.mets{1}, m.mets{2});
+            fclose(fid);
+            evalc('md = deltaGCSV(m, ''load'', ''metCsv'', metCsv);');
+            testCase.verifyEqual(md.metDeltaG(1), -42.5, 'AbsTol', 1e-9);
+            testCase.verifyTrue(isnan(md.metDeltaG(2)));
+        end
+
+        function deltaGCsvKeepsSentinelWhenDisabled(testCase)
+            % Passing [] disables the sentinel (raven_toolbox's missing_value
+            % =None), storing the 1e7 value literally.
+            m = testCase.model;
+            metCsv = [tempname '.csv'];
+            testCase.addTeardown(@() delete(metCsv));
+            fid = fopen(metCsv, 'w');
+            fprintf(fid, 'Var1,Var2\n%s,10000000.0\n', m.mets{1});
+            fclose(fid);
+            evalc('mk = deltaGCSV(m, ''load'', ''metCsv'', metCsv, ''missingValue'', []);');
+            testCase.verifyEqual(mk.metDeltaG(1), 1e7, 'AbsTol', 1e-3);
+        end
+
     end
 end
