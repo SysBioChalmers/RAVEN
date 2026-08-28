@@ -1,4 +1,4 @@
-<img src="./RAVEN2.png" width="200px">
+<img src="./RAVEN.png" width="200px">
 
 [![Current release](https://img.shields.io/github/release/SysBioChalmers/RAVEN/all.svg)](https://GitHub.com/SysBioChalmers/RAVEN/releases/)
 [![GitHub Discussions](https://img.shields.io/github/discussions-search?query=repo%3Asysbiochalmers%2raven&label=GitHub%20Discussions)](https://github.com/SysBioChalmers/RAVEN/discussions)
