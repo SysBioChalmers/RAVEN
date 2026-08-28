@@ -495,7 +495,7 @@ end
 end
 
 function emitScalarLine(fid, prefix, value, keyIndent, bareNumeric)
-% Emit "PREFIX: VALUE\n" (single-quoted when needed), where PREFIX is the
+% Emit "PREFIX: VALUE\n" (double-quoted when needed), where PREFIX is the
 % "    - key" part with no trailing colon and value is the raw,
 % unescaped scalar content.
 %
@@ -519,23 +519,26 @@ end
 
 function emitScalarCore(fid, ~, value, ~, bareNumeric)
 % Shared tail for emitScalarLine / emitListItem: writes a single space
-% (as ruamel always does after ':' or '-'), then the value, quoted with a
-% single quote when needed. No folding — RAVEN/raven-toolbox's shared
-% format never wraps a scalar across lines, however long, so the two
-% unused positional arguments (column and key indent) only exist to keep
-% every call site's signature stable.
+% (as ruamel always does after ':' or '-'), then the value, double-quoted
+% when needed (matching Prettier's YAML default, rather than ruamel's own
+% single-quote default). No folding — RAVEN/raven-toolbox's shared format
+% never wraps a scalar across lines, however long, so the two unused
+% positional arguments (column and key indent) only exist to keep every
+% call site's signature stable.
 if bareNumeric
     fprintf(fid, ' %s\n', value);
     return
 end
-if needsSingleQuote(value)
-    fprintf(fid, ' ''%s''\n', strrep(value, '''', ''''''));
+if needsQuote(value)
+    escaped = strrep(value, '\', '\\');
+    escaped = strrep(escaped, '"', '\"');
+    fprintf(fid, ' "%s"\n', escaped);
 else
     fprintf(fid, ' %s\n', value);
 end
 end
 
-function tf = needsSingleQuote(s)
+function tf = needsQuote(s)
 % Whether ruamel would quote this scalar: either because a plain (bare)
 % reading would resolve to a non-string YAML type (bool/int/float/null/
 % timestamp — cobra's dumper never emits explicit type tags), or because
