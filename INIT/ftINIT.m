@@ -10,9 +10,6 @@ function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, fullMipRes
 % generation process, and outputs the prepData, which is input to this
 % function.
 %
-% This is the main function for automatic reconstruction of models based on the
-% ftINIT algorithm.
-%
 % Parameters
 % ----------
 % prepData : struct
@@ -120,14 +117,12 @@ if isempty(useScoresForTasks)
     useScoresForTasks = true;
 end
 %Handle detected mets:
-%Previously, this was handled by giving a bonus for secreting those metabolites,
-%but that does not work since the metabolite secretion and uptake can be lost when
-%we merge linearly dependent reactions.
-%Instead, we need to figure out which reactions either produce or take up the mets.
-%We then give a bonus if any of them carry flux.
-%To simplify things, we focus on reactions that produce the metabolite (since there must be one such reaction). 
-%It is still a bit complicated though. In this step, we focus on identifying
-%producer reactions. We further reason that the direction does not matter -
+%Giving a bonus for secreting these metabolites does not work, since the
+%metabolite secretion and uptake can be lost when we merge linearly dependent
+%reactions. Instead, we need to figure out which reactions either produce or
+%take up the mets, and give a bonus if any of them carry flux. To simplify
+%things, we focus on reactions that produce the metabolite (since there must
+%be one such reaction). We further reason that the direction does not matter -
 %we can force one of these reactions in any direction - if it becomes a consumer, it will
 %automatically force another producer on as well (otherwise we will have a net consumption).
 
@@ -260,9 +255,8 @@ for initStep = 1:length(INITSteps)
         
         %now run the MILP
         try
-            %The prodweight for metabolomics is currently set to 5 - 0.5 was default in the old version, which I deemed very small?
-            %There could be a need to specify this somewhere in the call at some point. 
-            %This value has not been evaluated, but is assumed in the test cases - if changed, update the test case
+            %The prodweight for metabolomics is set to 5. This value has not
+            %been evaluated, but is assumed in the test cases - if changed, update the test case
             startVals = [];
             if ~isempty(fullMipRes)
                 startVals = fullMipRes.full;
@@ -343,11 +337,8 @@ initModel.id = 'INITModel';
 %If gaps in the model should be filled using a task list
 if ~isempty(prepData.taskStruct)
     %Remove exchange reactions and reactions already included in the INIT
-    %model
-    %We changed strategy and instead include all rxns except the exchange rxns in the ref model
-    %But we do keep the exchange rxns that are essential.
-    %Testing removal of all, which should work
-    
+    %model. Exchange rxns that are essential are kept.
+
     %At this stage the model is fully connected and most of the genes with
     %good scores should have been included. The final gap-filling should
     %take the scores of the genes into account, so that "rather bad"

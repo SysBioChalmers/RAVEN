@@ -247,7 +247,7 @@ if ~isOptimal
 end
 
 x=res.full(1:numel(model.rxns));%the fluxes
-I=res.full(intsIndexes) > 10^-3;%The margin for integers in gurobi is 10^-5, not 10^-12 that was previously used! Use 10^-3 to have some margin!
+I=res.full(intsIndexes) > 10^-3;%The margin for integers in gurobi is 10^-5; use 10^-3 to have some margin.
 
 tmp = res.full(intsIndexes);
 sel = (tmp > 10^-12) & (tmp < 0.5);

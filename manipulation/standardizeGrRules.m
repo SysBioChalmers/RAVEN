@@ -37,9 +37,8 @@ function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,varargin)
 %
 % Notes
 % -----
-% If this function is going to be used in a model reconstruction or
-% modification pipeline it is recommended to run this function just at the
-% beginning of the process.
+% If used in a model reconstruction or modification pipeline, run this
+% function first.
 
 %Preallocate fields
 n          = length(model.rxns);
@@ -93,7 +92,6 @@ if isfield(model,'grRules')
         if ~ismember(i,indexes2check)
             newSTR = [];
             if ~isempty(genesSets)
-                %For each simple genes set in the rule
                 for j=1:length(genesSets)
                     simpleSet  = genesSets{j};
                     %Enclose simpleSet in brackets
@@ -126,7 +124,6 @@ end
 %grRule string
 function genesSets = getSimpleGeneSets(originalSTR)
 genesSets  = [];
-%If gene rule is not empty split in all its different isoenzymes
 if ~isempty(originalSTR)
     originalSTR = strtrim(originalSTR);
     %Remove all brackets
@@ -151,7 +148,6 @@ if ~isempty(genesSets)
         genes = strsplit(STR,' ');
         for k=1:length(genes)
             if ~strcmpi(genes(k),' and ')
-                %Get gene index
                 genePos = find(strcmpi(modelGenes,genes(k)));
                 if ~isempty(genePos)
                     rxnGeneMat(i,genePos) = 1;

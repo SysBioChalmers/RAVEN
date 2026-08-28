@@ -1,6 +1,6 @@
 function [ravenPath, prevDir] = findRAVENroot()
 % findRAVENroot
-%   Finds the root of the RAVEN directory, first by  by searching for the path to
+%   Finds the root of the RAVEN directory by searching for the path to
 %   RAVEN.png. Can also record the current directory, in case a function will
 %   use the ravenPath to navigate to a precise folder, and it should return to
 %   the previous directory afterwards. See e.g. optimizeProb calling glpk.

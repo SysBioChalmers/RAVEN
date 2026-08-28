@@ -163,7 +163,7 @@ params.printReport=true;
 % 	10. Progesterone[s] (connects 9 metabolites)
 
 % This is a very useful way of directing the gap-filling tasks to where they
-% are of the greatest use. In this case it says that in order to have net
+% are of the greatest use. In this case it says that to have net
 % production of all metabolites in the model from the simple inputs which
 % have been defined (543 metabolites can currently not have net production)
 % one needs to connect 322 unconnected metabolites in. However, by

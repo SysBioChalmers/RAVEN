@@ -34,9 +34,7 @@ function [outModel, addedRxns, failedTasks]=ftINITFillGapsForAllTasks(model,refM
 %                   Such tasks add no reactions, so they are otherwise
 %                   indistinguishable from tasks that already worked
 %
-%   This function fills gaps in a model by using a reference model, so
-%   that the resulting model can perform a list of metabolic tasks. The
-%   gap-filling is done in a task-by-task manner, rather than solving for
+%   The gap-filling is done in a task-by-task manner, rather than solving for
 %   all tasks at once. This means that the order of the tasks could influence
 %   the result.
 %

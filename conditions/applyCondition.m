@@ -7,9 +7,8 @@ function model = applyCondition(model, condition)
 % and a per-reaction bounds diff. The schema is intentionally narrow so a
 % condition can be reviewed as data.
 %
-% Yeast-GEM was the first consumer; the same schema works for any GEM that
-% keeps its condition presets as data rather than as code.
-% Project-specific extensions (e.g. yeast-GEM's amino_acid_ratio step that
+% The same schema works for any GEM that keeps its condition presets as
+% data rather than as code. Project-specific extensions (e.g. yeast-GEM's amino_acid_ratio step that
 % rewrites a protein pseudoreaction's stoichiometry from a side-car TSV)
 % are handled by the caller before / after this function — kept
 % upstream-narrow on purpose.

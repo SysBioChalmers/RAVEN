@@ -1,11 +1,9 @@
 function newModel=ravenCobraWrapper(model)
 % ravenCobraWrapper  Convert between RAVEN and COBRA structures.
 %
-% This function is a bidirectional tool to convert between RAVEN and COBRA
-% structures. It recognises a COBRA structure by checking the existence of
-% the field 'rules', which is only found in a COBRA Toolbox structure. If
-% the COBRA model also has a grRules field, then this will be used instead
-% of parsing the rules field.
+% Recognises a COBRA structure by checking for the field 'rules', found
+% only in a COBRA Toolbox structure. If the COBRA model also has a grRules
+% field, that is used instead of parsing rules.
 %
 % Parameters
 % ----------
@@ -70,7 +68,7 @@ geneNamespaces  = COBRAnamespace(startsWith(COBRAfields,'gene'));
 fclose(fid);
 
 if isRaven
-    %Firstly remove boundary metabolites
+    %Remove boundary metabolites
     model=simplifyModel(model);
 end
 
@@ -426,9 +424,8 @@ newModel=standardizeModelFieldOrder(newModel); % Corrects for both RAVEN and COB
 end
 
 function rules=grrulesToRules(model)
-%This function just takes grRules, changes all gene names to
-%'x(geneNumber)' and also changes 'or' and 'and' relations to corresponding
-%symbols
+%Changes all gene names in grRules to 'x(geneNumber)' and changes 'or' and
+%'and' relations to the corresponding symbols
 replacingGenes=cell([size(model.genes,1) 1]);
 for i=1:numel(replacingGenes)
     replacingGenes{i}=strcat('x(',num2str(i),')');
@@ -445,9 +442,9 @@ rules=strtrim(rules);
 end
 
 function grRules=rulesTogrrules(model)
-%This function takes rules, replaces &/| for and/or, replaces the x(i)
-%format with the actual gene ID, and takes out extra whitespace and
-%redundant parenthesis introduced by COBRA, to create grRules.
+%Replaces &/| with and/or, replaces the x(i) format with the actual gene
+%ID, and strips the extra whitespace and redundant parenthesis introduced
+%by COBRA, to create grRules.
 grRules = strrep(model.rules,'&','and');
 grRules = strrep(grRules,'|','or');
 for i = 1:length(model.genes)

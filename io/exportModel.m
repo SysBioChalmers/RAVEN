@@ -542,7 +542,7 @@ if modelHasSubsystems
     modelSBML.groups_group.sboTerm     = 633;
     grpTemplate = modelSBML.groups_group;
 
-    % === 1) Normalize: make every entry a cell array of chars (vectorized) ===
+    % Normalize: make every entry a cell array of chars
     isChar = cellfun(@ischar, model.subSystems);
     model.subSystems(isChar)  = cellfun(@(s){s}, model.subSystems(isChar),  'UniformOutput', false);
     model.subSystems(cellfun(@isempty, model.subSystems)) = {{}};
@@ -550,7 +550,7 @@ if modelHasSubsystems
     % If some entries contain string scalars by mistake, coerce them:
     model.subSystems = cellfun(@(c) cellfun(@char, c, 'UniformOutput', false), model.subSystems, 'UniformOutput', false);
 
-    % === 2) Flatten once: names and their reaction indices (vectorized) ===
+    % Flatten: names and their reaction indices
     flatNames = vertcat(model.subSystems{:});                    % 1×M cellstr of all subsystem labels
     if isempty(flatNames)
         % Nothing to do: no subsystems present
@@ -562,12 +562,12 @@ if modelHasSubsystems
     flatIdx  = arrayfun(@(r,c) repmat(r, c, 1), (1:numel(model.subSystems)).', counts, 'UniformOutput', false);
     flatIdx  = vertcat(flatIdx{:});           % M×1 vector of reaction indices
 
-    % === 3) Group in one shot: unique subsystems + members per subsystem ===
+    % Group: unique subsystems and members per subsystem
     [subSystems, ~, g] = unique(flatNames, 'stable');          % stable preserves first appearance
     membersIdx = accumarray(g, flatIdx, [], @(v){v});          % cell: one vector of r-idx per group
     nSubs = numel(subSystems);
 
-    % === 4) Preallocate and build SBML groups (single simple loop) ===
+    % Preallocate and build SBML groups
     modelSBML.groups_group(1:nSubs) = grpTemplate;
     groupIDs = "group" + (1:nSubs);
 

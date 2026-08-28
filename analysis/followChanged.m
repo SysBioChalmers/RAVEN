@@ -40,8 +40,8 @@ cutOffFlux=p.cutOffFlux;
 cutOffDiff=p.cutOffDiff;
 metaboliteList=p.metaboliteList;
 
-%Keep track of which optional arguments were supplied, to reproduce the
-%original nargin-based reporting behaviour
+%Track which optional arguments were supplied; the reported message
+%format depends on that, not just on the (post-default) values
 cutOffFluxSupplied=~isempty(cutOffFlux);
 cutOffDiffSupplied=~isempty(cutOffDiff);
 metaboliteListSupplied=~isempty(metaboliteList);
@@ -62,7 +62,7 @@ else
 end
 
 %If a metabolite list is to be used, then find all the reactions involving
-%any of those metabolites Finds the metabolites
+%any of those metabolites
 if metaboliteListSupplied
     reactionIndexes=[];
     for i=1:length(metaboliteList)

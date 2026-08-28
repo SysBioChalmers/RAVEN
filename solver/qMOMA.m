@@ -43,8 +43,8 @@ if any(~rxnExists)
     error('RAVEN:badInput', '%s', 'All reactions in the test model must exist in the reference model');
 end
 
-%In order to make the calculations a little easier to formulate I reshape
-%modelA.S so that it is the same dimension as modelB.S
+%Reshape modelA.S so that it is the same dimension as modelB.S, to make
+%the calculations easier to formulate
 S=modelA.S;
 lb=modelA.lb;
 ub=modelA.ub;

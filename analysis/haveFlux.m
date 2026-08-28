@@ -64,7 +64,7 @@ indexes=getIndexes(smallModel,intersect(smallModel.rxns,rxns),'rxns');
 J=false(numel(indexes),1);
 mixIndexes=indexes(randperm(numel(indexes)));
 
-%Maximize for all fluxes first in order to get fewer rxns to test
+%Maximize for all fluxes first to get fewer rxns to test
 smallModel.c=ones(numel(smallModel.c),1);
 sol=solveLP(smallModel);
 if ~isempty(sol.x)

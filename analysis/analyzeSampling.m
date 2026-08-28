@@ -138,26 +138,10 @@ function p = tcdf(t,v,uflag)
 % P = TCDF(X,V,"upper") computes it for the upper tail instead
 % of the lower tail.
 %
-% This is an alternative to the TCDF function that is implemented
-% in the Matlab statistics toolbox. This version originates from
-% http://www.statsci.org/matlab/statbox.html and originally was called TP.
-% It has been renamed to TCDF for drop-in compatibility with the Matlab
-% version.
-%
-% Gordon Smyth, University of Queensland, gks@maths.uq.edu.au
-% 3 Apr 97
-%
-% NaN compatible - Markus Bauer and Eric Maris, FCDC
-% 27 Jan 2005
-%
-% fixed bug concerning NaN compatibility
-% 21 Aug 2006, Markus Siegel
-%
-% added support for upper tail, see http://bugzilla.fieldtriptoolbox.org/show_bug.cgi?id=3045
-% 13 Jan 2016, Robert Oostenveld
-%
-% taken from https://github.com/fieldtrip/fieldtrip/blob/master/external/stats/tcdf.m
-% 05 May 2022
+% Alternative to the TCDF function in the Matlab statistics toolbox, for use
+% when that toolbox is not installed. Adapted from
+% https://github.com/fieldtrip/fieldtrip/blob/master/external/stats/tcdf.m,
+% originally by Gordon Smyth, University of Queensland.
 
 if v <= 0, error('Degrees of freedom must be positive.'); end
 

@@ -82,7 +82,7 @@ classdef tQueries < RavenTestCase
 
         function getElementalBalanceEmptyRxnIsUnbalanced(testCase)
             % A reaction with no metabolites (all-zero S column) must not
-            % be falsely reported as balanced (B2 fix).
+            % be falsely reported as balanced.
             m = testCase.model;
             m.rxns{end+1}    = 'emptyRxn';
             m.S(:, end+1)    = 0;
@@ -196,8 +196,8 @@ classdef tQueries < RavenTestCase
 
         function getIndexesLogicalMaskAllTrueReturnsIndices(testCase)
             % A logical all-true mask of length n must return numeric [1..n],
-            % not be passed through as a logical array (G5 fix: islogical check
-            % instead of all() which cannot distinguish the two cases).
+            % not be passed through as a logical array: this requires an
+            % islogical check, since all() cannot distinguish the two cases.
             nR = numel(testCase.model.rxns);
             idx = getIndexes(testCase.model, true(nR, 1), 'rxns');
             testCase.verifyClass(idx, 'double');

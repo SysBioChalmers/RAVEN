@@ -2,9 +2,7 @@ function newModel=curateModelFromTables(model,metsInfo,varargin)
 % curateModelFromTables  Curate or add mets, rxns and genes from tables.
 %
 % Curate existing and/or add new metabolites, reactions and genes from
-% tabular data files. Originally extracted from yeast-GEM's
-% curateMetsRxnsGenes; generalised here so any GEM project can drive batch
-% curation from the same set of *.tsv files.
+% tabular data files.
 %
 % If the *.tsv files contain metabolites, reactions and/or genes that are
 % already present in the model, then information in the model will be

@@ -146,7 +146,7 @@ raw(:,end+1)={[]};
 colI(colI==0)=size(raw,2);
 
 %If read from  a text file, the numbers will be strings - fix that
-if convNumeric % in theory, this if should not be needed, the code should do nothing if all are already numeric. But it is kept as a safeguard.
+if convNumeric % safeguard; a no-op if the columns are already numeric
     numericColumns = [0 0 0 1 1 0 1 1 0 1 1 0 1 1 0 0 0] == 1;
     cols = colI(numericColumns);
     numeric = cellfun(@isnumeric,raw(:,cols));

@@ -28,10 +28,10 @@ printModelStats(model,true,true);
 %1006 genes
 
 %Most modelling approaches using GEMs are based on the mass balancing
-%around the internal metabolites in the system. However, in order for the
-%system to uptake or excrete metabolites, some metabolites have been
-%defined as "unconstrained". In order to simulate something, those
-%metabolites have to be removed from the model. The function simplifyModel
+%around the internal metabolites in the system. However, for the system to
+%uptake or excrete metabolites, some metabolites have been defined as
+%"unconstrained". To simulate anything, those metabolites have to be
+%removed from the model. The function simplifyModel
 %is a general-purpose function for making models smaller. This includes the
 %options such as grouping linear reactions and deleting reactions which
 %cannot carry flux. Here it is chosen to delete the exchange metabolites,
@@ -87,7 +87,7 @@ printFluxes(model, sol.x, false, 10^-7);
 
 %Now there are much fewer reactions that are active. Some of them will
 %probably appear to be a little "weird" but that is because the ATP and
-%NAD(P)H produced has to go somewhere in order to be mass balanced.
+%NAD(P)H produced has to go somewhere to be mass balanced.
 
 %If one wants to study the growth instead, change the objective to be the
 %production of biomass instead of CO2

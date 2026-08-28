@@ -1,8 +1,7 @@
 function model = deltaGCSV(model, direction, varargin)
 % deltaGCSV  Load or save metDeltaG and rxnDeltaG via CSV files.
 %
-% Consolidates loadDeltaGfromCSV and saveDeltaGtoCSV into a single function.
-% Mirrors raven_python.annotation.load_delta_g_csv /save_delta_g_csv.
+% Mirrors raven_python.annotation.load_delta_g_csv / save_delta_g_csv.
 %
 % Each CSV is a two-column table: identifier, deltaG. On load, rows whose
 % identifier is not in the model are silently skipped. Pass '' for either

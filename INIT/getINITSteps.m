@@ -2,7 +2,7 @@ function steps = getINITSteps(varargin)
 % getINITSteps  Define the steps used as input to ftINIT.
 %
 % Defines the steps in the way ftINIT is run. Note that all combinations of
-% steps will not work. In general, avoid "exclude" if you want to define new
+% steps will not work. Avoid "exclude" if you want to define new
 % ways to run the algorithm.
 %
 % Name-Value Arguments

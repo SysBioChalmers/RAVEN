@@ -233,7 +233,7 @@ if ~isempty(arrayData) && isfield(arrayData,'singleCells')
             hpaData.gene2Level(I,find_var(end)) = gene_scores;
         end
         
-        % Remove arrayData from the analysis (Might be a bad idea)
+        % Remove arrayData from the analysis
         clear arrayData
         arrayData=[];
     end

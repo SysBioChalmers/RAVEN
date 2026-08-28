@@ -1,8 +1,8 @@
 function model=rescaleModelForINIT(model, varargin)
 % rescaleModelForINIT  Rescale a model to avoid large stoichiometric differences.
 %
-% The idea with this function is to rescale the MILP problem in ftINIT to
-% avoid large differences in flux magnitudes between reactions. Such
+% Rescales the MILP problem in ftINIT to avoid large differences in flux
+% magnitudes between reactions. Such
 % differences cause among other things difficulties regarding tolerances for
 % integer variables. For now it just scales down all reactions with high
 % stoichiometric coefficients. There is room for improvement here - the best

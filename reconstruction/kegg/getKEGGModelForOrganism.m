@@ -208,11 +208,8 @@ if ~isempty(dataDir) && ~isempty(fastaFile)
     if ~endsWith(dataDir,hmmOptions)
         error(['Pre-trained HMMs set is not recognised. dataDir must match one of: ' strjoin(hmmOptions,' or ')])
     end
-    %dataDir points to a RAVEN-provided set. Use the concatenated KO HMM
-    %library (one gzip-compressed flatfile, queried in a single
-    %hmmsearch), downloading and extracting it if necessary. The dataDir
-    %name matches the published HMM library asset, so it doubles as the
-    %download filename.
+    %dataDir points to a RAVEN-provided set. Its name matches the
+    %published HMM library asset, so it doubles as the download filename.
     hmmName=hmmOptions{endsWith(dataDir,hmmOptions)};
     libraryFile=[dataDir '.hmm'];
     if isfile(libraryFile)
@@ -359,12 +356,10 @@ end
 
 %Query the whole proteome against the concatenated KO HMM library in a
 %single hmmsearch. With the profile library as the query and the
-%proteome as the target sequence database, the reported per-hit
-%E-values match the RAVEN historical per-KO hmmsearch (same search
-%direction, same effective database size), so the downstream scoring is
-%unchanged - thousands of hmmsearch calls simply collapse into one, and
-%no per-organism phylogenetic-distance subsampling is needed because the
-%library sequence set is already fixed.
+%proteome as the target sequence database, per-hit E-values stay
+%comparable across KOs (same search direction, same effective database
+%size), and no per-organism phylogenetic-distance subsampling is needed
+%because the library sequence set is already fixed.
 if ispc
     binEnd='.exe';
 elseif ismac
