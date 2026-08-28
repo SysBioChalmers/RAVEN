@@ -1,0 +1,141 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of tConditions</title>
+  <meta name="keywords" content="tConditions">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../index.html">Home</a> &gt;  <a href="#">testing</a> &gt; <a href="index.html">function_tests</a> &gt; tConditions.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for testing\function_tests&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+
+<h1>tConditions
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>This is a script file. </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre class="comment"></pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="RavenTestCase.html" class="code" title="">RavenTestCase</a>	</li><li><a href="tConditions.html" class="code" title="">tConditions</a>	</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="tConditions.html" class="code" title="">tConditions</a>	</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function applyConditionSetsBounds(testCase)</a></li><li><a href="#_sub2" class="code">function applyConditionResetExchangesZeroesUptake(testCase)</a></li><li><a href="#_sub3" class="code">function applyConditionRemoveMetZeroesCoefficient(testCase)</a></li><li><a href="#_sub4" class="code">function applyConditionRecomputesChargeBalance(testCase)</a></li><li><a href="#_sub5" class="code">function applyConditionBiomassDeltaAddsToCoefficient(testCase)</a></li><li><a href="#_sub6" class="code">function m = cofactorModel()</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre>0001 classdef <a href="tConditions.html" class="code" title="">tConditions</a> &lt; <a href="RavenTestCase.html" class="code" title="">RavenTestCase</a>
+0002 <span class="comment">% tConditions  Tests for the condition-application functions in conditions/.</span>
+0003 
+0004     methods (Test)
+0005 
+0006         <a name="_sub0" href="#_subfunctions" class="code">function applyConditionSetsBounds(testCase)</a>
+0007             rxn = testCase.model.rxns{1};
+0008             condition.bounds = {struct(<span class="string">'rxn'</span>, rxn, <span class="string">'lb'</span>, 0, <span class="string">'ub'</span>, 0)};
+0009             evalc(<span class="string">'m2 = applyCondition(testCase.model, condition);'</span>);
+0010             idx = strcmp(m2.rxns, rxn);
+0011             testCase.verifyEqual(m2.ub(idx), 0);
+0012             testCase.verifyEqual(m2.lb(idx), 0);
+0013         <span class="keyword">end</span>
+0014 
+0015         <a name="_sub1" href="#_subfunctions" class="code">function applyConditionResetExchangesZeroesUptake(testCase)</a>
+0016             <span class="comment">% The prelude reopens exchanges to (0, 1000), i.e. no uptake.</span>
+0017             m = testCase.model;
+0018             [~, exchangeRxns] = getExchangeRxns(m);
+0019             m.lb(exchangeRxns) = -37;
+0020             m.ub(exchangeRxns) = 42;
+0021             condition.prelude.reset_exchanges = <span class="string">'both'</span>;
+0022             evalc(<span class="string">'m2 = applyCondition(m, condition);'</span>);
+0023             testCase.verifyEqual(unique(m2.lb(exchangeRxns)), 0);
+0024             testCase.verifyEqual(unique(m2.ub(exchangeRxns)), 1000);
+0025         <span class="keyword">end</span>
+0026 
+0027         <a name="_sub2" href="#_subfunctions" class="code">function applyConditionRemoveMetZeroesCoefficient(testCase)</a>
+0028             <span class="comment">% remove_mets drops a metabolite from the cofactor pseudoreaction.</span>
+0029             m = tConditions.cofactorModel();
+0030             condition.cofactor_pseudoreaction = struct(<span class="string">'rxn_id'</span>, <span class="string">'R_cofactor'</span>, <span class="keyword">...</span>
+0031                 <span class="string">'remove_mets'</span>, {{struct(<span class="string">'met'</span>, <span class="string">'nadh_c'</span>)}});
+0032             evalc(<span class="string">'m2 = applyCondition(m, condition);'</span>);
+0033             testCase.verifyEqual(full(m2.S(strcmp(m2.mets,<span class="string">'nadh_c'</span>), 1)), 0);
+0034         <span class="keyword">end</span>
+0035 
+0036         <a name="_sub3" href="#_subfunctions" class="code">function applyConditionRecomputesChargeBalance(testCase)</a>
+0037             <span class="comment">% charge_balance_met takes whatever coefficient makes the</span>
+0038             <span class="comment">% pseudoreaction charge neutral, recomputed after the removals.</span>
+0039             m = tConditions.cofactorModel();
+0040             condition.cofactor_pseudoreaction = struct(<span class="string">'rxn_id'</span>, <span class="string">'R_cofactor'</span>, <span class="keyword">...</span>
+0041                 <span class="string">'remove_mets'</span>, {{struct(<span class="string">'met'</span>, <span class="string">'nadh_c'</span>)}}, <span class="keyword">...</span>
+0042                 <span class="string">'charge_balance_met'</span>, <span class="string">'h_c'</span>);
+0043             evalc(<span class="string">'m2 = applyCondition(m, condition);'</span>);
+0044             <span class="comment">% Left after removing NADH: atp_c (-1, charge -4) and amp_c</span>
+0045             <span class="comment">% (+1, charge -2), a residual of +2, so H+ must enter at -2.</span>
+0046             testCase.verifyEqual(full(m2.S(strcmp(m2.mets,<span class="string">'h_c'</span>), 1)), -2);
+0047             <span class="comment">% which is to say the reaction ends up charge neutral</span>
+0048             idx = find(m2.S(:,1));
+0049             testCase.verifyEqual(sum(full(m2.S(idx,1)) .* m2.metCharges(idx)), 0);
+0050         <span class="keyword">end</span>
+0051 
+0052         <a name="_sub4" href="#_subfunctions" class="code">function applyConditionBiomassDeltaAddsToCoefficient(testCase)</a>
+0053             <span class="comment">% A stoichiometry delta adds to the existing coefficient rather</span>
+0054             <span class="comment">% than replacing it.</span>
+0055             m = tConditions.cofactorModel();
+0056             m.rxns{2} = <span class="string">'R_biomass'</span>; m.rxnNames{2} = <span class="string">'R_biomass'</span>;
+0057             before = full(m.S(strcmp(m.mets,<span class="string">'atp_c'</span>), 2));
+0058             condition.biomass_stoichiometry_delta = struct(<span class="string">'rxn_id'</span>, <span class="string">'R_biomass'</span>, <span class="keyword">...</span>
+0059                 <span class="string">'add'</span>, {{struct(<span class="string">'met'</span>, <span class="string">'atp_c'</span>, <span class="string">'coef'</span>, -0.5)}});
+0060             evalc(<span class="string">'m2 = applyCondition(m, condition);'</span>);
+0061             testCase.verifyEqual(full(m2.S(strcmp(m2.mets,<span class="string">'atp_c'</span>), 2)), before - 0.5);
+0062         <span class="keyword">end</span>
+0063 
+0064     <span class="keyword">end</span>
+0065 
+0066     methods (Static, Access = private)
+0067 
+0068         <a name="_sub5" href="#_subfunctions" class="code">function m = cofactorModel()</a>
+0069             <span class="comment">% R_cofactor consumes ATP and NADH; R_other consumes ATP.</span>
+0070             m = struct();
+0071             m.id        = <span class="string">'cofac'</span>;
+0072             m.rxns      = {<span class="string">'R_cofactor'</span>;<span class="string">'R_other'</span>};
+0073             m.rxnNames  = {<span class="string">'R_cofactor'</span>;<span class="string">'R_other'</span>};
+0074             m.mets      = {<span class="string">'atp_c'</span>;<span class="string">'nadh_c'</span>;<span class="string">'amp_c'</span>;<span class="string">'h_c'</span>};
+0075             m.metNames  = {<span class="string">'ATP'</span>;<span class="string">'NADH'</span>;<span class="string">'AMP'</span>;<span class="string">'H+'</span>};
+0076             m.metComps  = [1;1;1;1];
+0077             m.metCharges= [-4;-2;-2;1];
+0078             m.comps     = {<span class="string">'c'</span>};
+0079             m.compNames = {<span class="string">'cytosol'</span>};
+0080             <span class="comment">%              R_cofactor R_other</span>
+0081             m.S = sparse([  -1        -1;    <span class="comment">% atp_c</span>
+0082                             -1         0;    <span class="comment">% nadh_c</span>
+0083                              1         0;    <span class="comment">% amp_c</span>
+0084                              0         0]);  <span class="comment">% h_c</span>
+0085             m.lb = [0;0]; m.ub = [1000;1000]; m.rev = [0;0]; m.c = [0;0];
+0086             m.b = zeros(4,1);
+0087             m.genes = {}; m.grRules = {<span class="string">''</span>;<span class="string">''</span>}; m.rxnGeneMat = sparse(2,0);
+0088             m.metFormulas = {<span class="string">'C10'</span>;<span class="string">'C21'</span>;<span class="string">'C10'</span>;<span class="string">'H'</span>};
+0089         <span class="keyword">end</span>
+0090 
+0091     <span class="keyword">end</span>
+0092 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

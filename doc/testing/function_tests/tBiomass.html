@@ -1,0 +1,154 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of tBiomass</title>
+  <meta name="keywords" content="tBiomass">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../index.html">Home</a> &gt;  <a href="#">testing</a> &gt; <a href="index.html">function_tests</a> &gt; tBiomass.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for testing\function_tests&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+
+<h1>tBiomass
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>This is a script file. </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre class="comment"></pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="RavenTestCase.html" class="code" title="">RavenTestCase</a>	</li><li><a href="tBiomass.html" class="code" title="">tBiomass</a>	</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="tBiomass.html" class="code" title="">tBiomass</a>	</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function getBiomassFractionsHandlesMissingComponents(testCase)</a></li><li><a href="#_sub2" class="code">function setGAMReturnsModel(testCase)</a></li><li><a href="#_sub3" class="code">function scaleBiomassFractionErrorsOnMissingComponent(testCase)</a></li><li><a href="#_sub4" class="code">function scaleBiomassPseudoreactionErrorsOnMissingComponent(testCase)</a></li><li><a href="#_sub5" class="code">function scaleBiomassPseudoreactionRebalancesProton(testCase)</a></li><li><a href="#_sub6" class="code">function scaleBiomassPseudoreactionRefusesUnknownCharge(testCase)</a></li><li><a href="#_sub7" class="code">function fitParametersRunsWhenQuadprogAvailable(testCase)</a></li><li><a href="#_sub8" class="code">function [m, cfg] = protonToyModel()</a></li><li><a href="#_sub9" class="code">function cfg = biomassConfig(testCase)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre>0001 classdef <a href="tBiomass.html" class="code" title="">tBiomass</a> &lt; <a href="RavenTestCase.html" class="code" title="">RavenTestCase</a>
+0002 <span class="comment">% tBiomass  Tests for the biomass-composition functions in biomass/.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">%   The textbook E. coli model has a single lumped biomass reaction rather</span>
+0005 <span class="comment">%   than per-component pseudoreactions, so component-scaling functions are</span>
+0006 <span class="comment">%   tested on their missing-pseudoreaction error path, and fitParameters</span>
+0007 <span class="comment">%   (which needs quadprog) is guarded on the Optimization Toolbox.</span>
+0008 
+0009     methods (Test)
+0010 
+0011         <a name="_sub0" href="#_subfunctions" class="code">function getBiomassFractionsHandlesMissingComponents(testCase)</a>
+0012             cfg = testCase.biomassConfig();
+0013             fractions = getBiomassFractions(testCase.model, cfg);
+0014             testCase.verifyTrue(isfield(fractions, <span class="string">'total'</span>));
+0015         <span class="keyword">end</span>
+0016 
+0017         <a name="_sub1" href="#_subfunctions" class="code">function setGAMReturnsModel(testCase)</a>
+0018             biomassRxn = testCase.model.rxns{find(testCase.model.c == 1, 1)};
+0019             evalc([<span class="string">'m2 = setGAM(testCase.model, 50, biomassRxn, '</span> <span class="keyword">...</span>
+0020                 <span class="string">'{''ATP'',''ADP'',''H2O'',''H+'',''Phosphate''});'</span>]);
+0021             testCase.verifyClass(m2, <span class="string">'struct'</span>);
+0022         <span class="keyword">end</span>
+0023 
+0024         <a name="_sub2" href="#_subfunctions" class="code">function scaleBiomassFractionErrorsOnMissingComponent(testCase)</a>
+0025             cfg = testCase.biomassConfig();
+0026             testCase.verifyError(@() scaleBiomassFraction(testCase.model, cfg, <span class="keyword">...</span>
+0027                 <span class="string">'protein'</span>, 0.5), ?MException);
+0028         <span class="keyword">end</span>
+0029 
+0030         <a name="_sub3" href="#_subfunctions" class="code">function scaleBiomassPseudoreactionErrorsOnMissingComponent(testCase)</a>
+0031             cfg = testCase.biomassConfig();
+0032             testCase.verifyError(@() scaleBiomassPseudoreaction(testCase.model, cfg, <span class="keyword">...</span>
+0033                 <span class="string">'protein'</span>, 0.9), ?MException);
+0034         <span class="keyword">end</span>
+0035 
+0036         <a name="_sub4" href="#_subfunctions" class="code">function scaleBiomassPseudoreactionRebalancesProton(testCase)</a>
+0037             <span class="comment">% Rescaling the substrates rebalances H+ so the pseudoreaction</span>
+0038             <span class="comment">% stays charge neutral.</span>
+0039             [m, cfg] = tBiomass.protonToyModel();
+0040             out = scaleBiomassPseudoreaction(m, cfg, <span class="string">'protein'</span>, 0.5);
+0041             <span class="comment">% x_c: -0.5 * charge -2 = +1, so H+ must come in at -1</span>
+0042             testCase.verifyEqual(full(out.S(strcmp(out.mets,<span class="string">'x_c'</span>), 1)), -0.5, <span class="string">'AbsTol'</span>, 1e-9);
+0043             testCase.verifyEqual(full(out.S(strcmp(out.mets,<span class="string">'h_c'</span>), 1)), -1, <span class="string">'AbsTol'</span>, 1e-9);
+0044         <span class="keyword">end</span>
+0045 
+0046         <a name="_sub5" href="#_subfunctions" class="code">function scaleBiomassPseudoreactionRefusesUnknownCharge(testCase)</a>
+0047             <span class="comment">% An unset charge on a participating metabolite leaves the charge</span>
+0048             <span class="comment">% balance unknown. Treating it as neutral would silently write the</span>
+0049             <span class="comment">% wrong proton coefficient, so the rescale must refuse instead.</span>
+0050             [m, cfg] = tBiomass.protonToyModel();
+0051             m.metCharges(strcmp(m.mets,<span class="string">'x_c'</span>)) = NaN;
+0052             testCase.verifyError(@() scaleBiomassPseudoreaction(m, cfg, <span class="string">'protein'</span>, 0.5), <span class="keyword">...</span>
+0053                 <span class="string">'scaleBiomassPseudoreaction:unknownCharge'</span>);
+0054         <span class="keyword">end</span>
+0055 
+0056         <a name="_sub6" href="#_subfunctions" class="code">function fitParametersRunsWhenQuadprogAvailable(testCase)</a>
+0057             testCase.assumeDependency(exist(<span class="string">'quadprog'</span>,<span class="string">'file'</span>)==2, <span class="keyword">...</span>
+0058                 <span class="string">'Optimization Toolbox (quadprog)'</span>);
+0059             <span class="comment">% Minimal single-parameter fit of an exchange flux.</span>
+0060             biomassRxn = testCase.model.rxns{find(testCase.model.c == 1, 1)};
+0061             pos.position = 1; pos.value = 0;
+0062             evalc([<span class="string">'p = fitParameters(testCase.model, {biomassRxn}, 0.5, '</span> <span class="keyword">...</span>
+0063                 <span class="string">'{biomassRxn}, 0.5, pos);'</span>]);
+0064             testCase.verifyNotEmpty(p);
+0065         <span class="keyword">end</span>
+0066 
+0067     <span class="keyword">end</span>
+0068 
+0069     methods (Static, Access = private)
+0070         <a name="_sub7" href="#_subfunctions" class="code">function [m, cfg] = protonToyModel()</a>
+0071             <span class="comment">% One pseudoreaction: x_c -&gt; protein, with h_c available to carry</span>
+0072             <span class="comment">% the charge balance.</span>
+0073             m = struct();
+0074             m.id        = <span class="string">'toy'</span>;
+0075             m.rxns      = {<span class="string">'R1'</span>};
+0076             m.rxnNames  = {<span class="string">'protein pseudoreaction'</span>};
+0077             m.mets      = {<span class="string">'x_c'</span>;<span class="string">'h_c'</span>;<span class="string">'prot_c'</span>};
+0078             m.metNames  = {<span class="string">'x'</span>;<span class="string">'h'</span>;<span class="string">'protein'</span>};
+0079             m.metComps  = [1;1;1];
+0080             m.metCharges= [-2;1;0];
+0081             m.comps     = {<span class="string">'c'</span>};
+0082             m.compNames = {<span class="string">'cytosol'</span>};
+0083             m.S         = sparse([-1;0;1]);
+0084             m.lb = 0; m.ub = 1000; m.rev = 0; m.c = 1; m.b = zeros(3,1);
+0085             m.grRules = {<span class="string">''</span>}; m.genes = {}; m.rxnGeneMat = sparse(1,0);
+0086 
+0087             cfg = struct();
+0088             cfg.biomass_rxn = <span class="string">'R1'</span>;
+0089             cfg.proton_met  = <span class="string">'h_c'</span>;
+0090             cfg.components  = {struct(<span class="string">'name'</span>,<span class="string">'protein'</span>, <span class="keyword">...</span>
+0091                 <span class="string">'pseudoreaction_name'</span>,<span class="string">'protein pseudoreaction'</span>, <span class="keyword">...</span>
+0092                 <span class="string">'mass_strategy'</span>,<span class="string">'mw'</span>)};
+0093         <span class="keyword">end</span>
+0094     <span class="keyword">end</span>
+0095 
+0096     methods (Access = private)
+0097         <a name="_sub8" href="#_subfunctions" class="code">function cfg = biomassConfig(testCase)</a>
+0098             biomassRxn = testCase.model.rxns{find(testCase.model.c == 1, 1)};
+0099             cfg.biomass_rxn = biomassRxn;
+0100             cfg.proton_met = <span class="string">'h_c'</span>;
+0101             cfg.components = {struct(<span class="string">'name'</span>,<span class="string">'protein'</span>, <span class="keyword">...</span>
+0102                 <span class="string">'pseudoreaction_name'</span>,<span class="string">'no_such_pseudoreaction'</span>,<span class="string">'mass_strategy'</span>,<span class="string">'mw'</span>)};
+0103         <span class="keyword">end</span>
+0104     <span class="keyword">end</span>
+0105 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

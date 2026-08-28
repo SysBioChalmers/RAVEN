@@ -24,7 +24,7 @@
 <div class="box"><strong>guessComposition  Guess the composition of metabolites without one.</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function [model, guessedFor, couldNotGuess]=guessComposition(model, printResults) </strong></div>
+<div class="box"><strong>function [model, guessedFor, couldNotGuess]=guessComposition(model, varargin) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> guessComposition  Guess the composition of metabolites without one.
@@ -36,7 +36,10 @@
  ----------
  model : struct
      a model structure.
- printResults : logical, optional
+
+ Name-Value Arguments
+ --------------------
+ printResults : logical
      true if the output should be printed (default true).
 
  Returns
@@ -89,7 +92,7 @@ This function is called by:
 <li><a href="#_sub1" class="code">function str=getCompString(elements,comp)</a></li></ul>
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [model, guessedFor, couldNotGuess]=guessComposition(model, printResults)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [model, guessedFor, couldNotGuess]=guessComposition(model, varargin)</a>
 0002 <span class="comment">% guessComposition  Guess the composition of metabolites without one.</span>
 0003 <span class="comment">%</span>
 0004 <span class="comment">% Attempts to guess the composition of metabolites without information about</span>
@@ -99,175 +102,167 @@ This function is called by:
 0008 <span class="comment">% ----------</span>
 0009 <span class="comment">% model : struct</span>
 0010 <span class="comment">%     a model structure.</span>
-0011 <span class="comment">% printResults : logical, optional</span>
-0012 <span class="comment">%     true if the output should be printed (default true).</span>
-0013 <span class="comment">%</span>
-0014 <span class="comment">% Returns</span>
-0015 <span class="comment">% -------</span>
-0016 <span class="comment">% model : struct</span>
-0017 <span class="comment">%     a model structure with information about elemental composition added.</span>
-0018 <span class="comment">% guessedFor : double</span>
-0019 <span class="comment">%     indexes for the metabolites for which a composition could be guessed.</span>
-0020 <span class="comment">% couldNotGuess : double</span>
-0021 <span class="comment">%     indexes for the metabolites for which no composition could be</span>
-0022 <span class="comment">%     assigned.</span>
-0023 <span class="comment">%</span>
-0024 <span class="comment">% Examples</span>
-0025 <span class="comment">% --------</span>
-0026 <span class="comment">%     [model, guessedFor, couldNotGuess] = guessComposition(model, printResults);</span>
-0027 <span class="comment">%</span>
-0028 <span class="comment">% Notes</span>
-0029 <span class="comment">% -----</span>
-0030 <span class="comment">% This function works in a rather straight forward manner:</span>
-0031 <span class="comment">%</span>
-0032 <span class="comment">% 1.  Get the metabolites which lack composition and participates in at</span>
-0033 <span class="comment">%     least one reaction where all other metabolites have composition</span>
-0034 <span class="comment">%     information.</span>
-0035 <span class="comment">% 2.  Loop through them and calculate their composition based on the rest of</span>
-0036 <span class="comment">%     the involved metabolites. If there are any inconsistencies, so that a</span>
-0037 <span class="comment">%     given metabolite should have different composition in different</span>
-0038 <span class="comment">%     equations, then throw an error.</span>
-0039 <span class="comment">% 3.  Go to 1.</span>
-0040 <span class="comment">%</span>
-0041 <span class="comment">% This simple approach requires that the rest of the metabolites have</span>
-0042 <span class="comment">% correct composition information, and that the involved reactions are</span>
-0043 <span class="comment">% correct. The function will exit with an error on any inconsistencies,</span>
-0044 <span class="comment">% which means that it could also be used as a way of checking the model for</span>
-0045 <span class="comment">% errors. Note that just because this exits sucessfully, the calculated</span>
-0046 <span class="comment">% compositions could still be wrong (in case that the existing compositions</span>
-0047 <span class="comment">% were wrong).</span>
-0048 
-0049 <span class="keyword">if</span> nargin&lt;2
-0050     printResults=true;
-0051 <span class="keyword">end</span>
-0052 
-0053 <span class="comment">%The metabolites for which there is no elemental composition</span>
-0054 originalMissing=unique(model.metNames(cellfun(@isempty,model.metFormulas)));
-0055 guessedFor={};
-0056 
-0057 <span class="comment">%This is to keep track of if new metabolite compositions were predicted</span>
-0058 predicted=true;
-0059 <span class="keyword">while</span> predicted==true
-0060     predicted=false;
-0061     
-0062     <span class="comment">%Get the unique names (composition should be independent of</span>
-0063     <span class="comment">%compartment) for the metabolites without composition</span>
-0064     metNames=unique(model.metNames(cellfun(@isempty,model.metFormulas)));
-0065     
-0066     <span class="comment">%Parse the formulas in the model</span>
-0067     [elements, useMat, exitFlag]=parseFormulas(model.metFormulas, true,false);
-0068     
-0069     <span class="keyword">for</span> i=1:numel(metNames)
-0070         <span class="comment">%Get the metabolites with this name. Not so neat, but this is a</span>
-0071         <span class="comment">%fast function anyways</span>
-0072         mets=find(ismember(model.metNames,metNames(i)));
-0073         
-0074         currentComp=[];
+0011 <span class="comment">%</span>
+0012 <span class="comment">% Name-Value Arguments</span>
+0013 <span class="comment">% --------------------</span>
+0014 <span class="comment">% printResults : logical</span>
+0015 <span class="comment">%     true if the output should be printed (default true).</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">% Returns</span>
+0018 <span class="comment">% -------</span>
+0019 <span class="comment">% model : struct</span>
+0020 <span class="comment">%     a model structure with information about elemental composition added.</span>
+0021 <span class="comment">% guessedFor : double</span>
+0022 <span class="comment">%     indexes for the metabolites for which a composition could be guessed.</span>
+0023 <span class="comment">% couldNotGuess : double</span>
+0024 <span class="comment">%     indexes for the metabolites for which no composition could be</span>
+0025 <span class="comment">%     assigned.</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">% Examples</span>
+0028 <span class="comment">% --------</span>
+0029 <span class="comment">%     [model, guessedFor, couldNotGuess] = guessComposition(model, printResults);</span>
+0030 <span class="comment">%</span>
+0031 <span class="comment">% Notes</span>
+0032 <span class="comment">% -----</span>
+0033 <span class="comment">% This function works in a rather straight forward manner:</span>
+0034 <span class="comment">%</span>
+0035 <span class="comment">% 1.  Get the metabolites which lack composition and participates in at</span>
+0036 <span class="comment">%     least one reaction where all other metabolites have composition</span>
+0037 <span class="comment">%     information.</span>
+0038 <span class="comment">% 2.  Loop through them and calculate their composition based on the rest of</span>
+0039 <span class="comment">%     the involved metabolites. If there are any inconsistencies, so that a</span>
+0040 <span class="comment">%     given metabolite should have different composition in different</span>
+0041 <span class="comment">%     equations, then throw an error.</span>
+0042 <span class="comment">% 3.  Go to 1.</span>
+0043 <span class="comment">%</span>
+0044 <span class="comment">% This simple approach requires that the rest of the metabolites have</span>
+0045 <span class="comment">% correct composition information, and that the involved reactions are</span>
+0046 <span class="comment">% correct. The function will exit with an error on any inconsistencies,</span>
+0047 <span class="comment">% which means that it could also be used as a way of checking the model for</span>
+0048 <span class="comment">% errors. Note that just because this exits sucessfully, the calculated</span>
+0049 <span class="comment">% compositions could still be wrong (in case that the existing compositions</span>
+0050 <span class="comment">% were wrong).</span>
+0051 
+0052 p=parseRAVENargs(varargin, {<span class="string">'printResults'</span>,true});
+0053 printResults=p.printResults;
+0054 
+0055 <span class="comment">%The metabolites for which there is no elemental composition</span>
+0056 originalMissing=unique(model.metNames(cellfun(@isempty,model.metFormulas)));
+0057 guessedFor={};
+0058 
+0059 <span class="comment">%This is to keep track of if new metabolite compositions were predicted</span>
+0060 predicted=true;
+0061 <span class="keyword">while</span> predicted==true
+0062     predicted=false;
+0063     
+0064     <span class="comment">%Get the unique names (composition should be independent of</span>
+0065     <span class="comment">%compartment) for the metabolites without composition</span>
+0066     metNames=unique(model.metNames(cellfun(@isempty,model.metFormulas)));
+0067     
+0068     <span class="comment">%Parse the formulas in the model</span>
+0069     [elements, useMat, exitFlag]=parseFormulas(model.metFormulas, true,false);
+0070     
+0071     <span class="keyword">for</span> i=1:numel(metNames)
+0072         <span class="comment">%Get the metabolites with this name. Not so neat, but this is a</span>
+0073         <span class="comment">%fast function anyways</span>
+0074         mets=find(ismember(model.metNames,metNames(i)));
 0075         
-0076         <span class="comment">%Loop through the metabolites -1: Could not assign due to missing</span>
-0077         <span class="comment">%info. -2: Could not assign due to contradiction 1: Composition</span>
-0078         <span class="comment">%assigned</span>
-0079         metStatus=-1;
-0080         <span class="keyword">for</span> j=1:numel(mets)
-0081             <span class="comment">%Get the reactions that the metabolite participates in</span>
-0082             [~, I]=find(model.S(mets(j),:));
-0083             <span class="keyword">if</span> any(I)
-0084                 <span class="keyword">for</span> k=1:numel(I)
-0085                     <span class="comment">%Loop through the reactions and check if all other mets</span>
-0086                     <span class="comment">%in them have known composition</span>
-0087                     eqn=model.S(:,I(k));
-0088                     eqn(mets(j))=0;
-0089                     <span class="keyword">if</span> all(exitFlag(eqn~=0)==1)
-0090                         <span class="comment">%This means that all other mets had composition.</span>
-0091                         <span class="comment">%Calculate the resulting composition for the</span>
-0092                         <span class="comment">%unknown one</span>
-0093                         comp=useMat'*eqn;
-0094                         
-0095                         <span class="comment">%This can result in round off errors if there are</span>
-0096                         <span class="comment">%stoichiometries with many decimals. Ignore values</span>
-0097                         <span class="comment">%below 10^-12</span>
-0098                         comp(abs(comp)&lt;10^-12)=0;
-0099                         
-0100                         <span class="comment">%Check if the composition consist of both negative</span>
-0101                         <span class="comment">%and positive values. If so, throw an error</span>
-0102                         <span class="keyword">if</span> all(comp&lt;=0) || all(comp&gt;=0)
-0103                             comp=abs(comp);
-0104                             <span class="keyword">if</span> isempty(currentComp)
-0105                                 currentComp=comp;
-0106                             <span class="keyword">end</span>
-0107                             <span class="comment">%Also to deal with round off errors</span>
-0108                             <span class="keyword">if</span> all(abs(currentComp-comp)&lt;10^-10)
-0109                                 metStatus=1;
-0110                             <span class="keyword">else</span>
-0111                                 metStatus=-2;
-0112                                 <span class="keyword">break</span>;
-0113                                 
-0114                                 <span class="comment">%%Check if there is an inconcistency</span>
-0115                                 <span class="comment">%if any(currentComp~=comp)</span>
-0116                                 <span class="comment">%    dispEM(['Could not predict composition</span>
-0117                                 <span class="comment">%    of ' model.metNames{mets(i)} ],false);</span>
-0118                                 <span class="comment">%end</span>
-0119                             <span class="keyword">end</span>
-0120                         <span class="keyword">else</span>
-0121                             <span class="comment">%Check if there is an inconcistency if</span>
-0122                             <span class="comment">%any(currentComp~=comp)</span>
-0123                             <span class="comment">%    dispEM(['Could not predict composition of</span>
-0124                             <span class="comment">%    ' model.metNames{loopThrough(i)} ],false);</span>
-0125                             <span class="comment">%end</span>
-0126                             metStatus=-2;
-0127                             <span class="keyword">break</span>;
-0128                         <span class="keyword">end</span>
-0129                     <span class="keyword">end</span>
-0130                 <span class="keyword">end</span>
-0131                 <span class="comment">%If there was contradictions in one compartment, then abort</span>
-0132                 <span class="comment">%for all compartments</span>
-0133                 <span class="keyword">if</span> metStatus==-2
-0134                     <span class="keyword">break</span>;
-0135                 <span class="keyword">end</span>
-0136             <span class="keyword">else</span>
-0137                 <span class="comment">%The metabolite doesn't participate, no composition can be</span>
-0138                 <span class="comment">%calculated</span>
-0139                 metStatus=-1;
-0140             <span class="keyword">end</span>
-0141         <span class="keyword">end</span>
-0142         <span class="comment">%Check status of the metabolite</span>
-0143         <span class="keyword">switch</span> metStatus
-0144             <span class="keyword">case</span> -2
-0145                 EM=[<span class="string">'Could not predict composition for &quot;'</span> metNames{i} <span class="string">'&quot; due to inconsistencies'</span>];
-0146                 dispEM(EM,false);
-0147             <span class="keyword">case</span> 1
-0148                 <span class="comment">%Calculate and add the composition</span>
-0149                 str=<a href="#_sub1" class="code" title="subfunction str=getCompString(elements,comp)">getCompString</a>(elements,comp);
-0150                 model.metFormulas(mets)={str};
-0151                 <span class="keyword">if</span> printResults==true
-0152                     fprintf([<span class="string">'Predicted composition for &quot;'</span> metNames{i} <span class="string">'&quot; to be '</span> str <span class="string">'\n'</span>]);
-0153                 <span class="keyword">end</span>
-0154                 
-0155                 <span class="comment">%Keep track</span>
-0156                 guessedFor=[guessedFor;metNames(i)];
-0157                 
-0158                 predicted=true; <span class="comment">%To loop again</span>
-0159         <span class="keyword">end</span>
-0160     <span class="keyword">end</span>
-0161 <span class="keyword">end</span>
-0162 
-0163 couldNotGuess=setdiff(originalMissing,guessedFor);
-0164 <span class="keyword">end</span>
-0165 
-0166 <span class="comment">%Helper function for getting the composition string</span>
-0167 <a name="_sub1" href="#_subfunctions" class="code">function str=getCompString(elements,comp)</a>
-0168 str=<span class="string">''</span>;
-0169 
-0170 <span class="keyword">for</span> i=1:numel(comp)
-0171     <span class="keyword">if</span> comp(i)~=0
-0172         <span class="keyword">if</span> comp(i)==1
-0173             str=[str elements.abbrevs{i}];
-0174         <span class="keyword">else</span>
-0175             str=[str elements.abbrevs{i} num2str(comp(i))];
-0176         <span class="keyword">end</span>
-0177     <span class="keyword">end</span>
-0178 <span class="keyword">end</span>
-0179 <span class="keyword">end</span></pre></div>
+0076         currentComp=[];
+0077         
+0078         <span class="comment">%Loop through the metabolites -1: Could not assign due to missing</span>
+0079         <span class="comment">%info. -2: Could not assign due to contradiction 1: Composition</span>
+0080         <span class="comment">%assigned</span>
+0081         metStatus=-1;
+0082         <span class="keyword">for</span> j=1:numel(mets)
+0083             <span class="comment">%Get the reactions that the metabolite participates in</span>
+0084             [~, I]=find(model.S(mets(j),:));
+0085             <span class="keyword">if</span> any(I)
+0086                 <span class="keyword">for</span> k=1:numel(I)
+0087                     <span class="comment">%Loop through the reactions and check if all other mets</span>
+0088                     <span class="comment">%in them have known composition</span>
+0089                     eqn=model.S(:,I(k));
+0090                     eqn(mets(j))=0;
+0091                     <span class="keyword">if</span> all(exitFlag(eqn~=0)==1)
+0092                         <span class="comment">%This means that all other mets had composition.</span>
+0093                         <span class="comment">%Calculate the resulting composition for the</span>
+0094                         <span class="comment">%unknown one</span>
+0095                         comp=useMat'*eqn;
+0096                         
+0097                         <span class="comment">%This can result in round off errors if there are</span>
+0098                         <span class="comment">%stoichiometries with many decimals. Ignore values</span>
+0099                         <span class="comment">%below 10^-12</span>
+0100                         comp(abs(comp)&lt;10^-12)=0;
+0101                         
+0102                         <span class="comment">%Check if the composition consist of both negative</span>
+0103                         <span class="comment">%and positive values. If so, throw an error</span>
+0104                         <span class="keyword">if</span> all(comp&lt;=0) || all(comp&gt;=0)
+0105                             comp=abs(comp);
+0106                             <span class="keyword">if</span> isempty(currentComp)
+0107                                 currentComp=comp;
+0108                             <span class="keyword">end</span>
+0109                             <span class="comment">%Also to deal with round off errors</span>
+0110                             <span class="keyword">if</span> all(abs(currentComp-comp)&lt;10^-10)
+0111                                 metStatus=1;
+0112                             <span class="keyword">else</span>
+0113                                 metStatus=-2;
+0114                                 <span class="keyword">break</span>;
+0115                                 
+0116                             <span class="keyword">end</span>
+0117                         <span class="keyword">else</span>
+0118                             metStatus=-2;
+0119                             <span class="keyword">break</span>;
+0120                         <span class="keyword">end</span>
+0121                     <span class="keyword">end</span>
+0122                 <span class="keyword">end</span>
+0123                 <span class="comment">%If there was contradictions in one compartment, then abort</span>
+0124                 <span class="comment">%for all compartments</span>
+0125                 <span class="keyword">if</span> metStatus==-2
+0126                     <span class="keyword">break</span>;
+0127                 <span class="keyword">end</span>
+0128             <span class="keyword">else</span>
+0129                 <span class="comment">%The metabolite does not participate, no composition can be</span>
+0130                 <span class="comment">%calculated</span>
+0131                 metStatus=-1;
+0132             <span class="keyword">end</span>
+0133         <span class="keyword">end</span>
+0134         <span class="comment">%Check status of the metabolite</span>
+0135         <span class="keyword">switch</span> metStatus
+0136             <span class="keyword">case</span> -2
+0137                 EM=[<span class="string">'Could not predict composition for &quot;'</span> metNames{i} <span class="string">'&quot; due to inconsistencies'</span>];
+0138                 warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'%s'</span>, EM);
+0139             <span class="keyword">case</span> 1
+0140                 <span class="comment">%Calculate and add the composition</span>
+0141                 str=<a href="#_sub1" class="code" title="subfunction str=getCompString(elements,comp)">getCompString</a>(elements,comp);
+0142                 model.metFormulas(mets)={str};
+0143                 <span class="keyword">if</span> printResults==true
+0144                     fprintf([<span class="string">'Predicted composition for &quot;'</span> metNames{i} <span class="string">'&quot; to be '</span> str <span class="string">'\n'</span>]);
+0145                 <span class="keyword">end</span>
+0146                 
+0147                 <span class="comment">%Keep track</span>
+0148                 guessedFor=[guessedFor;metNames(i)];
+0149                 
+0150                 predicted=true; <span class="comment">%To loop again</span>
+0151         <span class="keyword">end</span>
+0152     <span class="keyword">end</span>
+0153 <span class="keyword">end</span>
+0154 
+0155 couldNotGuess=setdiff(originalMissing,guessedFor);
+0156 <span class="keyword">end</span>
+0157 
+0158 <span class="comment">%Helper function for getting the composition string</span>
+0159 <a name="_sub1" href="#_subfunctions" class="code">function str=getCompString(elements,comp)</a>
+0160 str=<span class="string">''</span>;
+0161 
+0162 <span class="keyword">for</span> i=1:numel(comp)
+0163     <span class="keyword">if</span> comp(i)~=0
+0164         <span class="keyword">if</span> comp(i)==1
+0165             str=[str elements.abbrevs{i}];
+0166         <span class="keyword">else</span>
+0167             str=[str elements.abbrevs{i} num2str(comp(i))];
+0168         <span class="keyword">end</span>
+0169     <span class="keyword">end</span>
+0170 <span class="keyword">end</span>
+0171 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

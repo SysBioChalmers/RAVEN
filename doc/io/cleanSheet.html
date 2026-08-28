@@ -24,7 +24,7 @@
 <div class="box"><strong>cleanSheet  Clean up an Excel sheet.</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function [raw,keptRows,keptCols]=cleanSheet(raw,removeComments,removeOnlyCap,removeNoCap,removeEmptyRows) </strong></div>
+<div class="box"><strong>function [raw,keptRows,keptCols]=cleanSheet(raw,varargin) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> cleanSheet  Clean up an Excel sheet.
@@ -35,14 +35,17 @@
  ----------
  raw : cell
      cell array with the data in the sheet.
- removeComments : logical, optional
+
+ Name-Value Arguments
+ --------------------
+ removeComments : logical
      true if commented lines (non-empty first cell in each row) should be
      removed (default true).
- removeOnlyCap : logical, optional
+ removeOnlyCap : logical
      remove columns with captions but no other values (default false).
- removeNoCap : logical, optional
+ removeNoCap : logical
      remove columns without captions (default true).
- removeEmptyRows : logical, optional
+ removeEmptyRows : logical
      remove rows with no non-empty cells (default true).
 
  Returns
@@ -66,7 +69,7 @@ This function calls:
 </ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="importExcelModel.html" class="code" title="function model=importExcelModel(fileName,removeExcMets,printWarnings,ignoreErrors)">importExcelModel</a>	importExcelModel  Import a constraint-based model from an Excel file.</li></ul>
+</ul>
 <!-- crossreference -->
 
 <h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -82,114 +85,107 @@ This function is called by:
 0006 <span class="comment">% ----------</span>
 0007 <span class="comment">% raw : cell</span>
 0008 <span class="comment">%     cell array with the data in the sheet.</span>
-0009 <span class="comment">% removeComments : logical, optional</span>
-0010 <span class="comment">%     true if commented lines (non-empty first cell in each row) should be</span>
-0011 <span class="comment">%     removed (default true).</span>
-0012 <span class="comment">% removeOnlyCap : logical, optional</span>
-0013 <span class="comment">%     remove columns with captions but no other values (default false).</span>
-0014 <span class="comment">% removeNoCap : logical, optional</span>
-0015 <span class="comment">%     remove columns without captions (default true).</span>
-0016 <span class="comment">% removeEmptyRows : logical, optional</span>
-0017 <span class="comment">%     remove rows with no non-empty cells (default true).</span>
-0018 <span class="comment">%</span>
-0019 <span class="comment">% Returns</span>
-0020 <span class="comment">% -------</span>
-0021 <span class="comment">% raw : cell</span>
-0022 <span class="comment">%     cleaned version.</span>
-0023 <span class="comment">% keptRows : double</span>
-0024 <span class="comment">%     indices of the kept rows in the original structure.</span>
-0025 <span class="comment">% keptCols : double</span>
-0026 <span class="comment">%     indices of the kept columns in the original structure.</span>
-0027 <span class="comment">%</span>
-0028 <span class="comment">% Examples</span>
-0029 <span class="comment">% --------</span>
-0030 <span class="comment">%     [raw, keptRows, keptCols] = cleanSheet(raw, removeComments, ...</span>
-0031 <span class="comment">%         removeOnlyCap, removeNoCap, removeEmptyRows);</span>
-0032 <a name="_sub0" href="#_subfunctions" class="code">function [raw,keptRows,keptCols]=cleanSheet(raw,removeComments,removeOnlyCap,removeNoCap,removeEmptyRows)</a>
-0033 <span class="keyword">if</span> nargin&lt;2
-0034     removeComments=true;
-0035 <span class="keyword">end</span>
-0036 <span class="keyword">if</span> nargin&lt;3
-0037     removeOnlyCap=false;
-0038 <span class="keyword">end</span>
-0039 <span class="keyword">if</span> nargin&lt;4
-0040     removeNoCap=true;
-0041 <span class="keyword">end</span>
-0042 <span class="keyword">if</span> nargin&lt;5
-0043     removeEmptyRows=true;
-0044 <span class="keyword">end</span>
-0045 
-0046 keptRows=1:size(raw,1);
-0047 keptRows=keptRows(:);
-0048 keptCols=1:size(raw,2);
-0049 keptCols=keptCols(:);
-0050 
-0051 <span class="comment">%First check that it's a cell array. If a sheet is completely empty, then</span>
-0052 <span class="comment">%raw=NaN</span>
-0053 <span class="keyword">if</span> iscell(raw)
-0054     <span class="comment">%Clear cells which contain only white spaces or NaN. This could happen</span>
-0055     <span class="comment">%if you accidentally inserted a space for example. I don't know how NaN</span>
-0056     <span class="comment">%could occur after switching to Apache POI, but I clear it to be sure</span>
-0057     whites=cellfun(@<a href="#_sub1" class="code" title="subfunction I=wrapperWS(A)">wrapperWS</a>,raw);
-0058     raw(whites)={[]};
-0059     
-0060     <span class="comment">%Find the rows that are not commented. This corresponds to the first</span>
-0061     <span class="comment">%row and the ones which are empty in the first column</span>
-0062     <span class="keyword">if</span> removeComments==true
-0063         keepers=cellfun(@isempty,raw(:,1));
-0064         keepers(1)=true;
-0065         raw=raw(keepers,:);
-0066         keptRows=keptRows(keepers);
-0067     <span class="keyword">end</span>
-0068     
-0069     <span class="comment">%Remove columns that don't have string headers. If you cut and paste a</span>
-0070     <span class="comment">%lot in the sheet there tends to be columns that are empty</span>
-0071     <span class="keyword">if</span> removeNoCap==true
-0072         I=cellfun(@isstr,raw(1,:));
+0009 <span class="comment">%</span>
+0010 <span class="comment">% Name-Value Arguments</span>
+0011 <span class="comment">% --------------------</span>
+0012 <span class="comment">% removeComments : logical</span>
+0013 <span class="comment">%     true if commented lines (non-empty first cell in each row) should be</span>
+0014 <span class="comment">%     removed (default true).</span>
+0015 <span class="comment">% removeOnlyCap : logical</span>
+0016 <span class="comment">%     remove columns with captions but no other values (default false).</span>
+0017 <span class="comment">% removeNoCap : logical</span>
+0018 <span class="comment">%     remove columns without captions (default true).</span>
+0019 <span class="comment">% removeEmptyRows : logical</span>
+0020 <span class="comment">%     remove rows with no non-empty cells (default true).</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">% Returns</span>
+0023 <span class="comment">% -------</span>
+0024 <span class="comment">% raw : cell</span>
+0025 <span class="comment">%     cleaned version.</span>
+0026 <span class="comment">% keptRows : double</span>
+0027 <span class="comment">%     indices of the kept rows in the original structure.</span>
+0028 <span class="comment">% keptCols : double</span>
+0029 <span class="comment">%     indices of the kept columns in the original structure.</span>
+0030 <span class="comment">%</span>
+0031 <span class="comment">% Examples</span>
+0032 <span class="comment">% --------</span>
+0033 <span class="comment">%     [raw, keptRows, keptCols] = cleanSheet(raw, removeComments, ...</span>
+0034 <span class="comment">%         removeOnlyCap, removeNoCap, removeEmptyRows);</span>
+0035 <a name="_sub0" href="#_subfunctions" class="code">function [raw,keptRows,keptCols]=cleanSheet(raw,varargin)</a>
+0036 p=parseRAVENargs(varargin, {<span class="string">'removeComments'</span>,true; <span class="string">'removeOnlyCap'</span>,false; <span class="string">'removeNoCap'</span>,true; <span class="string">'removeEmptyRows'</span>,true});
+0037 removeComments=p.removeComments; removeOnlyCap=p.removeOnlyCap; removeNoCap=p.removeNoCap; removeEmptyRows=p.removeEmptyRows;
+0038 
+0039 keptRows=1:size(raw,1);
+0040 keptRows=keptRows(:);
+0041 keptCols=1:size(raw,2);
+0042 keptCols=keptCols(:);
+0043 
+0044 <span class="comment">%First check that it's a cell array. If a sheet is completely empty, then</span>
+0045 <span class="comment">%raw=NaN</span>
+0046 <span class="keyword">if</span> iscell(raw)
+0047     <span class="comment">%Clear cells which contain only white spaces or NaN. This could happen</span>
+0048     <span class="comment">%if you accidentally inserted a space, or if a blank/NaN cell was read</span>
+0049     <span class="comment">%from the source file.</span>
+0050     whites=cellfun(@<a href="#_sub1" class="code" title="subfunction I=wrapperWS(A)">wrapperWS</a>,raw);
+0051     raw(whites)={[]};
+0052     
+0053     <span class="comment">%Find the rows that are not commented. This corresponds to the first</span>
+0054     <span class="comment">%row and the ones which are empty in the first column</span>
+0055     <span class="keyword">if</span> removeComments==true
+0056         keepers=cellfun(@isempty,raw(:,1));
+0057         keepers(1)=true;
+0058         raw=raw(keepers,:);
+0059         keptRows=keptRows(keepers);
+0060     <span class="keyword">end</span>
+0061     
+0062     <span class="comment">%Remove columns that don't have string headers. If you cut and paste a</span>
+0063     <span class="comment">%lot in the sheet there tends to be columns that are empty</span>
+0064     <span class="keyword">if</span> removeNoCap==true
+0065         I=cellfun(@isstr,raw(1,:));
+0066         raw=raw(:,I);
+0067         keptCols=keptCols(I);
+0068     <span class="keyword">end</span>
+0069     
+0070     <span class="comment">%Remove columns which are empty except for header</span>
+0071     <span class="keyword">if</span> removeOnlyCap==true
+0072         I=~all(cellfun(@isempty,raw(2:<span class="keyword">end</span>,:)),1);
 0073         raw=raw(:,I);
 0074         keptCols=keptCols(I);
 0075     <span class="keyword">end</span>
 0076     
-0077     <span class="comment">%Remove columns which are empty except for header</span>
-0078     <span class="keyword">if</span> removeOnlyCap==true
-0079         I=~all(cellfun(@isempty,raw(2:<span class="keyword">end</span>,:)),1);
-0080         raw=raw(:,I);
-0081         keptCols=keptCols(I);
-0082     <span class="keyword">end</span>
-0083     
-0084     <span class="comment">%Check if there are any rows that are all empty. This could happen if</span>
-0085     <span class="comment">%it reads too far or if the user has inserted them for layout reasons.</span>
-0086     <span class="comment">%Remove any such rows</span>
-0087     <span class="keyword">if</span> removeEmptyRows==true
-0088         I=~all(cellfun(@isempty,raw),2);
-0089         raw=raw(I,:);
-0090         keptRows=keptRows(I);
-0091     <span class="keyword">end</span>
-0092 <span class="keyword">else</span>
-0093     raw={[]};
-0094 <span class="keyword">end</span>
-0095 
-0096 <span class="comment">%Checks if something is all white spaces or NaN</span>
-0097     <a name="_sub1" href="#_subfunctions" class="code">function I=wrapperWS(A)</a>
-0098         <span class="keyword">if</span> isnan(A)
-0099             I=true;
-0100         <span class="keyword">else</span>
-0101             <span class="comment">%isstrprop gives an error if boolean</span>
-0102             <span class="keyword">if</span> islogical(A)
-0103                 I=false;
-0104             <span class="keyword">else</span>
-0105                 <span class="comment">%I have to make this check, since otherwise it will pick up</span>
-0106                 <span class="comment">%on doubles for which the ASCII representation is a white</span>
-0107                 <span class="comment">%space character</span>
-0108                 <span class="keyword">if</span> isnumeric(A)
-0109                     I=false;
-0110                 <span class="keyword">else</span>
-0111                     I=all(isstrprop(A,<span class="string">'wspace'</span>));
-0112                 <span class="keyword">end</span>
-0113             <span class="keyword">end</span>
-0114         <span class="keyword">end</span>
-0115     <span class="keyword">end</span>
-0116 <span class="keyword">end</span></pre></div>
+0077     <span class="comment">%Check if there are any rows that are all empty. This could happen if</span>
+0078     <span class="comment">%it reads too far or if the user has inserted them for layout reasons.</span>
+0079     <span class="comment">%Remove any such rows</span>
+0080     <span class="keyword">if</span> removeEmptyRows==true
+0081         I=~all(cellfun(@isempty,raw),2);
+0082         raw=raw(I,:);
+0083         keptRows=keptRows(I);
+0084     <span class="keyword">end</span>
+0085 <span class="keyword">else</span>
+0086     raw={[]};
+0087 <span class="keyword">end</span>
+0088 
+0089 <span class="comment">%Checks if something is all white spaces or NaN</span>
+0090     <a name="_sub1" href="#_subfunctions" class="code">function I=wrapperWS(A)</a>
+0091         <span class="keyword">if</span> isnan(A)
+0092             I=true;
+0093         <span class="keyword">else</span>
+0094             <span class="comment">%isstrprop gives an error if boolean</span>
+0095             <span class="keyword">if</span> islogical(A)
+0096                 I=false;
+0097             <span class="keyword">else</span>
+0098                 <span class="comment">%I have to make this check, since otherwise it will pick up</span>
+0099                 <span class="comment">%on doubles for which the ASCII representation is a white</span>
+0100                 <span class="comment">%space character</span>
+0101                 <span class="keyword">if</span> isnumeric(A)
+0102                     I=false;
+0103                 <span class="keyword">else</span>
+0104                     I=all(isstrprop(A,<span class="string">'wspace'</span>));
+0105                 <span class="keyword">end</span>
+0106             <span class="keyword">end</span>
+0107         <span class="keyword">end</span>
+0108     <span class="keyword">end</span>
+0109 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

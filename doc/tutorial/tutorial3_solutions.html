@@ -50,8 +50,8 @@ This function is called by:
 0003 <span class="comment">%   &quot;RAVEN tutorials.docx&quot; for more details. All the parameters are set in</span>
 0004 <span class="comment">%   this script, rather than modifying the Excel model file.</span>
 0005 
-0006 <span class="comment">%Import the Excel model</span>
-0007 model=importExcelModel(<span class="string">'smallYeast.xlsx'</span>,true);
+0006 <span class="comment">%Import the model</span>
+0007 model=readYAMLmodel(<span class="string">'smallYeast.yml'</span>);
 0008 
 0009 <span class="comment">%Step 1</span>
 0010 <span class="comment">%Set the upper bound of glucose uptake to 1 and O2 uptake to zero</span>
@@ -118,36 +118,38 @@ This function is called by:
 0071 
 0072 <span class="comment">%Step 5</span>
 0073 <span class="comment">%Set the exchange rates to the recorded batch values</span>
-0074 model=setParam(model,<span class="string">'lb'</span>,{<span class="string">'acOUT'</span> <span class="string">'biomassOUT'</span> <span class="string">'co2OUT'</span> <span class="string">'ethOUT'</span> <span class="string">'glyOUT'</span> <span class="string">'glcIN'</span> <span class="string">'o2IN'</span> <span class="string">'ethIN'</span>},[0 0.67706 22.4122 19.0946 1.4717 15 1.6 0]*0.9999);
-0075 model=setParam(model,<span class="string">'ub'</span>,{<span class="string">'acOUT'</span> <span class="string">'biomassOUT'</span> <span class="string">'co2OUT'</span> <span class="string">'ethOUT'</span> <span class="string">'glyOUT'</span> <span class="string">'glcIN'</span> <span class="string">'o2IN'</span> <span class="string">'ethIN'</span>},[0 0.67706 22.4122 19.0946 1.4717 15 1.6 0]*1.0001);
-0076 
-0077 <span class="comment">%Define another model where all exchange reactions are open.</span>
-0078 model2=model;
-0079 I=getIndexes(model,getExchangeRxns(model),<span class="string">'rxns'</span>);
-0080 model2.lb(I)=0;
-0081 model2.ub(I)=1000;
-0082 
-0083 <span class="comment">%Delete ZWF gene</span>
-0084 model2=setParam(model2,<span class="string">'eq'</span>,{<span class="string">'ZWF'</span>},0);
-0085 
-0086 <span class="comment">%Run MOMA</span>
-0087 [fluxA, fluxB, flag]=qMOMA(model,model2);
-0088 
-0089 <span class="comment">%As one can see, the glycerol production is higher in the deletion strain.</span>
-0090 <span class="comment">%Note that this is without any objectives, just by trying to maintain the</span>
-0091 <span class="comment">%cells original flux distribution.</span>
-0092 
-0093 <span class="comment">%Step 6</span>
-0094 <span class="comment">%Read microarray results and calculate reporter metabolites (metabolites</span>
-0095 <span class="comment">%around which there are significant transcriptional changes)</span>
-0096 [orfs, pvalues]=textread(<span class="string">'expression.txt'</span>,<span class="string">'%s%f'</span>);
-0097 repMets=reporterMetabolites(model,orfs,pvalues);
-0098 [I, J]=sort(repMets.metPValues);
-0099 
-0100 fprintf(<span class="string">'TOP 10 REPORTER METABOLITES:\n'</span>);
-0101 <span class="keyword">for</span> i=1:min(numel(J),10)
-0102     fprintf([repMets.mets{J(i)} <span class="string">'\t'</span> num2str(I(i)) <span class="string">'\n'</span>]);
-0103 <span class="keyword">end</span></pre></div>
+0074 <span class="comment">%Set the upper bounds before the lower bounds, so that lb never temporarily</span>
+0075 <span class="comment">%exceeds the previous ub (e.g. glcIN, whose ub was set to 1 in Step 1)</span>
+0076 model=setParam(model,<span class="string">'ub'</span>,{<span class="string">'acOUT'</span> <span class="string">'biomassOUT'</span> <span class="string">'co2OUT'</span> <span class="string">'ethOUT'</span> <span class="string">'glyOUT'</span> <span class="string">'glcIN'</span> <span class="string">'o2IN'</span> <span class="string">'ethIN'</span>},[0 0.67706 22.4122 19.0946 1.4717 15 1.6 0]*1.0001);
+0077 model=setParam(model,<span class="string">'lb'</span>,{<span class="string">'acOUT'</span> <span class="string">'biomassOUT'</span> <span class="string">'co2OUT'</span> <span class="string">'ethOUT'</span> <span class="string">'glyOUT'</span> <span class="string">'glcIN'</span> <span class="string">'o2IN'</span> <span class="string">'ethIN'</span>},[0 0.67706 22.4122 19.0946 1.4717 15 1.6 0]*0.9999);
+0078 
+0079 <span class="comment">%Define another model where all exchange reactions are open.</span>
+0080 model2=model;
+0081 I=getIndexes(model,getExchangeRxns(model),<span class="string">'rxns'</span>);
+0082 model2.lb(I)=0;
+0083 model2.ub(I)=1000;
+0084 
+0085 <span class="comment">%Delete ZWF gene</span>
+0086 model2=setParam(model2,<span class="string">'eq'</span>,{<span class="string">'ZWF'</span>},0);
+0087 
+0088 <span class="comment">%Run MOMA</span>
+0089 [fluxA, fluxB, flag]=qMOMA(model,model2);
+0090 
+0091 <span class="comment">%As one can see, the glycerol production is higher in the deletion strain.</span>
+0092 <span class="comment">%Note that this is without any objectives, just by trying to maintain the</span>
+0093 <span class="comment">%cells original flux distribution.</span>
+0094 
+0095 <span class="comment">%Step 6</span>
+0096 <span class="comment">%Read microarray results and calculate reporter metabolites (metabolites</span>
+0097 <span class="comment">%around which there are significant transcriptional changes)</span>
+0098 [orfs, pvalues]=textread(<span class="string">'expression.txt'</span>,<span class="string">'%s%f'</span>);
+0099 repMets=reporterMetabolites(model,orfs,pvalues);
+0100 [I, J]=sort(repMets.metPValues);
+0101 
+0102 fprintf(<span class="string">'TOP 10 REPORTER METABOLITES:\n'</span>);
+0103 <span class="keyword">for</span> i=1:min(numel(J),10)
+0104     fprintf([repMets.mets{J(i)} <span class="string">'\t'</span> num2str(I(i)) <span class="string">'\n'</span>]);
+0105 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

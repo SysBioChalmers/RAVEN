@@ -1,0 +1,356 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of diffModels</title>
+  <meta name="keywords" content="diffModels">
+  <meta name="description" content="diffModels  Report the semantic differences between two models.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">comparison</a> &gt; diffModels.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for comparison&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>diffModels
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>diffModels  Report the semantic differences between two models.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function report = diffModels(modelA, modelB, varargin) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> diffModels  Report the semantic differences between two models.
+
+ Counterpart of raven_toolbox.comparison.diff.diff_models. Compares two
+ models entry by entry, keyed by identifier, and returns a report listing
+ every difference found. Reactions, metabolites and genes are matched by
+ id; for the ids present in both models the reaction stoichiometry, bounds,
+ objective coefficient, grRule, EC codes, and the metabolite formula,
+ charge and compartment are compared. This is the structured
+ added/removed/changed diff that compareMultipleModels /
+ compareRxnsGenesMetsComps (which report overlap counts and distances) do
+ not provide.
+
+ grRules are compared for logical equality rather than as strings: each
+ rule is expanded to disjunctive normal form and the genes within each
+ isozyme, and the isozymes themselves, are sorted before comparison, so
+ &quot;a and b&quot; equals &quot;b and a&quot; and &quot;(a or b)&quot; equals &quot;(b or a)&quot;. This is
+ stronger than a case/whitespace string match.
+
+ Parameters
+ ----------
+ modelA : struct
+     the first model.
+ modelB : struct
+     the second model.
+
+ Name-Value Arguments
+ --------------------
+ stoichTol : double
+     absolute tolerance for stoichiometric coefficient differences
+     (default 1e-9).
+ maxPerCategory : double
+     the maximum number of differences reported per category before the
+     rest are truncated with a single summary line (default 50).
+ printResults : logical
+     print the report to the command window (default false).
+
+ Returns
+ -------
+ report : struct
+     difference report with fields:
+
+     - equal : true if no differences were found.
+     - differences : cell array of human-readable difference strings, each
+       naming the category and the entity affected.
+     - rxnsOnlyInA / rxnsOnlyInB : reaction ids present in only one model.
+     - metsOnlyInA / metsOnlyInB : metabolite ids present in only one model.
+     - genesOnlyInA / genesOnlyInB : gene ids present in only one model.
+
+ Usage: report = diffModels(modelA, modelB, ...)</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function push(category, message)</a></li><li><a href="#_sub2" class="code">function reportSet(label, onlyA, onlyB)</a></li><li><a href="#_sub3" class="code">function [onlyA, onlyB, common] = idSets(a, b)</a></li><li><a href="#_sub4" class="code">function [mets, coeffs] = rxnStoich(model, j)</a></li><li><a href="#_sub5" class="code">function v = fieldAt(model, field, j, default)</a></li><li><a href="#_sub6" class="code">function s = cellAt(model, field, j)</a></li><li><a href="#_sub7" class="code">function cp = metComp(model, j)</a></li><li><a href="#_sub8" class="code">function s = canonicalGpr(rule)</a></li><li><a href="#_sub9" class="code">function s = joinTruncated(ids)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function report = diffModels(modelA, modelB, varargin)</a>
+0002 <span class="comment">% diffModels  Report the semantic differences between two models.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Counterpart of raven_toolbox.comparison.diff.diff_models. Compares two</span>
+0005 <span class="comment">% models entry by entry, keyed by identifier, and returns a report listing</span>
+0006 <span class="comment">% every difference found. Reactions, metabolites and genes are matched by</span>
+0007 <span class="comment">% id; for the ids present in both models the reaction stoichiometry, bounds,</span>
+0008 <span class="comment">% objective coefficient, grRule, EC codes, and the metabolite formula,</span>
+0009 <span class="comment">% charge and compartment are compared. This is the structured</span>
+0010 <span class="comment">% added/removed/changed diff that compareMultipleModels /</span>
+0011 <span class="comment">% compareRxnsGenesMetsComps (which report overlap counts and distances) do</span>
+0012 <span class="comment">% not provide.</span>
+0013 <span class="comment">%</span>
+0014 <span class="comment">% grRules are compared for logical equality rather than as strings: each</span>
+0015 <span class="comment">% rule is expanded to disjunctive normal form and the genes within each</span>
+0016 <span class="comment">% isozyme, and the isozymes themselves, are sorted before comparison, so</span>
+0017 <span class="comment">% &quot;a and b&quot; equals &quot;b and a&quot; and &quot;(a or b)&quot; equals &quot;(b or a)&quot;. This is</span>
+0018 <span class="comment">% stronger than a case/whitespace string match.</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% Parameters</span>
+0021 <span class="comment">% ----------</span>
+0022 <span class="comment">% modelA : struct</span>
+0023 <span class="comment">%     the first model.</span>
+0024 <span class="comment">% modelB : struct</span>
+0025 <span class="comment">%     the second model.</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">% Name-Value Arguments</span>
+0028 <span class="comment">% --------------------</span>
+0029 <span class="comment">% stoichTol : double</span>
+0030 <span class="comment">%     absolute tolerance for stoichiometric coefficient differences</span>
+0031 <span class="comment">%     (default 1e-9).</span>
+0032 <span class="comment">% maxPerCategory : double</span>
+0033 <span class="comment">%     the maximum number of differences reported per category before the</span>
+0034 <span class="comment">%     rest are truncated with a single summary line (default 50).</span>
+0035 <span class="comment">% printResults : logical</span>
+0036 <span class="comment">%     print the report to the command window (default false).</span>
+0037 <span class="comment">%</span>
+0038 <span class="comment">% Returns</span>
+0039 <span class="comment">% -------</span>
+0040 <span class="comment">% report : struct</span>
+0041 <span class="comment">%     difference report with fields:</span>
+0042 <span class="comment">%</span>
+0043 <span class="comment">%     - equal : true if no differences were found.</span>
+0044 <span class="comment">%     - differences : cell array of human-readable difference strings, each</span>
+0045 <span class="comment">%       naming the category and the entity affected.</span>
+0046 <span class="comment">%     - rxnsOnlyInA / rxnsOnlyInB : reaction ids present in only one model.</span>
+0047 <span class="comment">%     - metsOnlyInA / metsOnlyInB : metabolite ids present in only one model.</span>
+0048 <span class="comment">%     - genesOnlyInA / genesOnlyInB : gene ids present in only one model.</span>
+0049 <span class="comment">%</span>
+0050 <span class="comment">% Usage: report = diffModels(modelA, modelB, ...)</span>
+0051 
+0052 p = parseRAVENargs(varargin, {<span class="string">'stoichTol'</span>, 1e-9; <span class="string">'maxPerCategory'</span>, 50; <span class="keyword">...</span>
+0053     <span class="string">'printResults'</span>, false});
+0054 stoichTol = p.stoichTol;
+0055 maxPerCategory = p.maxPerCategory;
+0056 printResults = p.printResults;
+0057 
+0058 diffs = {};                 <span class="comment">% collected difference strings</span>
+0059 counts = struct();          <span class="comment">% per-category counters, for truncation</span>
+0060 
+0061 report = struct();
+0062 report.equal = true;
+0063 report.differences = {};
+0064 
+0065 <span class="comment">% --- Identifier sets --------------------------------------------------</span>
+0066 [report.rxnsOnlyInA, report.rxnsOnlyInB, commonRxns] = <a href="#_sub3" class="code" title="subfunction [onlyA, onlyB, common] = idSets(a, b)">idSets</a>(modelA.rxns, modelB.rxns);
+0067 [report.metsOnlyInA, report.metsOnlyInB, commonMets] = <a href="#_sub3" class="code" title="subfunction [onlyA, onlyB, common] = idSets(a, b)">idSets</a>(modelA.mets, modelB.mets);
+0068 <span class="keyword">if</span> isfield(modelA,<span class="string">'genes'</span>) &amp;&amp; isfield(modelB,<span class="string">'genes'</span>)
+0069     [report.genesOnlyInA, report.genesOnlyInB] = <a href="#_sub3" class="code" title="subfunction [onlyA, onlyB, common] = idSets(a, b)">idSets</a>(modelA.genes, modelB.genes);
+0070 <span class="keyword">else</span>
+0071     report.genesOnlyInA = {}; report.genesOnlyInB = {};
+0072 <span class="keyword">end</span>
+0073 
+0074 <a href="#_sub2" class="code" title="subfunction reportSet(label, onlyA, onlyB)">reportSet</a>(<span class="string">'reactions'</span>, report.rxnsOnlyInA, report.rxnsOnlyInB);
+0075 <a href="#_sub2" class="code" title="subfunction reportSet(label, onlyA, onlyB)">reportSet</a>(<span class="string">'metabolites'</span>, report.metsOnlyInA, report.metsOnlyInB);
+0076 <a href="#_sub2" class="code" title="subfunction reportSet(label, onlyA, onlyB)">reportSet</a>(<span class="string">'genes'</span>, report.genesOnlyInA, report.genesOnlyInB);
+0077 
+0078 <span class="comment">% --- Reaction content, on the shared ids ------------------------------</span>
+0079 [~, ia] = ismember(commonRxns, modelA.rxns);
+0080 [~, ib] = ismember(commonRxns, modelB.rxns);
+0081 <span class="keyword">for</span> k = 1:numel(commonRxns)
+0082     rxn = commonRxns{k};
+0083     ja = ia(k); jb = ib(k);
+0084 
+0085     <span class="comment">% Stoichiometry: compare the metabolite id -&gt; coefficient maps.</span>
+0086     [ma, ca] = <a href="#_sub4" class="code" title="subfunction [mets, coeffs] = rxnStoich(model, j)">rxnStoich</a>(modelA, ja);
+0087     [mb, cb] = <a href="#_sub4" class="code" title="subfunction [mets, coeffs] = rxnStoich(model, j)">rxnStoich</a>(modelB, jb);
+0088     <span class="keyword">if</span> ~isequal(sort(ma), sort(mb))
+0089         <a href="#_sub1" class="code" title="subfunction push(category, message)">push</a>(<span class="string">'stoich'</span>, sprintf(<span class="string">'%s: stoichiometry involves different metabolites'</span>, rxn));
+0090     <span class="keyword">else</span>
+0091         [~, locb] = ismember(ma, mb);
+0092         <span class="keyword">for</span> m = 1:numel(ma)
+0093             <span class="keyword">if</span> abs(ca(m) - cb(locb(m))) &gt; stoichTol
+0094                 <a href="#_sub1" class="code" title="subfunction push(category, message)">push</a>(<span class="string">'stoich'</span>, sprintf(<span class="string">'%s: coef[%s] A=%g B=%g'</span>, rxn, ma{m}, ca(m), cb(locb(m))));
+0095             <span class="keyword">end</span>
+0096         <span class="keyword">end</span>
+0097     <span class="keyword">end</span>
+0098 
+0099     <span class="comment">% Bounds.</span>
+0100     <span class="keyword">if</span> modelA.lb(ja) ~= modelB.lb(jb) || modelA.ub(ja) ~= modelB.ub(jb)
+0101         <a href="#_sub1" class="code" title="subfunction push(category, message)">push</a>(<span class="string">'bounds'</span>, sprintf(<span class="string">'%s: bounds A=[%g,%g] B=[%g,%g]'</span>, rxn, <span class="keyword">...</span>
+0102             modelA.lb(ja), modelA.ub(ja), modelB.lb(jb), modelB.ub(jb)));
+0103     <span class="keyword">end</span>
+0104 
+0105     <span class="comment">% Objective coefficient.</span>
+0106     <span class="keyword">if</span> <a href="#_sub5" class="code" title="subfunction v = fieldAt(model, field, j, default)">fieldAt</a>(modelA,<span class="string">'c'</span>,ja,0) ~= <a href="#_sub5" class="code" title="subfunction v = fieldAt(model, field, j, default)">fieldAt</a>(modelB,<span class="string">'c'</span>,jb,0)
+0107         <a href="#_sub1" class="code" title="subfunction push(category, message)">push</a>(<span class="string">'objective'</span>, sprintf(<span class="string">'%s: objective A=%g B=%g'</span>, rxn, <span class="keyword">...</span>
+0108             <a href="#_sub5" class="code" title="subfunction v = fieldAt(model, field, j, default)">fieldAt</a>(modelA,<span class="string">'c'</span>,ja,0), <a href="#_sub5" class="code" title="subfunction v = fieldAt(model, field, j, default)">fieldAt</a>(modelB,<span class="string">'c'</span>,jb,0)));
+0109     <span class="keyword">end</span>
+0110 
+0111     <span class="comment">% grRule, compared as logic rather than text.</span>
+0112     ga = <a href="#_sub8" class="code" title="subfunction s = canonicalGpr(rule)">canonicalGpr</a>(<a href="#_sub6" class="code" title="subfunction s = cellAt(model, field, j)">cellAt</a>(modelA,<span class="string">'grRules'</span>,ja));
+0113     gb = <a href="#_sub8" class="code" title="subfunction s = canonicalGpr(rule)">canonicalGpr</a>(<a href="#_sub6" class="code" title="subfunction s = cellAt(model, field, j)">cellAt</a>(modelB,<span class="string">'grRules'</span>,jb));
+0114     <span class="keyword">if</span> ~strcmp(ga, gb)
+0115         <a href="#_sub1" class="code" title="subfunction push(category, message)">push</a>(<span class="string">'gpr'</span>, sprintf(<span class="string">'%s: grRule A=&quot;%s&quot; B=&quot;%s&quot;'</span>, rxn, <span class="keyword">...</span>
+0116             <a href="#_sub6" class="code" title="subfunction s = cellAt(model, field, j)">cellAt</a>(modelA,<span class="string">'grRules'</span>,ja), <a href="#_sub6" class="code" title="subfunction s = cellAt(model, field, j)">cellAt</a>(modelB,<span class="string">'grRules'</span>,jb)));
+0117     <span class="keyword">end</span>
+0118 
+0119     <span class="comment">% EC codes (RAVEN's first-class annotation field).</span>
+0120     ea = <a href="#_sub6" class="code" title="subfunction s = cellAt(model, field, j)">cellAt</a>(modelA,<span class="string">'eccodes'</span>,ja);
+0121     eb = <a href="#_sub6" class="code" title="subfunction s = cellAt(model, field, j)">cellAt</a>(modelB,<span class="string">'eccodes'</span>,jb);
+0122     <span class="keyword">if</span> ~strcmp(ea, eb)
+0123         <a href="#_sub1" class="code" title="subfunction push(category, message)">push</a>(<span class="string">'eccodes'</span>, sprintf(<span class="string">'%s: eccodes A=&quot;%s&quot; B=&quot;%s&quot;'</span>, rxn, ea, eb));
+0124     <span class="keyword">end</span>
+0125 <span class="keyword">end</span>
+0126 
+0127 <span class="comment">% --- Metabolite content, on the shared ids ----------------------------</span>
+0128 [~, ia] = ismember(commonMets, modelA.mets);
+0129 [~, ib] = ismember(commonMets, modelB.mets);
+0130 <span class="keyword">for</span> k = 1:numel(commonMets)
+0131     met = commonMets{k};
+0132     ja = ia(k); jb = ib(k);
+0133 
+0134     fa = <a href="#_sub6" class="code" title="subfunction s = cellAt(model, field, j)">cellAt</a>(modelA,<span class="string">'metFormulas'</span>,ja);
+0135     fb = <a href="#_sub6" class="code" title="subfunction s = cellAt(model, field, j)">cellAt</a>(modelB,<span class="string">'metFormulas'</span>,jb);
+0136     <span class="keyword">if</span> ~strcmp(fa, fb)
+0137         <a href="#_sub1" class="code" title="subfunction push(category, message)">push</a>(<span class="string">'formula'</span>, sprintf(<span class="string">'%s: formula A=&quot;%s&quot; B=&quot;%s&quot;'</span>, met, fa, fb));
+0138     <span class="keyword">end</span>
+0139 
+0140     <span class="keyword">if</span> ~isequaln(<a href="#_sub5" class="code" title="subfunction v = fieldAt(model, field, j, default)">fieldAt</a>(modelA,<span class="string">'metCharges'</span>,ja,NaN), <a href="#_sub5" class="code" title="subfunction v = fieldAt(model, field, j, default)">fieldAt</a>(modelB,<span class="string">'metCharges'</span>,jb,NaN))
+0141         <a href="#_sub1" class="code" title="subfunction push(category, message)">push</a>(<span class="string">'charge'</span>, sprintf(<span class="string">'%s: charge A=%g B=%g'</span>, met, <span class="keyword">...</span>
+0142             <a href="#_sub5" class="code" title="subfunction v = fieldAt(model, field, j, default)">fieldAt</a>(modelA,<span class="string">'metCharges'</span>,ja,NaN), <a href="#_sub5" class="code" title="subfunction v = fieldAt(model, field, j, default)">fieldAt</a>(modelB,<span class="string">'metCharges'</span>,jb,NaN)));
+0143     <span class="keyword">end</span>
+0144 
+0145     cpA = <a href="#_sub7" class="code" title="subfunction cp = metComp(model, j)">metComp</a>(modelA, ja);
+0146     cpB = <a href="#_sub7" class="code" title="subfunction cp = metComp(model, j)">metComp</a>(modelB, jb);
+0147     <span class="keyword">if</span> ~strcmp(cpA, cpB)
+0148         <a href="#_sub1" class="code" title="subfunction push(category, message)">push</a>(<span class="string">'compartment'</span>, sprintf(<span class="string">'%s: compartment A=&quot;%s&quot; B=&quot;%s&quot;'</span>, met, cpA, cpB));
+0149     <span class="keyword">end</span>
+0150 <span class="keyword">end</span>
+0151 
+0152 report.equal = isempty(diffs);
+0153 report.differences = diffs(:);
+0154 
+0155 <span class="keyword">if</span> printResults
+0156     <span class="keyword">if</span> report.equal
+0157         fprintf(<span class="string">'Models are semantically equal.\n'</span>);
+0158     <span class="keyword">else</span>
+0159         fprintf(<span class="string">'Models differ (%d differences):\n'</span>, numel(diffs));
+0160         fprintf(<span class="string">'  - %s\n'</span>, diffs{:});
+0161     <span class="keyword">end</span>
+0162 <span class="keyword">end</span>
+0163 
+0164     <span class="comment">% --- nested helpers (share diffs / counts / maxPerCategory) --------</span>
+0165     <a name="_sub1" href="#_subfunctions" class="code">function push(category, message)</a>
+0166         <span class="keyword">if</span> ~isfield(counts, category)
+0167             counts.(category) = 0;
+0168         <span class="keyword">end</span>
+0169         counts.(category) = counts.(category) + 1;
+0170         <span class="keyword">if</span> counts.(category) &lt;= maxPerCategory
+0171             diffs{end+1,1} = message; <span class="comment">%#ok&lt;AGROW&gt;</span>
+0172         <span class="keyword">elseif</span> counts.(category) == maxPerCategory + 1
+0173             diffs{end+1,1} = sprintf(<span class="string">'... (%s category truncated at %d entries)'</span>, <span class="keyword">...</span>
+0174                 category, maxPerCategory); <span class="comment">%#ok&lt;AGROW&gt;</span>
+0175         <span class="keyword">end</span>
+0176     <span class="keyword">end</span>
+0177 
+0178     <a name="_sub2" href="#_subfunctions" class="code">function reportSet(label, onlyA, onlyB)</a>
+0179         <span class="keyword">if</span> ~isempty(onlyA)
+0180             <a href="#_sub1" class="code" title="subfunction push(category, message)">push</a>([label <span class="string">'_only_in_a'</span>], sprintf(<span class="string">'%d %s only in A: %s'</span>, <span class="keyword">...</span>
+0181                 numel(onlyA), label, <a href="#_sub9" class="code" title="subfunction s = joinTruncated(ids)">joinTruncated</a>(onlyA)));
+0182         <span class="keyword">end</span>
+0183         <span class="keyword">if</span> ~isempty(onlyB)
+0184             <a href="#_sub1" class="code" title="subfunction push(category, message)">push</a>([label <span class="string">'_only_in_b'</span>], sprintf(<span class="string">'%d %s only in B: %s'</span>, <span class="keyword">...</span>
+0185                 numel(onlyB), label, <a href="#_sub9" class="code" title="subfunction s = joinTruncated(ids)">joinTruncated</a>(onlyB)));
+0186         <span class="keyword">end</span>
+0187     <span class="keyword">end</span>
+0188 <span class="keyword">end</span>
+0189 
+0190 <span class="comment">% --- local helpers ----------------------------------------------------</span>
+0191 <a name="_sub3" href="#_subfunctions" class="code">function [onlyA, onlyB, common] = idSets(a, b)</a>
+0192 onlyA = setdiff(a, b);
+0193 onlyB = setdiff(b, a);
+0194 common = sort(intersect(a, b));
+0195 onlyA = sort(onlyA(:))'; onlyB = sort(onlyB(:))';
+0196 onlyA = onlyA(:); onlyB = onlyB(:);
+0197 <span class="keyword">end</span>
+0198 
+0199 <a name="_sub4" href="#_subfunctions" class="code">function [mets, coeffs] = rxnStoich(model, j)</a>
+0200 nz = find(model.S(:, j));
+0201 mets = model.mets(nz);
+0202 mets = mets(:)';
+0203 coeffs = full(model.S(nz, j))';
+0204 <span class="keyword">end</span>
+0205 
+0206 <a name="_sub5" href="#_subfunctions" class="code">function v = fieldAt(model, field, j, default)</a>
+0207 <span class="keyword">if</span> isfield(model, field) &amp;&amp; numel(model.(field)) &gt;= j
+0208     v = model.(field)(j);
+0209     <span class="keyword">if</span> iscell(v), v = v{1}; <span class="keyword">end</span>
+0210     <span class="keyword">if</span> isempty(v), v = default; <span class="keyword">end</span>
+0211 <span class="keyword">else</span>
+0212     v = default;
+0213 <span class="keyword">end</span>
+0214 <span class="keyword">end</span>
+0215 
+0216 <a name="_sub6" href="#_subfunctions" class="code">function s = cellAt(model, field, j)</a>
+0217 <span class="comment">% A char scalar from a cell-array field, '' when absent or empty.</span>
+0218 <span class="keyword">if</span> isfield(model, field) &amp;&amp; numel(model.(field)) &gt;= j
+0219     s = model.(field){j};
+0220     <span class="keyword">if</span> isempty(s), s = <span class="string">''</span>; <span class="keyword">end</span>
+0221 <span class="keyword">else</span>
+0222     s = <span class="string">''</span>;
+0223 <span class="keyword">end</span>
+0224 <span class="keyword">end</span>
+0225 
+0226 <a name="_sub7" href="#_subfunctions" class="code">function cp = metComp(model, j)</a>
+0227 <span class="keyword">if</span> isfield(model, <span class="string">'metComps'</span>) &amp;&amp; isfield(model, <span class="string">'comps'</span>)
+0228     cp = model.comps{model.metComps(j)};
+0229 <span class="keyword">else</span>
+0230     cp = <span class="string">''</span>;
+0231 <span class="keyword">end</span>
+0232 <span class="keyword">end</span>
+0233 
+0234 <a name="_sub8" href="#_subfunctions" class="code">function s = canonicalGpr(rule)</a>
+0235 <span class="comment">% A canonical string for a grRule under which isozymes and their subunits</span>
+0236 <span class="comment">% are order-insensitive. Empty rule -&gt; ''.</span>
+0237 <span class="keyword">if</span> isempty(rule)
+0238     s = <span class="string">''</span>;
+0239     <span class="keyword">return</span>;
+0240 <span class="keyword">end</span>
+0241 clauses = grRuleToDNF(rule);
+0242 parts = cell(1, numel(clauses));
+0243 <span class="keyword">for</span> i = 1:numel(clauses)
+0244     genes = sort(unique(clauses{i}));
+0245     parts{i} = strjoin(genes(:)', <span class="string">' and '</span>);
+0246 <span class="keyword">end</span>
+0247 parts = sort(parts);
+0248 s = strjoin(parts, <span class="string">' or '</span>);
+0249 <span class="keyword">end</span>
+0250 
+0251 <a name="_sub9" href="#_subfunctions" class="code">function s = joinTruncated(ids)</a>
+0252 <span class="comment">% Join up to the first 10 ids, appending a count of the remainder.</span>
+0253 ids = ids(:)';
+0254 <span class="keyword">if</span> numel(ids) &gt; 10
+0255     s = [strjoin(ids(1:10), <span class="string">', '</span>) sprintf(<span class="string">', ... (%d more)'</span>, numel(ids) - 10)];
+0256 <span class="keyword">else</span>
+0257     s = strjoin(ids, <span class="string">', '</span>);
+0258 <span class="keyword">end</span>
+0259 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

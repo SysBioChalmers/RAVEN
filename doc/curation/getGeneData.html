@@ -1,0 +1,346 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of getGeneData</title>
+  <meta name="keywords" content="getGeneData">
+  <meta name="description" content="getGeneData  Build a gene-mapping table from NCBI genome annotation files.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">curation</a> &gt; getGeneData.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for curation&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>getGeneData
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>getGeneData  Build a gene-mapping table from NCBI genome annotation files.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function geneTable = getGeneData(accession, varargin) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> getGeneData  Build a gene-mapping table from NCBI genome annotation files.
+
+ Parses the GFF3 annotation and protein FASTA (.faa) files for a given
+ NCBI genome assembly and produces a table mapping locus tags to gene
+ symbols, protein IDs, and other identifiers. The resulting table can be
+ passed directly to renameModelGenes to update gene identifiers in a
+ RAVEN model. If no local files are provided, downloadGenomeData is
+ called automatically to fetch them.
+
+ Parameters
+ ----------
+ accession : char
+     NCBI genome assembly accession, e.g. 'GCF_000002595.2', or a path to a
+     local GFF3 annotation file.
+
+ Name-Value Arguments
+ --------------------
+ outputFile : char
+     Path to save the resulting table as a tab-delimited .tsv file. If
+     omitted or empty, no file is written and the table is only returned.
+ downloadDir : char
+     Directory where genome files are downloaded if not already present
+     (default: current working directory).
+
+ Returns
+ -------
+ geneTable : table
+     MATLAB table with one row per gene containing:
+       locus_tag       — stable locus identifier (e.g. 'Cre01.g000001')
+       old_locus_tag   — previous locus identifier when available
+       GeneID          — NCBI Gene ID (e.g. '5723799')
+       gene_name       — common gene symbol when available (e.g. 'rbcL')
+       GenBank_protein — protein accession (e.g. 'XP_001698190.2'), matching
+                         the protein FASTA headers
+       UniProt         — UniProt accession from Dbxref when available
+
+ Examples
+ --------
+     % Fetch and parse gene data for Chlamydomonas reinhardtii
+     geneTable = getGeneData('GCF_000002595.2');
+
+     % Save the mapping table to a specific file
+     geneTable = getGeneData('GCF_000002595.2', 'chlamy.tsv');
+
+     % Save to a file and download to a specific directory
+     geneTable = getGeneData('GCF_000002595.2', 'chlamy.tsv', 'data/');
+
+ Notes
+ -----
+ When outputFile is provided the table is written as UTF-8 encoded
+ tab-delimited text with a header row, compatible with readtable and
+ renameModelGenes. Rows without a locus_tag are silently discarded.</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="downloadGenomeData.html" class="code" title="function [gffFile, faaFile] = downloadGenomeData(accession, varargin)">downloadGenomeData</a>	downloadGenomeData  Download genome annotation files from NCBI.</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function T = parseGFF(gffPath)</a></li><li><a href="#_sub2" class="code">function value = extractAttr(attrStr, key)</a></li><li><a href="#_sub3" class="code">function out = gff3Decode(str)</a></li><li><a href="#_sub4" class="code">function value = extractDbxrefField(dbxref, prefix)</a></li><li><a href="#_sub5" class="code">function g = parseGeneAttrs(attrs)</a></li><li><a href="#_sub6" class="code">function c = parseCDSAttrs(attrs)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function geneTable = getGeneData(accession, varargin)</a>
+0002 <span class="comment">% getGeneData  Build a gene-mapping table from NCBI genome annotation files.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Parses the GFF3 annotation and protein FASTA (.faa) files for a given</span>
+0005 <span class="comment">% NCBI genome assembly and produces a table mapping locus tags to gene</span>
+0006 <span class="comment">% symbols, protein IDs, and other identifiers. The resulting table can be</span>
+0007 <span class="comment">% passed directly to renameModelGenes to update gene identifiers in a</span>
+0008 <span class="comment">% RAVEN model. If no local files are provided, downloadGenomeData is</span>
+0009 <span class="comment">% called automatically to fetch them.</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% Parameters</span>
+0012 <span class="comment">% ----------</span>
+0013 <span class="comment">% accession : char</span>
+0014 <span class="comment">%     NCBI genome assembly accession, e.g. 'GCF_000002595.2', or a path to a</span>
+0015 <span class="comment">%     local GFF3 annotation file.</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">% Name-Value Arguments</span>
+0018 <span class="comment">% --------------------</span>
+0019 <span class="comment">% outputFile : char</span>
+0020 <span class="comment">%     Path to save the resulting table as a tab-delimited .tsv file. If</span>
+0021 <span class="comment">%     omitted or empty, no file is written and the table is only returned.</span>
+0022 <span class="comment">% downloadDir : char</span>
+0023 <span class="comment">%     Directory where genome files are downloaded if not already present</span>
+0024 <span class="comment">%     (default: current working directory).</span>
+0025 <span class="comment">%</span>
+0026 <span class="comment">% Returns</span>
+0027 <span class="comment">% -------</span>
+0028 <span class="comment">% geneTable : table</span>
+0029 <span class="comment">%     MATLAB table with one row per gene containing:</span>
+0030 <span class="comment">%       locus_tag       — stable locus identifier (e.g. 'Cre01.g000001')</span>
+0031 <span class="comment">%       old_locus_tag   — previous locus identifier when available</span>
+0032 <span class="comment">%       GeneID          — NCBI Gene ID (e.g. '5723799')</span>
+0033 <span class="comment">%       gene_name       — common gene symbol when available (e.g. 'rbcL')</span>
+0034 <span class="comment">%       GenBank_protein — protein accession (e.g. 'XP_001698190.2'), matching</span>
+0035 <span class="comment">%                         the protein FASTA headers</span>
+0036 <span class="comment">%       UniProt         — UniProt accession from Dbxref when available</span>
+0037 <span class="comment">%</span>
+0038 <span class="comment">% Examples</span>
+0039 <span class="comment">% --------</span>
+0040 <span class="comment">%     % Fetch and parse gene data for Chlamydomonas reinhardtii</span>
+0041 <span class="comment">%     geneTable = getGeneData('GCF_000002595.2');</span>
+0042 <span class="comment">%</span>
+0043 <span class="comment">%     % Save the mapping table to a specific file</span>
+0044 <span class="comment">%     geneTable = getGeneData('GCF_000002595.2', 'chlamy.tsv');</span>
+0045 <span class="comment">%</span>
+0046 <span class="comment">%     % Save to a file and download to a specific directory</span>
+0047 <span class="comment">%     geneTable = getGeneData('GCF_000002595.2', 'chlamy.tsv', 'data/');</span>
+0048 <span class="comment">%</span>
+0049 <span class="comment">% Notes</span>
+0050 <span class="comment">% -----</span>
+0051 <span class="comment">% When outputFile is provided the table is written as UTF-8 encoded</span>
+0052 <span class="comment">% tab-delimited text with a header row, compatible with readtable and</span>
+0053 <span class="comment">% renameModelGenes. Rows without a locus_tag are silently discarded.</span>
+0054 
+0055     <span class="keyword">if</span> nargin &lt; 1 || isempty(accession)
+0056         error(<span class="string">'getGeneData:missingInput'</span>, <span class="keyword">...</span>
+0057             <span class="string">'accession is required. Provide an NCBI assembly accession, e.g. ''GCF_000002595.2''.'</span>);
+0058     <span class="keyword">end</span>
+0059 
+0060     p = parseRAVENargs(varargin, {<span class="string">'outputFile'</span>, <span class="string">''</span>; <span class="string">'downloadDir'</span>, pwd});
+0061     outputFile = char(p.outputFile);
+0062     downloadDir = char(p.downloadDir);
+0063 
+0064     <span class="comment">% Resolve input → local GFF3 path. Decide whether input is a file path or an NCBI accession.</span>
+0065     <span class="keyword">if</span> ischar(accession) || isstring(accession)
+0066         inp = char(accession);
+0067     <span class="keyword">else</span>
+0068         error(<span class="string">'getGeneData:badInputType'</span>, <span class="string">'Input must be a character vector or string.'</span>);
+0069     <span class="keyword">end</span>
+0070     
+0071     gffPath = <span class="string">''</span>;
+0072     <span class="comment">% If input is an existing file, use it.</span>
+0073     <span class="keyword">if</span> isfile(inp)
+0074         gffPath = inp;
+0075     <span class="keyword">else</span>
+0076         <span class="comment">% Check if it looks like an NCBI assembly accession (GCF_... or GCA_...)</span>
+0077         <span class="keyword">if</span> ~isempty(regexp(inp, <span class="string">'^GC[FA]_\d+(\.\d+)?$'</span>, <span class="string">'once'</span>))
+0078             gffPath = <a href="downloadGenomeData.html" class="code" title="function [gffFile, faaFile] = downloadGenomeData(accession, varargin)">downloadGenomeData</a>(inp, downloadDir);
+0079         <span class="keyword">else</span>
+0080             error(<span class="string">'getGeneData:badInput'</span>, <span class="keyword">...</span>
+0081                 <span class="string">'Input &quot;%s&quot; is neither an existing file nor a recognised NCBI assembly accession.'</span>, inp);
+0082         <span class="keyword">end</span>
+0083     <span class="keyword">end</span>
+0084 
+0085     <span class="comment">% Parse the GFF3 annotation into a gene-mapping table</span>
+0086     geneTable = <a href="#_sub1" class="code" title="subfunction T = parseGFF(gffPath)">parseGFF</a>(gffPath);
+0087 
+0088     <span class="comment">% Save result only if an output file was requested</span>
+0089     <span class="keyword">if</span> ~isempty(outputFile)
+0090         writetable(geneTable, outputFile, <span class="string">'Delimiter'</span>, <span class="string">'\t'</span>, <span class="string">'FileType'</span>, <span class="string">'text'</span>);
+0091         fprintf(<span class="string">'Gene table saved to: %s  (%d rows)\n'</span>, outputFile, height(geneTable));
+0092     <span class="keyword">end</span>
+0093 <span class="keyword">end</span>
+0094 
+0095 <span class="comment">%--------------------------------------------------------------------------</span>
+0096 <span class="comment">% Helper functions</span>
+0097 
+0098 <a name="_sub1" href="#_subfunctions" class="code">function T = parseGFF(gffPath)</a>
+0099 <span class="comment">% Parse a GFF3 file extracting gene + CDS pairs. The protein accession is</span>
+0100 <span class="comment">% taken from each CDS protein_id, and the owning gene is resolved through</span>
+0101 <span class="comment">% the Parent chain (CDS → mRNA → gene for eukaryotes, CDS → gene for</span>
+0102 <span class="comment">% prokaryotes), so the GenBank_protein column matches the protein FASTA.</span>
+0103 <span class="comment">%</span>
+0104 <span class="comment">% Returns a table with columns:</span>
+0105 <span class="comment">%   locus_tag | old_locus_tag | GeneID | gene_name | GenBank_protein | UniProt</span>
+0106 
+0107     batchSize = 10000;
+0108     rows  = cell(batchSize, 6);
+0109     nRows = 0;
+0110     <span class="comment">% Use a containers.Map to hold the last gene record keyed by gene ID,</span>
+0111     <span class="comment">% and an mRNA → gene map to resolve eukaryote CDS parents.</span>
+0112     geneMap    = containers.Map(<span class="string">'KeyType'</span>, <span class="string">'char'</span>, <span class="string">'ValueType'</span>, <span class="string">'any'</span>);
+0113     mrnaToGene = containers.Map(<span class="string">'KeyType'</span>, <span class="string">'char'</span>, <span class="string">'ValueType'</span>, <span class="string">'char'</span>);
+0114     emptyGene = struct(<span class="string">'locus_tag'</span>,<span class="string">''</span>,<span class="string">'old_locus_tag'</span>,<span class="string">''</span>,<span class="string">'geneID'</span>,<span class="string">''</span>,<span class="string">'name'</span>,<span class="string">''</span>);
+0115 
+0116     fid = fopen(gffPath, <span class="string">'r'</span>);
+0117     <span class="keyword">while</span> ~feof(fid)
+0118         line = fgetl(fid);
+0119         <span class="keyword">if</span> ~ischar(line) || isempty(line) || line(1) == <span class="string">'#'</span>, <span class="keyword">continue</span>, <span class="keyword">end</span>
+0120         fields = strsplit(line, <span class="string">'\t'</span>);
+0121         <span class="keyword">if</span> numel(fields) &lt; 9, <span class="keyword">continue</span>, <span class="keyword">end</span>
+0122 
+0123         featureType = fields{3};
+0124         attrs       = fields{9};
+0125 
+0126         <span class="keyword">if</span> strcmp(featureType, <span class="string">'gene'</span>)
+0127             g = <a href="#_sub5" class="code" title="subfunction g = parseGeneAttrs(attrs)">parseGeneAttrs</a>(attrs);
+0128             <span class="keyword">if</span> ~isempty(g.id)
+0129                 geneMap(g.id) = g;
+0130             <span class="keyword">end</span>
+0131 
+0132         <span class="keyword">elseif</span> strcmp(featureType, <span class="string">'mRNA'</span>)
+0133             id     = <a href="#_sub2" class="code" title="subfunction value = extractAttr(attrStr, key)">extractAttr</a>(attrs, <span class="string">'ID'</span>);
+0134             parent = <a href="#_sub2" class="code" title="subfunction value = extractAttr(attrStr, key)">extractAttr</a>(attrs, <span class="string">'Parent'</span>);
+0135             <span class="keyword">if</span> ~isempty(id) &amp;&amp; ~isempty(parent)
+0136                 mrnaToGene(id) = parent;
+0137             <span class="keyword">end</span>
+0138 
+0139         <span class="keyword">elseif</span> strcmp(featureType, <span class="string">'CDS'</span>)
+0140             child     = <a href="#_sub6" class="code" title="subfunction c = parseCDSAttrs(attrs)">parseCDSAttrs</a>(attrs);
+0141             proteinID = child.protein_id;
+0142             <span class="keyword">if</span> isempty(child.parent) || isempty(proteinID), <span class="keyword">continue</span>, <span class="keyword">end</span>
+0143 
+0144             <span class="comment">% Resolve the owning gene through the Parent chain</span>
+0145             <span class="keyword">if</span> isKey(mrnaToGene, child.parent)
+0146                 geneKey = mrnaToGene(child.parent);
+0147             <span class="keyword">else</span>
+0148                 geneKey = child.parent;  <span class="comment">% prokaryote: CDS Parent is the gene</span>
+0149             <span class="keyword">end</span>
+0150             <span class="keyword">if</span> isKey(geneMap, geneKey)
+0151                 g = geneMap(geneKey);
+0152             <span class="keyword">else</span>
+0153                 g = emptyGene;
+0154             <span class="keyword">end</span>
+0155 
+0156             nRows = nRows + 1;
+0157             <span class="keyword">if</span> nRows &gt; size(rows, 1)
+0158                 rows = [rows; cell(batchSize, 6)];
+0159             <span class="keyword">end</span>
+0160             rows(nRows, :) = {g.locus_tag, g.old_locus_tag, <span class="keyword">...</span>
+0161                                g.geneID,    g.name,          proteinID, g.uniProt};
+0162         <span class="keyword">end</span>
+0163     <span class="keyword">end</span>
+0164     fclose(fid);
+0165 
+0166     rows = rows(1:nRows, :);
+0167 
+0168     <span class="comment">% Deduplicate rows (CDS repeats per exon).</span>
+0169     rowKeys = cellfun(@(a,b,c,d,e) strjoin({a,b,c,d,e}, <span class="string">'|'</span>), <span class="keyword">...</span>
+0170         rows(:,1), rows(:,2), rows(:,3), rows(:,4), rows(:,5), <span class="keyword">...</span>
+0171         <span class="string">'UniformOutput'</span>, false);
+0172     [~, ia] = unique(rowKeys, <span class="string">'stable'</span>);
+0173     rows = rows(ia, :);
+0174 
+0175     T = cell2table(rows, <span class="string">'VariableNames'</span>, <span class="keyword">...</span>
+0176         {<span class="string">'locus_tag'</span>,<span class="string">'old_locus_tag'</span>,<span class="string">'GeneID'</span>,<span class="string">'gene_name'</span>,<span class="string">'GenBank_protein'</span>,<span class="string">'UniProt'</span>});
+0177 <span class="keyword">end</span>
+0178 
+0179 <span class="comment">% Attibute parsing utilities</span>
+0180 <a name="_sub2" href="#_subfunctions" class="code">function value = extractAttr(attrStr, key)</a>
+0181 <span class="comment">% Extract the value of a GFF3 attribute by key.</span>
+0182 <span class="comment">% Handles URL-encoded characters (%2C etc.) for robustness.</span>
+0183 <span class="comment">% Returns '' if key is not present.</span>
+0184     pattern = sprintf(<span class="string">'(?:^|;)%s=([^;]+)'</span>, regexptranslate(<span class="string">'escape'</span>, key));
+0185     tok = regexp(attrStr, pattern, <span class="string">'tokens'</span>, <span class="string">'once'</span>);
+0186     <span class="keyword">if</span> isempty(tok)
+0187         value = <span class="string">''</span>;
+0188     <span class="keyword">else</span>
+0189         value = <a href="#_sub3" class="code" title="subfunction out = gff3Decode(str)">gff3Decode</a>(tok{1});
+0190     <span class="keyword">end</span>
+0191 <span class="keyword">end</span>
+0192 
+0193 <a name="_sub3" href="#_subfunctions" class="code">function out = gff3Decode(str)</a>
+0194 <span class="comment">% Decode GFF3 percent-encoded characters (%XX). Unlike urldecode, '+' is</span>
+0195 <span class="comment">% left untouched, as GFF3 does not use it to encode spaces.</span>
+0196     out = regexprep(str, <span class="string">'%([0-9A-Fa-f]{2})'</span>, <span class="string">'${char(hex2dec($1))}'</span>);
+0197 <span class="keyword">end</span>
+0198 
+0199 <a name="_sub4" href="#_subfunctions" class="code">function value = extractDbxrefField(dbxref, prefix)</a>
+0200 <span class="comment">% From a comma-separated Dbxref value like</span>
+0201 <span class="comment">%   &quot;Phytozome:Cre16.g651050,GeneID:5723799,GenBank:XM_001698190.2&quot;</span>
+0202 <span class="comment">% extract the part after &quot;prefix:&quot;.</span>
+0203 <span class="comment">% Returns '' if not found.</span>
+0204     <span class="keyword">if</span> isempty(dbxref)
+0205         value = <span class="string">''</span>;
+0206         <span class="keyword">return</span>
+0207     <span class="keyword">end</span>
+0208     parts   = strsplit(dbxref, <span class="string">','</span>);
+0209     pattern = sprintf(<span class="string">'^%s:(.+)$'</span>, regexptranslate(<span class="string">'escape'</span>, prefix));
+0210     value   = <span class="string">''</span>;
+0211     <span class="keyword">for</span> i = 1:numel(parts)
+0212         tok = regexp(strtrim(parts{i}), pattern, <span class="string">'tokens'</span>, <span class="string">'once'</span>);
+0213         <span class="keyword">if</span> ~isempty(tok)
+0214             value = tok{1};
+0215             <span class="keyword">return</span>
+0216         <span class="keyword">end</span>
+0217     <span class="keyword">end</span>
+0218 <span class="keyword">end</span>
+0219 
+0220 <a name="_sub5" href="#_subfunctions" class="code">function g = parseGeneAttrs(attrs)</a>
+0221     g.id            = <a href="#_sub2" class="code" title="subfunction value = extractAttr(attrStr, key)">extractAttr</a>(attrs, <span class="string">'ID'</span>);
+0222     g.name          = <a href="#_sub2" class="code" title="subfunction value = extractAttr(attrStr, key)">extractAttr</a>(attrs, <span class="string">'Name'</span>);
+0223     g.locus_tag     = <a href="#_sub2" class="code" title="subfunction value = extractAttr(attrStr, key)">extractAttr</a>(attrs, <span class="string">'locus_tag'</span>);
+0224     g.old_locus_tag = <a href="#_sub2" class="code" title="subfunction value = extractAttr(attrStr, key)">extractAttr</a>(attrs, <span class="string">'old_locus_tag'</span>);
+0225 
+0226     <span class="comment">% Dbxref is a comma-separated list like:</span>
+0227     <span class="comment">%   GeneID:5723799,GenBank:XM_001698190.2</span>
+0228     dbxref          = <a href="#_sub2" class="code" title="subfunction value = extractAttr(attrStr, key)">extractAttr</a>(attrs, <span class="string">'Dbxref'</span>);
+0229     g.geneID        = <a href="#_sub4" class="code" title="subfunction value = extractDbxrefField(dbxref, prefix)">extractDbxrefField</a>(dbxref, <span class="string">'GeneID'</span>);
+0230 
+0231     <span class="comment">% UniProt accession appears as UniProtKB/Swiss-Prot:P12345 or UniProtKB:P12345</span>
+0232     g.uniProt       = <a href="#_sub4" class="code" title="subfunction value = extractDbxrefField(dbxref, prefix)">extractDbxrefField</a>(dbxref, <span class="string">'UniProtKB/Swiss-Prot'</span>);
+0233     <span class="keyword">if</span> isempty(g.uniProt)
+0234         g.uniProt   = <a href="#_sub4" class="code" title="subfunction value = extractDbxrefField(dbxref, prefix)">extractDbxrefField</a>(dbxref, <span class="string">'UniProtKB'</span>);
+0235     <span class="keyword">end</span>
+0236 <span class="keyword">end</span>
+0237 
+0238 <a name="_sub6" href="#_subfunctions" class="code">function c = parseCDSAttrs(attrs)</a>
+0239     c.parent     = <a href="#_sub2" class="code" title="subfunction value = extractAttr(attrStr, key)">extractAttr</a>(attrs, <span class="string">'Parent'</span>);
+0240     c.protein_id = <a href="#_sub2" class="code" title="subfunction value = extractAttr(attrStr, key)">extractAttr</a>(attrs, <span class="string">'protein_id'</span>);
+0241     <span class="keyword">if</span> isempty(c.protein_id)
+0242         <span class="comment">% Some files put it in Dbxref as GenBank:WP_...</span>
+0243         dbxref       = <a href="#_sub2" class="code" title="subfunction value = extractAttr(attrStr, key)">extractAttr</a>(attrs, <span class="string">'Dbxref'</span>);
+0244         c.protein_id = <a href="#_sub4" class="code" title="subfunction value = extractDbxrefField(dbxref, prefix)">extractDbxrefField</a>(dbxref, <span class="string">'GenBank'</span>);
+0245     <span class="keyword">end</span>
+0246 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

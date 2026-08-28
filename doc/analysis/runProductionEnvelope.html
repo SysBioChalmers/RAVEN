@@ -24,7 +24,7 @@
 <div class="box"><strong>runProductionEnvelope  Calculate the byproduct secretion envelope.</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function [biomassValues, targetValues] = runProductionEnvelope(model, targetRxn, biomassRxn, nPts) </strong></div>
+<div class="box"><strong>function [biomassValues, targetValues] = runProductionEnvelope(model, targetRxn, biomassRxn, varargin) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> runProductionEnvelope  Calculate the byproduct secretion envelope.
@@ -37,7 +37,10 @@
      identifier of target metabolite production reaction.
  biomassRxn : char
      identifier of biomass reaction.
- nPts : double, optional
+
+ Name-Value Arguments
+ --------------------
+ nPts : double
      number of points in the plot (default 20).
 
  Returns
@@ -69,7 +72,7 @@ This function is called by:
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [biomassValues, targetValues] = runProductionEnvelope(model, targetRxn, biomassRxn, nPts)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [biomassValues, targetValues] = runProductionEnvelope(model, targetRxn, biomassRxn, varargin)</a>
 0002 <span class="comment">% runProductionEnvelope  Calculate the byproduct secretion envelope.</span>
 0003 <span class="comment">%</span>
 0004 <span class="comment">% Parameters</span>
@@ -80,70 +83,72 @@ This function is called by:
 0009 <span class="comment">%     identifier of target metabolite production reaction.</span>
 0010 <span class="comment">% biomassRxn : char</span>
 0011 <span class="comment">%     identifier of biomass reaction.</span>
-0012 <span class="comment">% nPts : double, optional</span>
-0013 <span class="comment">%     number of points in the plot (default 20).</span>
-0014 <span class="comment">%</span>
-0015 <span class="comment">% Returns</span>
-0016 <span class="comment">% -------</span>
-0017 <span class="comment">% biomassValues : double</span>
-0018 <span class="comment">%     biomass values for plotting.</span>
-0019 <span class="comment">% targetValues : double</span>
-0020 <span class="comment">%     target upper and lower bounds for plotting.</span>
-0021 <span class="comment">%</span>
-0022 <span class="comment">% Examples</span>
-0023 <span class="comment">% --------</span>
-0024 <span class="comment">%     [biomassValues, targetValues] = runProductionEnvelope(model, ...</span>
-0025 <span class="comment">%         targetRxn, biomassRxn, nPts);</span>
-0026 <span class="comment">%</span>
-0027 <span class="comment">% Notes</span>
-0028 <span class="comment">% -----</span>
-0029 <span class="comment">% Modified from COBRA Toolbox productionEnvelope.m.</span>
-0030 
-0031 <span class="keyword">if</span> nargin &lt; 4
-0032     nPts = 20;
-0033 <span class="keyword">end</span>
-0034 
-0035 <span class="comment">% Run FBA to get upper bound for biomass</span>
-0036 model   = setParam(model,<span class="string">'obj'</span>,biomassRxn,1);
-0037 [solMax,hsSol]  = solveLP(model);
-0038 solMax  = solMax.x(logical(model.c));
-0039 model.c = -model.c;
-0040 solMin  = solveLP(model,0,[],hsSol);
-0041 solMin  = solMin.x(logical(model.c));
-0042 
-0043 <span class="comment">% Create biomass range vector</span>
-0044 biomassValues = linspace(solMin,solMax,nPts);
-0045 targetUpperBound = nan(1,numel(biomassValues));
-0046 targetLowerBound = nan(1,numel(biomassValues));
-0047 
-0048 PB = ProgressBar2(length(biomassValues),<span class="string">'Creating production envelope'</span>,<span class="string">'cli'</span>);
-0049 <span class="comment">% Max/min for target production</span>
-0050 model = setParam(model,<span class="string">'obj'</span>,targetRxn,1);
-0051 <span class="keyword">for</span> i = 1:length(biomassValues)
-0052     model1 = setParam(model,<span class="string">'eq'</span>,biomassRxn,biomassValues(i));
-0053     sol = solveLP(model1,0,[],hsSol);
-0054     <span class="keyword">if</span> (sol.stat &gt; 0)
-0055         targetUpperBound(i) = sol.x(logical(model.c));
-0056     <span class="keyword">else</span>
-0057         targetUpperBound(i) = NaN;
-0058     <span class="keyword">end</span>
-0059     model1.c = -model1.c;
-0060     sol = solveLP(model1,0,[],hsSol);
-0061     <span class="keyword">if</span> (sol.stat &gt; 0)
-0062         targetLowerBound(i) = sol.x(logical(model1.c));
-0063     <span class="keyword">else</span>
-0064         targetLowerBound(i) = NaN;
-0065     <span class="keyword">end</span>
-0066     count(PB);
-0067 <span class="keyword">end</span>
-0068 
-0069 <span class="comment">% Plot results</span>
-0070 plot([biomassValues fliplr(biomassValues)],[targetUpperBound fliplr(targetLowerBound)],<span class="string">'blue'</span>,<span class="string">'LineWidth'</span>,2);
-0071 axis tight;
-0072 ylabel([strrep(targetRxn,<span class="string">'_'</span>,<span class="string">'-'</span>) <span class="string">' (mmol/gDW h)'</span>]);
-0073 xlabel(<span class="string">'Growth rate (1/h)'</span>);
-0074 targetValues = [targetLowerBound; targetUpperBound];
-0075 <span class="keyword">end</span></pre></div>
+0012 <span class="comment">%</span>
+0013 <span class="comment">% Name-Value Arguments</span>
+0014 <span class="comment">% --------------------</span>
+0015 <span class="comment">% nPts : double</span>
+0016 <span class="comment">%     number of points in the plot (default 20).</span>
+0017 <span class="comment">%</span>
+0018 <span class="comment">% Returns</span>
+0019 <span class="comment">% -------</span>
+0020 <span class="comment">% biomassValues : double</span>
+0021 <span class="comment">%     biomass values for plotting.</span>
+0022 <span class="comment">% targetValues : double</span>
+0023 <span class="comment">%     target upper and lower bounds for plotting.</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">% Examples</span>
+0026 <span class="comment">% --------</span>
+0027 <span class="comment">%     [biomassValues, targetValues] = runProductionEnvelope(model, ...</span>
+0028 <span class="comment">%         targetRxn, biomassRxn, nPts);</span>
+0029 <span class="comment">%</span>
+0030 <span class="comment">% Notes</span>
+0031 <span class="comment">% -----</span>
+0032 <span class="comment">% Modified from COBRA Toolbox productionEnvelope.m.</span>
+0033 
+0034 p=parseRAVENargs(varargin, {<span class="string">'nPts'</span>,20});
+0035 nPts=p.nPts;
+0036 
+0037 <span class="comment">% Run FBA to get upper bound for biomass</span>
+0038 model   = setParam(model,<span class="string">'obj'</span>,biomassRxn,1);
+0039 [solMax,hsSol]  = solveLP(model);
+0040 solMax  = solMax.x(logical(model.c));
+0041 model.c = -model.c;
+0042 solMin  = solveLP(model,0,[],hsSol);
+0043 solMin  = solMin.x(logical(model.c));
+0044 
+0045 <span class="comment">% Create biomass range vector</span>
+0046 biomassValues = linspace(solMin,solMax,nPts);
+0047 targetUpperBound = nan(1,numel(biomassValues));
+0048 targetLowerBound = nan(1,numel(biomassValues));
+0049 
+0050 PB = progressReport(length(biomassValues),<span class="string">'Creating production envelope'</span>);
+0051 <span class="comment">% Max/min for target production</span>
+0052 model = setParam(model,<span class="string">'obj'</span>,targetRxn,1);
+0053 <span class="keyword">for</span> i = 1:length(biomassValues)
+0054     model1 = setParam(model,<span class="string">'eq'</span>,biomassRxn,biomassValues(i));
+0055     sol = solveLP(model1,0,[],hsSol);
+0056     <span class="keyword">if</span> (sol.stat &gt; 0)
+0057         targetUpperBound(i) = sol.x(logical(model.c));
+0058     <span class="keyword">else</span>
+0059         targetUpperBound(i) = NaN;
+0060     <span class="keyword">end</span>
+0061     model1.c = -model1.c;
+0062     sol = solveLP(model1,0,[],hsSol);
+0063     <span class="keyword">if</span> (sol.stat &gt; 0)
+0064         targetLowerBound(i) = sol.x(logical(model1.c));
+0065     <span class="keyword">else</span>
+0066         targetLowerBound(i) = NaN;
+0067     <span class="keyword">end</span>
+0068     count(PB);
+0069 <span class="keyword">end</span>
+0070 
+0071 <span class="comment">% Plot results</span>
+0072 plot([biomassValues fliplr(biomassValues)],[targetUpperBound fliplr(targetLowerBound)],<span class="string">'blue'</span>,<span class="string">'LineWidth'</span>,2);
+0073 axis tight;
+0074 ylabel([strrep(targetRxn,<span class="string">'_'</span>,<span class="string">'-'</span>) <span class="string">' (mmol/gDW h)'</span>]);
+0075 xlabel(<span class="string">'Growth rate (1/h)'</span>);
+0076 targetValues = [targetLowerBound; targetUpperBound];
+0077 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

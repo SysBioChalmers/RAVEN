@@ -1,0 +1,269 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of parseGrRule</title>
+  <meta name="keywords" content="parseGrRule">
+  <meta name="description" content="parseGrRule  Parse a grRule into a syntax tree.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utils</a> &gt; parseGrRule.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utils&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>parseGrRule
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>parseGrRule  Parse a grRule into a syntax tree.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function tree=parseGrRule(rule) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> parseGrRule  Parse a grRule into a syntax tree.
+
+ Parses a gene-protein-reaction rule into a tree of AND/OR/gene nodes, so
+ that callers can reason about its structure instead of searching the raw
+ string. Gene IDs are matched as whole tokens, so IDs that contain &quot;and&quot; or
+ &quot;or&quot; as a substring (RAND1), or that are prefixes of one another (10 and
+ 100), are never confused with operators or with each other.
+
+ Parameters
+ ----------
+ rule : char or string
+     a grRule, e.g. &quot;(G1 and G2) or G3&quot;. Both the word forms (&quot;and&quot;, &quot;or&quot;,
+     any case) and the symbol forms (&quot;&amp;&quot;, &quot;&amp;&amp;&quot;, &quot;|&quot;, &quot;||&quot;) are accepted.
+     An empty rule yields an empty tree.
+
+ Returns
+ -------
+ tree : struct
+     a scalar struct with fields:
+
+     - type     : char — 'gene', 'and' or 'or'.
+     - id       : char — the gene ID; '' for 'and'/'or' nodes.
+     - children : cell — child nodes; {} for 'gene' nodes.
+
+     An empty rule returns a 0x0 struct array, for which isempty is true.
+
+ Notes
+ -----
+ The grammar is the usual precedence, with AND binding tighter than OR:
+
+     expr   := term ( OR term )*
+     term   := factor ( AND factor )*
+     factor := gene | '(' expr ')'
+
+ Malformed rules raise RAVEN:badGrRule rather than being silently
+ misparsed. Callers that lint user input (findPotentialErrors) catch this
+ and report it instead of failing.
+
+ Examples
+ --------
+     tree = parseGrRule('(G1 and G2) or G3');
+     tree.type            % 'or'
+     numel(tree.children) % 2
+
+ See also: <a href="isDnfGrRule.html" class="code" title="function tf=isDnfGrRule(rule)">isDnfGrRule</a>, <a href="grRuleToDNF.html" class="code" title="function clauses=grRuleToDNF(rule)">grRuleToDNF</a>, <a href="grRuleToString.html" class="code" title="function rule=grRuleToString(tree)">grRuleToString</a></pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="grRuleToDNF.html" class="code" title="function clauses=grRuleToDNF(rule)">grRuleToDNF</a>	grRuleToDNF  Convert a grRule to disjunctive normal form.</li><li><a href="isDnfGrRule.html" class="code" title="function tf=isDnfGrRule(rule)">isDnfGrRule</a>	isDnfGrRule  Test whether a grRule is in disjunctive normal form.</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function tree=emptyTree()</a></li><li><a href="#_sub2" class="code">function toks=tokenizeGrRule(rule)</a></li><li><a href="#_sub3" class="code">function [node,pos]=parseExpr(toks,pos,rule)</a></li><li><a href="#_sub4" class="code">function [node,pos]=parseTerm(toks,pos,rule)</a></li><li><a href="#_sub5" class="code">function [node,pos]=parseFactor(toks,pos,rule)</a></li><li><a href="#_sub6" class="code">function tf=isOp(tok,op)</a></li><li><a href="#_sub7" class="code">function txt=tokenText(tok)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function tree=parseGrRule(rule)</a>
+0002 <span class="comment">% parseGrRule  Parse a grRule into a syntax tree.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Parses a gene-protein-reaction rule into a tree of AND/OR/gene nodes, so</span>
+0005 <span class="comment">% that callers can reason about its structure instead of searching the raw</span>
+0006 <span class="comment">% string. Gene IDs are matched as whole tokens, so IDs that contain &quot;and&quot; or</span>
+0007 <span class="comment">% &quot;or&quot; as a substring (RAND1), or that are prefixes of one another (10 and</span>
+0008 <span class="comment">% 100), are never confused with operators or with each other.</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% Parameters</span>
+0011 <span class="comment">% ----------</span>
+0012 <span class="comment">% rule : char or string</span>
+0013 <span class="comment">%     a grRule, e.g. &quot;(G1 and G2) or G3&quot;. Both the word forms (&quot;and&quot;, &quot;or&quot;,</span>
+0014 <span class="comment">%     any case) and the symbol forms (&quot;&amp;&quot;, &quot;&amp;&amp;&quot;, &quot;|&quot;, &quot;||&quot;) are accepted.</span>
+0015 <span class="comment">%     An empty rule yields an empty tree.</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">% Returns</span>
+0018 <span class="comment">% -------</span>
+0019 <span class="comment">% tree : struct</span>
+0020 <span class="comment">%     a scalar struct with fields:</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">%     - type     : char — 'gene', 'and' or 'or'.</span>
+0023 <span class="comment">%     - id       : char — the gene ID; '' for 'and'/'or' nodes.</span>
+0024 <span class="comment">%     - children : cell — child nodes; {} for 'gene' nodes.</span>
+0025 <span class="comment">%</span>
+0026 <span class="comment">%     An empty rule returns a 0x0 struct array, for which isempty is true.</span>
+0027 <span class="comment">%</span>
+0028 <span class="comment">% Notes</span>
+0029 <span class="comment">% -----</span>
+0030 <span class="comment">% The grammar is the usual precedence, with AND binding tighter than OR:</span>
+0031 <span class="comment">%</span>
+0032 <span class="comment">%     expr   := term ( OR term )*</span>
+0033 <span class="comment">%     term   := factor ( AND factor )*</span>
+0034 <span class="comment">%     factor := gene | '(' expr ')'</span>
+0035 <span class="comment">%</span>
+0036 <span class="comment">% Malformed rules raise RAVEN:badGrRule rather than being silently</span>
+0037 <span class="comment">% misparsed. Callers that lint user input (findPotentialErrors) catch this</span>
+0038 <span class="comment">% and report it instead of failing.</span>
+0039 <span class="comment">%</span>
+0040 <span class="comment">% Examples</span>
+0041 <span class="comment">% --------</span>
+0042 <span class="comment">%     tree = parseGrRule('(G1 and G2) or G3');</span>
+0043 <span class="comment">%     tree.type            % 'or'</span>
+0044 <span class="comment">%     numel(tree.children) % 2</span>
+0045 <span class="comment">%</span>
+0046 <span class="comment">% See also: isDnfGrRule, grRuleToDNF, grRuleToString</span>
+0047 
+0048 <span class="keyword">if</span> nargin&lt;1 || isempty(rule)
+0049     tree=<a href="#_sub1" class="code" title="subfunction tree=emptyTree()">emptyTree</a>();
+0050     <span class="keyword">return</span>
+0051 <span class="keyword">end</span>
+0052 rule=char(rule);
+0053 <span class="keyword">if</span> all(isspace(rule))
+0054     tree=<a href="#_sub1" class="code" title="subfunction tree=emptyTree()">emptyTree</a>();
+0055     <span class="keyword">return</span>
+0056 <span class="keyword">end</span>
+0057 
+0058 toks=<a href="#_sub2" class="code" title="subfunction toks=tokenizeGrRule(rule)">tokenizeGrRule</a>(rule);
+0059 <span class="keyword">if</span> isempty(toks)
+0060     tree=<a href="#_sub1" class="code" title="subfunction tree=emptyTree()">emptyTree</a>();
+0061     <span class="keyword">return</span>
+0062 <span class="keyword">end</span>
+0063 
+0064 [tree,pos]=<a href="#_sub3" class="code" title="subfunction [node,pos]=parseExpr(toks,pos,rule)">parseExpr</a>(toks,1,rule);
+0065 <span class="keyword">if</span> pos&lt;=numel(toks)
+0066     error(<span class="string">'RAVEN:badGrRule'</span>,[<span class="string">'Unexpected &quot;'</span> <a href="#_sub7" class="code" title="subfunction txt=tokenText(tok)">tokenText</a>(toks{pos}) <span class="string">'&quot; in grRule: '</span> rule]);
+0067 <span class="keyword">end</span>
+0068 <span class="keyword">end</span>
+0069 
+0070 
+0071 <a name="_sub1" href="#_subfunctions" class="code">function tree=emptyTree()</a>
+0072 tree=struct(<span class="string">'type'</span>,{},<span class="string">'id'</span>,{},<span class="string">'children'</span>,{});
+0073 <span class="keyword">end</span>
+0074 
+0075 
+0076 <a name="_sub2" href="#_subfunctions" class="code">function toks=tokenizeGrRule(rule)</a>
+0077 <span class="comment">% Split into '(' , ')' , 'AND' , 'OR' and gene tokens. Operators are matched</span>
+0078 <span class="comment">% as whole words, which is what keeps gene IDs containing &quot;and&quot;/&quot;or&quot; intact.</span>
+0079 toks={};
+0080 i=1;
+0081 n=numel(rule);
+0082 <span class="keyword">while</span> i&lt;=n
+0083     c=rule(i);
+0084     <span class="keyword">if</span> isspace(c)
+0085         i=i+1;
+0086         <span class="keyword">continue</span>
+0087     <span class="keyword">end</span>
+0088     <span class="keyword">if</span> c==<span class="string">'('</span> || c==<span class="string">')'</span>
+0089         toks{end+1}=c; <span class="comment">%#ok&lt;AGROW&gt;</span>
+0090         i=i+1;
+0091         <span class="keyword">continue</span>
+0092     <span class="keyword">end</span>
+0093     <span class="comment">% Read a word: everything up to whitespace or a bracket.</span>
+0094     j=i;
+0095     <span class="keyword">while</span> j&lt;=n &amp;&amp; ~isspace(rule(j)) &amp;&amp; rule(j)~=<span class="string">'('</span> &amp;&amp; rule(j)~=<span class="string">')'</span>
+0096         j=j+1;
+0097     <span class="keyword">end</span>
+0098     word=rule(i:j-1);
+0099     <span class="keyword">switch</span> lower(word)
+0100         <span class="keyword">case</span> {<span class="string">'and'</span>,<span class="string">'&amp;'</span>,<span class="string">'&amp;&amp;'</span>}
+0101             toks{end+1}=<span class="string">'AND'</span>; <span class="comment">%#ok&lt;AGROW&gt;</span>
+0102         <span class="keyword">case</span> {<span class="string">'or'</span>,<span class="string">'|'</span>,<span class="string">'||'</span>}
+0103             toks{end+1}=<span class="string">'OR'</span>; <span class="comment">%#ok&lt;AGROW&gt;</span>
+0104         <span class="keyword">otherwise</span>
+0105             toks{end+1}=struct(<span class="string">'gene'</span>,word); <span class="comment">%#ok&lt;AGROW&gt;</span>
+0106     <span class="keyword">end</span>
+0107     i=j;
+0108 <span class="keyword">end</span>
+0109 <span class="keyword">end</span>
+0110 
+0111 
+0112 <a name="_sub3" href="#_subfunctions" class="code">function [node,pos]=parseExpr(toks,pos,rule)</a>
+0113 <span class="comment">% expr := term ( OR term )*</span>
+0114 [node,pos]=<a href="#_sub4" class="code" title="subfunction [node,pos]=parseTerm(toks,pos,rule)">parseTerm</a>(toks,pos,rule);
+0115 <span class="keyword">if</span> pos&gt;numel(toks) || ~<a href="#_sub6" class="code" title="subfunction tf=isOp(tok,op)">isOp</a>(toks{pos},<span class="string">'OR'</span>)
+0116     <span class="keyword">return</span>
+0117 <span class="keyword">end</span>
+0118 children={node};
+0119 <span class="keyword">while</span> pos&lt;=numel(toks) &amp;&amp; <a href="#_sub6" class="code" title="subfunction tf=isOp(tok,op)">isOp</a>(toks{pos},<span class="string">'OR'</span>)
+0120     [child,pos]=<a href="#_sub4" class="code" title="subfunction [node,pos]=parseTerm(toks,pos,rule)">parseTerm</a>(toks,pos+1,rule);
+0121     children{end+1}=child; <span class="comment">%#ok&lt;AGROW&gt;</span>
+0122 <span class="keyword">end</span>
+0123 node=struct(<span class="string">'type'</span>,<span class="string">'or'</span>,<span class="string">'id'</span>,<span class="string">''</span>,<span class="string">'children'</span>,{children});
+0124 <span class="keyword">end</span>
+0125 
+0126 
+0127 <a name="_sub4" href="#_subfunctions" class="code">function [node,pos]=parseTerm(toks,pos,rule)</a>
+0128 <span class="comment">% term := factor ( AND factor )*</span>
+0129 [node,pos]=<a href="#_sub5" class="code" title="subfunction [node,pos]=parseFactor(toks,pos,rule)">parseFactor</a>(toks,pos,rule);
+0130 <span class="keyword">if</span> pos&gt;numel(toks) || ~<a href="#_sub6" class="code" title="subfunction tf=isOp(tok,op)">isOp</a>(toks{pos},<span class="string">'AND'</span>)
+0131     <span class="keyword">return</span>
+0132 <span class="keyword">end</span>
+0133 children={node};
+0134 <span class="keyword">while</span> pos&lt;=numel(toks) &amp;&amp; <a href="#_sub6" class="code" title="subfunction tf=isOp(tok,op)">isOp</a>(toks{pos},<span class="string">'AND'</span>)
+0135     [child,pos]=<a href="#_sub5" class="code" title="subfunction [node,pos]=parseFactor(toks,pos,rule)">parseFactor</a>(toks,pos+1,rule);
+0136     children{end+1}=child; <span class="comment">%#ok&lt;AGROW&gt;</span>
+0137 <span class="keyword">end</span>
+0138 node=struct(<span class="string">'type'</span>,<span class="string">'and'</span>,<span class="string">'id'</span>,<span class="string">''</span>,<span class="string">'children'</span>,{children});
+0139 <span class="keyword">end</span>
+0140 
+0141 
+0142 <a name="_sub5" href="#_subfunctions" class="code">function [node,pos]=parseFactor(toks,pos,rule)</a>
+0143 <span class="comment">% factor := gene | '(' expr ')'</span>
+0144 <span class="keyword">if</span> pos&gt;numel(toks)
+0145     error(<span class="string">'RAVEN:badGrRule'</span>,[<span class="string">'grRule ends after an operator: '</span> rule]);
+0146 <span class="keyword">end</span>
+0147 tok=toks{pos};
+0148 <span class="keyword">if</span> <a href="#_sub6" class="code" title="subfunction tf=isOp(tok,op)">isOp</a>(tok,<span class="string">'('</span>)
+0149     [node,pos]=<a href="#_sub3" class="code" title="subfunction [node,pos]=parseExpr(toks,pos,rule)">parseExpr</a>(toks,pos+1,rule);
+0150     <span class="keyword">if</span> pos&gt;numel(toks) || ~<a href="#_sub6" class="code" title="subfunction tf=isOp(tok,op)">isOp</a>(toks{pos},<span class="string">')'</span>)
+0151         error(<span class="string">'RAVEN:badGrRule'</span>,[<span class="string">'Unbalanced parentheses in grRule: '</span> rule]);
+0152     <span class="keyword">end</span>
+0153     pos=pos+1;
+0154     <span class="keyword">return</span>
+0155 <span class="keyword">end</span>
+0156 <span class="keyword">if</span> isstruct(tok)
+0157     node=struct(<span class="string">'type'</span>,<span class="string">'gene'</span>,<span class="string">'id'</span>,tok.gene,<span class="string">'children'</span>,{{}});
+0158     pos=pos+1;
+0159     <span class="keyword">return</span>
+0160 <span class="keyword">end</span>
+0161 error(<span class="string">'RAVEN:badGrRule'</span>,[<span class="string">'Expected a gene but found &quot;'</span> <a href="#_sub7" class="code" title="subfunction txt=tokenText(tok)">tokenText</a>(tok) <span class="string">'&quot; in grRule: '</span> rule]);
+0162 <span class="keyword">end</span>
+0163 
+0164 
+0165 <a name="_sub6" href="#_subfunctions" class="code">function tf=isOp(tok,op)</a>
+0166 tf=ischar(tok) &amp;&amp; strcmp(tok,op);
+0167 <span class="keyword">end</span>
+0168 
+0169 
+0170 <a name="_sub7" href="#_subfunctions" class="code">function txt=tokenText(tok)</a>
+0171 <span class="keyword">if</span> isstruct(tok)
+0172     txt=tok.gene;
+0173 <span class="keyword">else</span>
+0174     txt=tok;
+0175 <span class="keyword">end</span>
+0176 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

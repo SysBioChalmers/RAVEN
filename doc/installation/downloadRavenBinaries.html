@@ -1,0 +1,178 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of downloadRavenBinaries</title>
+  <meta name="keywords" content="downloadRavenBinaries">
+  <meta name="description" content="downloadRavenBinaries">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">installation</a> &gt; downloadRavenBinaries.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for installation&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>downloadRavenBinaries
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>downloadRavenBinaries</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function downloadRavenBinaries(tools) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> downloadRavenBinaries
+   Download RAVEN's external command-line binaries on demand from the
+   raven-data repository into RAVEN's software/ directory. These binaries are
+   no longer committed to the RAVEN git repository; only the binary matching
+   the current platform is fetched, and only when needed.
+
+   Input:
+   tools   cell array, subset of {'blast+','diamond','hmmer'} to
+           download. Defaults to all of them. Tools whose target executable is
+           already present are skipped.
+
+   This requires an internet connection. For an offline / air-gapped install,
+   download the &quot;*-binaries&quot; RAVEN release (which bundles all binaries) and
+   unzip it into the RAVEN software/ directory instead.
+
+   The binaries are hosted as release assets in
+   https://github.com/SysBioChalmers/raven-data.
+
+   Usage: downloadRavenBinaries({'blast+','diamond'})
+
+ NOTE: lazily invoked by getBlast/getDiamond/getKEGGModelForOrganism and
+ offered by checkInstallation when a binary is missing.</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="fetchRavenDataAsset.html" class="code" title="function localPath=fetchRavenDataAsset(destDir,releaseTag,assetName)">fetchRavenDataAsset</a>	fetchRavenDataAsset  Download (if needed) a raven-data release asset.</li><li><a href="findRAVENroot.html" class="code" title="function [ravenPath, prevDir] = findRAVENroot()">findRAVENroot</a>	findRAVENroot</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function downloadRavenBinaries(tools)</a>
+0002 <span class="comment">% downloadRavenBinaries</span>
+0003 <span class="comment">%   Download RAVEN's external command-line binaries on demand from the</span>
+0004 <span class="comment">%   raven-data repository into RAVEN's software/ directory. These binaries are</span>
+0005 <span class="comment">%   no longer committed to the RAVEN git repository; only the binary matching</span>
+0006 <span class="comment">%   the current platform is fetched, and only when needed.</span>
+0007 <span class="comment">%</span>
+0008 <span class="comment">%   Input:</span>
+0009 <span class="comment">%   tools   cell array, subset of {'blast+','diamond','hmmer'} to</span>
+0010 <span class="comment">%           download. Defaults to all of them. Tools whose target executable is</span>
+0011 <span class="comment">%           already present are skipped.</span>
+0012 <span class="comment">%</span>
+0013 <span class="comment">%   This requires an internet connection. For an offline / air-gapped install,</span>
+0014 <span class="comment">%   download the &quot;*-binaries&quot; RAVEN release (which bundles all binaries) and</span>
+0015 <span class="comment">%   unzip it into the RAVEN software/ directory instead.</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">%   The binaries are hosted as release assets in</span>
+0018 <span class="comment">%   https://github.com/SysBioChalmers/raven-data.</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">%   Usage: downloadRavenBinaries({'blast+','diamond'})</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">% NOTE: lazily invoked by getBlast/getDiamond/getKEGGModelForOrganism and</span>
+0023 <span class="comment">% offered by checkInstallation when a binary is missing.</span>
+0024 
+0025 <span class="keyword">if</span> nargin &lt; 1 || isempty(tools)
+0026     tools = {<span class="string">'blast+'</span>,<span class="string">'diamond'</span>,<span class="string">'hmmer'</span>};
+0027 <span class="keyword">elseif</span> ischar(tools)
+0028     tools = {tools};
+0029 <span class="keyword">end</span>
+0030 
+0031 ravenDir = <a href="findRAVENroot.html" class="code" title="function [ravenPath, prevDir] = findRAVENroot()">findRAVENroot</a>();
+0032 
+0033 <span class="comment">% raven-data platform key for the per-platform binary ZIPs.</span>
+0034 <span class="keyword">if</span> ispc
+0035     plat = <span class="string">'windows-x86_64'</span>;
+0036 <span class="keyword">elseif</span> ismac
+0037     plat = <span class="string">'macos-arm64'</span>;
+0038 <span class="keyword">else</span>
+0039     plat = <span class="string">'linux-x86_64'</span>;
+0040 <span class="keyword">end</span>
+0041 
+0042 <span class="keyword">for</span> i = 1:numel(tools)
+0043     tool = tools{i};
+0044     <span class="keyword">switch</span> tool
+0045         <span class="keyword">case</span> <span class="string">'blast+'</span>
+0046             tag = <span class="string">'blast-2.17.0'</span>;
+0047             asset = [<span class="string">'blast-2.17.0-'</span> plat <span class="string">'.zip'</span>];
+0048             destDir = fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'blast+'</span>);
+0049             sentinel = fullfile(destDir,<span class="string">'blastp'</span>);           <span class="comment">% bare name on every OS (.exe on Windows)</span>
+0050             execs = {<span class="string">'blastp'</span>,<span class="string">'makeblastdb'</span>};
+0051         <span class="keyword">case</span> <span class="string">'diamond'</span>
+0052             tag = <span class="string">'diamond-2.1.17'</span>;
+0053             asset = [<span class="string">'diamond-2.1.17-'</span> plat <span class="string">'.zip'</span>];
+0054             destDir = fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'diamond'</span>);
+0055             sentinel = fullfile(destDir,<span class="string">'diamond'</span>);
+0056             execs = {<span class="string">'diamond'</span>};
+0057         <span class="keyword">case</span> <span class="string">'hmmer'</span>
+0058             <span class="keyword">if</span> ispc
+0059                 tag = <span class="string">'hmmer-3.3.2'</span>;                          <span class="comment">% native Windows build (Cygwin); reads HMMER3/f</span>
+0060                 asset = [<span class="string">'hmmer-3.3.2-'</span> plat <span class="string">'.zip'</span>];
+0061             <span class="keyword">else</span>
+0062                 tag = <span class="string">'hmmer-3.4.0'</span>;
+0063                 asset = [<span class="string">'hmmer-3.4.0-'</span> plat <span class="string">'.zip'</span>];
+0064             <span class="keyword">end</span>
+0065             destDir = fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'hmmer'</span>);
+0066             sentinel = fullfile(destDir,<span class="string">'hmmsearch'</span>);
+0067             execs = {<span class="string">'hmmsearch'</span>};
+0068         <span class="keyword">otherwise</span>
+0069             error(<span class="string">'downloadRavenBinaries: unknown tool ''%s''.'</span>,tool);
+0070     <span class="keyword">end</span>
+0071 
+0072     <span class="comment">% macOS uses a .mac suffix and Windows a .exe suffix (Linux: bare name).</span>
+0073     <span class="keyword">if</span> ispc
+0074         sentinel = [sentinel <span class="string">'.exe'</span>]; <span class="comment">%#ok&lt;AGROW&gt;</span>
+0075     <span class="keyword">elseif</span> ismac
+0076         sentinel = [sentinel <span class="string">'.mac'</span>]; <span class="comment">%#ok&lt;AGROW&gt;</span>
+0077     <span class="keyword">end</span>
+0078     <span class="keyword">if</span> exist(sentinel,<span class="string">'file'</span>)
+0079         <span class="keyword">continue</span>;   <span class="comment">% already provisioned</span>
+0080     <span class="keyword">end</span>
+0081 
+0082     zipPath = <a href="fetchRavenDataAsset.html" class="code" title="function localPath=fetchRavenDataAsset(destDir,releaseTag,assetName)">fetchRavenDataAsset</a>(fullfile(ravenDir,<span class="string">'software'</span>),tag,asset);
+0083     unzip(zipPath,destDir);
+0084     delete(zipPath);
+0085 
+0086     <span class="comment">% macOS uses the .mac suffix throughout RAVEN, but the raven-data macOS ZIP</span>
+0087     <span class="comment">% ships bare names, so rename the extracted executables to match.</span>
+0088     <span class="keyword">if</span> ismac
+0089         <span class="keyword">for</span> k = 1:numel(execs)
+0090             bare = fullfile(destDir,execs{k});
+0091             <span class="keyword">if</span> isfile(bare)
+0092                 movefile(bare, fullfile(destDir,[execs{k} <span class="string">'.mac'</span>]));
+0093             <span class="keyword">end</span>
+0094         <span class="keyword">end</span>
+0095     <span class="keyword">end</span>
+0096 
+0097     <span class="comment">% MATLAB's unzip does not preserve Unix execute permissions; restore them.</span>
+0098     <span class="keyword">if</span> isunix
+0099         <span class="keyword">if</span> ismac; sfx = <span class="string">'.mac'</span>; <span class="keyword">else</span>; sfx = <span class="string">''</span>; <span class="keyword">end</span>
+0100         <span class="keyword">for</span> k = 1:numel(execs)
+0101             system([<span class="string">'chmod +x &quot;'</span> fullfile(destDir,[execs{k} sfx]) <span class="string">'&quot;'</span>]);
+0102         <span class="keyword">end</span>
+0103         <span class="comment">% Downloaded binaries are quarantined by macOS Gatekeeper and will not</span>
+0104         <span class="comment">% execute until the com.apple.quarantine attribute is cleared.</span>
+0105         <span class="keyword">if</span> ismac
+0106             system([<span class="string">'xattr -dr com.apple.quarantine &quot;'</span> destDir <span class="string">'&quot;'</span>]);
+0107         <span class="keyword">end</span>
+0108     <span class="keyword">end</span>
+0109 <span class="keyword">end</span>
+0110 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

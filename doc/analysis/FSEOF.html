@@ -24,7 +24,7 @@
 <div class="box"><strong>FSEOF  Flux Scanning based on Enforced Objective Flux.</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function targets=FSEOF(model,biomassRxn,targetRxn,iterations,coefficient,outputFile) </strong></div>
+<div class="box"><strong>function targets=FSEOF(model,biomassRxn,targetRxn,varargin) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> FSEOF  Flux Scanning based on Enforced Objective Flux.
@@ -44,22 +44,37 @@
      reaction ID of the biomass formation or growth reaction.
  targetRxn : char
      reaction ID of the target reaction.
- iterations : double, optional
+
+ Name-Value Arguments
+ --------------------
+ iterations : double
      number of iterations (default 10).
- coefficient : double, optional
+ coefficient : double
      ratio of optimal target reaction flux, must be less than 1
      (default 0.9).
- outputFile : char, optional
+ outputFile : char
      output filename (default prints to command window).
+ corrThreshold : double
+     minimum absolute Pearson correlation coefficient between a
+     reaction absolute flux and the enforced product flux for the
+     reaction to be selected as a target. Values in [0, 1]; higher
+     values require a more linear response and suppress LP alternative-
+     optima noise (default 0.9).
 
  Returns
  -------
  targets : struct
      structure with information for identified targets, with fields:
 
-     - logical : logical array indicating whether a model reaction was
-       identified as target by FSEOF
-     - slope : numeric array with FSEOF slopes for target reactions
+     - logical : logical array, true for amplification targets (backward
+       compatible alias for amplify).
+     - amplify : logical array, reactions whose absolute flux increases
+       with enforced product flux.
+     - knockdown : logical array, reactions driven toward but not to zero.
+     - knockout : logical array, reactions driven to zero at max product.
+     - slope : numeric array with per-reaction regression slopes of
+       absolute flux versus enforced product flux (all reactions, not
+       just targets).
 
  Examples
  --------
@@ -79,7 +94,7 @@ This function is called by:
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function targets=FSEOF(model,biomassRxn,targetRxn,iterations,coefficient,outputFile)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function targets=FSEOF(model,biomassRxn,targetRxn,varargin)</a>
 0002 <span class="comment">% FSEOF  Flux Scanning based on Enforced Objective Flux.</span>
 0003 <span class="comment">%</span>
 0004 <span class="comment">% Implements the Flux Scanning based on Enforced Objective Flux algorithm.</span>
@@ -97,146 +112,154 @@ This function is called by:
 0016 <span class="comment">%     reaction ID of the biomass formation or growth reaction.</span>
 0017 <span class="comment">% targetRxn : char</span>
 0018 <span class="comment">%     reaction ID of the target reaction.</span>
-0019 <span class="comment">% iterations : double, optional</span>
-0020 <span class="comment">%     number of iterations (default 10).</span>
-0021 <span class="comment">% coefficient : double, optional</span>
-0022 <span class="comment">%     ratio of optimal target reaction flux, must be less than 1</span>
-0023 <span class="comment">%     (default 0.9).</span>
-0024 <span class="comment">% outputFile : char, optional</span>
-0025 <span class="comment">%     output filename (default prints to command window).</span>
-0026 <span class="comment">%</span>
-0027 <span class="comment">% Returns</span>
-0028 <span class="comment">% -------</span>
-0029 <span class="comment">% targets : struct</span>
-0030 <span class="comment">%     structure with information for identified targets, with fields:</span>
-0031 <span class="comment">%</span>
-0032 <span class="comment">%     - logical : logical array indicating whether a model reaction was</span>
-0033 <span class="comment">%       identified as target by FSEOF</span>
-0034 <span class="comment">%     - slope : numeric array with FSEOF slopes for target reactions</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% Name-Value Arguments</span>
+0021 <span class="comment">% --------------------</span>
+0022 <span class="comment">% iterations : double</span>
+0023 <span class="comment">%     number of iterations (default 10).</span>
+0024 <span class="comment">% coefficient : double</span>
+0025 <span class="comment">%     ratio of optimal target reaction flux, must be less than 1</span>
+0026 <span class="comment">%     (default 0.9).</span>
+0027 <span class="comment">% outputFile : char</span>
+0028 <span class="comment">%     output filename (default prints to command window).</span>
+0029 <span class="comment">% corrThreshold : double</span>
+0030 <span class="comment">%     minimum absolute Pearson correlation coefficient between a</span>
+0031 <span class="comment">%     reaction absolute flux and the enforced product flux for the</span>
+0032 <span class="comment">%     reaction to be selected as a target. Values in [0, 1]; higher</span>
+0033 <span class="comment">%     values require a more linear response and suppress LP alternative-</span>
+0034 <span class="comment">%     optima noise (default 0.9).</span>
 0035 <span class="comment">%</span>
-0036 <span class="comment">% Examples</span>
-0037 <span class="comment">% --------</span>
-0038 <span class="comment">%     targets = FSEOF(model, biomassRxn, targetRxn, iterations, ...</span>
-0039 <span class="comment">%                     coefficient, outputFile);</span>
-0040 
-0041 biomassRxn=char(biomassRxn);
-0042 targetRxn=char(targetRxn);
-0043 
-0044 <span class="keyword">if</span> nargin&lt;4
-0045     iterations=10;
-0046     coefficient=0.9;
-0047 <span class="keyword">end</span>
-0048 
-0049 <span class="keyword">if</span> nargin &lt;5
-0050     coefficient=0.9;
-0051 <span class="keyword">end</span>
-0052 
-0053 <span class="keyword">if</span> nargin == 6
-0054     output=1;
-0055 <span class="keyword">else</span>
-0056     output=0;
-0057 <span class="keyword">end</span>
+0036 <span class="comment">% Returns</span>
+0037 <span class="comment">% -------</span>
+0038 <span class="comment">% targets : struct</span>
+0039 <span class="comment">%     structure with information for identified targets, with fields:</span>
+0040 <span class="comment">%</span>
+0041 <span class="comment">%     - logical : logical array, true for amplification targets (backward</span>
+0042 <span class="comment">%       compatible alias for amplify).</span>
+0043 <span class="comment">%     - amplify : logical array, reactions whose absolute flux increases</span>
+0044 <span class="comment">%       with enforced product flux.</span>
+0045 <span class="comment">%     - knockdown : logical array, reactions driven toward but not to zero.</span>
+0046 <span class="comment">%     - knockout : logical array, reactions driven to zero at max product.</span>
+0047 <span class="comment">%     - slope : numeric array with per-reaction regression slopes of</span>
+0048 <span class="comment">%       absolute flux versus enforced product flux (all reactions, not</span>
+0049 <span class="comment">%       just targets).</span>
+0050 <span class="comment">%</span>
+0051 <span class="comment">% Examples</span>
+0052 <span class="comment">% --------</span>
+0053 <span class="comment">%     targets = FSEOF(model, biomassRxn, targetRxn, iterations, ...</span>
+0054 <span class="comment">%                     coefficient, outputFile);</span>
+0055 
+0056 biomassRxn=char(biomassRxn);
+0057 targetRxn=char(targetRxn);
 0058 
-0059 <span class="comment">%Find out the maximum theoretical yield of target reaction</span>
-0060 model=setParam(model,<span class="string">'obj'</span>,targetRxn,1);
-0061 sol=solveLP(model,1);
-0062 targetMax=sol.f*coefficient;   <span class="comment">% 90 percent of the theoretical yield</span>
-0063 
-0064 model=setParam(model,<span class="string">'obj'</span>,biomassRxn,1);
-0065 
-0066 fseof.results=zeros(length(model.rxns),iterations);
-0067 fseof.target=zeros(length(model.rxns),1);
-0068 rxnDirection=zeros(length(model.rxns),1);
+0059 p=parseRAVENargs(varargin, {<span class="string">'iterations'</span>,10; <span class="string">'coefficient'</span>,0.9; <span class="string">'outputFile'</span>,[]; <span class="string">'corrThreshold'</span>,0.9});
+0060 iterations=p.iterations;
+0061 coefficient=p.coefficient;
+0062 outputFile=p.outputFile;
+0063 corrThreshold=p.corrThreshold;
+0064 
+0065 <span class="comment">%Find out the maximum theoretical yield of target reaction</span>
+0066 model=setParam(model,<span class="string">'obj'</span>,targetRxn,1);
+0067 sol=solveLP(model,1);
+0068 targetMax=sol.f*coefficient;
 0069 
-0070 <span class="comment">%Enforce objective flux iteratively</span>
-0071 <span class="keyword">for</span> i=1:iterations
-0072     n=i*targetMax/iterations;
-0073     model=setParam(model,<span class="string">'lb'</span>,targetRxn,n);
-0074     
-0075     sol=solveLP(model,1);
-0076     
-0077     fseof.results(:,i)=sol.x;
-0078     
-0079     <span class="comment">%Loop through all fluxes and identify the ones that increased upon the</span>
-0080     <span class="comment">%enforced objective flux</span>
-0081     <span class="keyword">for</span> j=1:length(fseof.results)
-0082         <span class="keyword">if</span> fseof.results(j,1) &gt; 0   <span class="comment">%Check the positive fluxes</span>
-0083             
-0084             <span class="keyword">if</span> i == 1   <span class="comment">%The initial round</span>
-0085                 rxnDirection(j,1)=1;
-0086                 fseof.target(j,1)=1;
-0087             <span class="keyword">else</span>
-0088                 
-0089                 <span class="keyword">if</span> (fseof.results(j,i) &gt; fseof.results(j,i-1)) &amp; fseof.target(j,1)
-0090                     fseof.target(j,1)=1;
-0091                 <span class="keyword">else</span>
-0092                     fseof.target(j,1)=0;
-0093                 <span class="keyword">end</span>
-0094             <span class="keyword">end</span>
-0095             
-0096         <span class="keyword">elseif</span> fseof.results(j,1) &lt; 0 <span class="comment">%Check the negative fluxes</span>
-0097             
-0098             <span class="keyword">if</span> i == 1   <span class="comment">%The initial round</span>
-0099                 rxnDirection(j,1)=-1;
-0100                 fseof.target(j,1)=1;
-0101             <span class="keyword">else</span>
-0102                 <span class="keyword">if</span> (fseof.results(j,i) &lt; fseof.results(j,i-1)) &amp; fseof.target(j,1)
-0103                     fseof.target(j,1)=1;
-0104                 <span class="keyword">else</span>
-0105                     fseof.target(j,1)=0;
-0106                 <span class="keyword">end</span>
-0107             <span class="keyword">end</span>
-0108             
-0109         <span class="keyword">end</span>
-0110         
-0111     <span class="keyword">end</span>
-0112 <span class="keyword">end</span>
-0113 
-0114 <span class="comment">%Generating output</span>
-0115 formatSpec=<span class="string">'%s\t%s\t%s\t%s\t%s\t%s\t%s\n'</span>;
-0116 <span class="keyword">if</span> output == 1    <span class="comment">%Output to a file</span>
-0117     outputFile=char(outputFile);
-0118     fid=fopen(outputFile,<span class="string">'w'</span>);
-0119     fprintf(fid,formatSpec,<span class="string">'Slope'</span>,<span class="string">'rowID'</span>,<span class="string">'Enzyme ID'</span>,<span class="string">'Enzyme Name'</span>,<span class="string">'Subsystems'</span>,<span class="string">'Direction'</span>,<span class="string">'Gr Rule'</span>);
-0120 <span class="keyword">else</span>              <span class="comment">%Output to screen</span>
-0121     fprintf(formatSpec,<span class="string">'Slope'</span>,<span class="string">'rowID'</span>,<span class="string">'Enzyme ID'</span>,<span class="string">'Enzyme Name'</span>,<span class="string">'Subsystems'</span>,<span class="string">'Direction'</span>,<span class="string">'Gr Rule'</span>);
-0122 <span class="keyword">end</span>
-0123 
-0124 <span class="keyword">for</span> num=1:length(fseof.target)
-0125     <span class="keyword">if</span> fseof.target(num,1) == 1
-0126         A0=num2str(abs(fseof.results(num,iterations)-fseof.results(num,1))/abs(targetMax-targetMax/iterations)); <span class="comment">%Slope calculation</span>
-0127         A1=num2str(num);                                  <span class="comment">%row ID</span>
-0128         A2=char(model.rxns(num));                         <span class="comment">%enzyme ID</span>
-0129         A3=char(model.rxnNames(num));                     <span class="comment">%enzyme Name</span>
-0130         <span class="keyword">if</span> isfield(model,<span class="string">'subSystems'</span>) &amp;&amp; ~isempty(model.subSystems{num});
-0131             <span class="keyword">if</span> ~any(cellfun(@(x) iscell(x), model.subSystems));
-0132                 subSys = cellfun(@(x) {x}, model.subSystems, <span class="string">'uni'</span>, 0);
-0133             <span class="keyword">else</span>
-0134                 subSys = model.subSystems;
-0135             <span class="keyword">end</span>
-0136             A4=char(strjoin(subSys{num},<span class="string">';'</span>));                   <span class="comment">%Subsystems</span>
-0137         <span class="keyword">else</span>
-0138             A4=<span class="string">''</span>;
-0139         <span class="keyword">end</span>
-0140         A5=num2str(model.rev(num)*rxnDirection(num,1));   <span class="comment">%reaction Dirction</span>
-0141         A6=char(model.grRules(num));                      <span class="comment">%Gr Rule</span>
-0142         <span class="keyword">if</span> output == 1    <span class="comment">%Output to a file</span>
-0143             fprintf(fid,formatSpec,A0,A1,A2,A3,A4,A5,A6);
-0144         <span class="keyword">else</span>              <span class="comment">%Output screen</span>
-0145             fprintf(formatSpec,A0,A1,A2,A3,A4,A5,A6);
-0146         <span class="keyword">end</span>
-0147     <span class="keyword">end</span>
-0148 <span class="keyword">end</span>
-0149 
-0150 <span class="keyword">if</span> output == 1    <span class="comment">%Output to a file</span>
-0151     fclose(fid);
-0152 <span class="keyword">end</span>
-0153 
-0154 <span class="keyword">if</span> nargout == 1
-0155     targets.logical=logical(fseof.target);
-0156     targets.slope=abs(fseof.results(:,iterations)-fseof.results(:,1))/abs(targetMax-targetMax/iterations); <span class="comment">%Slope calculation</span>
+0070 model=setParam(model,<span class="string">'obj'</span>,biomassRxn,1);
+0071 
+0072 nRxns=length(model.rxns);
+0073 results=zeros(nRxns,iterations);
+0074 enforcedFlux=(1:iterations)*targetMax/iterations;
+0075 
+0076 <span class="comment">%Run pFBA at each enforced target flux level</span>
+0077 <span class="keyword">for</span> i=1:iterations
+0078     model=setParam(model,<span class="string">'lb'</span>,targetRxn,enforcedFlux(i));
+0079     sol=solveLP(model,1);
+0080     results(:,i)=sol.x;
+0081 <span class="keyword">end</span>
+0082 
+0083 <span class="comment">%Compute per-reaction regression slope (FS4) and Pearson correlation (FS1)</span>
+0084 <span class="comment">%on absolute flux values to treat forward/reverse symmetrically.</span>
+0085 absResults=abs(results);
+0086 slope=zeros(nRxns,1);
+0087 rCoeff=zeros(nRxns,1);
+0088 hasVariation = iterations &gt; 1 &amp;&amp; std(enforcedFlux) &gt; 0;
+0089 <span class="keyword">if</span> hasVariation
+0090     <span class="keyword">for</span> num=1:nRxns
+0091         fluxTrack=absResults(num,:);
+0092         <span class="keyword">if</span> any(fluxTrack &gt; 1e-10) &amp;&amp; std(fluxTrack) &gt; 0
+0093             p_fit=polyfit(enforcedFlux,fluxTrack,1);
+0094             slope(num)=p_fit(1);
+0095             r=corrcoef(enforcedFlux,fluxTrack);
+0096             rCoeff(num)=r(1,2);
+0097         <span class="keyword">end</span>
+0098     <span class="keyword">end</span>
+0099 <span class="keyword">end</span>
+0100 
+0101 <span class="comment">%Classify targets: select reactions whose absolute flux is sufficiently</span>
+0102 <span class="comment">%correlated with the enforced product flux (FS1), then split by direction</span>
+0103 <span class="comment">%and whether any flux remains at maximum enforcement (FS2).</span>
+0104 isCorrelated = abs(rCoeff) &gt;= corrThreshold;
+0105 isAmplify    = isCorrelated &amp; slope &gt; 0;
+0106 isKnockdown  = isCorrelated &amp; slope &lt; 0 &amp; absResults(:,end) &gt; 1e-8;
+0107 isKnockout   = isCorrelated &amp; slope &lt; 0 &amp; absResults(:,end) &lt;= 1e-8;
+0108 
+0109 rxnDirection=sign(results(:,1));
+0110 
+0111 <span class="comment">%Generating output</span>
+0112 formatSpec=<span class="string">'%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n'</span>;
+0113 <span class="keyword">if</span> ~isempty(outputFile)
+0114     outputFile=char(outputFile);
+0115     fid=fopen(outputFile,<span class="string">'w'</span>);
+0116     fprintf(fid,formatSpec,<span class="string">'Type'</span>,<span class="string">'Slope'</span>,<span class="string">'rowID'</span>,<span class="string">'Enzyme ID'</span>,<span class="string">'Enzyme Name'</span>,<span class="string">'Subsystems'</span>,<span class="string">'Direction'</span>,<span class="string">'Gr Rule'</span>);
+0117 <span class="keyword">else</span>
+0118     fid=-1;
+0119     fprintf(formatSpec,<span class="string">'Type'</span>,<span class="string">'Slope'</span>,<span class="string">'rowID'</span>,<span class="string">'Enzyme ID'</span>,<span class="string">'Enzyme Name'</span>,<span class="string">'Subsystems'</span>,<span class="string">'Direction'</span>,<span class="string">'Gr Rule'</span>);
+0120 <span class="keyword">end</span>
+0121 
+0122 targetTypes  = {<span class="string">'Amplify'</span>,<span class="string">'Knockdown'</span>,<span class="string">'Knockout'</span>};
+0123 targetArrays = {isAmplify, isKnockdown, isKnockout};
+0124 
+0125 <span class="keyword">for</span> t=1:3
+0126     flag=targetArrays{t};
+0127     <span class="keyword">for</span> num=1:nRxns
+0128         <span class="keyword">if</span> flag(num)
+0129             A_type=targetTypes{t};
+0130             A0=num2str(slope(num));
+0131             A1=num2str(num);
+0132             A2=char(model.rxns(num));
+0133             A3=char(model.rxnNames(num));
+0134             <span class="keyword">if</span> isfield(model,<span class="string">'subSystems'</span>) &amp;&amp; ~isempty(model.subSystems{num})
+0135                 <span class="keyword">if</span> ~any(cellfun(@(x) iscell(x), model.subSystems))
+0136                     subSys=cellfun(@(x) {x}, model.subSystems, <span class="string">'uni'</span>, 0);
+0137                 <span class="keyword">else</span>
+0138                     subSys=model.subSystems;
+0139                 <span class="keyword">end</span>
+0140                 A4=char(strjoin(subSys{num},<span class="string">';'</span>));
+0141             <span class="keyword">else</span>
+0142                 A4=<span class="string">''</span>;
+0143             <span class="keyword">end</span>
+0144             A5=num2str(model.rev(num)*rxnDirection(num));
+0145             A6=char(model.grRules(num));
+0146             <span class="keyword">if</span> fid == -1
+0147                 fprintf(formatSpec,A_type,A0,A1,A2,A3,A4,A5,A6);
+0148             <span class="keyword">else</span>
+0149                 fprintf(fid,formatSpec,A_type,A0,A1,A2,A3,A4,A5,A6);
+0150             <span class="keyword">end</span>
+0151         <span class="keyword">end</span>
+0152     <span class="keyword">end</span>
+0153 <span class="keyword">end</span>
+0154 
+0155 <span class="keyword">if</span> fid ~= -1
+0156     fclose(fid);
 0157 <span class="keyword">end</span>
-0158 <span class="keyword">end</span></pre></div>
+0158 
+0159 <span class="keyword">if</span> nargout == 1
+0160     targets.logical   = isAmplify;
+0161     targets.amplify   = isAmplify;
+0162     targets.knockdown = isKnockdown;
+0163     targets.knockout  = isKnockout;
+0164     targets.slope     = slope;
+0165 <span class="keyword">end</span>
+0166 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

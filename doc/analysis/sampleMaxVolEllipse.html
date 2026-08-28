@@ -1,0 +1,281 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of sampleMaxVolEllipse</title>
+  <meta name="keywords" content="sampleMaxVolEllipse">
+  <meta name="description" content="sampleMaxVolEllipse  Maximum-volume inscribed ellipsoid of a polytope.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">analysis</a> &gt; sampleMaxVolEllipse.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for analysis&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>sampleMaxVolEllipse
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>sampleMaxVolEllipse  Maximum-volume inscribed ellipsoid of a polytope.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [x, E, converged] = sampleMaxVolEllipse(A, b, x0, maxiter, tol, reg) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> sampleMaxVolEllipse  Maximum-volume inscribed ellipsoid of a polytope.
+
+ Solves  max log det E  over centre x and SPD matrix E such that the
+ ellipsoid {x + E*s : ||s||_2 &lt;= 1} is contained in the polytope
+ {z : A*z &lt;= b}, using the Zhang &amp; Gao (2003) primal-dual interior-point
+ method (the regularised variant used in COBRA's CHRR sampler). This is the
+ rounding step of sampleCHRR: the returned transform E maps the polytope to a
+ well-conditioned body in which coordinate hit-and-run mixes rapidly.
+
+ This function is pure linear algebra (no LP solver) except when x0 is empty,
+ in which case a Chebyshev centre is obtained via sampleChebyshevCenter.
+
+ Parameters
+ ----------
+ A : double
+     m-by-n constraint matrix of the polytope {z : A*z &lt;= b}. Requires
+     m &gt;= n+1 and a non-empty interior.
+ b : double
+     m-by-1 right-hand side.
+ x0 : double (optional)
+     a strictly interior point (A*x0 &lt; b). If empty, computed by
+     sampleChebyshevCenter(A, b).
+ maxiter : double (optional)
+     maximum interior-point iterations (default 150).
+ tol : double (optional)
+     convergence tolerance (default 1e-6).
+ reg : double (optional)
+     diagonal / Levenberg regularisation keeping the Newton solves
+     well-conditioned (default 1e-8).
+
+ Returns
+ -------
+ x : double
+     n-by-1 ellipsoid centre.
+ E : double
+     n-by-n lower-triangular rounding transform with E*E' = E2 (the SPD
+     ellipsoid matrix). The rounding substitution is z = x + E*y.
+ converged : logical
+     whether tol was reached within maxiter. A false value is not fatal —
+     the last iterate is still a valid (if looser) rounding.
+
+ Notes
+ -----
+ Validated against analytic cases: a box maps to the unit ball (E = I); a
+ sheared box {z : -1 &lt;= M*z &lt;= 1} gives E*E' = inv(M)*inv(M)'; a triangle
+ gives its Steiner inellipse.
+
+ Based on Y. Zhang &amp; L. Gao (2003), SIAM J. Optim. 14:53-76; as used in
+ Haraldsdottir et al. (2017) Bioinformatics 33:1741 (CHRR).
+
+ See also
+ --------
+ <a href="sampleCHRR.html" class="code" title="function [solutions, info] = sampleCHRR(model, nSamples, thinning, nBurnin, seed, fixedWidthTol)">sampleCHRR</a>, <a href="sampleChebyshevCenter.html" class="code" title="function x0 = sampleChebyshevCenter(A, b)">sampleChebyshevCenter</a>, <a href="randomSampling.html" class="code" title="function [solutions, goodRxns, info]=randomSampling(model,varargin)">randomSampling</a></pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="sampleChebyshevCenter.html" class="code" title="function x0 = sampleChebyshevCenter(A, b)">sampleChebyshevCenter</a>	sampleChebyshevCenter  Centre of the largest ball inscribed in a polytope.</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="sampleCHRR.html" class="code" title="function [solutions, info] = sampleCHRR(model, nSamples, thinning, nBurnin, seed, fixedWidthTol)">sampleCHRR</a>	sampleCHRR  Coordinate Hit-and-Run with Rounding flux sampling.</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function E = nearestSPDchol(M)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [x, E, converged] = sampleMaxVolEllipse(A, b, x0, maxiter, tol, reg)</a>
+0002 <span class="comment">% sampleMaxVolEllipse  Maximum-volume inscribed ellipsoid of a polytope.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Solves  max log det E  over centre x and SPD matrix E such that the</span>
+0005 <span class="comment">% ellipsoid {x + E*s : ||s||_2 &lt;= 1} is contained in the polytope</span>
+0006 <span class="comment">% {z : A*z &lt;= b}, using the Zhang &amp; Gao (2003) primal-dual interior-point</span>
+0007 <span class="comment">% method (the regularised variant used in COBRA's CHRR sampler). This is the</span>
+0008 <span class="comment">% rounding step of sampleCHRR: the returned transform E maps the polytope to a</span>
+0009 <span class="comment">% well-conditioned body in which coordinate hit-and-run mixes rapidly.</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% This function is pure linear algebra (no LP solver) except when x0 is empty,</span>
+0012 <span class="comment">% in which case a Chebyshev centre is obtained via sampleChebyshevCenter.</span>
+0013 <span class="comment">%</span>
+0014 <span class="comment">% Parameters</span>
+0015 <span class="comment">% ----------</span>
+0016 <span class="comment">% A : double</span>
+0017 <span class="comment">%     m-by-n constraint matrix of the polytope {z : A*z &lt;= b}. Requires</span>
+0018 <span class="comment">%     m &gt;= n+1 and a non-empty interior.</span>
+0019 <span class="comment">% b : double</span>
+0020 <span class="comment">%     m-by-1 right-hand side.</span>
+0021 <span class="comment">% x0 : double (optional)</span>
+0022 <span class="comment">%     a strictly interior point (A*x0 &lt; b). If empty, computed by</span>
+0023 <span class="comment">%     sampleChebyshevCenter(A, b).</span>
+0024 <span class="comment">% maxiter : double (optional)</span>
+0025 <span class="comment">%     maximum interior-point iterations (default 150).</span>
+0026 <span class="comment">% tol : double (optional)</span>
+0027 <span class="comment">%     convergence tolerance (default 1e-6).</span>
+0028 <span class="comment">% reg : double (optional)</span>
+0029 <span class="comment">%     diagonal / Levenberg regularisation keeping the Newton solves</span>
+0030 <span class="comment">%     well-conditioned (default 1e-8).</span>
+0031 <span class="comment">%</span>
+0032 <span class="comment">% Returns</span>
+0033 <span class="comment">% -------</span>
+0034 <span class="comment">% x : double</span>
+0035 <span class="comment">%     n-by-1 ellipsoid centre.</span>
+0036 <span class="comment">% E : double</span>
+0037 <span class="comment">%     n-by-n lower-triangular rounding transform with E*E' = E2 (the SPD</span>
+0038 <span class="comment">%     ellipsoid matrix). The rounding substitution is z = x + E*y.</span>
+0039 <span class="comment">% converged : logical</span>
+0040 <span class="comment">%     whether tol was reached within maxiter. A false value is not fatal —</span>
+0041 <span class="comment">%     the last iterate is still a valid (if looser) rounding.</span>
+0042 <span class="comment">%</span>
+0043 <span class="comment">% Notes</span>
+0044 <span class="comment">% -----</span>
+0045 <span class="comment">% Validated against analytic cases: a box maps to the unit ball (E = I); a</span>
+0046 <span class="comment">% sheared box {z : -1 &lt;= M*z &lt;= 1} gives E*E' = inv(M)*inv(M)'; a triangle</span>
+0047 <span class="comment">% gives its Steiner inellipse.</span>
+0048 <span class="comment">%</span>
+0049 <span class="comment">% Based on Y. Zhang &amp; L. Gao (2003), SIAM J. Optim. 14:53-76; as used in</span>
+0050 <span class="comment">% Haraldsdottir et al. (2017) Bioinformatics 33:1741 (CHRR).</span>
+0051 <span class="comment">%</span>
+0052 <span class="comment">% See also</span>
+0053 <span class="comment">% --------</span>
+0054 <span class="comment">% sampleCHRR, sampleChebyshevCenter, randomSampling</span>
+0055 
+0056 <span class="keyword">if</span> nargin &lt; 4 || isempty(maxiter); maxiter = 150; <span class="keyword">end</span>
+0057 <span class="keyword">if</span> nargin &lt; 5 || isempty(tol);     tol = 1e-6;     <span class="keyword">end</span>
+0058 <span class="keyword">if</span> nargin &lt; 6 || isempty(reg);     reg = 1e-8;     <span class="keyword">end</span>
+0059 
+0060 [m, n] = size(A);
+0061 b = b(:);
+0062 <span class="comment">% bnrm is the norm of the ORIGINAL b (before the row-normalisation below sets</span>
+0063 <span class="comment">% b &lt;- ones). This matches COBRA's chrrSampler reference; do not &quot;correct&quot; it to</span>
+0064 <span class="comment">% sqrt(m), or convergence scaling diverges from the reference (and from the</span>
+0065 <span class="comment">% validated Python max_volume_ellipsoid this file mirrors).</span>
+0066 bnrm = norm(b);
+0067 minmu = 1e-8;
+0068 tau0  = 0.75;
+0069 
+0070 <span class="keyword">if</span> nargin &lt; 3 || isempty(x0)
+0071     x0 = <a href="sampleChebyshevCenter.html" class="code" title="function x0 = sampleChebyshevCenter(A, b)">sampleChebyshevCenter</a>(A, b);
+0072 <span class="keyword">end</span>
+0073 x0 = x0(:);
+0074 
+0075 bmAx0 = b - A*x0;
+0076 <span class="keyword">if</span> any(bmAx0 &lt;= 0)
+0077     error(<span class="string">'RAVEN:sampling'</span>, <span class="string">'sampleMaxVolEllipse: x0 is not strictly interior (A*x0 &lt; b).'</span>);
+0078 <span class="keyword">end</span>
+0079 
+0080 <span class="comment">% Row-normalise so the constraint RHS is all ones; solve in shifted coords.</span>
+0081 A = A ./ bmAx0;
+0082 b = ones(m, 1);
+0083 
+0084 x = zeros(n, 1);
+0085 y = ones(m, 1);
+0086 bmAx = b;
+0087 z = zeros(m, 1);
+0088 astep = 0;
+0089 Adx = zeros(n, 1);
+0090 converged = false;
+0091 E2 = eye(n);
+0092 
+0093 <span class="keyword">for</span> it = 1:maxiter
+0094     <span class="keyword">if</span> it &gt; 1
+0095         bmAx = bmAx - astep*Adx;
+0096     <span class="keyword">end</span>
+0097 
+0098     AtYA = A' * (A .* y);          <span class="comment">% A' * diag(y) * A   (n-by-n)</span>
+0099     E2 = inv(AtYA);                <span class="comment">%#ok&lt;MINV&gt; explicit inverse mirrors the reference</span>
+0100     Q  = A * E2 * A';              <span class="comment">% m-by-m</span>
+0101     h  = sqrt(max(diag(Q), 0));
+0102 
+0103     <span class="keyword">if</span> it == 1
+0104         t = min(bmAx ./ h);
+0105         y = y / t^2;
+0106         h = t * h;
+0107         z = max(1e-1, bmAx - h);
+0108         Q = t^2 * Q;
+0109     <span class="keyword">end</span>
+0110 
+0111     yz = y .* z;
+0112     yh = y .* h;
+0113     gap = sum(yz) / m;
+0114     rmu = max(min(0.5, gap)*gap, minmu);
+0115 
+0116     R1 = -A' * yh;                 <span class="comment">% dual residual      (n-by-1)</span>
+0117     R2 = bmAx - h - z;             <span class="comment">% primal/slack       (m-by-1)</span>
+0118     R3 = rmu - yz;                 <span class="comment">% complementarity    (m-by-1)</span>
+0119     res = max([max(abs(R1)), max(abs(R2)), max(abs(R3))]);
+0120 
+0121     <span class="keyword">if</span> res &lt; tol*(1 + bnrm) &amp;&amp; rmu &lt;= minmu
+0122         x = x + x0;
+0123         converged = true;
+0124         <span class="keyword">break</span>;
+0125     <span class="keyword">end</span>
+0126 
+0127     YQ   = y .* Q;                 <span class="comment">% diag(y) * Q</span>
+0128     YQQY = YQ .* YQ';              <span class="comment">% Hadamard product</span>
+0129     y2h  = 2 * yh;
+0130     G    = YQQY + diag(max(reg, y2h .* z));
+0131     YA   = y .* A;                 <span class="comment">% diag(y) * A</span>
+0132     T    = G \ ((h + z) .* YA);    <span class="comment">% m-by-n</span>
+0133     ATP  = (y2h .* T - YA)';       <span class="comment">% n-by-m</span>
+0134     R3Dy = R3 ./ y;
+0135     R23  = R2 - R3Dy;
+0136     ATP_A = ATP*A + reg*eye(n);
+0137     dx   = ATP_A \ (R1 + ATP*R23);
+0138     Adx  = A * dx;
+0139     dyDy = G \ (y2h .* (Adx - R23));
+0140     dy   = y .* dyDy;
+0141     dz   = R3Dy - z .* dyDy;
+0142 
+0143     ax = -1 / min([-Adx ./ bmAx; -0.5]);
+0144     ay = -1 / min([ dyDy;        -0.5]);
+0145     az = -1 / min([ dz ./ z;     -0.5]);
+0146     tau = max(tau0, 1 - res);
+0147     astep = tau * min([1, ax, ay, az]);
+0148 
+0149     x = x + astep*dx;
+0150     y = y + astep*dy;
+0151     z = z + astep*dz;
+0152 <span class="keyword">end</span>
+0153 
+0154 <span class="keyword">if</span> ~converged
+0155     x = x + x0;
+0156 <span class="keyword">end</span>
+0157 
+0158 E = <a href="#_sub1" class="code" title="subfunction E = nearestSPDchol(M)">nearestSPDchol</a>(E2);
+0159 <span class="keyword">end</span>
+0160 
+0161 
+0162 <a name="_sub1" href="#_subfunctions" class="code">function E = nearestSPDchol(M)</a>
+0163 <span class="comment">% Lower-triangular Cholesky factor of the nearest SPD matrix to M, so E*E' = M.</span>
+0164 M = (M + M') / 2;
+0165 [E, p] = chol(M, <span class="string">'lower'</span>);
+0166 <span class="keyword">if</span> p == 0
+0167     <span class="keyword">return</span>;
+0168 <span class="keyword">end</span>
+0169 ev = eig(M);
+0170 jitter = max(-min(ev), 0) + 1e-12;
+0171 nn = size(M, 1);
+0172 <span class="keyword">for</span> k = 1:30
+0173     [E, p] = chol(M + jitter*eye(nn), <span class="string">'lower'</span>);
+0174     <span class="keyword">if</span> p == 0
+0175         <span class="keyword">return</span>;
+0176     <span class="keyword">end</span>
+0177     jitter = jitter * 10;
+0178 <span class="keyword">end</span>
+0179 E = chol(M + jitter*eye(nn), <span class="string">'lower'</span>);
+0180 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

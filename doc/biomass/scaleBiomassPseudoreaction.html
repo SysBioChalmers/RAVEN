@@ -74,12 +74,12 @@ This function calls:
 </ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="scaleBiomassFraction.html" class="code" title="function model = scaleBiomassFraction(model, biomassConfig, componentName, newValue, balanceOut)">scaleBiomassFraction</a>	scaleBiomassFraction  Rescale a biomass component to a target value.</li></ul>
+<li><a href="scaleBiomassFraction.html" class="code" title="function model = scaleBiomassFraction(model, biomassConfig, componentName, newValue, varargin)">scaleBiomassFraction</a>	scaleBiomassFraction  Rescale a biomass component to a target value.</li></ul>
 <!-- crossreference -->
 
 <h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="#_sub1" class="code">function comp = findComponent(cfg, name)</a></li></ul>
+<li><a href="#_sub1" class="code">function residual = chargeResidual(model, rxnPos)</a></li><li><a href="#_sub2" class="code">function comp = findComponent(cfg, name)</a></li></ul>
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function model = scaleBiomassPseudoreaction(model, biomassConfig, componentName, factor)</a>
@@ -123,7 +123,7 @@ This function is called by:
 0039 <span class="comment">% --------</span>
 0040 <span class="comment">% getBiomassFractions</span>
 0041 
-0042 comp = <a href="#_sub1" class="code" title="subfunction comp = findComponent(cfg, name)">findComponent</a>(biomassConfig, componentName);
+0042 comp = <a href="#_sub2" class="code" title="subfunction comp = findComponent(cfg, name)">findComponent</a>(biomassConfig, componentName);
 0043 rxnPos = find(strcmp(model.rxnNames, comp.pseudoreaction_name));
 0044 <span class="keyword">if</span> isempty(rxnPos)
 0045     error(<span class="string">'scaleBiomassPseudoreaction:missingPseudoreaction'</span>, <span class="keyword">...</span>
@@ -141,19 +141,41 @@ This function is called by:
 0057 <span class="comment">% Rebalance H+ to keep charge neutrality.</span>
 0058 Hc = find(strcmp(model.mets, biomassConfig.proton_met));
 0059 model.S(Hc, rxnPos) = 0;
-0060 model.S(Hc, rxnPos) = -sum(model.S(:, rxnPos) .* model.metCharges, <span class="string">'omitnan'</span>);
+0060 model.S(Hc, rxnPos) = -<a href="#_sub1" class="code" title="subfunction residual = chargeResidual(model, rxnPos)">chargeResidual</a>(model, rxnPos);
 0061 <span class="keyword">end</span>
 0062 
-0063 <a name="_sub1" href="#_subfunctions" class="code">function comp = findComponent(cfg, name)</a>
-0064 <span class="keyword">for</span> i = 1:numel(cfg.components)
-0065     <span class="keyword">if</span> strcmp(cfg.components{i}.name, name)
-0066         comp = cfg.components{i};
-0067         <span class="keyword">return</span>;
-0068     <span class="keyword">end</span>
-0069 <span class="keyword">end</span>
-0070 error(<span class="string">'scaleBiomassPseudoreaction:unknownComponent'</span>, <span class="keyword">...</span>
-0071     <span class="string">'biomassConfig has no component named %s'</span>, name);
-0072 <span class="keyword">end</span></pre></div>
+0063 <a name="_sub1" href="#_subfunctions" class="code">function residual = chargeResidual(model, rxnPos)</a>
+0064 <span class="comment">% Sum of charges over the metabolites that take part in a reaction. Only the</span>
+0065 <span class="comment">% participants may be summed: S is sparse and 0*NaN is NaN, so any unset</span>
+0066 <span class="comment">% charge in the model would otherwise poison the result. Summing with</span>
+0067 <span class="comment">% 'omitnan' instead would treat an unset charge as neutral and silently</span>
+0068 <span class="comment">% rebalance the reaction to the wrong coefficient.</span>
+0069 metIdx = find(model.S(:, rxnPos));
+0070 <span class="keyword">if</span> ~isfield(model, <span class="string">'metCharges'</span>)
+0071     error(<span class="string">'scaleBiomassPseudoreaction:noCharges'</span>, <span class="keyword">...</span>
+0072         [<span class="string">'Cannot rebalance charge: the model has no metCharges field. '</span> <span class="keyword">...</span>
+0073          <span class="string">'Provide metabolite charges, or rescale without charge balancing.'</span>]);
+0074 <span class="keyword">end</span>
+0075 unknown = metIdx(isnan(model.metCharges(metIdx)));
+0076 <span class="keyword">if</span> ~isempty(unknown)
+0077     error(<span class="string">'scaleBiomassPseudoreaction:unknownCharge'</span>, <span class="keyword">...</span>
+0078         [<span class="string">'Cannot rebalance charge of %s: the following metabolites have no '</span> <span class="keyword">...</span>
+0079          <span class="string">'charge, so the charge balance is unknown rather than zero:\n\t%s'</span>], <span class="keyword">...</span>
+0080         model.rxns{rxnPos}, strjoin(model.mets(unknown), <span class="string">', '</span>));
+0081 <span class="keyword">end</span>
+0082 residual = sum(full(model.S(metIdx, rxnPos)) .* model.metCharges(metIdx));
+0083 <span class="keyword">end</span>
+0084 
+0085 <a name="_sub2" href="#_subfunctions" class="code">function comp = findComponent(cfg, name)</a>
+0086 <span class="keyword">for</span> i = 1:numel(cfg.components)
+0087     <span class="keyword">if</span> strcmp(cfg.components{i}.name, name)
+0088         comp = cfg.components{i};
+0089         <span class="keyword">return</span>;
+0090     <span class="keyword">end</span>
+0091 <span class="keyword">end</span>
+0092 error(<span class="string">'scaleBiomassPseudoreaction:unknownComponent'</span>, <span class="keyword">...</span>
+0093     <span class="string">'biomassConfig has no component named %s'</span>, name);
+0094 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

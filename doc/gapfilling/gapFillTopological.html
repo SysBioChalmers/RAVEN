@@ -1,0 +1,375 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of gapFillTopological</title>
+  <meta name="keywords" content="gapFillTopological">
+  <meta name="description" content="gapFillTopological  BFS metabolite-producibility pre-screening.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">gapfilling</a> &gt; gapFillTopological.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for gapfilling&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>gapFillTopological
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>gapFillTopological  BFS metabolite-producibility pre-screening.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function result = gapFillTopological(model, universalModel, varargin) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> gapFillTopological  BFS metabolite-producibility pre-screening.
+
+ Identifies which metabolites in the draft model cannot be produced from a
+ given set of seed metabolites (medium), using a graph-based fixed-point
+ &quot;scope&quot; computation (no solver required). For each unreachable metabolite,
+ finds candidate reactions in the universal database that produce it
+ directly.
+
+ This is a computationally cheap pre-screening step that prunes the
+ universal database before a more expensive gap-filling solve. It is
+ inspired by the topological analysis used in Meneco (Prigent et al. 2017,
+ PLoS Comput Biol).
+
+ Algorithm
+ ---------
+ Starting from seed metabolites (available in the medium), iteratively
+ mark reactions as &quot;fireable&quot; when all their substrates are reachable,
+ then mark their products as newly reachable. Continue until no new
+ metabolite is reached (fixed point). Reversible reactions (lb &lt; 0) are
+ also considered in their reverse direction.
+
+ Parameters
+ ----------
+ model : struct
+     draft RAVEN model.
+ universalModel : struct
+     universal reaction database (RAVEN model).
+
+ Optional name-value parameters
+ --------------------------------
+ 'seeds' (default [])
+     Metabolite IDs (cell array) available from the medium. Default:
+     metabolites of every exchange reaction whose bounds let it supply the
+     metabolite, i.e. getExchangeRxns 'uptake' plus 'reverse'.
+ 'targets' (default [])
+     Metabolite IDs (cell array) that should be produced. Default:
+     substrates of the objective (biomass) reaction.
+ 'verbose' (default true)
+     print a summary of the results.
+
+ Returns
+ -------
+ result : struct
+     .reachableMets   — logical vector (length nMets) marking producible mets
+     .blockedMets     — cell array of metabolite IDs that cannot be reached
+     .candidateRxns   — n-by-1 cell array of universal rxn ID lists, one
+                        cell per blocked metabolite (same order as blockedMets)
+     .pruningFraction — fraction of universal reactions pruned (not needed
+                        for any blocked metabolite)
+
+ See also
+ --------
+ <a href="gapFillFastLP.html" class="code" title="function [addedRxns, newModel, cannotConnect] = gapFillFastLP(model, universalModel, varargin)">gapFillFastLP</a>, <a href="gapFillMILP.html" class="code" title="function [addedRxns, reversedRxns, newModel, exitFlag] = gapFillMILP(model, universalModel, varargin)">gapFillMILP</a>, <a href="fillGaps.html" class="code" title="function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(model,models,varargin)">fillGaps</a></pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="fillGaps.html" class="code" title="function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(model,models,varargin)">fillGaps</a>	fillGaps  Use template model(s) to fill gaps in a model.</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function result = gapFillTopological(model, universalModel, varargin)</a>
+0002 <span class="comment">% gapFillTopological  BFS metabolite-producibility pre-screening.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Identifies which metabolites in the draft model cannot be produced from a</span>
+0005 <span class="comment">% given set of seed metabolites (medium), using a graph-based fixed-point</span>
+0006 <span class="comment">% &quot;scope&quot; computation (no solver required). For each unreachable metabolite,</span>
+0007 <span class="comment">% finds candidate reactions in the universal database that produce it</span>
+0008 <span class="comment">% directly.</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% This is a computationally cheap pre-screening step that prunes the</span>
+0011 <span class="comment">% universal database before a more expensive gap-filling solve. It is</span>
+0012 <span class="comment">% inspired by the topological analysis used in Meneco (Prigent et al. 2017,</span>
+0013 <span class="comment">% PLoS Comput Biol).</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">% Algorithm</span>
+0016 <span class="comment">% ---------</span>
+0017 <span class="comment">% Starting from seed metabolites (available in the medium), iteratively</span>
+0018 <span class="comment">% mark reactions as &quot;fireable&quot; when all their substrates are reachable,</span>
+0019 <span class="comment">% then mark their products as newly reachable. Continue until no new</span>
+0020 <span class="comment">% metabolite is reached (fixed point). Reversible reactions (lb &lt; 0) are</span>
+0021 <span class="comment">% also considered in their reverse direction.</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">% Parameters</span>
+0024 <span class="comment">% ----------</span>
+0025 <span class="comment">% model : struct</span>
+0026 <span class="comment">%     draft RAVEN model.</span>
+0027 <span class="comment">% universalModel : struct</span>
+0028 <span class="comment">%     universal reaction database (RAVEN model).</span>
+0029 <span class="comment">%</span>
+0030 <span class="comment">% Optional name-value parameters</span>
+0031 <span class="comment">% --------------------------------</span>
+0032 <span class="comment">% 'seeds' (default [])</span>
+0033 <span class="comment">%     Metabolite IDs (cell array) available from the medium. Default:</span>
+0034 <span class="comment">%     metabolites of every exchange reaction whose bounds let it supply the</span>
+0035 <span class="comment">%     metabolite, i.e. getExchangeRxns 'uptake' plus 'reverse'.</span>
+0036 <span class="comment">% 'targets' (default [])</span>
+0037 <span class="comment">%     Metabolite IDs (cell array) that should be produced. Default:</span>
+0038 <span class="comment">%     substrates of the objective (biomass) reaction.</span>
+0039 <span class="comment">% 'verbose' (default true)</span>
+0040 <span class="comment">%     print a summary of the results.</span>
+0041 <span class="comment">%</span>
+0042 <span class="comment">% Returns</span>
+0043 <span class="comment">% -------</span>
+0044 <span class="comment">% result : struct</span>
+0045 <span class="comment">%     .reachableMets   — logical vector (length nMets) marking producible mets</span>
+0046 <span class="comment">%     .blockedMets     — cell array of metabolite IDs that cannot be reached</span>
+0047 <span class="comment">%     .candidateRxns   — n-by-1 cell array of universal rxn ID lists, one</span>
+0048 <span class="comment">%                        cell per blocked metabolite (same order as blockedMets)</span>
+0049 <span class="comment">%     .pruningFraction — fraction of universal reactions pruned (not needed</span>
+0050 <span class="comment">%                        for any blocked metabolite)</span>
+0051 <span class="comment">%</span>
+0052 <span class="comment">% See also</span>
+0053 <span class="comment">% --------</span>
+0054 <span class="comment">% gapFillFastLP, gapFillMILP, fillGaps</span>
+0055 
+0056 <span class="comment">% ---- Parse optional arguments ----</span>
+0057 p = inputParser();
+0058 addParameter(p, <span class="string">'seeds'</span>,   [], @(x) isempty(x) || iscell(x));
+0059 addParameter(p, <span class="string">'targets'</span>, [], @(x) isempty(x) || iscell(x));
+0060 addParameter(p, <span class="string">'verbose'</span>, true, @islogical);
+0061 parse(p, varargin{:});
+0062 seeds   = p.Results.seeds;
+0063 targets = p.Results.targets;
+0064 verbose = p.Results.verbose;
+0065 
+0066 nMets = numel(model.mets);
+0067 nRxns = numel(model.rxns);
+0068 
+0069 <span class="comment">% ---- Identify seed metabolites ----</span>
+0070 <span class="keyword">if</span> isempty(seeds)
+0071     <span class="comment">% Default: metabolites that an exchange reaction can supply. Ask</span>
+0072     <span class="comment">% getExchangeRxns rather than testing lb &lt; 0 here: RAVEN writes an uptake</span>
+0073     <span class="comment">% exchange either as &quot;=&gt; met&quot; (addExchangeRxns 'in', so lb = 0 and a</span>
+0074     <span class="comment">% positive flux supplies the metabolite) or as &quot;met =&gt;&quot; with lb &lt; 0. Only</span>
+0075     <span class="comment">% the second has lb &lt; 0, so a hand-rolled lb &lt; 0 test silently misses</span>
+0076     <span class="comment">% every 'in' exchange.</span>
+0077     <span class="comment">%</span>
+0078     <span class="comment">% 'uptake' alone is not enough either: it means the bounds allow *only*</span>
+0079     <span class="comment">% uptake, so a reversible exchange (&quot;met &lt;=&gt;&quot;) is classified 'reverse'</span>
+0080     <span class="comment">% even though it supplies the metabolite just as well. The union of the</span>
+0081     <span class="comment">% two is exactly &quot;forward flux produces it, or reverse flux does&quot;, which</span>
+0082     <span class="comment">% is what analyse_topology's lower_bound &lt; 0 test means under cobra's</span>
+0083     <span class="comment">% convention, where every exchange is written &quot;met &lt;=&gt;&quot;.</span>
+0084     [~, onlyUptakeIdx] = getExchangeRxns(model, <span class="string">'uptake'</span>);
+0085     [~, reversibleIdx] = getExchangeRxns(model, <span class="string">'reverse'</span>);
+0086     uptakeIdx = union(onlyUptakeIdx, reversibleIdx);
+0087     <span class="keyword">if</span> isempty(uptakeIdx)
+0088         warning([<span class="string">'gapFillTopological: no uptake exchange reactions found. '</span> <span class="keyword">...</span>
+0089             <span class="string">'Provide seeds manually via the ''seeds'' option.'</span>]);
+0090         seedMetIdx = [];
+0091     <span class="keyword">else</span>
+0092         [seedRows, ~] = find(model.S(:, uptakeIdx) ~= 0);
+0093         seedMetIdx = unique(seedRows);
+0094     <span class="keyword">end</span>
+0095 <span class="keyword">else</span>
+0096     [~, seedMetIdx] = ismember(seeds, model.mets);
+0097     seedMetIdx = seedMetIdx(seedMetIdx &gt; 0);
+0098 <span class="keyword">end</span>
+0099 
+0100 <span class="comment">% ---- Identify target metabolites ----</span>
+0101 <span class="keyword">if</span> isempty(targets)
+0102     <span class="comment">% Default: substrates of the objective (biomass) reaction</span>
+0103     objRxns = find(model.c ~= 0);
+0104     <span class="keyword">if</span> isempty(objRxns)
+0105         error([<span class="string">'gapFillTopological: no objective function defined. '</span> <span class="keyword">...</span>
+0106             <span class="string">'Provide targets manually via the ''targets'' option.'</span>]);
+0107     <span class="keyword">end</span>
+0108     biomassIdx = objRxns(1);
+0109     targetMetIdx = find(model.S(:, biomassIdx) ~= 0);
+0110 <span class="keyword">else</span>
+0111     [~, targetMetIdx] = ismember(targets, model.mets);
+0112     targetMetIdx = targetMetIdx(targetMetIdx &gt; 0);
+0113 <span class="keyword">end</span>
+0114 
+0115 <span class="comment">% ---- Build adjacency lists ----</span>
+0116 <span class="comment">% subOf{m}  = reaction indices where metabolite m is a substrate (S &lt; 0)</span>
+0117 <span class="comment">% prodOf{m} = reaction indices where metabolite m is a product  (S &gt; 0)</span>
+0118 <span class="comment">% rxnSubs{j} = substrate metabolite indices of reaction j</span>
+0119 <span class="comment">% rxnProds{j} = product metabolite indices of reaction j</span>
+0120 <span class="comment">%</span>
+0121 <span class="comment">% Use find() on the sparse S directly to avoid materialising a dense logical</span>
+0122 <span class="comment">% matrix: extract all nonzeros then partition by sign.</span>
+0123 [allRows, allCols, allVals] = find(model.S);
+0124 subMask    = allVals &lt; 0;
+0125 proMask    = allVals &gt; 0;
+0126 subMetRows = allRows(subMask);
+0127 subRxnCols = allCols(subMask);
+0128 proMetRows = allRows(proMask);
+0129 proRxnCols = allCols(proMask);
+0130 
+0131 subOf  = cell(nMets, 1);
+0132 prodOf = cell(nMets, 1);
+0133 <span class="keyword">for</span> k = 1:numel(subMetRows)
+0134     subOf{subMetRows(k)}(end+1) = subRxnCols(k);
+0135 <span class="keyword">end</span>
+0136 <span class="keyword">for</span> k = 1:numel(proMetRows)
+0137     prodOf{proMetRows(k)}(end+1) = proRxnCols(k);
+0138 <span class="keyword">end</span>
+0139 
+0140 rxnSubs  = cell(nRxns, 1);
+0141 rxnProds = cell(nRxns, 1);
+0142 <span class="keyword">for</span> k = 1:numel(subMetRows)
+0143     rxnSubs{subRxnCols(k)}(end+1) = subMetRows(k);
+0144 <span class="keyword">end</span>
+0145 <span class="keyword">for</span> k = 1:numel(proMetRows)
+0146     rxnProds{proRxnCols(k)}(end+1) = proMetRows(k);
+0147 <span class="keyword">end</span>
+0148 
+0149 isRev = model.lb &lt; 0;
+0150 
+0151 <span class="comment">% ---- BFS scope computation ----</span>
+0152 <span class="comment">% Uses a countdown approach: a reaction fires when all its substrates are</span>
+0153 <span class="comment">% reachable. Each time a metabolite becomes reachable, decrement the</span>
+0154 <span class="comment">% substrate count of all reactions it participates in.</span>
+0155 subCountFwd = cellfun(@numel, rxnSubs);   <span class="comment">% remaining unreachable substrates (fwd)</span>
+0156 subCountRev = cellfun(@numel, rxnProds);  <span class="comment">% remaining unreachable products  (rev)</span>
+0157 
+0158 reachable = false(nMets, 1);
+0159 firedFwd  = false(nRxns, 1);
+0160 firedRev  = false(nRxns, 1);
+0161 
+0162 <span class="comment">% Initialize queue with seed metabolites</span>
+0163 queue  = seedMetIdx(:)';
+0164 qHead  = 1;
+0165 reachable(seedMetIdx) = true;
+0166 
+0167 <span class="comment">% Reactions with no substrates have nothing to wait for and fire straight</span>
+0168 <span class="comment">% away. They are in no subOf list, so the countdown below never reaches them</span>
+0169 <span class="comment">% and their products would otherwise stay unreachable forever. This is where</span>
+0170 <span class="comment">% &quot;=&gt; met&quot; uptake exchanges enter the scope.</span>
+0171 <span class="keyword">for</span> j = find(subCountFwd == 0)'
+0172     firedFwd(j) = true;
+0173     <span class="keyword">for</span> p = rxnProds{j}
+0174         <span class="keyword">if</span> ~reachable(p)
+0175             reachable(p) = true;
+0176             queue(end+1) = p; <span class="comment">%#ok&lt;AGROW&gt;</span>
+0177         <span class="keyword">end</span>
+0178     <span class="keyword">end</span>
+0179 <span class="keyword">end</span>
+0180 
+0181 <span class="keyword">while</span> qHead &lt;= numel(queue)
+0182     m = queue(qHead);
+0183     qHead = qHead + 1;
+0184 
+0185     <span class="comment">% --- Forward direction ---</span>
+0186     <span class="comment">% m is a substrate of rxn j (S(m,j) &lt; 0)</span>
+0187     <span class="keyword">for</span> j = subOf{m}
+0188         subCountFwd(j) = subCountFwd(j) - 1;
+0189         <span class="keyword">if</span> subCountFwd(j) == 0 &amp;&amp; ~firedFwd(j)
+0190             firedFwd(j) = true;
+0191             <span class="keyword">for</span> p = rxnProds{j}
+0192                 <span class="keyword">if</span> ~reachable(p)
+0193                     reachable(p) = true;
+0194                     queue(end+1) = p;
+0195                 <span class="keyword">end</span>
+0196             <span class="keyword">end</span>
+0197         <span class="keyword">end</span>
+0198     <span class="keyword">end</span>
+0199 
+0200     <span class="comment">% --- Reverse direction (reversible reactions only) ---</span>
+0201     <span class="comment">% m is a product of rxn j (S(m,j) &gt; 0), which in reverse means m is a</span>
+0202     <span class="comment">% substrate; if all products are reachable, the reaction can fire in</span>
+0203     <span class="comment">% reverse and produce the substrates.</span>
+0204     <span class="keyword">for</span> j = prodOf{m}
+0205         <span class="keyword">if</span> isRev(j)
+0206             subCountRev(j) = subCountRev(j) - 1;
+0207             <span class="keyword">if</span> subCountRev(j) == 0 &amp;&amp; ~firedRev(j)
+0208                 firedRev(j) = true;
+0209                 <span class="keyword">for</span> s = rxnSubs{j}
+0210                     <span class="keyword">if</span> ~reachable(s)
+0211                         reachable(s) = true;
+0212                         queue(end+1) = s;
+0213                     <span class="keyword">end</span>
+0214                 <span class="keyword">end</span>
+0215             <span class="keyword">end</span>
+0216         <span class="keyword">end</span>
+0217     <span class="keyword">end</span>
+0218 <span class="keyword">end</span>
+0219 
+0220 <span class="comment">% ---- Report blocked target metabolites ----</span>
+0221 targetReachable = reachable(targetMetIdx);
+0222 blockedMetIdx   = targetMetIdx(~targetReachable);
+0223 blockedMets     = model.mets(blockedMetIdx);
+0224 
+0225 <span class="keyword">if</span> verbose
+0226     fprintf(<span class="string">'gapFillTopological: %d/%d target metabolites are reachable.\n'</span>, <span class="keyword">...</span>
+0227         sum(targetReachable), numel(targetMetIdx));
+0228     <span class="keyword">if</span> ~isempty(blockedMets)
+0229         fprintf(<span class="string">'gapFillTopological: %d blocked target metabolite(s).\n'</span>, numel(blockedMets));
+0230     <span class="keyword">end</span>
+0231 <span class="keyword">end</span>
+0232 
+0233 <span class="comment">% ---- Find candidate universal reactions for each blocked metabolite ----</span>
+0234 candidateRxns  = cell(numel(blockedMets), 1);
+0235 allCandidates  = {};
+0236 
+0237 <span class="keyword">for</span> k = 1:numel(blockedMetIdx)
+0238     m     = blockedMetIdx(k);
+0239     metId = model.mets{m};
+0240 
+0241     <span class="comment">% Find this metabolite in the universal model</span>
+0242     univMetIdx = find(strcmp(universalModel.mets, metId));
+0243     <span class="keyword">if</span> isempty(univMetIdx)
+0244         candidateRxns{k} = {};
+0245         <span class="keyword">continue</span>;
+0246     <span class="keyword">end</span>
+0247     univMetIdx = univMetIdx(1);   <span class="comment">% take first match; IDs should be unique</span>
+0248 
+0249     univSRow = full(universalModel.S(univMetIdx, :));
+0250 
+0251     <span class="comment">% Forward production: rxns with S(m,j) &gt; 0</span>
+0252     fwdProdMask = univSRow &gt; 0;
+0253     <span class="comment">% Reverse production: rxns with S(m,j) &lt; 0 that can carry negative flux</span>
+0254     revProdMask = univSRow &lt; 0 &amp; (universalModel.lb' &lt; 0);
+0255 
+0256     candidateMask         = fwdProdMask | revProdMask;
+0257     candidateRxns{k}      = universalModel.rxns(candidateMask);
+0258     allCandidates         = [allCandidates; candidateRxns{k}];
+0259 <span class="keyword">end</span>
+0260 
+0261 <span class="comment">% ---- Pruning fraction ----</span>
+0262 uniqueCandidates   = unique(allCandidates);
+0263 pruningFraction    = 1 - numel(uniqueCandidates) / numel(universalModel.rxns);
+0264 
+0265 <span class="keyword">if</span> verbose
+0266     fprintf(<span class="string">'gapFillTopological: %d/%d universal reactions pruned (%.0f%%).\n'</span>, <span class="keyword">...</span>
+0267         numel(universalModel.rxns) - numel(uniqueCandidates), <span class="keyword">...</span>
+0268         numel(universalModel.rxns), pruningFraction * 100);
+0269 <span class="keyword">end</span>
+0270 
+0271 <span class="comment">% ---- Pack output ----</span>
+0272 result.reachableMets     = reachable;
+0273 result.blockedMets       = blockedMets;
+0274 result.candidateRxns     = candidateRxns;
+0275 result.pruningFraction   = pruningFraction;
+0276 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

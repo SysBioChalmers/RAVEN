@@ -24,7 +24,7 @@
 <div class="box"><strong>getElementalBalance  Check whether the reactions of a model are balanced.</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function balanceStructure=getElementalBalance(model,rxns,printUnbalanced,printUnparsable) </strong></div>
+<div class="box"><strong>function balanceStructure=getElementalBalance(model,varargin) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> getElementalBalance  Check whether the reactions of a model are balanced.
@@ -35,14 +35,17 @@
  ----------
  model : struct
      a model structure.
- rxns : cell or logical or double, optional
+
+ Name-Value Arguments
+ --------------------
+ rxns : cell or logical or double
      either a cell array of reaction IDs, a logical vector with the same
      number of elements as reactions in the model, or a vector of
      indexes. Only these reactions will be checked (default model.rxns).
- printUnbalanced : logical, optional
+ printUnbalanced : logical
      print warnings about the reactions that were unbalanced
      (default false).
- printUnparsable : logical, optional
+ printUnparsable : logical
      print warnings about the reactions that cannot be parsed
      (default false).
 
@@ -53,7 +56,14 @@
 
      - balanceStatus : 1 if the reaction is balanced, 0 if it is
        unbalanced, -1 if it could not be balanced due to missing
-       information, -2 if it could not be balanced due to an error
+       information, -2 if it could not be balanced due to an error.
+       Elemental only; charge is reported separately below
+     - chargeStatus : 1 if the reaction is charge balanced, 0 if it is
+       not, -1 if any participating metabolite has no charge (or the
+       model has no metCharges field), in which case the charge balance
+       is unknown rather than zero
+     - chargeResidual : the sum of charges over the reaction, NaN where
+       chargeStatus is -1
      - elements : struct with fields abbrevs (cell array with
        abbreviations for all used elements) and names (cell array with
        the names for all used elements)
@@ -69,16 +79,16 @@
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>	getIndexes  Retrieve the indexes for a list of reactions or metabolites.</li><li><a href="parseFormulas.html" class="code" title="function [elements, useMat, exitFlag, MW]=parseFormulas(formulas, noPolymers,isInchi,ignoreRX)">parseFormulas</a>	parseFormulas  Get the elemental composition from formulas.</li></ul>
+<li><a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, varargin)">getIndexes</a>	getIndexes  Retrieve the indexes for a list of reactions or metabolites.</li><li><a href="parseFormulas.html" class="code" title="function [elements, useMat, exitFlag, MW]=parseFormulas(formulas, varargin)">parseFormulas</a>	parseFormulas  Get the elemental composition from formulas.</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="printFluxes.html" class="code" title="function printFluxes(model, fluxes, onlyExchange, cutOffFlux, outputFile,outputString,metaboliteList)">printFluxes</a>	printFluxes  Print reactions and fluxes to the screen or to a file.</li><li><a href="printModelStats.html" class="code" title="function printModelStats(model, printModelIssues, printDetails)">printModelStats</a>	printModelStats  Print some statistics about a model to the screen.</li></ul>
+<li><a href="printFluxes.html" class="code" title="function printFluxes(model, fluxes, varargin)">printFluxes</a>	printFluxes  Print reactions and fluxes to the screen or to a file.</li><li><a href="printModelStats.html" class="code" title="function printModelStats(model, varargin)">printModelStats</a>	printModelStats  Print some statistics about a model to the screen.</li></ul>
 <!-- crossreference -->
 
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function balanceStructure=getElementalBalance(model,rxns,printUnbalanced,printUnparsable)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function balanceStructure=getElementalBalance(model,varargin)</a>
 0002 <span class="comment">% getElementalBalance  Check whether the reactions of a model are balanced.</span>
 0003 <span class="comment">%</span>
 0004 <span class="comment">% Checks a model to see if the reactions are elementally balanced.</span>
@@ -87,151 +97,188 @@ This function is called by:
 0007 <span class="comment">% ----------</span>
 0008 <span class="comment">% model : struct</span>
 0009 <span class="comment">%     a model structure.</span>
-0010 <span class="comment">% rxns : cell or logical or double, optional</span>
-0011 <span class="comment">%     either a cell array of reaction IDs, a logical vector with the same</span>
-0012 <span class="comment">%     number of elements as reactions in the model, or a vector of</span>
-0013 <span class="comment">%     indexes. Only these reactions will be checked (default model.rxns).</span>
-0014 <span class="comment">% printUnbalanced : logical, optional</span>
-0015 <span class="comment">%     print warnings about the reactions that were unbalanced</span>
-0016 <span class="comment">%     (default false).</span>
-0017 <span class="comment">% printUnparsable : logical, optional</span>
-0018 <span class="comment">%     print warnings about the reactions that cannot be parsed</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% Name-Value Arguments</span>
+0012 <span class="comment">% --------------------</span>
+0013 <span class="comment">% rxns : cell or logical or double</span>
+0014 <span class="comment">%     either a cell array of reaction IDs, a logical vector with the same</span>
+0015 <span class="comment">%     number of elements as reactions in the model, or a vector of</span>
+0016 <span class="comment">%     indexes. Only these reactions will be checked (default model.rxns).</span>
+0017 <span class="comment">% printUnbalanced : logical</span>
+0018 <span class="comment">%     print warnings about the reactions that were unbalanced</span>
 0019 <span class="comment">%     (default false).</span>
-0020 <span class="comment">%</span>
-0021 <span class="comment">% Returns</span>
-0022 <span class="comment">% -------</span>
-0023 <span class="comment">% balanceStructure : struct</span>
-0024 <span class="comment">%     elemental balance structure with fields:</span>
-0025 <span class="comment">%</span>
-0026 <span class="comment">%     - balanceStatus : 1 if the reaction is balanced, 0 if it is</span>
-0027 <span class="comment">%       unbalanced, -1 if it could not be balanced due to missing</span>
-0028 <span class="comment">%       information, -2 if it could not be balanced due to an error</span>
-0029 <span class="comment">%     - elements : struct with fields abbrevs (cell array with</span>
-0030 <span class="comment">%       abbreviations for all used elements) and names (cell array with</span>
-0031 <span class="comment">%       the names for all used elements)</span>
-0032 <span class="comment">%     - leftComp : MxN matrix with the sum of coefficients for each of the</span>
-0033 <span class="comment">%       elements (N) for the left side of the reactions (M)</span>
-0034 <span class="comment">%     - rightComp : the corresponding matrix for the right side</span>
-0035 <span class="comment">%</span>
-0036 <span class="comment">% Examples</span>
-0037 <span class="comment">% --------</span>
-0038 <span class="comment">%     balanceStructure = getElementalBalance(model, rxns, printUnbalanced, printUnparsable);</span>
-0039 
-0040 <span class="keyword">if</span> nargin&lt;2
-0041     rxns=[];
-0042 <span class="keyword">elseif</span> ~islogical(rxns) &amp;&amp; ~isnumeric(rxns)
-0043     rxns=convertCharArray(rxns);
-0044 <span class="keyword">end</span>
-0045 
-0046 <span class="keyword">if</span> nargin&lt;3
-0047     printUnbalanced=false;
-0048 <span class="keyword">end</span>
+0020 <span class="comment">% printUnparsable : logical</span>
+0021 <span class="comment">%     print warnings about the reactions that cannot be parsed</span>
+0022 <span class="comment">%     (default false).</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">% Returns</span>
+0025 <span class="comment">% -------</span>
+0026 <span class="comment">% balanceStructure : struct</span>
+0027 <span class="comment">%     elemental balance structure with fields:</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">%     - balanceStatus : 1 if the reaction is balanced, 0 if it is</span>
+0030 <span class="comment">%       unbalanced, -1 if it could not be balanced due to missing</span>
+0031 <span class="comment">%       information, -2 if it could not be balanced due to an error.</span>
+0032 <span class="comment">%       Elemental only; charge is reported separately below</span>
+0033 <span class="comment">%     - chargeStatus : 1 if the reaction is charge balanced, 0 if it is</span>
+0034 <span class="comment">%       not, -1 if any participating metabolite has no charge (or the</span>
+0035 <span class="comment">%       model has no metCharges field), in which case the charge balance</span>
+0036 <span class="comment">%       is unknown rather than zero</span>
+0037 <span class="comment">%     - chargeResidual : the sum of charges over the reaction, NaN where</span>
+0038 <span class="comment">%       chargeStatus is -1</span>
+0039 <span class="comment">%     - elements : struct with fields abbrevs (cell array with</span>
+0040 <span class="comment">%       abbreviations for all used elements) and names (cell array with</span>
+0041 <span class="comment">%       the names for all used elements)</span>
+0042 <span class="comment">%     - leftComp : MxN matrix with the sum of coefficients for each of the</span>
+0043 <span class="comment">%       elements (N) for the left side of the reactions (M)</span>
+0044 <span class="comment">%     - rightComp : the corresponding matrix for the right side</span>
+0045 <span class="comment">%</span>
+0046 <span class="comment">% Examples</span>
+0047 <span class="comment">% --------</span>
+0048 <span class="comment">%     balanceStructure = getElementalBalance(model, rxns, printUnbalanced, printUnparsable);</span>
 0049 
-0050 <span class="keyword">if</span> nargin&lt;4
-0051     printUnparsable=false;
-0052 <span class="keyword">end</span>
-0053 
-0054 <span class="keyword">if</span> ~isempty(rxns)
-0055     indexes=~<a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>(model,rxns,<span class="string">'rxns'</span>,true);
-0056     model=removeReactions(model,indexes,true);
-0057 <span class="keyword">end</span>
-0058 
-0059 balanceStructure.balanceStatus=nan(numel(model.rxns),1);
-0060 
-0061 <span class="comment">%Get the formulas</span>
-0062 <span class="keyword">if</span> isfield(model,<span class="string">'metFormulas'</span>)
-0063     [balanceStructure.elements, useMat, exitFlag]=<a href="parseFormulas.html" class="code" title="function [elements, useMat, exitFlag, MW]=parseFormulas(formulas, noPolymers,isInchi,ignoreRX)">parseFormulas</a>(model.metFormulas, true);
-0064 <span class="keyword">else</span>
-0065     <span class="keyword">if</span> isfield(model,<span class="string">'inchis'</span>)
-0066         [balanceStructure.elements, useMat, exitFlag]=<a href="parseFormulas.html" class="code" title="function [elements, useMat, exitFlag, MW]=parseFormulas(formulas, noPolymers,isInchi,ignoreRX)">parseFormulas</a>(model.inchis, true,true);
-0067     <span class="keyword">else</span>
-0068         EM=<span class="string">'The model must contain either the &quot;metFormulas&quot; or the &quot;inchis&quot; field in order to test for elemental balancing'</span>;
-0069         dispEM(EM);
-0070     <span class="keyword">end</span>
-0071 <span class="keyword">end</span>
-0072 
-0073 balanceStructure.leftComp=zeros(numel(model.rxns),numel(balanceStructure.elements.names));
-0074 balanceStructure.rightComp=balanceStructure.leftComp;
-0075 
-0076 <span class="comment">%Look at the right and left side of the reactions separately</span>
-0077 S{1}=model.S;
-0078 S{2}=model.S;
-0079 S{1}(S{1}&gt;0)=0; <span class="comment">%Left side</span>
-0080 S{2}(S{2}&lt;0)=0; <span class="comment">%Right side</span>
-0081 S{1}=abs(S{1}); <span class="comment">%Both should have positive values</span>
-0082 
-0083 <span class="comment">%First do it for left side and then for right</span>
-0084 <span class="keyword">for</span> i=1:2
-0085     <span class="keyword">for</span> j=1:numel(model.rxns)
-0086         <span class="comment">%Get the balance status of the involved mets</span>
-0087         I=exitFlag(S{i}(:,j)~=0);
-0088         <span class="keyword">if</span> any(I==-1)
-0089             balanceStructure.balanceStatus(j)=-2;
-0090         <span class="keyword">end</span>
-0091         <span class="keyword">if</span> any(I==0)
-0092             <span class="comment">%Don't change a more serious error to a less serious one</span>
-0093             balanceStructure.balanceStatus(j)=min(-1,balanceStructure.balanceStatus(j));
+0050 p=parseRAVENargs(varargin, {<span class="string">'rxns'</span>,[]; <span class="string">'printUnbalanced'</span>,false; <span class="string">'printUnparsable'</span>,false});
+0051 rxns=p.rxns;
+0052 <span class="keyword">if</span> ~isempty(rxns) &amp;&amp; ~islogical(rxns) &amp;&amp; ~isnumeric(rxns)
+0053     rxns=convertCharArray(rxns);
+0054 <span class="keyword">end</span>
+0055 printUnbalanced=p.printUnbalanced;
+0056 printUnparsable=p.printUnparsable;
+0057 
+0058 <span class="keyword">if</span> ~isempty(rxns)
+0059     indexes=~<a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, varargin)">getIndexes</a>(model,rxns,<span class="string">'rxns'</span>,true);
+0060     model=removeReactions(model,indexes,true);
+0061 <span class="keyword">end</span>
+0062 
+0063 balanceStructure.balanceStatus=nan(numel(model.rxns),1);
+0064 
+0065 <span class="comment">%Get the formulas</span>
+0066 <span class="keyword">if</span> isfield(model,<span class="string">'metFormulas'</span>)
+0067     [balanceStructure.elements, useMat, exitFlag]=<a href="parseFormulas.html" class="code" title="function [elements, useMat, exitFlag, MW]=parseFormulas(formulas, varargin)">parseFormulas</a>(model.metFormulas, true);
+0068 <span class="keyword">else</span>
+0069     <span class="keyword">if</span> isfield(model,<span class="string">'inchis'</span>)
+0070         [balanceStructure.elements, useMat, exitFlag]=<a href="parseFormulas.html" class="code" title="function [elements, useMat, exitFlag, MW]=parseFormulas(formulas, varargin)">parseFormulas</a>(model.inchis, true,true);
+0071     <span class="keyword">else</span>
+0072         EM=<span class="string">'The model must contain either the &quot;metFormulas&quot; or the &quot;inchis&quot; field in order to test for elemental balancing'</span>;
+0073         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0074     <span class="keyword">end</span>
+0075 <span class="keyword">end</span>
+0076 
+0077 balanceStructure.leftComp=zeros(numel(model.rxns),numel(balanceStructure.elements.names));
+0078 balanceStructure.rightComp=balanceStructure.leftComp;
+0079 
+0080 <span class="comment">%Look at the right and left side of the reactions separately</span>
+0081 S{1}=model.S;
+0082 S{2}=model.S;
+0083 S{1}(S{1}&gt;0)=0; <span class="comment">%Left side</span>
+0084 S{2}(S{2}&lt;0)=0; <span class="comment">%Right side</span>
+0085 S{1}=abs(S{1}); <span class="comment">%Both should have positive values</span>
+0086 
+0087 <span class="comment">%First do it for left side and then for right</span>
+0088 <span class="keyword">for</span> i=1:2
+0089     <span class="keyword">for</span> j=1:numel(model.rxns)
+0090         <span class="comment">%Get the balance status of the involved mets</span>
+0091         I=exitFlag(S{i}(:,j)~=0);
+0092         <span class="keyword">if</span> any(I==-1)
+0093             balanceStructure.balanceStatus(j)=-2;
 0094         <span class="keyword">end</span>
-0095         <span class="comment">%Loop through each element</span>
-0096         <span class="keyword">for</span> k=1:numel(balanceStructure.elements.names)
-0097             <span class="keyword">if</span> i==1
-0098                 balanceStructure.leftComp(j,k)=sum(S{i}(:,j).*useMat(:,k));
-0099             <span class="keyword">else</span>
-0100                 balanceStructure.rightComp(j,k)=sum(S{i}(:,j).*useMat(:,k));
-0101             <span class="keyword">end</span>
-0102         <span class="keyword">end</span>
-0103     <span class="keyword">end</span>
-0104 <span class="keyword">end</span>
-0105 
-0106 <span class="comment">%Now compare the left and right sides to find which are unbalanced. This is</span>
-0107 <span class="comment">%done even if the reaction as a whole couldn't be balanced</span>
-0108 total=abs(balanceStructure.rightComp-balanceStructure.leftComp)&gt;10^-8; <span class="comment">%To deal with roundoff error</span>
+0095         <span class="keyword">if</span> any(I==0)
+0096             <span class="comment">%Do not change a more serious error to a less serious one</span>
+0097             balanceStructure.balanceStatus(j)=min(-1,balanceStructure.balanceStatus(j));
+0098         <span class="keyword">end</span>
+0099         <span class="comment">%Loop through each element</span>
+0100         <span class="keyword">for</span> k=1:numel(balanceStructure.elements.names)
+0101             <span class="keyword">if</span> i==1
+0102                 balanceStructure.leftComp(j,k)=sum(S{i}(:,j).*useMat(:,k));
+0103             <span class="keyword">else</span>
+0104                 balanceStructure.rightComp(j,k)=sum(S{i}(:,j).*useMat(:,k));
+0105             <span class="keyword">end</span>
+0106         <span class="keyword">end</span>
+0107     <span class="keyword">end</span>
+0108 <span class="keyword">end</span>
 0109 
-0110 <span class="comment">%Get which reactions are unbalanced. Don't change an error to just</span>
-0111 <span class="comment">%unbalanced</span>
-0112 balanceStructure.balanceStatus(any(total,2))=min(balanceStructure.balanceStatus(any(total,2)),0);
+0110 <span class="comment">%Now compare the left and right sides to find which are unbalanced. This is</span>
+0111 <span class="comment">%done even if the reaction as a whole could not be balanced</span>
+0112 total=abs(balanceStructure.rightComp-balanceStructure.leftComp)&gt;10^-8; <span class="comment">%To deal with roundoff error</span>
 0113 
-0114 <span class="comment">%The remaining ones are all balanced</span>
-0115 balanceStructure.balanceStatus(isnan(balanceStructure.balanceStatus))=1;
-0116 
-0117 <span class="comment">%Print warnings</span>
-0118 toPrint=[];
-0119 <span class="keyword">if</span> printUnbalanced==true
-0120     toPrint=[toPrint;find(balanceStructure.balanceStatus==0)];
-0121 <span class="keyword">end</span>
-0122 <span class="keyword">if</span> printUnparsable==true
-0123     toPrint=[toPrint;find(balanceStructure.balanceStatus&lt;0)];
-0124 <span class="keyword">end</span>
-0125 
-0126 toPrint=sort(toPrint);
-0127 <span class="keyword">for</span> i=1:numel(toPrint)
-0128     <span class="keyword">if</span> balanceStructure.balanceStatus(toPrint(i))&lt;0
-0129         <span class="keyword">if</span> balanceStructure.balanceStatus(toPrint(i))==-1
-0130             EM=[<span class="string">'The reaction '</span> model.rxns{toPrint(i)} <span class="string">' could not be balanced due to missing information'</span>];
-0131             dispEM(EM,false);
-0132         <span class="keyword">else</span>
-0133             EM=[<span class="string">'The reaction '</span> model.rxns{toPrint(i)} <span class="string">' could not be balanced due to a parsing error'</span>];
-0134             dispEM(EM,false);
-0135         <span class="keyword">end</span>
-0136     <span class="keyword">else</span>
-0137         <span class="comment">%Find the compounds that it's not balanced for</span>
-0138         notBalanced=find(total(toPrint(i),:));
-0139         <span class="keyword">for</span> j=1:numel(notBalanced)
-0140             EM=[<span class="string">'The reaction '</span> model.rxns{toPrint(i)} <span class="string">' is not balanced with respect to '</span> balanceStructure.elements.names{notBalanced(j)}];
-0141             dispEM(EM,false);
-0142         <span class="keyword">end</span>
-0143     <span class="keyword">end</span>
-0144 <span class="keyword">end</span>
-0145 
-0146 <span class="comment">% Re-order the structure entries so they're consistent with the ordering of</span>
-0147 <span class="comment">% the input reaction indexes</span>
-0148 <span class="keyword">if</span> ~isempty(rxns)
-0149     rxns = <a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>(model,rxns,<span class="string">'rxns'</span>);
-0150     [~,i] = sort(rxns);
-0151     balanceStructure.balanceStatus(i) = balanceStructure.balanceStatus;
-0152     balanceStructure.leftComp(i,:) = balanceStructure.leftComp;
-0153     balanceStructure.rightComp(i,:) = balanceStructure.rightComp;
-0154 <span class="keyword">end</span></pre></div>
+0114 <span class="comment">%Get which reactions are unbalanced. Do not change an error to just</span>
+0115 <span class="comment">%unbalanced</span>
+0116 balanceStructure.balanceStatus(any(total,2))=min(balanceStructure.balanceStatus(any(total,2)),0);
+0117 
+0118 <span class="comment">%Reactions with no metabolites are not balanced (empty S column skips both loops above)</span>
+0119 emptyRxns = full(sum(model.S ~= 0, 1).' == 0);
+0120 balanceStructure.balanceStatus(emptyRxns) = min(-1, balanceStructure.balanceStatus(emptyRxns));
+0121 
+0122 <span class="comment">%The remaining ones are all balanced</span>
+0123 balanceStructure.balanceStatus(isnan(balanceStructure.balanceStatus))=1;
+0124 
+0125 <span class="comment">%Charge balance. This is reported separately from balanceStatus, which</span>
+0126 <span class="comment">%callers such as removeBadRxns and printModelStats read as a purely</span>
+0127 <span class="comment">%elemental verdict.</span>
+0128 balanceStructure.chargeStatus=zeros(numel(model.rxns),1);
+0129 balanceStructure.chargeResidual=nan(numel(model.rxns),1);
+0130 <span class="keyword">if</span> ~isfield(model,<span class="string">'metCharges'</span>)
+0131     balanceStructure.chargeStatus(:)=-1;
+0132 <span class="keyword">else</span>
+0133     <span class="keyword">for</span> j=1:numel(model.rxns)
+0134         <span class="comment">%Only the participating metabolites may be touched: S is sparse and</span>
+0135         <span class="comment">%0*NaN is NaN, so a single unset charge anywhere in the model would</span>
+0136         <span class="comment">%otherwise poison every reaction. Summing with 'omitnan' instead</span>
+0137         <span class="comment">%would be worse, silently reporting an unknown residual as 0.</span>
+0138         idx=find(model.S(:,j));
+0139         <span class="keyword">if</span> isempty(idx) || any(isnan(model.metCharges(idx)))
+0140             balanceStructure.chargeStatus(j)=-1;
+0141         <span class="keyword">else</span>
+0142             balanceStructure.chargeResidual(j)=sum(full(model.S(idx,j)).*model.metCharges(idx));
+0143             <span class="keyword">if</span> abs(balanceStructure.chargeResidual(j))&gt;10^-8 <span class="comment">%Roundoff error</span>
+0144                 balanceStructure.chargeStatus(j)=0;
+0145             <span class="keyword">else</span>
+0146                 balanceStructure.chargeStatus(j)=1;
+0147             <span class="keyword">end</span>
+0148         <span class="keyword">end</span>
+0149     <span class="keyword">end</span>
+0150 <span class="keyword">end</span>
+0151 
+0152 <span class="comment">%Print warnings</span>
+0153 toPrint=[];
+0154 <span class="keyword">if</span> printUnbalanced==true
+0155     toPrint=[toPrint;find(balanceStructure.balanceStatus==0)];
+0156 <span class="keyword">end</span>
+0157 <span class="keyword">if</span> printUnparsable==true
+0158     toPrint=[toPrint;find(balanceStructure.balanceStatus&lt;0)];
+0159 <span class="keyword">end</span>
+0160 
+0161 toPrint=sort(toPrint);
+0162 <span class="keyword">for</span> i=1:numel(toPrint)
+0163     <span class="keyword">if</span> balanceStructure.balanceStatus(toPrint(i))&lt;0
+0164         <span class="keyword">if</span> balanceStructure.balanceStatus(toPrint(i))==-1
+0165             EM=[<span class="string">'The reaction '</span> model.rxns{toPrint(i)} <span class="string">' could not be balanced due to missing information'</span>];
+0166             warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'%s'</span>, EM);
+0167         <span class="keyword">else</span>
+0168             EM=[<span class="string">'The reaction '</span> model.rxns{toPrint(i)} <span class="string">' could not be balanced due to a parsing error'</span>];
+0169             warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'%s'</span>, EM);
+0170         <span class="keyword">end</span>
+0171     <span class="keyword">else</span>
+0172         <span class="comment">%Find the compounds that are not balanced</span>
+0173         notBalanced=find(total(toPrint(i),:));
+0174         <span class="keyword">for</span> j=1:numel(notBalanced)
+0175             EM=[<span class="string">'The reaction '</span> model.rxns{toPrint(i)} <span class="string">' is not balanced with respect to '</span> balanceStructure.elements.names{notBalanced(j)}];
+0176             warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'%s'</span>, EM);
+0177         <span class="keyword">end</span>
+0178     <span class="keyword">end</span>
+0179 <span class="keyword">end</span>
+0180 
+0181 <span class="comment">% Re-order the structure entries so they are consistent with the ordering of</span>
+0182 <span class="comment">% the input reaction indexes</span>
+0183 <span class="keyword">if</span> ~isempty(rxns)
+0184     rxns = <a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, varargin)">getIndexes</a>(model,rxns,<span class="string">'rxns'</span>);
+0185     [~,i] = sort(rxns);
+0186     balanceStructure.balanceStatus(i) = balanceStructure.balanceStatus;
+0187     balanceStructure.chargeStatus(i) = balanceStructure.chargeStatus;
+0188     balanceStructure.chargeResidual(i) = balanceStructure.chargeResidual;
+0189     balanceStructure.leftComp(i,:) = balanceStructure.leftComp;
+0190     balanceStructure.rightComp(i,:) = balanceStructure.rightComp;
+0191 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

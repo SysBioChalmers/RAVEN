@@ -24,7 +24,7 @@
 <div class="box"><strong>parseHPArna  Parse a dump of Human Protein Atlas (HPA) RNA-Seq data.</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function arrayData=parseHPArna(fileName, version) </strong></div>
+<div class="box"><strong>function arrayData=parseHPArna(fileName, varargin) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> parseHPArna  Parse a dump of Human Protein Atlas (HPA) RNA-Seq data.
@@ -34,23 +34,26 @@
  fileName : char
      tab-separated database dump of HPA RNA data. For details regarding the
      format, see http://www.proteinatlas.org/about/download.
- version : double, optional
-     version of HPA (default 19). Only versions 18 and 19 are supported.
+
+ Name-Value Arguments
+ --------------------
+ version : double
+     accepted for backward compatibility but ignored; the format is now
+     inferred from the column headers (default 19).
 
  Returns
  -------
  arrayData : struct
      parsed HPA RNA data with fields:
 
-     - genes : cell array with the unique ensemble gene IDs
-     - geneNames : cell array with the gene names (gene abbrevs)
-     - tissues : cell array with the tissue names
-     - levels : matrix of gene expression levels (TPM), where rows
-       correspond to genes, and columns correspond to tissues
+     - genes : cell array with the unique Ensembl gene IDs
+     - geneNames : cell array with the gene symbols
+     - tissues : cell array with the unique tissue (or sample) names
+     - levels : matrix of expression values (rows = genes, cols = tissues)
 
  Examples
  --------
-     arrayData = parseHPArna(fileName, version);</pre></div>
+     arrayData = parseHPArna(fileName);</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -65,7 +68,7 @@ This function is called by:
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function arrayData=parseHPArna(fileName, version)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function arrayData=parseHPArna(fileName, varargin)</a>
 0002 <span class="comment">% parseHPArna  Parse a dump of Human Protein Atlas (HPA) RNA-Seq data.</span>
 0003 <span class="comment">%</span>
 0004 <span class="comment">% Parameters</span>
@@ -73,72 +76,78 @@ This function is called by:
 0006 <span class="comment">% fileName : char</span>
 0007 <span class="comment">%     tab-separated database dump of HPA RNA data. For details regarding the</span>
 0008 <span class="comment">%     format, see http://www.proteinatlas.org/about/download.</span>
-0009 <span class="comment">% version : double, optional</span>
-0010 <span class="comment">%     version of HPA (default 19). Only versions 18 and 19 are supported.</span>
-0011 <span class="comment">%</span>
-0012 <span class="comment">% Returns</span>
-0013 <span class="comment">% -------</span>
-0014 <span class="comment">% arrayData : struct</span>
-0015 <span class="comment">%     parsed HPA RNA data with fields:</span>
-0016 <span class="comment">%</span>
-0017 <span class="comment">%     - genes : cell array with the unique ensemble gene IDs</span>
-0018 <span class="comment">%     - geneNames : cell array with the gene names (gene abbrevs)</span>
-0019 <span class="comment">%     - tissues : cell array with the tissue names</span>
-0020 <span class="comment">%     - levels : matrix of gene expression levels (TPM), where rows</span>
-0021 <span class="comment">%       correspond to genes, and columns correspond to tissues</span>
-0022 <span class="comment">%</span>
-0023 <span class="comment">% Examples</span>
-0024 <span class="comment">% --------</span>
-0025 <span class="comment">%     arrayData = parseHPArna(fileName, version);</span>
-0026 
-0027 <span class="keyword">if</span> nargin&lt;2
-0028     <span class="comment">%Change this and add code for more versions when the current HPA</span>
-0029     <span class="comment">%version is increased and the format is changed</span>
-0030     version=19;
-0031 <span class="keyword">end</span>
-0032 
-0033 fileName=char(fileName);
-0034 <span class="keyword">if</span> ~isfile(fileName)
-0035     error(<span class="string">'HPA file %s cannot be found'</span>, string(fileName));
-0036 <span class="keyword">end</span>
-0037 
-0038 <span class="comment">%NOTE! This function assumes that the first 4 columns contain (in order):</span>
-0039 <span class="comment">% (1) gene ensembl ID, (2) gene abbrev, (3) tissue name,  (4) TPM value</span>
-0040 <span class="keyword">if</span> (version == 19)
-0041     headers={<span class="string">'Gene'</span> <span class="string">'Gene name'</span> <span class="string">'Tissue'</span> <span class="string">'TPM'</span> <span class="string">'pTPM'</span> <span class="string">'NX'</span>};
-0042 <span class="keyword">elseif</span> (version == 18)
-0043     headers={<span class="string">'Gene'</span> <span class="string">'Gene name'</span> <span class="string">'Sample'</span> <span class="string">'Value'</span> <span class="string">'Unit'</span>};
-0044 <span class="keyword">else</span>
-0045     error(<span class="string">'Only HPA versions 18 and 19 are currently supported.'</span>);
-0046 <span class="keyword">end</span>
-0047 
-0048 <span class="comment">%extract data from file</span>
-0049 formatSpec = strip(repmat(<span class="string">'%q '</span>, 1, numel(headers)));
-0050 fid=fopen(fileName, <span class="string">'r'</span>);
-0051 hpa=textscan(fid, formatSpec, <span class="string">'Delimiter'</span>, <span class="string">'\t'</span>);
-0052 fclose(fid);
-0053 
-0054 <span class="comment">%Go through and see if the headers match what was expected</span>
-0055 <span class="keyword">for</span> i=1:numel(headers)
-0056     <span class="keyword">if</span> ~strcmpi(headers(i),hpa{i}(1))
-0057         EM=[<span class="string">'Could not find the header &quot;'</span> headers{i} <span class="string">'&quot;. Make sure that the input file matches the format specified at http://www.proteinatlas.org/about/download'</span>];
-0058         dispEM(EM);
-0059     <span class="keyword">end</span>
-0060     <span class="comment">%Remove the header line here</span>
-0061     hpa{i}(1)=[];
+0009 <span class="comment">%</span>
+0010 <span class="comment">% Name-Value Arguments</span>
+0011 <span class="comment">% --------------------</span>
+0012 <span class="comment">% version : double</span>
+0013 <span class="comment">%     accepted for backward compatibility but ignored; the format is now</span>
+0014 <span class="comment">%     inferred from the column headers (default 19).</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% Returns</span>
+0017 <span class="comment">% -------</span>
+0018 <span class="comment">% arrayData : struct</span>
+0019 <span class="comment">%     parsed HPA RNA data with fields:</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">%     - genes : cell array with the unique Ensembl gene IDs</span>
+0022 <span class="comment">%     - geneNames : cell array with the gene symbols</span>
+0023 <span class="comment">%     - tissues : cell array with the unique tissue (or sample) names</span>
+0024 <span class="comment">%     - levels : matrix of expression values (rows = genes, cols = tissues)</span>
+0025 <span class="comment">%</span>
+0026 <span class="comment">% Examples</span>
+0027 <span class="comment">% --------</span>
+0028 <span class="comment">%     arrayData = parseHPArna(fileName);</span>
+0029 
+0030 p=parseRAVENargs(varargin, {<span class="string">'version'</span>,19}); <span class="comment">%#ok&lt;NASGU&gt; retained for backward compat</span>
+0031 
+0032 fileName=char(fileName);
+0033 <span class="keyword">if</span> ~isfile(fileName)
+0034     error(<span class="string">'HPA file %s cannot be found'</span>, string(fileName));
+0035 <span class="keyword">end</span>
+0036 
+0037 <span class="comment">%Parse header and all data columns (RNA files are always TSV)</span>
+0038 fid=fopen(fileName,<span class="string">'r'</span>);
+0039 headers=strsplit(fgetl(fid), sprintf(<span class="string">'\t'</span>));
+0040 fmtStr=strip(repmat(<span class="string">'%q '</span>,1,numel(headers)));
+0041 hpa=textscan(fid, fmtStr, <span class="string">'Delimiter'</span>,<span class="string">'\t'</span>);
+0042 fclose(fid);
+0043 
+0044 <span class="comment">%Helper: column index by name (returns empty if not found)</span>
+0045 ci=@(name) find(strcmp(headers,name),1);
+0046 
+0047 <span class="comment">%Validate required columns</span>
+0048 <span class="keyword">for</span> h={<span class="string">'Gene'</span>,<span class="string">'Gene name'</span>}
+0049     <span class="keyword">if</span> isempty(ci(h{1}))
+0050         error([<span class="string">'Could not find the column &quot;'</span> h{1} <span class="string">'&quot;. '</span> <span class="keyword">...</span>
+0051             <span class="string">'Make sure the input file matches the format at https://www.proteinatlas.org/about/download'</span>]);
+0052     <span class="keyword">end</span>
+0053 <span class="keyword">end</span>
+0054 
+0055 <span class="comment">%Detect tissue column: 'Tissue' (v19) or 'Sample' (v18)</span>
+0056 tissueCol=<span class="string">'Tissue'</span>;
+0057 <span class="keyword">if</span> isempty(ci(<span class="string">'Tissue'</span>)) &amp;&amp; ~isempty(ci(<span class="string">'Sample'</span>))
+0058     tissueCol=<span class="string">'Sample'</span>;
+0059 <span class="keyword">elseif</span> isempty(ci(<span class="string">'Tissue'</span>))
+0060     error([<span class="string">'Could not find a tissue column (&quot;Tissue&quot; or &quot;Sample&quot;). '</span> <span class="keyword">...</span>
+0061         <span class="string">'Make sure the input file matches the format at https://www.proteinatlas.org/about/download'</span>]);
 0062 <span class="keyword">end</span>
 0063 
-0064 <span class="comment">%Get unique gene IDs and tissue names</span>
-0065 [arrayData.genes, P, I] = unique(hpa{1});
-0066 arrayData.geneNames = hpa{2}(P);  <span class="comment">% retrieve corresponding gene names</span>
-0067 [arrayData.tissues, ~, J] = unique(hpa{3});
-0068 
-0069 <span class="comment">%Now extract the gene levels and organize into matrix</span>
-0070 arrayData.levels = NaN(max(I),max(J));
-0071 linearInd = sub2ind(size(arrayData.levels),I,J);
-0072 arrayData.levels(linearInd) = str2double(hpa{4});
-0073     
-0074</pre></div>
+0064 <span class="comment">%Detect expression value column: 'TPM' (v19) or 'Value' (v18)</span>
+0065 valueCol=<span class="string">'TPM'</span>;
+0066 <span class="keyword">if</span> isempty(ci(<span class="string">'TPM'</span>)) &amp;&amp; ~isempty(ci(<span class="string">'Value'</span>))
+0067     valueCol=<span class="string">'Value'</span>;
+0068 <span class="keyword">elseif</span> isempty(ci(<span class="string">'TPM'</span>))
+0069     error([<span class="string">'Could not find an expression value column (&quot;TPM&quot; or &quot;Value&quot;). '</span> <span class="keyword">...</span>
+0070         <span class="string">'Make sure the input file matches the format at https://www.proteinatlas.org/about/download'</span>]);
+0071 <span class="keyword">end</span>
+0072 
+0073 [arrayData.genes, P, I]=unique(hpa{ci(<span class="string">'Gene'</span>)});
+0074 arrayData.geneNames=hpa{ci(<span class="string">'Gene name'</span>)}(P);
+0075 [arrayData.tissues, ~, J]=unique(hpa{ci(tissueCol)});
+0076 
+0077 arrayData.levels=NaN(max(I),max(J));
+0078 linearInd=sub2ind(size(arrayData.levels),I,J);
+0079 arrayData.levels(linearInd)=str2double(hpa{ci(valueCol)});
+0080 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

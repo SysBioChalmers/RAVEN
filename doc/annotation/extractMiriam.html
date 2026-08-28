@@ -24,7 +24,7 @@
 <div class="box"><strong>extractMiriam  Unpack MIRIAM annotations into a human-readable table.</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function [miriams,extractedMiriamNames]=extractMiriam(modelMiriams,miriamNames) </strong></div>
+<div class="box"><strong>function [miriams,extractedMiriamNames]=extractMiriam(modelMiriams,varargin) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> extractMiriam  Unpack MIRIAM annotations into a human-readable table.
@@ -40,7 +40,10 @@
  modelMiriams : cell
      a miriam structure (e.g. model.metMiriams) for one or multiple
      metabolites.
- miriamNames : cell or char, optional
+
+ Name-Value Arguments
+ --------------------
+ miriamNames : cell or char
      cell array with miriam names to be extracted (default 'all', meaning
      that annotation for all miriam names found in modelMiriams will be
      extracted).
@@ -76,7 +79,7 @@ This function is called by:
 <li><a href="#_sub1" class="code">function miriams=extractMiriamType(modelMiriams,miriamName)</a></li></ul>
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [miriams,extractedMiriamNames]=extractMiriam(modelMiriams,miriamNames)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [miriams,extractedMiriamNames]=extractMiriam(modelMiriams,varargin)</a>
 0002 <span class="comment">% extractMiriam  Unpack MIRIAM annotations into a human-readable table.</span>
 0003 <span class="comment">%</span>
 0004 <span class="comment">% This function unpacks the information kept in metMiriams, rxnMiriams,</span>
@@ -90,81 +93,86 @@ This function is called by:
 0012 <span class="comment">% modelMiriams : cell</span>
 0013 <span class="comment">%     a miriam structure (e.g. model.metMiriams) for one or multiple</span>
 0014 <span class="comment">%     metabolites.</span>
-0015 <span class="comment">% miriamNames : cell or char, optional</span>
-0016 <span class="comment">%     cell array with miriam names to be extracted (default 'all', meaning</span>
-0017 <span class="comment">%     that annotation for all miriam names found in modelMiriams will be</span>
-0018 <span class="comment">%     extracted).</span>
-0019 <span class="comment">%</span>
-0020 <span class="comment">% Returns</span>
-0021 <span class="comment">% -------</span>
-0022 <span class="comment">% miriams : cell</span>
-0023 <span class="comment">%     a cell array with extracted miriams. If several miriam names are</span>
-0024 <span class="comment">%     requested, the corresponding information is saved in different</span>
-0025 <span class="comment">%     columns. If there are several ids available for the same entity</span>
-0026 <span class="comment">%     (metabolite, gene, reaction or compartment), they are concatenated</span>
-0027 <span class="comment">%     into one column. The total number of columns represents the number</span>
-0028 <span class="comment">%     of unique miriam names per entity.</span>
-0029 <span class="comment">% extractedMiriamNames : cell</span>
-0030 <span class="comment">%     cell array with extracted miriam names.</span>
-0031 <span class="comment">%</span>
-0032 <span class="comment">% Examples</span>
-0033 <span class="comment">% --------</span>
-0034 <span class="comment">%     [miriams, extractedMiriamNames] = extractMiriam(modelMiriams, miriamNames);</span>
-0035 
-0036 <span class="keyword">if</span> nargin&lt;2 || (ischar(miriamNames) &amp;&amp; strcmp(miriamNames,<span class="string">'all'</span>))
-0037     extractAllTypes=true;
-0038 <span class="keyword">else</span>
-0039     extractAllTypes=false;
-0040     miriamNames=convertCharArray(miriamNames);
-0041 <span class="keyword">end</span>
-0042 
-0043 <span class="comment">%The annotation for all miriam names should be extracted</span>
-0044 <span class="keyword">if</span> extractAllTypes
-0045     miriamNames={<span class="string">''</span>};
-0046     <span class="keyword">for</span> i=1:numel(modelMiriams)
-0047         <span class="keyword">if</span> ~isempty(modelMiriams{i,1})
-0048             <span class="keyword">for</span> j=1:numel(modelMiriams{i,1}.name)
-0049                 miriamNames{numel(miriamNames)+1,1}=modelMiriams{i,1}.name{j};
-0050             <span class="keyword">end</span>
-0051         <span class="keyword">end</span>
-0052     <span class="keyword">end</span>
-0053     miriamNames=sort(unique(miriamNames));
-0054 <span class="keyword">end</span>
-0055 
-0056 <span class="comment">%Aggregate the final cell array table with extracted miriam information</span>
-0057 miriams=cell(numel(modelMiriams),0);
-0058 <span class="keyword">for</span> i=1:numel(miriamNames)
-0059     miriams=[miriams, <a href="#_sub1" class="code" title="subfunction miriams=extractMiriamType(modelMiriams,miriamName)">extractMiriamType</a>(modelMiriams,miriamNames{i})];
-0060 <span class="keyword">end</span>
-0061 extractedMiriamNames=miriamNames;
-0062 
-0063 <span class="keyword">end</span>
-0064 
-0065 <a name="_sub1" href="#_subfunctions" class="code">function miriams=extractMiriamType(modelMiriams,miriamName)</a>
-0066 <span class="comment">%Create an empty cell array for ids vector</span>
-0067 tempMiriams = cell([size(modelMiriams,1) 1]);
-0068 <span class="comment">%Firstly obtain the list of relevant miriam ids. Several entries may have</span>
-0069 <span class="comment">%several miriam ids, such ids are kept in additional columns</span>
-0070 <span class="keyword">for</span> i=1:numel(modelMiriams)
-0071     <span class="keyword">if</span> (~isempty(modelMiriams{i,1})) &amp;&amp; any(strcmp(modelMiriams{i,1}.name,miriamName))
-0072         <span class="keyword">for</span> j=1:numel(modelMiriams{i,1}.name)
-0073             <span class="keyword">if</span> strcmp(modelMiriams{i,1}.name(j),miriamName)
-0074                 tempMiriams(i,j) = modelMiriams{i,1}.value(j);
-0075             <span class="keyword">end</span>
-0076         <span class="keyword">end</span>
-0077     <span class="keyword">else</span>
-0078         modelMiriams{i,1} = <span class="string">''</span>;
-0079     <span class="keyword">end</span>
-0080 <span class="keyword">end</span>
-0081 
-0082 <span class="comment">%Concatenate multiple ids per miriam name in one column with semicolon as</span>
-0083 <span class="comment">%separator</span>
-0084 miriams = cell([size(tempMiriams,1) 1]);
-0085 notEmpty=~cellfun(@isempty,tempMiriams);
-0086 <span class="keyword">for</span> i=1:size(miriams,1)
-0087     miriams{i}=strjoin(tempMiriams(i,notEmpty(i,:)),{<span class="string">'; '</span>});
-0088 <span class="keyword">end</span>
-0089 <span class="keyword">end</span></pre></div>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% Name-Value Arguments</span>
+0017 <span class="comment">% --------------------</span>
+0018 <span class="comment">% miriamNames : cell or char</span>
+0019 <span class="comment">%     cell array with miriam names to be extracted (default 'all', meaning</span>
+0020 <span class="comment">%     that annotation for all miriam names found in modelMiriams will be</span>
+0021 <span class="comment">%     extracted).</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">% Returns</span>
+0024 <span class="comment">% -------</span>
+0025 <span class="comment">% miriams : cell</span>
+0026 <span class="comment">%     a cell array with extracted miriams. If several miriam names are</span>
+0027 <span class="comment">%     requested, the corresponding information is saved in different</span>
+0028 <span class="comment">%     columns. If there are several ids available for the same entity</span>
+0029 <span class="comment">%     (metabolite, gene, reaction or compartment), they are concatenated</span>
+0030 <span class="comment">%     into one column. The total number of columns represents the number</span>
+0031 <span class="comment">%     of unique miriam names per entity.</span>
+0032 <span class="comment">% extractedMiriamNames : cell</span>
+0033 <span class="comment">%     cell array with extracted miriam names.</span>
+0034 <span class="comment">%</span>
+0035 <span class="comment">% Examples</span>
+0036 <span class="comment">% --------</span>
+0037 <span class="comment">%     [miriams, extractedMiriamNames] = extractMiriam(modelMiriams, miriamNames);</span>
+0038 
+0039 p=parseRAVENargs(varargin, {<span class="string">'miriamNames'</span>,[]});
+0040 miriamNames=p.miriamNames;
+0041 <span class="keyword">if</span> isempty(miriamNames) || (ischar(miriamNames) &amp;&amp; strcmp(miriamNames,<span class="string">'all'</span>))
+0042     extractAllTypes=true;
+0043 <span class="keyword">else</span>
+0044     extractAllTypes=false;
+0045     miriamNames=convertCharArray(miriamNames);
+0046 <span class="keyword">end</span>
+0047 
+0048 <span class="comment">%The annotation for all miriam names should be extracted</span>
+0049 <span class="keyword">if</span> extractAllTypes
+0050     miriamNames={<span class="string">''</span>};
+0051     <span class="keyword">for</span> i=1:numel(modelMiriams)
+0052         <span class="keyword">if</span> ~isempty(modelMiriams{i,1})
+0053             <span class="keyword">for</span> j=1:numel(modelMiriams{i,1}.name)
+0054                 miriamNames{numel(miriamNames)+1,1}=modelMiriams{i,1}.name{j};
+0055             <span class="keyword">end</span>
+0056         <span class="keyword">end</span>
+0057     <span class="keyword">end</span>
+0058     miriamNames=sort(unique(miriamNames));
+0059 <span class="keyword">end</span>
+0060 
+0061 <span class="comment">%Aggregate the final cell array table with extracted miriam information</span>
+0062 miriams=cell(numel(modelMiriams),0);
+0063 <span class="keyword">for</span> i=1:numel(miriamNames)
+0064     miriams=[miriams, <a href="#_sub1" class="code" title="subfunction miriams=extractMiriamType(modelMiriams,miriamName)">extractMiriamType</a>(modelMiriams,miriamNames{i})];
+0065 <span class="keyword">end</span>
+0066 extractedMiriamNames=miriamNames;
+0067 
+0068 <span class="keyword">end</span>
+0069 
+0070 <a name="_sub1" href="#_subfunctions" class="code">function miriams=extractMiriamType(modelMiriams,miriamName)</a>
+0071 <span class="comment">%Create an empty cell array for ids vector</span>
+0072 tempMiriams = cell([size(modelMiriams,1) 1]);
+0073 <span class="comment">%Firstly obtain the list of relevant miriam ids. Several entries may have</span>
+0074 <span class="comment">%several miriam ids, such ids are kept in additional columns</span>
+0075 <span class="keyword">for</span> i=1:numel(modelMiriams)
+0076     <span class="keyword">if</span> (~isempty(modelMiriams{i,1})) &amp;&amp; any(strcmp(modelMiriams{i,1}.name,miriamName))
+0077         <span class="keyword">for</span> j=1:numel(modelMiriams{i,1}.name)
+0078             <span class="keyword">if</span> strcmp(modelMiriams{i,1}.name(j),miriamName)
+0079                 tempMiriams(i,j) = modelMiriams{i,1}.value(j);
+0080             <span class="keyword">end</span>
+0081         <span class="keyword">end</span>
+0082     <span class="keyword">else</span>
+0083         modelMiriams{i,1} = <span class="string">''</span>;
+0084     <span class="keyword">end</span>
+0085 <span class="keyword">end</span>
+0086 
+0087 <span class="comment">%Concatenate multiple ids per miriam name in one column with semicolon as</span>
+0088 <span class="comment">%separator</span>
+0089 miriams = cell([size(tempMiriams,1) 1]);
+0090 notEmpty=~cellfun(@isempty,tempMiriams);
+0091 <span class="keyword">for</span> i=1:size(miriams,1)
+0092     miriams{i}=strjoin(tempMiriams(i,notEmpty(i,:)),{<span class="string">'; '</span>});
+0093 <span class="keyword">end</span>
+0094 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

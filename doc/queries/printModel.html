@@ -24,7 +24,7 @@
 <div class="box"><strong>printModel  Print reactions to the screen or to a file.</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function printModel(model,rxnList,outputString,outputFile,metaboliteList) </strong></div>
+<div class="box"><strong>function printModel(model,varargin) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> printModel  Print reactions to the screen or to a file.
@@ -36,17 +36,20 @@
  ----------
  model : struct
      a model structure.
- rxnList : cell or logical or double, optional
+
+ Name-Value Arguments
+ --------------------
+ rxnList : cell or logical or double
      either a cell array of reaction IDs, a logical vector with the same
      number of elements as reactions in the model, or a vector of indexes
      to print (default model.rxns).
- outputString : char, optional
+ outputString : char
      a string that specifies the output of each reaction (default
      '%rxnID (%rxnName)\n\t%eqn [%lower %upper]\n').
- outputFile : char, optional
+ outputFile : char
      a file to save the print-out to (default is output to the command
      window).
- metaboliteList : cell, optional
+ metaboliteList : cell
      cell array of metabolite names. Only reactions involving any of these
      metabolites will be printed.
 
@@ -75,7 +78,7 @@
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>	getIndexes  Retrieve the indexes for a list of reactions or metabolites.</li><li><a href="printFluxes.html" class="code" title="function printFluxes(model, fluxes, onlyExchange, cutOffFlux, outputFile,outputString,metaboliteList)">printFluxes</a>	printFluxes  Print reactions and fluxes to the screen or to a file.</li></ul>
+<li><a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, varargin)">getIndexes</a>	getIndexes  Retrieve the indexes for a list of reactions or metabolites.</li><li><a href="printFluxes.html" class="code" title="function printFluxes(model, fluxes, varargin)">printFluxes</a>	printFluxes  Print reactions and fluxes to the screen or to a file.</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
 </ul>
@@ -84,7 +87,7 @@ This function is called by:
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function printModel(model,rxnList,outputString,outputFile,metaboliteList)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function printModel(model,varargin)</a>
 0002 <span class="comment">% printModel  Print reactions to the screen or to a file.</span>
 0003 <span class="comment">%</span>
 0004 <span class="comment">% This is a wrapper around printFluxes, intended for use when there is no</span>
@@ -94,70 +97,74 @@ This function is called by:
 0008 <span class="comment">% ----------</span>
 0009 <span class="comment">% model : struct</span>
 0010 <span class="comment">%     a model structure.</span>
-0011 <span class="comment">% rxnList : cell or logical or double, optional</span>
-0012 <span class="comment">%     either a cell array of reaction IDs, a logical vector with the same</span>
-0013 <span class="comment">%     number of elements as reactions in the model, or a vector of indexes</span>
-0014 <span class="comment">%     to print (default model.rxns).</span>
-0015 <span class="comment">% outputString : char, optional</span>
-0016 <span class="comment">%     a string that specifies the output of each reaction (default</span>
-0017 <span class="comment">%     '%rxnID (%rxnName)\n\t%eqn [%lower %upper]\n').</span>
-0018 <span class="comment">% outputFile : char, optional</span>
-0019 <span class="comment">%     a file to save the print-out to (default is output to the command</span>
-0020 <span class="comment">%     window).</span>
-0021 <span class="comment">% metaboliteList : cell, optional</span>
-0022 <span class="comment">%     cell array of metabolite names. Only reactions involving any of these</span>
-0023 <span class="comment">%     metabolites will be printed.</span>
-0024 <span class="comment">%</span>
-0025 <span class="comment">% Notes</span>
-0026 <span class="comment">% -----</span>
-0027 <span class="comment">% The following codes are available for user-defined output strings:</span>
-0028 <span class="comment">%</span>
-0029 <span class="comment">% - %rxnID : reaction ID</span>
-0030 <span class="comment">% - %rxnName : reaction name</span>
-0031 <span class="comment">% - %lower : lower bound</span>
-0032 <span class="comment">% - %upper : upper bound</span>
-0033 <span class="comment">% - %obj : objective coefficient</span>
-0034 <span class="comment">% - %eqn : equation</span>
-0035 <span class="comment">% - %element : equation using the metabolite formulas rather than metabolite</span>
-0036 <span class="comment">%   names</span>
-0037 <span class="comment">% - %unbalanced : &quot;(*)&quot; if the reaction is unbalanced and &quot;(-)&quot; if it could</span>
-0038 <span class="comment">%   not be parsed</span>
-0039 <span class="comment">% - %lumped : equation where the elemental compositions for the left/right</span>
-0040 <span class="comment">%   hand sides are lumped</span>
-0041 <span class="comment">%</span>
-0042 <span class="comment">% Examples</span>
-0043 <span class="comment">% --------</span>
-0044 <span class="comment">%     printModel(model, rxnList, outputString, outputFile, metaboliteList);</span>
-0045 
-0046 <span class="keyword">if</span> nargin&lt;2 || isempty(rxnList)
-0047     rxnList=model.rxns;
-0048 <span class="keyword">elseif</span> ~islogical(rxnList) &amp;&amp; ~isnumeric(rxnList)
-0049     rxnList=convertCharArray(rxnList);
-0050 <span class="keyword">end</span>
-0051 <span class="keyword">if</span> nargin&lt;3 || isempty(outputString)
-0052     outputString=<span class="string">'%rxnID (%rxnName)\n\t%eqn [%lower %upper]\n'</span>;
-0053 <span class="keyword">else</span>
-0054     outputString=char(outputString);
+0011 <span class="comment">%</span>
+0012 <span class="comment">% Name-Value Arguments</span>
+0013 <span class="comment">% --------------------</span>
+0014 <span class="comment">% rxnList : cell or logical or double</span>
+0015 <span class="comment">%     either a cell array of reaction IDs, a logical vector with the same</span>
+0016 <span class="comment">%     number of elements as reactions in the model, or a vector of indexes</span>
+0017 <span class="comment">%     to print (default model.rxns).</span>
+0018 <span class="comment">% outputString : char</span>
+0019 <span class="comment">%     a string that specifies the output of each reaction (default</span>
+0020 <span class="comment">%     '%rxnID (%rxnName)\n\t%eqn [%lower %upper]\n').</span>
+0021 <span class="comment">% outputFile : char</span>
+0022 <span class="comment">%     a file to save the print-out to (default is output to the command</span>
+0023 <span class="comment">%     window).</span>
+0024 <span class="comment">% metaboliteList : cell</span>
+0025 <span class="comment">%     cell array of metabolite names. Only reactions involving any of these</span>
+0026 <span class="comment">%     metabolites will be printed.</span>
+0027 <span class="comment">%</span>
+0028 <span class="comment">% Notes</span>
+0029 <span class="comment">% -----</span>
+0030 <span class="comment">% The following codes are available for user-defined output strings:</span>
+0031 <span class="comment">%</span>
+0032 <span class="comment">% - %rxnID : reaction ID</span>
+0033 <span class="comment">% - %rxnName : reaction name</span>
+0034 <span class="comment">% - %lower : lower bound</span>
+0035 <span class="comment">% - %upper : upper bound</span>
+0036 <span class="comment">% - %obj : objective coefficient</span>
+0037 <span class="comment">% - %eqn : equation</span>
+0038 <span class="comment">% - %element : equation using the metabolite formulas rather than metabolite</span>
+0039 <span class="comment">%   names</span>
+0040 <span class="comment">% - %unbalanced : &quot;(*)&quot; if the reaction is unbalanced and &quot;(-)&quot; if it could</span>
+0041 <span class="comment">%   not be parsed</span>
+0042 <span class="comment">% - %lumped : equation where the elemental compositions for the left/right</span>
+0043 <span class="comment">%   hand sides are lumped</span>
+0044 <span class="comment">%</span>
+0045 <span class="comment">% Examples</span>
+0046 <span class="comment">% --------</span>
+0047 <span class="comment">%     printModel(model, rxnList, outputString, outputFile, metaboliteList);</span>
+0048 
+0049 p=parseRAVENargs(varargin, {<span class="string">'rxnList'</span>,[]; <span class="string">'outputString'</span>,[]; <span class="string">'outputFile'</span>,[]; <span class="string">'metaboliteList'</span>,[]});
+0050 rxnList=p.rxnList;
+0051 <span class="keyword">if</span> isempty(rxnList)
+0052     rxnList=model.rxns;
+0053 <span class="keyword">elseif</span> ~islogical(rxnList) &amp;&amp; ~isnumeric(rxnList)
+0054     rxnList=convertCharArray(rxnList);
 0055 <span class="keyword">end</span>
-0056 <span class="keyword">if</span> nargin&lt;4
-0057     outputFile=[];
-0058 <span class="keyword">else</span>
-0059     outputFile=char(outputFile);
-0060 <span class="keyword">end</span>
-0061 <span class="keyword">if</span> nargin&lt;5
-0062     metaboliteList=[];
-0063 <span class="keyword">else</span>
-0064     metaboliteList=convertCharArray(metaboliteList);
+0056 outputString=p.outputString;
+0057 <span class="keyword">if</span> isempty(outputString)
+0058     outputString=<span class="string">'%rxnID (%rxnName)\n\t%eqn [%lower %upper]\n'</span>;
+0059 <span class="keyword">else</span>
+0060     outputString=char(outputString);
+0061 <span class="keyword">end</span>
+0062 outputFile=p.outputFile;
+0063 <span class="keyword">if</span> ~isempty(outputFile)
+0064     outputFile=char(outputFile);
 0065 <span class="keyword">end</span>
-0066 
-0067 I=<a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, returnLogical)">getIndexes</a>(model,rxnList,<span class="string">'rxns'</span>,true)*1.00; <span class="comment">%To convert it to &quot;fluxes&quot;</span>
-0068 
-0069 <span class="keyword">if</span> ~isempty(metaboliteList)
-0070     <a href="printFluxes.html" class="code" title="function printFluxes(model, fluxes, onlyExchange, cutOffFlux, outputFile,outputString,metaboliteList)">printFluxes</a>(model, I, false, 0.1, outputFile,outputString,metaboliteList);
-0071 <span class="keyword">else</span>
-0072     <a href="printFluxes.html" class="code" title="function printFluxes(model, fluxes, onlyExchange, cutOffFlux, outputFile,outputString,metaboliteList)">printFluxes</a>(model, I, false, 0.1, outputFile,outputString);
-0073 <span class="keyword">end</span>
-0074 <span class="keyword">end</span></pre></div>
+0066 metaboliteList=p.metaboliteList;
+0067 <span class="keyword">if</span> ~isempty(metaboliteList)
+0068     metaboliteList=convertCharArray(metaboliteList);
+0069 <span class="keyword">end</span>
+0070 
+0071 I=<a href="getIndexes.html" class="code" title="function indexes=getIndexes(model, objects, type, varargin)">getIndexes</a>(model,rxnList,<span class="string">'rxns'</span>,true)*1.00; <span class="comment">%To convert it to &quot;fluxes&quot;</span>
+0072 
+0073 <span class="keyword">if</span> ~isempty(metaboliteList)
+0074     <a href="printFluxes.html" class="code" title="function printFluxes(model, fluxes, varargin)">printFluxes</a>(model, I, false, 0.1, outputFile,outputString,metaboliteList);
+0075 <span class="keyword">else</span>
+0076     <a href="printFluxes.html" class="code" title="function printFluxes(model, fluxes, varargin)">printFluxes</a>(model, I, false, 0.1, outputFile,outputString);
+0077 <span class="keyword">end</span>
+0078 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

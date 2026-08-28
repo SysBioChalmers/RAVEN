@@ -1,0 +1,235 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of tSampling</title>
+  <meta name="keywords" content="tSampling">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../index.html">Home</a> &gt;  <a href="#">testing</a> &gt; <a href="index.html">function_tests</a> &gt; tSampling.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for testing\function_tests&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+
+<h1>tSampling
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>This is a script file. </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre class="comment"></pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="RavenTestCase.html" class="code" title="">RavenTestCase</a>	</li><li><a href="tSampling.html" class="code" title="">tSampling</a>	</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="tSampling.html" class="code" title="">tSampling</a>	</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function sampleMaxVolEllipseUnitBox(testCase)</a></li><li><a href="#_sub2" class="code">function sampleMaxVolEllipseScaledBox(testCase)</a></li><li><a href="#_sub3" class="code">function sampleMaxVolEllipseShearedBox(testCase)</a></li><li><a href="#_sub4" class="code">function sampleMaxVolEllipseTriangle(testCase)</a></li><li><a href="#_sub5" class="code">function sampleMaxVolEllipseRejectsExterior(testCase)</a></li><li><a href="#_sub6" class="code">function sampleCHRRReturnsInfo(testCase)</a></li><li><a href="#_sub7" class="code">function sampleACHRReturnsSteadyState(testCase)</a></li><li><a href="#_sub8" class="code">function randomSamplingDefaultsToACHR(testCase)</a></li><li><a href="#_sub9" class="code">function randomSamplingCHRRDispatch(testCase)</a></li><li><a href="#_sub10" class="code">function randomSamplingCHRRExposesInfo(testCase)</a></li><li><a href="#_sub11" class="code">function randomSamplingCHRRDeterministic(testCase)</a></li><li><a href="#_sub12" class="code">function randomSamplingCHRRVaries(testCase)</a></li><li><a href="#_sub13" class="code">function randomSamplingUnknownMethodErrors(testCase)</a></li><li><a href="#_sub14" class="code">function randomSamplingLoopDetectionUsesModelBounds(testCase)</a></li><li><a href="#_sub15" class="code">function m = loopModel()</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre>0001 classdef <a href="tSampling.html" class="code" title="">tSampling</a> &lt; <a href="RavenTestCase.html" class="code" title="">RavenTestCase</a>
+0002 <span class="comment">% tSampling  Tests for the MCMC flux samplers (CHRR, ACHR, MVE) dispatched</span>
+0003 <span class="comment">% through randomSampling.</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">%   The maximum-volume ellipsoid solver is the numerical crux of CHRR, so it is</span>
+0006 <span class="comment">%   validated directly against analytic cases (box -&gt; unit ball, scaled/sheared</span>
+0007 <span class="comment">%   box, triangle -&gt; Steiner inellipse) before the end-to-end samplers are</span>
+0008 <span class="comment">%   exercised on the textbook model. All methods are LP-only, so the default</span>
+0009 <span class="comment">%   GLPK solver suffices (no MILP assumption needed).</span>
+0010 
+0011     methods (Test)
+0012 
+0013         <span class="comment">% ---- sampleMaxVolEllipse: analytic validation -------------------</span>
+0014 
+0015         <a name="_sub0" href="#_subfunctions" class="code">function sampleMaxVolEllipseUnitBox(testCase)</a>
+0016             <span class="comment">% Box {-1 &lt;= x_i &lt;= 1} -&gt; unit ball: centre 0, E*E' = I.</span>
+0017             A = [eye(3); -eye(3)];
+0018             b = ones(6, 1);
+0019             [x, E, converged] = sampleMaxVolEllipse(A, b, zeros(3, 1));
+0020             testCase.verifyTrue(converged);
+0021             testCase.verifyLessThan(norm(x), 1e-4);
+0022             testCase.verifyLessThan(norm(E*E' - eye(3)), 1e-3);
+0023         <span class="keyword">end</span>
+0024 
+0025         <a name="_sub1" href="#_subfunctions" class="code">function sampleMaxVolEllipseScaledBox(testCase)</a>
+0026             <span class="comment">% Box {-r_i &lt;= x_i &lt;= r_i} -&gt; E*E' = diag(r_i^2).</span>
+0027             r = [2; 0.5; 3];
+0028             A = [eye(3); -eye(3)];
+0029             b = [r; r];
+0030             [x, E, converged] = sampleMaxVolEllipse(A, b, zeros(3, 1));
+0031             testCase.verifyTrue(converged);
+0032             testCase.verifyLessThan(norm(x), 1e-4);
+0033             testCase.verifyLessThan(norm(E*E' - diag(r.^2)), 1e-3);
+0034         <span class="keyword">end</span>
+0035 
+0036         <a name="_sub2" href="#_subfunctions" class="code">function sampleMaxVolEllipseShearedBox(testCase)</a>
+0037             <span class="comment">% {-1 &lt;= M*x &lt;= 1} -&gt; E*E' = inv(M)*inv(M)'.</span>
+0038             M = [1 0.5; 0 1];
+0039             A = [M; -M];
+0040             b = ones(4, 1);
+0041             [x, E, converged] = sampleMaxVolEllipse(A, b, zeros(2, 1));
+0042             Minv = inv(M);
+0043             testCase.verifyTrue(converged);
+0044             testCase.verifyLessThan(norm(x), 1e-4);
+0045             testCase.verifyLessThan(norm(E*E' - Minv*Minv'), 1e-3);
+0046         <span class="keyword">end</span>
+0047 
+0048         <a name="_sub3" href="#_subfunctions" class="code">function sampleMaxVolEllipseTriangle(testCase)</a>
+0049             <span class="comment">% Standard simplex {x&gt;=0, x1+x2&lt;=1}: the max-area inscribed ellipse is</span>
+0050             <span class="comment">% the Steiner inellipse, centred at the centroid (1/3,1/3) with</span>
+0051             <span class="comment">% E2 = [[1/9,-1/18],[-1/18,1/9]] (det 1/108) -- NOT the incircle. This</span>
+0052             <span class="comment">% confirms the solver maximises volume, not just the largest ball.</span>
+0053             A = [-1 0; 0 -1; 1 1];
+0054             b = [0; 0; 1];
+0055             [x, E, converged] = sampleMaxVolEllipse(A, b, [0.25; 0.25]);
+0056             E2exp = [1/9 -1/18; -1/18 1/9];
+0057             testCase.verifyTrue(converged);
+0058             testCase.verifyLessThan(norm(x - [1/3; 1/3]), 1e-3);
+0059             testCase.verifyLessThan(norm(E*E' - E2exp), 1e-3);
+0060             testCase.verifyLessThan(abs(det(E*E') - 1/108), 1e-4);
+0061         <span class="keyword">end</span>
+0062 
+0063         <a name="_sub4" href="#_subfunctions" class="code">function sampleMaxVolEllipseRejectsExterior(testCase)</a>
+0064             A = [eye(2); -eye(2)];
+0065             b = ones(4, 1);
+0066             testCase.verifyError(@() sampleMaxVolEllipse(A, b, [5; 0]), <span class="keyword">...</span>
+0067                 <span class="string">'RAVEN:sampling'</span>);
+0068         <span class="keyword">end</span>
+0069 
+0070         <span class="comment">% ---- sampler implementations return diagnostics -----------------</span>
+0071 
+0072         <a name="_sub5" href="#_subfunctions" class="code">function sampleCHRRReturnsInfo(testCase)</a>
+0073             evalc(<span class="string">'[sols, sInfo] = sampleCHRR(testCase.model, 10, 5, 20, 1);'</span>);
+0074             nRxns = numel(testCase.model.rxns);
+0075             testCase.verifySize(sols, [nRxns, 10]);
+0076             testCase.verifyTrue(isfield(sInfo, <span class="string">'nDimensions'</span>));
+0077             testCase.verifyTrue(isfield(sInfo, <span class="string">'mveConverged'</span>));
+0078             <span class="comment">% Samples must satisfy steady state and bounds.</span>
+0079             resid = testCase.model.S * sols;
+0080             testCase.verifyLessThan(max(abs(resid(:))), 1e-6);
+0081             testCase.verifyGreaterThanOrEqual(min(sols, [], 2), testCase.model.lb - 1e-6);
+0082             testCase.verifyLessThanOrEqual(max(sols, [], 2), testCase.model.ub + 1e-6);
+0083         <span class="keyword">end</span>
+0084 
+0085         <a name="_sub6" href="#_subfunctions" class="code">function sampleACHRReturnsSteadyState(testCase)</a>
+0086             evalc(<span class="string">'sols = sampleACHR(testCase.model, 10, 5, [], 1);'</span>);
+0087             nRxns = numel(testCase.model.rxns);
+0088             testCase.verifySize(sols, [nRxns, 10]);
+0089             resid = testCase.model.S * sols;
+0090             testCase.verifyLessThan(max(abs(resid(:))), 1e-6);
+0091         <span class="keyword">end</span>
+0092 
+0093         <span class="comment">% ---- randomSampling dispatch ------------------------------------</span>
+0094 
+0095         <a name="_sub7" href="#_subfunctions" class="code">function randomSamplingDefaultsToACHR(testCase)</a>
+0096             <span class="comment">% The default method must be ACHR: with a fixed seed the default call</span>
+0097             <span class="comment">% must equal an explicit 'achr' call.</span>
+0098             evalc(<span class="string">'sDefault = randomSampling(testCase.model, 8, ''thinning'', 5, ''seed'', 3);'</span>);
+0099             evalc(<span class="string">'sAchr = randomSampling(testCase.model, 8, ''method'', ''achr'', ''thinning'', 5, ''seed'', 3);'</span>);
+0100             testCase.verifyEqual(sDefault, sAchr);
+0101         <span class="keyword">end</span>
+0102 
+0103         <a name="_sub8" href="#_subfunctions" class="code">function randomSamplingCHRRDispatch(testCase)</a>
+0104             evalc([<span class="string">'sols = randomSampling(testCase.model, 10, ''method'', ''chrr'', '</span> <span class="keyword">...</span>
+0105                 <span class="string">'''thinning'', 5, ''nBurnin'', 20, ''seed'', 1);'</span>]);
+0106             nRxns = numel(testCase.model.rxns);
+0107             testCase.verifySize(sols, [nRxns, 10]);
+0108             resid = testCase.model.S * sols;
+0109             testCase.verifyLessThan(max(abs(resid(:))), 1e-6);
+0110         <span class="keyword">end</span>
+0111 
+0112         <a name="_sub9" href="#_subfunctions" class="code">function randomSamplingCHRRExposesInfo(testCase)</a>
+0113             <span class="comment">% The CHRR convergence diagnostics must be reachable through the</span>
+0114             <span class="comment">% documented randomSampling entry point, not only sampleCHRR.</span>
+0115             evalc([<span class="string">'[sols, gr, sInfo] = randomSampling(testCase.model, 10, '</span> <span class="keyword">...</span>
+0116                 <span class="string">'''method'', ''chrr'', ''thinning'', 5, ''nBurnin'', 20, ''seed'', 1);'</span>]);
+0117             testCase.verifyTrue(isfield(sInfo, <span class="string">'mveConverged'</span>));
+0118         <span class="keyword">end</span>
+0119 
+0120         <a name="_sub10" href="#_subfunctions" class="code">function randomSamplingCHRRDeterministic(testCase)</a>
+0121             evalc([<span class="string">'s1 = randomSampling(testCase.model, 8, ''method'', ''chrr'', '</span> <span class="keyword">...</span>
+0122                 <span class="string">'''thinning'', 5, ''nBurnin'', 20, ''seed'', 42);'</span>]);
+0123             evalc([<span class="string">'s2 = randomSampling(testCase.model, 8, ''method'', ''chrr'', '</span> <span class="keyword">...</span>
+0124                 <span class="string">'''thinning'', 5, ''nBurnin'', 20, ''seed'', 42);'</span>]);
+0125             testCase.verifyEqual(s1, s2);
+0126         <span class="keyword">end</span>
+0127 
+0128         <a name="_sub11" href="#_subfunctions" class="code">function randomSamplingCHRRVaries(testCase)</a>
+0129             <span class="comment">% A correct CHRR run must mix: at least one reaction varies, and two</span>
+0130             <span class="comment">% seeds give distinct sample matrices. Guards against a degenerate</span>
+0131             <span class="comment">% sampler that collapses to a single point (which would still satisfy</span>
+0132             <span class="comment">% S*v=0 and the bounds, and remain deterministic).</span>
+0133             evalc([<span class="string">'s1 = randomSampling(testCase.model, 50, ''method'', ''chrr'', '</span> <span class="keyword">...</span>
+0134                 <span class="string">'''thinning'', 5, ''nBurnin'', 20, ''seed'', 1);'</span>]);
+0135             evalc([<span class="string">'s2 = randomSampling(testCase.model, 50, ''method'', ''chrr'', '</span> <span class="keyword">...</span>
+0136                 <span class="string">'''thinning'', 5, ''nBurnin'', 20, ''seed'', 2);'</span>]);
+0137             testCase.verifyGreaterThan(max(std(s1, 0, 2)), 1e-3);
+0138             testCase.verifyNotEqual(s1, s2);
+0139         <span class="keyword">end</span>
+0140 
+0141         <a name="_sub12" href="#_subfunctions" class="code">function randomSamplingUnknownMethodErrors(testCase)</a>
+0142             testCase.verifyError( <span class="keyword">...</span>
+0143                 @() randomSampling(testCase.model, 5, <span class="string">'method'</span>, <span class="string">'gibbs'</span>), <span class="keyword">...</span>
+0144                 <span class="string">'RAVEN:badInput'</span>);
+0145         <span class="keyword">end</span>
+0146 
+0147         <a name="_sub13" href="#_subfunctions" class="code">function randomSamplingLoopDetectionUsesModelBounds(testCase)</a>
+0148             <span class="comment">% Loop detection must take its threshold from the model. R2/R3</span>
+0149             <span class="comment">% form an a -&gt; b -&gt; a loop that runs up to this model's 100 cap,</span>
+0150             <span class="comment">% while the linear path R1 -&gt; R4 is held to 10. A threshold that</span>
+0151             <span class="comment">% assumes ±1000 bounds matches neither, leaving the loop</span>
+0152             <span class="comment">% reactions to be sampled as if they were loop-free.</span>
+0153             m = tSampling.loopModel();
+0154             evalc([<span class="string">'[~, goodRxns] = randomSampling(m, 2, ''method'', '</span> <span class="keyword">...</span>
+0155                 <span class="string">'''randomObjective'', ''seed'', 1);'</span>]);
+0156             testCase.verifyEqual(sort(goodRxns(:))', [1 4]);
+0157         <span class="keyword">end</span>
+0158 
+0159     <span class="keyword">end</span>
+0160 
+0161     methods (Static, Access = private)
+0162 
+0163         <a name="_sub14" href="#_subfunctions" class="code">function m = loopModel()</a>
+0164             m = struct();
+0165             m.id       = <span class="string">'loop'</span>;
+0166             m.rxns     = {<span class="string">'R1'</span>;<span class="string">'R2'</span>;<span class="string">'R3'</span>;<span class="string">'R4'</span>};
+0167             m.rxnNames = m.rxns;
+0168             m.mets     = {<span class="string">'a'</span>;<span class="string">'b'</span>};
+0169             m.metNames = {<span class="string">'a'</span>;<span class="string">'b'</span>};
+0170             m.metComps = [1;1];
+0171             m.comps    = {<span class="string">'c'</span>};
+0172             m.compNames= {<span class="string">'cytosol'</span>};
+0173             <span class="comment">%             R1  R2  R3  R4</span>
+0174             m.S = sparse([ 1  -1   1   0;    <span class="comment">% a</span>
+0175                            0   1  -1  -1]);  <span class="comment">% b</span>
+0176             m.lb  = [0;0;0;0];
+0177             m.ub  = [10;100;100;100];
+0178             m.rev = [0;0;0;0];
+0179             m.c   = [0;0;0;1];
+0180             m.b   = zeros(2,1);
+0181             m.genes = {}; m.grRules = {<span class="string">''</span>;<span class="string">''</span>;<span class="string">''</span>;<span class="string">''</span>}; m.rxnGeneMat = sparse(4,0);
+0182             m.metFormulas = {<span class="string">'C'</span>;<span class="string">'C'</span>};
+0183         <span class="keyword">end</span>
+0184 
+0185     <span class="keyword">end</span>
+0186 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>
