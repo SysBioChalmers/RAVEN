@@ -29,6 +29,38 @@ classdef tINIT < RavenTestCase
             testCase.verifyClass(m2, 'struct');
         end
 
+        function removeLowScoreGenesKeepsFieldsAligned(testCase)
+            % getGenesFromGrRules returns a sorted gene list, but the
+            % annotation fields are trimmed with a mask in the original gene
+            % order. If newModel.genes took the sorted order, every annotation
+            % field would shift relative to it. Use deliberately unsorted genes
+            % so sorted != original, and drop one isozyme gene.
+            m = struct();
+            m.id = 'test';
+            m.rxns = {'R1'}; m.rxnNames = {'R1'};
+            m.mets = {'A';'B'}; m.metNames = {'A';'B'}; m.metComps = [1;1];
+            m.comps = {'c'}; m.compNames = {'c'};
+            m.S = sparse([-1;1]); m.lb = 0; m.ub = 1000; m.rev = 0; m.c = 0;
+            m.b = [0;0];
+            m.genes = {'G3';'G1';'G2'};                      % unsorted
+            m.geneShortNames = {'short3';'short1';'short2'}; % aligned to genes
+            m.grRules = {'G3 or G1 or G2'};
+            m.rxnGeneMat = sparse([1 1 1]);
+            scores = [1; -1; 1];   % G1 (negative) is dropped from the isozyme
+            evalc('[mm, removed] = removeLowScoreGenes(m, scores);');
+
+            testCase.verifyEqual(removed, {'G1'});
+            % Each surviving gene keeps its own short name.
+            for k = 1:numel(mm.genes)
+                want = strrep(mm.genes{k}, 'G', 'short');
+                testCase.verifyEqual(mm.geneShortNames{k}, want);
+            end
+            % rxnGeneMat columns must correspond to mm.genes, and R1 still uses
+            % both surviving genes.
+            testCase.verifyEqual(numel(mm.genes), size(mm.rxnGeneMat, 2));
+            testCase.verifyEqual(full(mm.rxnGeneMat), ones(1, numel(mm.genes)));
+        end
+
         function reverseRxnsRuns(testCase)
             % R1 = '=> a[s]'; R3 = 'a[c] <=> b[c] + c[c]'
             testModel = getTstModel();

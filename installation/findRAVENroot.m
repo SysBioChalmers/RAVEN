@@ -1,7 +1,7 @@
 function [ravenPath, prevDir] = findRAVENroot()
 % findRAVENroot
 %   Finds the root of the RAVEN directory, first by  by searching for the path to
-%   RAVEN2.png. Can also record the current directory, in case a function will
+%   RAVEN.png. Can also record the current directory, in case a function will
 %   use the ravenPath to navigate to a precise folder, and it should return to
 %   the previous directory afterwards. See e.g. optimizeProb calling glpk.
 
@@ -29,14 +29,14 @@ if isempty(ravenPath)
     ravenPath = ST(strcmp({ST.name},'findRAVENroot')).file;
     rootFound = 0;
     while rootFound == 0
-        isRoot = isfile(fullfile(ravenPath,'RAVEN2.png'));
+        isRoot = isfile(fullfile(ravenPath,'RAVEN.png'));
         if isRoot
             rootFound = 1;
         else
             ravenPathOld = ravenPath;
             ravenPath = fileparts(ravenPath);
             if strcmp(ravenPathOld,ravenPath)
-                error('Cannot find the RAVEN root directory. Make sure you have not removed the RAVEN2.png file from your RAVEN installation.')
+                error('Cannot find the RAVEN root directory. Make sure you have not removed the RAVEN.png file from your RAVEN installation.')
             end
         end
     end
