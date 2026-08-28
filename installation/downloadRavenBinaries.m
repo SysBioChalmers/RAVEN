@@ -29,7 +29,6 @@ elseif ischar(tools)
 end
 
 ravenDir = findRAVENroot();
-base     = 'https://github.com/SysBioChalmers/raven-data/releases/download';
 
 % raven-data platform key for the per-platform binary ZIPs.
 if ispc
@@ -80,16 +79,7 @@ for i = 1:numel(tools)
         continue;   % already provisioned
     end
 
-    url = [base '/' tag '/' asset];
-    zipPath = fullfile(ravenDir,'software',asset);
-    fprintf('Downloading %s from raven-data ...\n',tool);
-    try
-        websave(zipPath,url);
-    catch
-        error(['Failed to download %s from %s\n' ...
-               'Check your internet connection, or fetch the offline ' ...
-               '"*-binaries" RAVEN release.'],tool,url);
-    end
+    zipPath = fetchRavenDataAsset(fullfile(ravenDir,'software'),tag,asset);
     unzip(zipPath,destDir);
     delete(zipPath);
 

@@ -199,8 +199,12 @@ libraryFile='';
 %gzip-compressed flatfile, queried in one hmmsearch); if it is not already
 %present it is downloaded from the corresponding raven-data release
 %(https://github.com/SysBioChalmers/raven-data).
-if ~isempty(dataDir)
-    hmmOptions={'kegg118_eukaryotes','kegg118_prokaryotes'};
+%Only needed for the protein-homology path (fastaFile supplied): the
+%annotation-only path never touches libraryFile, so skip the (100+ MB)
+%download/extraction entirely when there is no FASTA file to search.
+if ~isempty(dataDir) && ~isempty(fastaFile)
+    kver=keggDataVersion();
+    hmmOptions={[kver '_eukaryotes'],[kver '_prokaryotes']};
     if ~endsWith(dataDir,hmmOptions)
         error(['Pre-trained HMMs set is not recognised. dataDir must match one of: ' strjoin(hmmOptions,' or ')])
     end
@@ -218,15 +222,7 @@ if ~isempty(dataDir)
         gunzip([libraryFile '.gz']);
         fprintf('COMPLETE\n');
     else
-        fprintf('Downloading the HMM library file... ');
-        try
-            websave([libraryFile '.gz'],['https://github.com/SysBioChalmers/raven-data/releases/download/kegg118/' hmmName '.hmm.gz']);
-        catch ME
-            if strcmp(ME.identifier,'MATLAB:webservices:HTTP404StatusCodeError')
-                error('Failed to download the HMM library file, the server returned a 404 error, try again later. If the problem persists please report it on the RAVEN GitHub Issues page: https://github.com/SysBioChalmers/RAVEN/issues')
-            end
-        end
-        fprintf('COMPLETE\n');
+        fetchRavenDataAsset(fileparts(libraryFile),kver,[hmmName '.hmm.gz']);
         fprintf('Extracting the HMM library file... ');
         gunzip([libraryFile '.gz']);
         fprintf('COMPLETE\n');

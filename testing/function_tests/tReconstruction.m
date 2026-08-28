@@ -60,8 +60,23 @@ classdef tReconstruction < RavenTestCase
         function getModelFromKEGGNeedsData(testCase)
             matFile = fullfile(testCase.ravenRoot, 'reconstruction', 'kegg', 'keggModel.mat');
             testCase.assumeFalse(exist(matFile, 'file') == 2, ...
-                'keggModel.mat is present; skipping error-path test.');
-            testCase.verifyError(@() getModelFromKEGG(), 'getModelFromKEGG:noModel');
+                'keggModel.mat is present; skipping the build-from-artefacts path.');
+            testCase.assumeFail('Downloads and assembles the full KEGG artefact set from raven-data; not run automatically.');
+        end
+
+        function buildGlobalGPRJoinsGenesThroughSharedKO(testCase)
+            % Offline unit test of the join at the core of buildGlobalKEGGModel:
+            % two reactions sharing a KO, a KO used by two organisms' genes, and
+            % a reaction with no KO at all (should end up with no genes).
+            rxns = {'R1'; 'R2'; 'R3'};
+            koReaction = table({'K1'; 'K1'; 'K2'}, {'R1'; 'R2'; 'R2'}, ...
+                'VariableNames', {'ko', 'reaction'});
+            organismGeneKO = table({'a'; 'a'; 'b'}, {'g1'; 'g2'; 'g1'}, {'K1'; 'K2'; 'K1'}, ...
+                'VariableNames', {'organism', 'gene', 'ko'});
+            [genes, rxnGeneMat] = buildGlobalGPR(rxns, koReaction, organismGeneKO);
+            testCase.verifyEqual(genes, {'a:g1'; 'a:g2'; 'b:g1'});
+            expected = [1 0 1; 1 1 1; 0 0 0];
+            testCase.verifyEqual(full(rxnGeneMat), expected);
         end
 
         function getPhylDistNeedsData(testCase)
