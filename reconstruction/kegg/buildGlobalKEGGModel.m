@@ -1,13 +1,14 @@
 function [model,KOModel,isSpontaneous,isUndefinedStoich,isIncomplete,isGeneral]=buildGlobalKEGGModel(ravenPath)
 % buildGlobalKEGGModel  Download and assemble the global KEGG model.
 %
-% Fetches the raven-data kegg118_core.tar.gz bundle (the gene-free
-% reference model plus the ko_reaction / organism_gene_ko / rxn_flags
-% relational tables --- see raven-toolbox's
+% Fetches the raven-data <kegg version>_core.tar.gz bundle (the
+% gene-free reference model plus the ko_reaction / organism_gene_ko /
+% rxn_flags relational tables --- see raven-toolbox's
 % docs/maintenance/kegg_data_format.md), then joins every organism's
 % genes onto the reference reactions through their shared KO ids. This
 % is the data getModelFromKEGG used to load from a pre-built
-% keggModel.mat; see RAVEN issue #704.
+% keggModel.mat; see RAVEN issue #704. The KEGG version is read from
+% keggDataVersion, not hardcoded here.
 %
 % Parameters
 % ----------
@@ -27,10 +28,11 @@ function [model,KOModel,isSpontaneous,isUndefinedStoich,isIncomplete,isGeneral]=
 % isSpontaneous, isUndefinedStoich, isIncomplete, isGeneral : cell arrays
 %     reaction ids carrying the corresponding rxn_flags quality flag.
 
+kver=keggDataVersion();
 keggDir=fullfile(ravenPath,'reconstruction','kegg');
-archive=fetchKEGGArtefact(ravenPath,'kegg118_core.tar.gz');
+archive=fetchRavenDataAsset(keggDir,kver,[kver '_core.tar.gz']);
 
-coreDir=fullfile(keggDir,'kegg118_core');
+coreDir=fullfile(keggDir,[kver '_core']);
 if ~isfolder(coreDir)
     fprintf('Extracting the KEGG core artefacts... ');
     untar(archive,coreDir);
@@ -38,7 +40,7 @@ if ~isfolder(coreDir)
 end
 
 fprintf('Reading the KEGG reference model... ');
-refFileGz=fullfile(coreDir,'kegg118_reference_model.yml.gz');
+refFileGz=fullfile(coreDir,[kver '_reference_model.yml.gz']);
 refFile=refFileGz(1:end-3);
 if ~isfile(refFile)
     gunzip(refFileGz);
@@ -47,9 +49,9 @@ model=readYAMLmodel(refFile);
 fprintf('COMPLETE\n');
 
 fprintf('Reading the KEGG relational tables... ');
-koReaction=readKEGGTable(fullfile(coreDir,'kegg118_ko_reaction.tsv.gz'));
-rxnFlags=readKEGGTable(fullfile(coreDir,'kegg118_rxn_flags.tsv.gz'));
-organismGeneKO=readKEGGTable(fullfile(coreDir,'kegg118_organism_gene_ko.tsv.gz'));
+koReaction=readKEGGTable(fullfile(coreDir,[kver '_ko_reaction.tsv.gz']));
+rxnFlags=readKEGGTable(fullfile(coreDir,[kver '_rxn_flags.tsv.gz']));
+organismGeneKO=readKEGGTable(fullfile(coreDir,[kver '_organism_gene_ko.tsv.gz']));
 fprintf('COMPLETE\n');
 
 isSpontaneous=flaggedReactions(rxnFlags,'spontaneous');
