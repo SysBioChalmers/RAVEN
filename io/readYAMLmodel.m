@@ -248,6 +248,12 @@ for i=1:numel(line_key)
             end
             pos=0;
             continue
+        case '- genes: []'
+            % Flow-style empty list: a gene-less model. No entries follow,
+            % so there is nothing to switch into --- the next recognised
+            % header is matched fresh on the next iteration regardless of
+            % what `section` is left as.
+            continue
         case '- compartments: !!omap'
             section = 5;
             if verbose

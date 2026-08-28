@@ -133,11 +133,12 @@ for i = 1:length(model.rxns)
 end
 
 %Genes:
-% Omit the whole section for an empty gene list, same as an absent
-% genes field: writing a bare `- genes:` with nothing following parses
-% as `genes: null`, not an empty list, and crashes readers that assume
-% a present key means a list (raven_toolbox.io.read_yaml_model among
-% them).
+% genes is one of cobra's required top-level model keys (model_to_dict
+% always emits it, empty or not) — write the flow-style empty list for
+% a gene-less model, matching raven_toolbox.io.write_yaml_model exactly,
+% rather than a bare `- genes:` with nothing following, which parses as
+% `genes: null` and crashes readers that assume a present key means a
+% list.
 if isfield(model,'genes') && ~isempty(model.genes)
     fprintf(fid,'- genes:\n');
     for i = 1:length(model.genes)
@@ -147,6 +148,8 @@ if isfield(model,'genes') && ~isempty(model.genes)
         writeAnnotationSimple(model, fid, 'geneMiriams', 'newGeneMiriams', 'newGeneMiriamNames', i)
         writeField(model, fid, 'proteins',       'txt', i, '    - protein', 4)
     end
+else
+    fprintf(fid,'- genes: []\n');
 end
 
 %Compartments:
