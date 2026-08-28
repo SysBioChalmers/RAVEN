@@ -668,6 +668,14 @@ end
 [~, model.metComps] = ismember(model.metComps, model.comps);
 [~, model.geneComps] = ismember(model.geneComps, model.comps);
 [~, model.rxnComps] = ismember(model.rxnComps, model.comps);
+% A metabolite with no explicit compartment is still ismember'd above (it
+% parses as ''), so it resolves to 0 -- not the "assume first compartment"
+% default the emptyOrFill call further down intends -- unless it happens
+% to be the trailing metabolite in the file, the only case emptyOrFill
+% actually reaches (it only extends a too-short array, and ismember has
+% already made this one full-length). Catch every 0 here so the default
+% applies regardless of position, not just at the end of the list.
+model.metComps(model.metComps==0) = 1;
 
 % Fill S-matrix
 rxnIdx = cellfun('isempty', equations(:,1));
@@ -725,10 +733,10 @@ end
 for i={'metNames','inchis','metFormulas','metMiriams','metFrom','metSmiles','metNotes'} % Empty strings
    model = emptyOrFill(model,i{1},{''},'mets');
 end
-for i={'metCharges','unconstrained'} % Zeros
+for i={'unconstrained'} % Zeros
    model = emptyOrFill(model,i{1},0,'mets');
 end
-for i={'metDeltaG'} % % NaNs
+for i={'metCharges','metDeltaG'} % NaNs
     model = emptyOrFill(model,i{1},NaN,'mets');
  end
 for i={'metComps'} % Ones, assume first compartment
