@@ -119,7 +119,12 @@ for i = 1:length(model.rxns)
     writeField(model, fid, 'S',                    'txt', i, '    - metabolites',           4)
     writeField(model, fid, 'lb',                   'flt', i, '    - lower_bound',           4)
     writeField(model, fid, 'ub',                   'flt', i, '    - upper_bound',           4)
-    writeField(model, fid, 'grRules',              'txtReq', i, '    - gene_reaction_rule', 4)
+    % Deliberately not cobra's "required reaction attribute" here: an
+    % absent gene_reaction_rule reads back as '' on both sides (cobra's
+    % own Reaction defaults to it, and raven_toolbox.io.read_yaml_model
+    % never indexes the key directly), so dropping an empty one when
+    % writing is safe, and keeps the file free of the resulting churn.
+    writeField(model, fid, 'grRules',              'txt', i, '    - gene_reaction_rule', 4)
     if model.c(i)~=0
         writeField(model, fid, 'c',                'flt', i, '    - objective_coefficient', 4)
     end
@@ -133,7 +138,13 @@ for i = 1:length(model.rxns)
 end
 
 %Genes:
-if isfield(model,'genes')
+% genes is one of cobra's required top-level model keys (model_to_dict
+% always emits it, empty or not) — write the flow-style empty list for
+% a gene-less model, matching raven_toolbox.io.write_yaml_model exactly,
+% rather than a bare `- genes:` with nothing following, which parses as
+% `genes: null` and crashes readers that assume a present key means a
+% list.
+if isfield(model,'genes') && ~isempty(model.genes)
     fprintf(fid,'- genes:\n');
     for i = 1:length(model.genes)
         fprintf(fid,'  - !!omap\n');
@@ -142,6 +153,8 @@ if isfield(model,'genes')
         writeAnnotationSimple(model, fid, 'geneMiriams', 'newGeneMiriams', 'newGeneMiriamNames', i)
         writeField(model, fid, 'proteins',       'txt', i, '    - protein', 4)
     end
+else
+    fprintf(fid,'- genes: []\n');
 end
 
 %Compartments:
@@ -284,12 +297,6 @@ if isfield(model,fieldName)
             if ~isempty(value)
                 emitScalarLine(fid, name, value, keyIndent)
             end
-        elseif strcmp(type,'txtReq')
-            %A structural field that is always emitted, even when empty
-            %(matching cobra's "required reaction attribute" convention
-            %for gene_reaction_rule) — unlike every optional field above,
-            %which is simply omitted when empty.
-            emitScalarLine(fid, name, field{pos}, keyIndent)
         elseif strcmp(type,'flt')
             if ~isnan(field(pos))
                 emitScalarLine(fid, name, formatFloat(full(field(pos))), keyIndent, true)
