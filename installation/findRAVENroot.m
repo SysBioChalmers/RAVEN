@@ -8,22 +8,16 @@ function [ravenPath, prevDir] = findRAVENroot()
 ST=dbstack('-completenames');
 prevDir = pwd();
 % A stored preference is only trusted if it still points at a real RAVEN
-% install. Without this check, a stale preference left over from a
-% different RAVEN checkout on the same machine would silently resolve to
-% that other copy's data, not the one actually running; erroring instead
-% surfaces the stale preference itself, rather than silently falling back
-% to a directory the caller did not ask for.
+% install; otherwise fall through to walking up from the currently
+% executing copy of this file. Without this check, a stale preference
+% left over from a different RAVEN checkout on the same machine silently
+% resolves to that other copy's data, not the one actually running.
 ravenPath = '';
 if ispref('RAVEN','ravenPath')
     prefPath = getpref('RAVEN','ravenPath');
-    if ~isfile(fullfile(prefPath,'RAVEN2.png'))
-        error(['The RAVEN root preference points to ' strrep(prefPath,'\','/') ...
-            ', which does not contain RAVEN2.png. Update it with ' ...
-            'setpref(''RAVEN'',''ravenPath'',<path>), or clear it with ' ...
-            'rmpref(''RAVEN'',''ravenPath'') to resolve the root from the ' ...
-            'currently executing copy of RAVEN instead.'])
+    if isfile(fullfile(prefPath,'RAVEN.png'))
+        ravenPath = prefPath;
     end
-    ravenPath = prefPath;
 end
 if isempty(ravenPath)
     ravenPath = ST(strcmp({ST.name},'findRAVENroot')).file;
