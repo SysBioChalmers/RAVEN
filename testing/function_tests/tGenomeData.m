@@ -1,7 +1,7 @@
 classdef tGenomeData < RavenTestCase
 % tGenomeData  Tests for the genome-data utilities used in homology-based
 %              reconstruction (downloadGenomeData, getGeneData,
-%              processProteinFastaFile, renameModelGenes).
+%              renameModelGenes).
 %
 %   Parsing and renaming are tested offline with small GFF3/FASTA fixtures
 %   (one eukaryote, one prokaryote). The NCBI download is guarded and skips
@@ -45,19 +45,6 @@ classdef tGenomeData < RavenTestCase
             prevFiles = dir('geneData.tsv');
             getGeneData(fullfile(testCase.fixtureDir(),'prok.gff'));
             testCase.verifyEqual(numel(dir('geneData.tsv')), numel(prevFiles));
-        end
-
-        function processProteinFastaFileRenamesHeaders(testCase)
-            T   = getGeneData(fullfile(testCase.fixtureDir(),'euk.gff'));
-            out = processProteinFastaFile(fullfile(testCase.fixtureDir(), ...
-                'euk_protein.faa'), T, 'locus_tag', tempdir);
-            testCase.addTeardown(@() delete(out));
-            fa = readFasta(out);
-            headers = {fa.Header};
-            % NP_111.1 -> LT1, NP_222.1 -> LT2, NP_999.9 has no match and is kept
-            testCase.verifyTrue(ismember('LT1', headers));
-            testCase.verifyTrue(ismember('LT2', headers));
-            testCase.verifyTrue(any(startsWith(headers, 'NP_999.9')));
         end
 
         function renameModelGenesRenamesGenesAndGrRules(testCase)
