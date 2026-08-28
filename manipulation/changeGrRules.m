@@ -55,7 +55,14 @@ idx=getIndexes(model,rxns,'rxns');
 if replace==true % Replace old gene associations
     model.grRules(idx)=grRules;
 else % Add gene associations, add new gene rules after 'OR'.
-    model.grRules(idx)=strcat('(',model.grRules(idx),') or (',grRules,')');
+    % A reaction with no existing grRule yet gets the new rule directly:
+    % wrapping it as '() or (...)' regardless left an empty first clause,
+    % a string neither grRuleToDNF nor isDnfGrRule can parse.
+    existingRules=model.grRules(idx);
+    hasExisting=~cellfun(@isempty,existingRules);
+    combined=grRules;
+    combined(hasExisting)=strcat('(',existingRules(hasExisting),') or (',grRules(hasExisting),')');
+    model.grRules(idx)=combined;
 end
 
 %Fix grRules and reconstruct rxnGeneMat
