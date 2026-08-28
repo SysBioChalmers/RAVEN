@@ -199,7 +199,10 @@ libraryFile='';
 %gzip-compressed flatfile, queried in one hmmsearch); if it is not already
 %present it is downloaded from the corresponding raven-data release
 %(https://github.com/SysBioChalmers/raven-data).
-if ~isempty(dataDir)
+%Only needed for the protein-homology path (fastaFile supplied): the
+%annotation-only path never touches libraryFile, so skip the (100+ MB)
+%download/extraction entirely when there is no FASTA file to search.
+if ~isempty(dataDir) && ~isempty(fastaFile)
     hmmOptions={'kegg118_eukaryotes','kegg118_prokaryotes'};
     if ~endsWith(dataDir,hmmOptions)
         error(['Pre-trained HMMs set is not recognised. dataDir must match one of: ' strjoin(hmmOptions,' or ')])
