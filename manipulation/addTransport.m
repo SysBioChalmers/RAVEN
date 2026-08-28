@@ -89,18 +89,20 @@ for i=1:numel(toComps)
     if onlyToExisting==true || all(J)
         toMets=I(K(J)); %Only look at the existing ones
         fromMetsInComp=fromMetsInComp(J);
+        namesInComp=metNames(J); %Matches fromMetsInComp/toMets below
     else
         %This is if not all metabolites exist in the target compartment,
         %and they should be added
         metsToAdd.metNames=metNames(J==0);
         metsToAdd.compartments=toComps{i};
         model=addMets(model,metsToAdd);
-        
+
         %Redo the mapping when all mets are there. A bit lazy, but it is
         %fast anyways
         I=find(model.metComps==toIDs(i));
         [~, K]=ismember(metNames,model.metNames(I));
         toMets=I(K); %All are guaranteed to be found now
+        namesInComp=metNames; %All requested metabolites now exist
     end
     
     %Construct the S matrix
@@ -132,7 +134,7 @@ for i=1:numel(toComps)
     filler=cell(nRxns,1);
     filler(:)={''};
     addedRxnsID=generateNewIds(model,'rxns',prefix,nRxns);
-    addedRxnsName=transpose(strcat(metNames, {' transport, '}, model.compNames(fromID), '-', model.compNames(toIDs(i))));
+    addedRxnsName=strcat(namesInComp, {' transport, '}, model.compNames(fromID), '-', model.compNames(toIDs(i)));
     model.rxns=[model.rxns;addedRxnsID];
     model.rxnNames=[model.rxnNames;addedRxnsName];
     
