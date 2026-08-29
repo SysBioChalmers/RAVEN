@@ -7,8 +7,8 @@ classdef tIO < RavenTestCase
     methods (Test)
 
         function exportForGitWritesDependencies(testCase)
-            % The toolbox-version lookup is now embedded in exportForGit and
-            % is exercised via the dependencies.txt it writes
+            % Exercises the toolbox-version lookup in exportForGit via the
+            % dependencies.txt it writes
             f = fullfile(testCase.ravenRoot,'tutorial','empty.xml');
             evalc('model = importModel(f);');
             outDir = tempname; mkdir(outDir);

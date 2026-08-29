@@ -19,7 +19,9 @@ function model=mergeModels(models,varargin)
 % supressWarnings : logical
 %     whether warnings should be supressed (default false).
 % copyToComps : logical
-%     whether mergeModels is run via copyToComps (default false).
+%     internal flag used by copyToComps.m when it calls mergeModels to
+%     duplicate a model into a new compartment; leave at default when
+%     calling mergeModels directly (default false).
 %
 % Returns
 % -------

@@ -55,8 +55,8 @@ function [draftModel, hitGenes]=getModelFromHomology(models,blastStructure,...
 % minLen : double
 %     only look at genes with alignment length >= this value (default 100).
 %     Measured against KEGG and OMA orthology across four organisms: any
-%     value at or below 150 performs the same, while the previous 200
-%     discarded real orthologs without reducing the number of wrong ones.
+%     value at or below 150 performs the same, while higher values discard
+%     real orthologs without reducing the number of wrong ones.
 % minIde : double
 %     only look at genes with identity >= this value (default 40 (%)).
 %     The filter that decides the outcome, and 40 is the measured optimum
@@ -490,7 +490,7 @@ for i=1:numel(models)
         [~, oldGeneIds]=find(models{useOrderIndexes(i)}.rxnGeneMat(j,:));
 
         %Tokenize the grRule once; all gene substitutions operate on the
-        %token list so that no gene ID can partially match another (H2).
+        %token list so that no gene ID can partially match another.
         tokens=gprTokenize(models{useOrderIndexes(i)}.grRules{j});
 
         %Update the matrix for each gene. This includes replacing one gene
@@ -568,7 +568,7 @@ draftModel=mergeModels(models,'metNames');
 
 %Remove OLD_ genes that appear only in OR branches (they were added for
 %AND-complex genes with no orthologs; in OR branches they are redundant).
-%Uses token-level removal to avoid partial-match hazards (H2).
+%Uses token-level removal to avoid partial-match hazards.
 for oldI=1:numel(draftModel.grRules)
     if ~contains(draftModel.grRules{oldI},'OLD_')
         continue

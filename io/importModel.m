@@ -69,9 +69,9 @@ function model=importModel(varargin)
 %
 % Notes
 % -----
-% A number of consistency checks are performed in order to ensure that the
-% model is valid. Take these warnings seriously and modify the model
-% structure to solve them.
+% A number of consistency checks are performed to ensure that the model is
+% valid. Take these warnings seriously and modify the model structure to
+% solve them.
 
 p=parseRAVENargs(varargin, {'fileName',[]; 'removeExcMets',[]; 'removePrefix',[]; 'supressWarnings',false});
 fileName=p.fileName; removeExcMets=p.removeExcMets; removePrefix=p.removePrefix; supressWarnings=p.supressWarnings;
@@ -155,7 +155,6 @@ if isempty(modelSBML)
 end
 
 %RAVEN only supports SBML Level 3 Version 1 with the FBC version 2 package.
-%Older SBML levels/versions and non-FBC formats are no longer supported.
 if ~(isfield(modelSBML,'SBML_level') && isequal(modelSBML.SBML_level,3) && ...
         isfield(modelSBML,'SBML_version') && isequal(modelSBML.SBML_version,1) && ...
         isfield(modelSBML,'fbc_version') && isequal(modelSBML.fbc_version,2))

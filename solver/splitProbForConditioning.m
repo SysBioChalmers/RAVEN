@@ -9,20 +9,15 @@ function [prob, condInfo] = splitProbForConditioning(prob, maxRatio)
 % diagonal row/column scaling that LP solvers apply, and may lead to
 % unreliable solutions or spurious infeasibility.
 %
-% Each offending small coefficient is replaced by a chain consisting of an
-% auxiliary "star" metabolite (a new equality constraint row) and one or more
-% conversion variables (new columns), such that no individual column has a
-% coefficient ratio exceeding maxRatio. The feasible region of the original
-% problem is preserved exactly: the new rows are steady-state (=0) constraints
-% and the new variables are fully determined by them, so the values of all
+% Splitting is done via auxiliary metabolites and variables that preserve
+% the feasible region of the original problem exactly, so the values of all
 % original variables are unchanged.
 %
 % The function is meant to be called inside optimizeProb, on the COBRA-style
-% problem struct, immediately before the problem is passed to the solver. The
-% auxiliary rows are appended at the bottom of prob.A and the auxiliary
-% columns at the right, so the indices of all original constraints and
-% variables are preserved. This allows the augmentation to be stripped from
-% the solver output (see condInfo).
+% problem struct, immediately before the problem is passed to the solver.
+% Auxiliary rows/columns are appended after the original ones, so the
+% augmentation can be stripped from the solver output afterwards (see
+% condInfo).
 %
 % Parameters
 % ----------

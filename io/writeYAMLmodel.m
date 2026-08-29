@@ -109,8 +109,8 @@ end
 %   objective_coefficient, subsystem, annotation (which carries the EC
 %   numbers under `ec-code`, the cobrapy/geckopy convention), then
 %   RAVEN-only extras (references, rxnFrom, deltaG, confidence_score,
-%   notes). The notes key is the canonical `notes` (no longer
-%   `rxnNotes`); the reader still accepts the legacy key.
+%   notes). The notes key is the canonical `notes`, not `rxnNotes`; the
+%   reader still accepts the legacy key.
 fprintf(fid,'- reactions:\n');
 for i = 1:length(model.rxns)
     fprintf(fid,'  - !!omap\n');
@@ -202,7 +202,7 @@ end
 
 function writeField(model,fid,fieldName,type,pos,name,keyIndent)
 %Writes a new line in the yaml file if the field exists and the field is
-%not empty at the correspoinding position. It's recursive for the S
+%not empty at the corresponding position. It's recursive for the S
 %field (reaction stoichiometry).
 
 if isfield(model,fieldName)

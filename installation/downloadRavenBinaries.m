@@ -1,9 +1,8 @@
 function downloadRavenBinaries(tools)
 % downloadRavenBinaries
 %   Download RAVEN's external command-line binaries on demand from the
-%   raven-data repository into RAVEN's software/ directory. These binaries are
-%   no longer committed to the RAVEN git repository; only the binary matching
-%   the current platform is fetched, and only when needed.
+%   raven-data repository into RAVEN's software/ directory. Only the binary
+%   matching the current platform is fetched, and only when needed.
 %
 %   Input:
 %   tools   cell array, subset of {'blast+','diamond','hmmer'} to

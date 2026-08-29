@@ -1,7 +1,7 @@
 function [currVer, installType] = checkInstallation(developMode, checkBinaries)
 % checkInstallation
-%   The purpose of this function is to check if all necessary functions are
-%   installed and working. It also checks whether there are any functions
+%   Checks that all necessary functions are installed and working. It also
+%   checks whether there are any functions
 %   with overlapping names between RAVEN and other toolboxes or
 %   user-defined functions, which are accessible from MATLAB pathlist
 %
@@ -250,9 +250,9 @@ if ~checkBinaries
     printOrange('    Skipping check of binary executables\n')
 else
     % The BLAST+/DIAMOND/HMMER binaries are downloaded on demand from
-    % raven-data (no longer committed to the repository); fetch any that are
-    % missing for this platform before checking. This doubles as the up-front
-    % "prefetch" for users who want everything ready after installation.
+    % raven-data; fetch any that are missing for this platform before
+    % checking. This doubles as the up-front "prefetch" for users who want
+    % everything ready after installation.
     try
         downloadRavenBinaries({'blast+','diamond','hmmer'});
     catch ME

@@ -1,6 +1,8 @@
 function model=reverseRxns(model, rxns)
 % reverseRxns
-% Reverses reactions
+% Reverses the given reactions in place: negates their stoichiometry and
+% objective coefficient, and swaps/negates their lower and upper bounds,
+% so flux in the new positive direction is what was previously negative flux.
 % model     the model to change (input/output)
 % rxns      the rxns to reverse
 

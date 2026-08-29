@@ -24,9 +24,8 @@ function [outModel, geneLocalization, transportStruct, scores,...
 % transportCost : double
 %     the cost for including a transport reaction. If this is a scalar then
 %     the same cost is used for all metabolites. It can also be a vector of
-%     costs with the same dimension as model.mets. Note that negative costs
-%     will result in transport of the metabolite being encouraged (default
-%     0.5).
+%     costs with the same dimension as model.mets. Negative costs encourage
+%     transport of the metabolite (default 0.5).
 % maxTime : double
 %     maximum optimization time in minutes (default 15).
 % plotResults : logical
@@ -47,8 +46,8 @@ function [outModel, geneLocalization, transportStruct, scores,...
 %     score based on gene localization and the score based on included
 %     transport reactions.
 % removedRxns : cell
-%     cell array with the reaction ids that had to be removed in order to
-%     have a connected input model.
+%     cell array with the reaction ids that had to be removed to have a
+%     connected input model.
 %
 % Notes
 % -----
@@ -210,8 +209,7 @@ end
 %Adjust the transport costs
 transportCost=transportCost(ismember(originalModelMets,model.mets));
 
-%Assign fake genes to reactions without genes. This is just to make things
-%easier later on
+%Assign fake genes to reactions without genes
 I=find(sum(model.rxnGeneMat,2)==0);
 for i=1:numel(I)
     model.genes=[model.genes;['&&FAKE&&' num2str(i)]];
@@ -232,13 +230,12 @@ for i=1:numel(I)
 end
 
 %Update the GSS. All genes, fake or real, for which there is no evidence
-%gets a score 0.5 in all compartments. Also just to make it easier further
-%on
+%gets a score 0.5 in all compartments
 I=setdiff(model.genes,GSS.genes);
 GSS.genes=[GSS.genes;I];
 GSS.scores=[GSS.scores;ones(numel(I),numel(GSS.compartments))*0.5];
 
-%Gene complexes should be moved together in order to be biologically
+%Gene complexes should be moved together to be biologically
 %relevant. The average score for the genes is used for each compartment.
 %This is done by changing the model so that gene complexes are used as a
 %single gene name and then a score is calculated for that "gene".
@@ -265,7 +262,7 @@ for i=1:numel(complexes)
         %Get the average of the genes that were found
         mScores=mean(GSS.scores(J(I),:));
         
-        %And add 0.5 for the genes that were not found in order to be
+        %And add 0.5 for the genes that were not found, to be
         %consistent with non-complexes
         mScores=(mScores.*sum(I)+(numel(genesInComplex)-sum(I))*0.5)/numel(genesInComplex);
     else
@@ -471,7 +468,7 @@ while toc<maxTime*60
                 end
             end
             
-            %If it is possible to move any gene in order to have a more
+            %If it is possible to move any gene to have a more
             %connected network, then move the best one
             if hasToAddTransport==false
                 [newS, newg2c]=moveGene(newS,model,g2c,geneIndex(I),moveTo(I),nRxns,nMets);
@@ -818,7 +815,7 @@ oldRxns=I+(currentComp-1)*nRxns;
 %And their new positions
 newRxns=I+(toComp-1)*nRxns;
 
-%The metabolite ids also have to be changed in order to match the new
+%The metabolite ids also have to be changed to match the new
 %compartment
 metChange=nMets*(toComp-currentComp);
 

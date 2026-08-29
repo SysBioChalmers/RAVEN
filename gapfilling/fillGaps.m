@@ -52,7 +52,7 @@ function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(m
 % algorithm : char
 %     gap-filling algorithm to use (default 'reference'):
 %
-%     - 'reference'   : existing MILP-based connectivity maximisation
+%     - 'reference'   : MILP-based connectivity maximisation
 %     - 'fastLP'      : L1-norm LP relaxation via FASTCORE (gapFillFastLP)
 %     - 'swiftLP'     : SWIFTCORE single-LP variant (gapFillFastLP)
 %     - 'gapfillMILP' : growth-floor MILP with directionality repair
@@ -144,7 +144,7 @@ switch lower(p.algorithm)
         exitFlag = 1;
         return;
 end
-% Falls through to the 'reference' algorithm (existing code) for all other values.
+% Falls through to the 'reference' algorithm for all other values.
 
 if isempty(rxnScores)
     rxnScores=cell(numel(models),1);
@@ -265,7 +265,6 @@ else
     %Constrain all reactions in the original model to have a flux
     allModels.lb(ismember(allModels.rxns,K))=0.1;
     
-    %Return stuff
     newConnected=K;
     cannotConnect=setdiff(model.rxns(~originalFlux),newConnected);
 end

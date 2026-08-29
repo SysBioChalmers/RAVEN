@@ -3,10 +3,8 @@ classdef tSyntax < RavenTestCase
 %
 %   A MATLAB file with unbalanced block keywords still sits in the repository
 %   looking perfectly ordinary: the error only surfaces when something calls
-%   it. getKEGGModelForOrganism.m carried an orphan `end` for over a month
-%   (introduced by #636, found by #669) during which the whole KEGG homology
-%   path was dead, because its only test was an unconditional assumeFail and
-%   nothing else parsed the file.
+%   it, so a file behind an unconditional skip (e.g. assumeFail) can carry a
+%   broken parse indefinitely without any test catching it.
 %
 %   This test is the cheap backstop: it needs no data, no solver and no
 %   network, and it runs over the entire source tree in seconds.

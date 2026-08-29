@@ -1,8 +1,8 @@
 function prepData = prepINITModel(origRefModel, taskStruct, varargin)
 % prepINITModel  Precompute omics-independent data for ftINIT.
 %
-% The purpose of this function is to run time-consuming calculation steps that
-% are not dependent on the RNA-Seq data.
+% Runs time-consuming calculation steps that are not dependent on the RNA-Seq
+% data.
 %
 % Parameters
 % ----------
@@ -173,11 +173,6 @@ disp('Step 5: Final work')
 %the tasks. So, instead we run checkTasks before, and figure out which merged reactions the 
 %essential reactions belong to now
 
-%It may be possible to create a minModel2b, run mergeLinear on that (which is quick), and 
-%then run checkTasks on the minimized model. Would be good to check if this gives the 
-%same result, I'm not sure. The code would get less complicated.
-
-
 if ~isempty(taskStruct)
 
     %find all potential rxns
@@ -258,7 +253,7 @@ for i = 1:length(minModel2.rxns)
                    success = false;
                    break;
                 end
-                if comps(1) == comps(metMatch) %they must be in different compartments (maybe this need not to be checked)
+                if comps(1) == comps(metMatch) %they must be in different compartments
                    success = false;
                    break;
                 end
@@ -294,7 +289,7 @@ toIgnoreAllWithoutGPRs = cellfun(@isempty,minModel2.grRules);
 %sum(toIgnoreAllTransp)%in total 3337 rxns in human-GEM, so 1,000 more
 
 %Now, try to scale the model to become more favorable for the solver.
-%In general, we try to make all fluxes as similar as possible.
+%We try to make all fluxes as similar as possible.
 %      There is room for improvement here, this function is pretty simple.
 %      It only rescales reactions, while it would be possible to rescale
 %      metabolites as well (ROS => kROS, albumin => millialbumin, etc., but

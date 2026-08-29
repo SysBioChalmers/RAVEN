@@ -1,11 +1,9 @@
 function [miriams,extractedMiriamNames]=extractMiriam(modelMiriams,varargin)
 % extractMiriam  Unpack MIRIAM annotations into a human-readable table.
 %
-% This function unpacks the information kept in metMiriams, rxnMiriams,
-% geneMiriams or compMiriams to make the annotation more human-readable.
-% The obtained cell array looks the same as in Excel format, just the
-% columns are split to have a particular miriam name in the corresponding
-% column.
+% Unpacks metMiriams, rxnMiriams, geneMiriams or compMiriams into a
+% human-readable cell array, formatted as in Excel, with the columns split
+% so each miriam name gets its own column.
 %
 % Parameters
 % ----------
@@ -70,7 +68,7 @@ end
 function miriams=extractMiriamType(modelMiriams,miriamName)
 %Create an empty cell array for ids vector
 tempMiriams = cell([size(modelMiriams,1) 1]);
-%Firstly obtain the list of relevant miriam ids. Several entries may have
+%Obtain the list of relevant miriam ids. Several entries may have
 %several miriam ids, such ids are kept in additional columns
 for i=1:numel(modelMiriams)
     if (~isempty(modelMiriams{i,1})) && any(strcmp(modelMiriams{i,1}.name,miriamName))

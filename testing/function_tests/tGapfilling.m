@@ -188,11 +188,9 @@ classdef tGapfilling < RavenTestCase
         end
 
         function gapFillMILPReversesDirectionality(testCase)
-            % If a reaction's directionality is wrong, gapFillMILP should reverse it.
+            % gapFillMILP should reverse a reaction whose directionality is wrong.
             testCase.assumeMILPSolver();
             model = testCase.model;
-            % Find an irreversible reaction that, if reversed, would break growth.
-            % Use a simpler test: check that reversedRxns is a cell array.
             modelDB = model; modelDB.id = 'DB';
             gapModel = removeReactions(model, model.rxns(1:3));
             gapModel.id = 'gapModel';

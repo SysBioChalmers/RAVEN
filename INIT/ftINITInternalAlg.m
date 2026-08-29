@@ -33,9 +33,11 @@ function [deletedRxns,metProduction,res,turnedOnRxns,fluxes]=ftINITInternalAlg(m
 %                   with a higher MIPGap, to use the results from the previous
 %                   run
 %   fluxes          Fluxes from the last run.
-%   verbose         If true, the MILP progression will be shown. 
+%   verbose         If true, the MILP progression will be shown.
+%   forceOn         minimum flux magnitude enforced through a reaction once
+%                   it is turned on in the MILP (optional, default 0.1)
 %
-%   deletedRxns     reactions which were deleted by the algorithm (only 
+%   deletedRxns     reactions which were deleted by the algorithm (only
 %                   rxns included in the problem)
 %   metProduction   array that indicates which of the
 %                   metabolites in presentMets that could be

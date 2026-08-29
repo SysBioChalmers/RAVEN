@@ -1,5 +1,8 @@
 function model=sortModel(model,varargin)
-% sortModel  Sort a model based on metabolite names and compartments.
+% sortModel  Standardize a model's internal ordering: by default orients
+% reversible reactions consistently; can also reorder metabolites within
+% reaction equations and/or reactions within each subsystem, depending on
+% which options are enabled.
 %
 % Parameters
 % ----------
@@ -36,16 +39,14 @@ sortMetName=p.sortMetName;
 sortReactionOrder=p.sortReactionOrder;
 
 if sortMetName==true
-    %Assuming that metComps are the indexes. Should be changed at one point
+    %Assuming that metComps are the indexes.
     [~, metIndexes]=sort(strcat(model.metNames,'[',model.comps(model.metComps),']'));
     model=permuteModel(model,metIndexes,'mets');
 end
 
 if sortReversible==true && sortReactionOrder==false
-    %Get all reversible reactions
     revIndexes=find(model.rev);
-    
-    %Loop through them
+
     for i=1:numel(revIndexes)
         %Create a cell array with all the metabolite names
         mets=find(model.S(:,revIndexes(i)));
@@ -62,7 +63,6 @@ if sortReversible==true && sortReactionOrder==false
 end
 
 if sortReactionOrder==true
-    %Check if the model has sub-systems, otherwise throw an error
     if ~isfield(model,'subSystems')
         EM='The model must contain a subSystems field in order to sort reaction order';
         error('RAVEN:badInput', '%s', EM);
@@ -100,14 +100,14 @@ if sortReactionOrder==true
         %original model and -1 means the opposite direction.
         oldRev=ones(numel(revRxns),1);
         
-        %The problem could probably be solved analytically but a simple
-        %random method is implemented here instead. Two reactions are
-        %chosen randomly and their positions are switched. A score is
-        %calculated based on the number of metabolites that are produced
-        %before they are consumed. If the perturbed model has a better or
-        %equal score than the original the reaction order is switched. If
-        %no increase in score has been seen after 1000*rxnsInSubsystem then
-        %the optimization is terminated
+        %The problem could be solved analytically, but a simple random
+        %method is used instead. Two reactions are chosen randomly and
+        %their positions are switched. A score is calculated based on the
+        %number of metabolites that are produced before they are consumed.
+        %If the perturbed model has a better or equal score than the
+        %original the reaction order is switched. If no increase in score
+        %has been seen after 1000*rxnsInSubsystem then the optimization is
+        %terminated
         
         rxnOrder=1:nRxns;
         oldScore=-inf;
@@ -124,8 +124,7 @@ if sortReactionOrder==true
             
             if firstIter==false
                 y=randperm(nRxns,2);
-                
-                %Switch the order
+
                 newRxnOrder(y(1))=rxnOrder(y(2));
                 newRxnOrder(y(2))=rxnOrder(y(1));
                 

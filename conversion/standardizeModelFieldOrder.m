@@ -61,9 +61,7 @@ function vecT = columnVector(vec)
 %   vecT:    a column vector
 %
 % .. Authors:
-%     - Original file: Markus Herrgard
-%     - Minor changes: Laurent Heirendt January 2017
-%     - Copied from COBRA Toolbox May 2022
+%     - Markus Herrgard (COBRA Toolbox)
 
 [n, m] = size(vec);
 

@@ -14,7 +14,9 @@ function expr = getExprForRxnScore(scores, varargin)
 % Name-Value Arguments
 % --------------------
 % threshold : double
-%     gene threshold (default 1).
+%     gene expression threshold, matching the one used to originally
+%     calculate the reaction score; scales the resulting expression value
+%     (default 1).
 %
 % Returns
 % -------

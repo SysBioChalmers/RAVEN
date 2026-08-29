@@ -14,7 +14,7 @@ function I=haveFlux(model,varargin)
 % --------------------
 % cutOff : double
 %     the flux value that a reaction has to carry to be identified as
-%     positive (default 10^-8).
+%     positive (default 10^-6).
 % rxns : cell or logical or double
 %     either a cell array of IDs, a logical vector with the same number of
 %     elements as metabolites in the model, or a vector of indexes (default
@@ -64,7 +64,7 @@ indexes=getIndexes(smallModel,intersect(smallModel.rxns,rxns),'rxns');
 J=false(numel(indexes),1);
 mixIndexes=indexes(randperm(numel(indexes)));
 
-%Maximize for all fluxes first in order to get fewer rxns to test
+%Maximize for all fluxes first to get fewer rxns to test
 smallModel.c=ones(numel(smallModel.c),1);
 sol=solveLP(smallModel);
 if ~isempty(sol.x)

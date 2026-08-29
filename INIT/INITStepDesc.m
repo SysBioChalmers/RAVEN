@@ -2,8 +2,10 @@ classdef INITStepDesc
 % Describes a step in the ftINIT algorithm. A cell array of objects of this
 % class is used as input to ftINIT to specify how the algorithm should be run.
    properties
-      PosRevOff
-      AllowMetSecr
+      PosRevOff %If true, positive-scored reversible reactions are removed
+                %from the MILP problem (used in step 1 of ftINIT)
+      AllowMetSecr %If true, excretion of all metabolites is allowed, which
+                   %results in fewer reactions being considered dead-ends
       HowToUsePrevResults %'ignore', 'exclude', 'essential'
       RxnsToIgnoreMask %Specifies reactions to leave outside the problem in
                        %the MILP.

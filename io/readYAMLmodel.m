@@ -57,12 +57,7 @@ end
 % entry in this format, at every nesting depth (including a nested list
 % under a key, e.g. an annotation sub-entry indented 6+ spaces), is itself
 % introduced with a literal leading dash, while a folded scalar's
-% continuation is raw text with no list-item marker of its own. This is the
-% actual distinguishing signal --- checking whether the continuation's first
-% character looked like a word character used to stand in for it, but that
-% missed any continuation starting with something else (e.g. a wrapped
-% scalar that happens to break right before a '#'), which fell through to
-% the "Unknown entry" error below instead of being joined.
+% continuation is raw text with no list-item marker of its own.
 newLine=regexp(line_raw,'^ {6,}([^-\s].*)','tokenExtents');
 brokenLine=find(~cellfun('isempty',newLine));
 for i=flip(1:numel(brokenLine))
@@ -79,16 +74,9 @@ line_key = regexprep(line_raw,'^ *-? ([^:]+)(:)($| .*)','$1');
 line_key = regexprep(line_key,'(.*!!omap)|(---)|( {4,}.*)','');
 
 line_value = regexprep(line_raw, '.*:$','');
-% Captures everything after "key: " verbatim, quotes and all --- an
-% earlier version used an optional quote on each end ('"?(.+)"?$'),
-% but the trailing '"?' is just as happy matching zero characters, so
-% for a quoted value the closing quote slid into the capture (e.g.
-% 'm1"' instead of 'm1'). That leftover quote used to get mopped up by
-% a blanket "strip every quote character" pass; once that pass was
-% anchored to a matching pair (below, to stop eating a genuine
-% apostrophe in unquoted text) it no longer caught it. Simplest fix:
-% leave any wrapping quotes in place here and let that anchored-pair
-% strip remove them next --- it already handles both quote styles.
+% Captures everything after "key: " verbatim, quotes and all; any wrapping
+% quotes are left in place here and removed next by the anchored-pair
+% strip below, which handles both quote styles.
 line_value = regexprep(line_value, '[^":]+: (.+)$','$1');
 % The list-marker strip must run before quote detection below, not after:
 % a quoted *list item* (e.g. a pubmed id under an annotation block,
@@ -105,14 +93,11 @@ line_value = regexprep(line_value, '^ {4,}- ','');
 % at both ends of the value --- not every quote character in it. ruamel
 % single-quotes anything YAML requires quoting (a value that would
 % otherwise parse as a date/number/boolean, or one containing a character
-% with special meaning), where RAVEN's own writer only ever double-quotes;
-% previously only a leading/trailing '"' was recognised at all, so a
-% ruamel-single-quoted value came back with both quote characters still
-% attached, e.g. reading back as "'[cytochrome c]-L-lysine'". Anchoring
-% (rather than a global strip) also fixes a latent version of the same bug
-% for double quotes: an unquoted value that happens to contain a genuine
-% apostrophe, e.g. "yeast's hexokinase reaction", must keep it --- only
-% the wrapping pair is a delimiter, not every quote-like character.
+% with special meaning), where RAVEN's own writer only ever double-quotes,
+% so both styles must be handled here. Anchoring (rather than a global
+% strip) also preserves a genuine apostrophe in an unquoted value, e.g.
+% "yeast's hexokinase reaction" --- only the wrapping pair is a delimiter,
+% not every quote-like character.
 wasSingleQuoted = ~cellfun('isempty', regexp(line_value, '^''.*''$', 'once'));
 wasDoubleQuoted = ~cellfun('isempty', regexp(line_value, '^".*"$', 'once'));
 line_value = regexprep(line_value, '^(["''])(.*)\1$','$2');

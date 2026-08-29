@@ -226,15 +226,13 @@ if isfield(arrayData,'threshold')
     arrayData.threshold(J) = [];
 end
 
-%Calculate the scores for the arrayData. These scores are calculated for
-%each genes from its fold change between the tissue/celltype(s) in question
-%and all other celltypes. This is a lower quality data than protein
-%abundance, since a gene that is equally highly expressed in all cell types
-%will have a score of 0.0. These scores are therefore only used for genes
-%for which there is no HPA data available. The fold changes are transformed
-%as min(log(x),10) for x>1 and max(log(x),-5) for x<1 in order to have
-%negative scores for lower expressed genes and to scale the scrores to have
-%somewhat lower weights than the HPA scores
+%Calculate arrayData scores from each gene's fold change between the
+%tissue/celltype(s) in question and all other celltypes. This is lower
+%quality than protein abundance data, since a gene equally expressed in all
+%cell types scores 0.0, so these scores are only used for genes with no HPA
+%data. Fold changes are transformed as min(log(x),10) for x>1 and
+%max(log(x),-5) for x<1, giving negative scores to lower-expressed genes and
+%scaling them below the HPA scores
 tempArrayLevels=arrayData.levels;
 tempArrayLevels(isnan(tempArrayLevels))=0;
 if isfield(arrayData,'threshold') && ~isempty(arrayData.threshold)

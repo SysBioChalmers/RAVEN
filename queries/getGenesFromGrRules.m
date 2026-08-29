@@ -12,7 +12,9 @@ function [genes,rxnGeneMat] = getGenesFromGrRules(grRules, varargin)
 % Name-Value Arguments
 % --------------------
 % originalGenes : cell
-%     the original gene list from the model as reference.
+%     the original gene list from the model. If supplied, the genes parsed
+%     from grRules must match it exactly (as a set), an error is thrown
+%     otherwise, and the returned genes list follows originalGenes' order.
 %
 % Returns
 % -------

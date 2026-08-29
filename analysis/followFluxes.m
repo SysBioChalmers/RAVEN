@@ -34,8 +34,8 @@ p=parseRAVENargs(varargin, {'upperFlux',[]; 'fluxesB',[]});
 upperFlux=p.upperFlux;
 fluxesB=p.fluxesB;
 
-%Keep track of which optional arguments were supplied, to reproduce the
-%original nargin-based behaviour
+%Track which optional arguments were supplied, since the reporting below
+%depends on that, not just on the (post-default) values
 upperFluxSupplied=~isempty(upperFlux);
 fluxesBSupplied=~isempty(fluxesB);
 

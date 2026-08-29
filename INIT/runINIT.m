@@ -279,7 +279,7 @@ prob.buc=[metUB;nonEssUBs;ones(nRevBounds*2,1)*999.9;revUB];
 
 %Add objective coefficients for the binary reactions. The negative is used
 %since we are minimizing. The negative is taken for the prodWeight as well,
-%in order to be consistent with the syntax that positive scores are good
+%to be consistent with the syntax that positive scores are good
 prob.c=[zeros(nRxns,1);rxnScores;ones(nNetProd,1)*prodWeight*-1;zeros(nRevBounds*2,1)];
 prob.a=S;
 

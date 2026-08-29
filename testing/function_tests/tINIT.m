@@ -339,9 +339,8 @@ classdef tINIT < RavenTestCase
         end
 
         function ftINITSeriesVariantsRun(testCase)
-            % Only '1+1' and 'full' were ever exercised, so the 2-step series
-            % from the paper -- and the allowExcretion constraint they lean on
-            % -- had no coverage at all.
+            % Exercises the 2-step series from the paper, including the
+            % allowExcretion constraint it relies on.
             testCase.assumeMILPSolver();
             testModel  = getTstModel();
             testParams = struct();

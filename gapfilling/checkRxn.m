@@ -71,8 +71,6 @@ if isfield(model,'rxnComps')
     model=rmfield(model,'rxnComps');
 end
 
-%There are several ways to do this. Here I choose to add the reactions one
-%by one and checking their bounds. This might not be optimal
 for i=1:numel(report.reactants)
     [tempModel, testRxn]=addExchangeRxns(model,'out',report.reactants(i));
     tempModel=setParam(tempModel,'obj',testRxn,1);

@@ -1,7 +1,7 @@
 function [model, hasChanged]=removeIdentifierPrefix(model,varargin)
 % removeIdentifierPrefix  Remove SBML-required identifier prefixes.
 %
-% This function removes identifier prefixes:
+% Removes identifier prefixes:
 %
 %     "R_" for model.rxns, model.rxnNames and model.id,
 %     "M_" for model.mets and model.metNames,

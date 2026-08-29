@@ -11,8 +11,7 @@ function [solutions, goodRxns, info]=randomSampling(model,varargin)
 %   'randomObjective' the random-objective vertex method of Bordel et al. (2010)
 %                     PLoS Comput Biol (doi:10.1371/journal.pcbi.1000859): each
 %                     sample maximises a small random objective, returning a
-%                     polytope vertex. This was randomSampling's historical
-%                     behaviour; it is no longer the default.
+%                     polytope vertex.
 %
 % The 'achr'/'chrr' methods draw the (near-)uniform interior distribution; the
 % 'randomObjective' method draws diverse vertices. Arguments below marked
@@ -37,10 +36,10 @@ function [solutions, goodRxns, info]=randomSampling(model,varargin)
 % replaceBoundsWithInf : logical
 %     [randomObjective]
 %     replace the largest upper bounds with Inf and the smallest lower
-%     bounds with -Inf. This is needed in order to get solutions without
-%     loops if your model has, for example, 1000/-1000 as arbitrarily large
-%     bounds. If your model only has "biologically relevant" bounds, then
-%     set this to false (default true).
+%     bounds with -Inf. This is needed to get solutions without loops if
+%     your model has, for example, 1000/-1000 as arbitrarily large bounds.
+%     If your model only has "biologically relevant" bounds, then set this
+%     to false (default true).
 % supressErrors : logical
 %     the program will halt if it has problems finding non-zero solutions
 %     which are not involved in loops. This could be because the constraints
@@ -125,7 +124,7 @@ end
 
 % ---- Dispatch to the requested sampler ----
 % 'achr'/'chrr' are near-uniform MCMC samplers of the polytope interior,
-% implemented in sampleACHR / sampleCHRR. 'randomObjective' is the historical
+% implemented in sampleACHR / sampleCHRR. 'randomObjective' is the
 % random-objective vertex method (Bordel 2010), implemented below; goodRxns is
 % meaningful only for that method (empty otherwise).
 switch lower(method)
