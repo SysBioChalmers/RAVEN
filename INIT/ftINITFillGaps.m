@@ -12,11 +12,6 @@ function [addedRxns, newModel, exitFlag]=ftINITFillGaps(tModel, origModel, tRefM
 %                       products can't be further processed. If this
 %                       parameter is true, only the first type of
 %                       unconnectivity is considered (optional, default false)
-%   useModelConstraints true if the constraints specified in the tModel
-%                       structure should be used. If false then reactions
-%                       included from the template tModel(s) so that as many
-%                       reactions as possible in tModel can carry flux
-%                       (optional, default false)
 %   supressWarnings     false if warnings should be displayed (optional, default
 %                       false)
 %   rxnScores           scores for each of the reactions in the
@@ -34,23 +29,10 @@ function [addedRxns, newModel, exitFlag]=ftINITFillGaps(tModel, origModel, tRefM
 %
 %   This method works by merging the tModel to the reference model and
 %   checking which reactions can carry flux. All reactions that can't
-%   carry flux are removed.
-%   If useModelConstraints is false it then solves the MILP problem of
-%   minimizing the number of active reactions from the reference model
-%   that are required to have flux in all the reactions in model. This
-%   requires that the input tModel has exchange reactions present for the
-%   nutrients that are needed for its metabolism. If useModelConstraints is
-%   true then the problem is to include as few reactions as possible from
-%   the reference models in order to satisfy the tModel constraints.
-%   The intended use is that the user can attempt a general gap-filling using
-%   useModelConstraint=false or a more targeted gap-filling by setting
-%   constraints in the model structure and then use
-%   useModelConstraints=true. Say that the user want to include reactions
-%   so that all biomass components can be synthesized. He/she could then
-%   define a biomass equation and set the lower bound to >0. Running this
-%   function with useModelConstraints=true would then give the smallest set
-%   of reactions that have to be included in order for the tModel to produce
-%   biomass.
+%   carry flux are removed. It then solves the MILP problem of including
+%   as few additional reactions as possible from the reference model so
+%   that the constraints already set on tModel (e.g. a required biomass
+%   flux, or exchange bounds) can be satisfied.
 %
 % Usage: [newModel, exitFlag]=...
 %           fillGaps(tModel,models,allowNetProduction,...

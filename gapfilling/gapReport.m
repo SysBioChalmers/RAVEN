@@ -3,6 +3,15 @@ function [noFluxRxns, noFluxRxnsRelaxed, subGraphs, notProducedMets, minToConnec
     connectedFromTemplates, addedFromTemplates]=gapReport(model, varargin)
 % gapReport  Perform a gap analysis and summarize the results.
 %
+% Runs a series of connectivity checks on the model - which reactions are
+% blocked, how many isolated sub-networks exist, which metabolites cannot
+% be produced (and the minimal set of metabolites that would need to be
+% connected to fix that), and, for models with exchange reactions, which
+% metabolites can be produced/consumed without any input/output. If
+% templateModels is supplied, it also attempts to gap-fill using those
+% models. A formatted report is printed to the command window; the same
+% results are returned as outputs for further use.
+%
 % Parameters
 % ----------
 % model : struct
@@ -11,7 +20,8 @@ function [noFluxRxns, noFluxRxnsRelaxed, subGraphs, notProducedMets, minToConnec
 % Name-Value Arguments
 % --------------------
 % templateModels : cell
-%     a cell array of template models to use for gap filling.
+%     a cell array of template models to use for gap filling. If omitted,
+%     the automated gap-filling section is skipped.
 %
 % Returns
 % -------

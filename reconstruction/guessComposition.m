@@ -30,24 +30,15 @@ function [model, guessedFor, couldNotGuess]=guessComposition(model, varargin)
 %
 % Notes
 % -----
-% This function works in a rather straight forward manner:
-%
-% 1.  Get the metabolites which lack composition and participates in at
-%     least one reaction where all other metabolites have composition
-%     information.
-% 2.  Loop through them and calculate their composition based on the rest of
-%     the involved metabolites. If there are any inconsistencies, so that a
-%     given metabolite should have different composition in different
-%     equations, then throw an error.
-% 3.  Go to 1.
-%
-% This simple approach requires that the rest of the metabolites have
-% correct composition information, and that the involved reactions are
-% correct. The function will exit with an error on any inconsistencies,
-% which means that it could also be used as a way of checking the model for
-% errors. Note that just because this exits sucessfully, the calculated
-% compositions could still be wrong (in case that the existing compositions
-% were wrong).
+% A metabolite's composition can only be resolved from a reaction in which
+% every other participating metabolite already has a known composition;
+% the function repeats this until no further metabolites can be resolved.
+% It requires that the existing compositions and reactions are correct,
+% and throws an error if a metabolite would need inconsistent
+% compositions in different reactions -- so it can also be used to check
+% a model for such errors. Note that successful completion does not
+% guarantee correctness if the pre-existing compositions were themselves
+% wrong.
 
 p=parseRAVENargs(varargin, {'printResults',true});
 printResults=p.printResults;

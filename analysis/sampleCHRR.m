@@ -3,16 +3,9 @@ function [solutions, info] = sampleCHRR(model, nSamples, thinning, nBurnin, seed
 %
 % Draws nSamples flux vectors approximately uniformly from the flux polytope
 % {v : S*v = 0, lb <= v <= ub}, using the CHRR algorithm (Haraldsdottir et al.
-% 2017, Bioinformatics 33:1741):
-%
-%   1. Reduce the polytope to a full-dimensional body via the nullspace of S
-%      (v = v0 + N*x); reactions with ~zero flux range are folded into the
-%      equality system so the reduced polytope is full-dimensional.
-%   2. Round it with the maximum-volume inscribed ellipsoid (sampleMaxVolEllipse).
-%      Rounding makes mixing independent of how elongated the polytope is, which
-%      is the regime of enzyme-constrained (ecModel + proteomics) and
-%      flux-measured models.
-%   3. Walk the rounded polytope with coordinate hit-and-run and map back.
+% 2017, Bioinformatics 33:1741). The polytope is rounded before sampling, so
+% mixing stays fast even on strongly elongated polytopes (e.g.
+% enzyme-constrained models), unlike sampleACHR.
 %
 % Set any constraints you want to condition on (e.g. a biomass lower bound or
 % measured exchange fluxes) on the model before calling.

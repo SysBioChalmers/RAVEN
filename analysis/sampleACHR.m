@@ -1,15 +1,10 @@
 function solutions = sampleACHR(model, nSamples, thinning, warmup, seed)
 % sampleACHR  Artificially Centered Hit-and-Run flux sampling.
 %
-% Draws nSamples flux vectors from the flux polytope {v : S*v = 0, lb <= v <= ub}
-% using ACHR (Kaufman & Smith 1998): from the current point, step towards a
-% randomly chosen warmup vertex through the running centre of all points so far,
-% sampling uniformly along the feasible chord. No rounding is performed, so on
-% strongly elongated polytopes (e.g. enzyme-constrained models) mixing is slower
-% than sampleCHRR; prefer CHRR there.
-%
-% Because every search direction is a difference of feasible points (which all
-% satisfy S*v = 0), each step stays exactly on the steady-state manifold.
+% Draws nSamples flux vectors approximately uniformly from the flux polytope
+% {v : S*v = 0, lb <= v <= ub}, using the ACHR algorithm (Kaufman & Smith 1998).
+% No rounding is performed, so on strongly elongated polytopes (e.g.
+% enzyme-constrained models) mixing is slower than sampleCHRR; prefer CHRR there.
 %
 % Parameters
 % ----------

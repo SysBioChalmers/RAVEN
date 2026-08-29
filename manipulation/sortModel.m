@@ -1,5 +1,8 @@
 function model=sortModel(model,varargin)
-% sortModel  Sort a model based on metabolite names and compartments.
+% sortModel  Standardize a model's internal ordering: by default orients
+% reversible reactions consistently; can also reorder metabolites within
+% reaction equations and/or reactions within each subsystem, depending on
+% which options are enabled.
 %
 % Parameters
 % ----------

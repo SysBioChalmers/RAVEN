@@ -17,8 +17,10 @@ function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,varargin)
 % Name-Value Arguments
 % --------------------
 % embedded : logical
-%     true if this function is called inside of another RAVEN function
-%     (default false).
+%     if true, suppresses the console warning about potentially
+%     problematic grRules relationships, for use when this function is
+%     called inside of another RAVEN function that handles reporting
+%     itself (default false).
 %
 % Returns
 % -------
