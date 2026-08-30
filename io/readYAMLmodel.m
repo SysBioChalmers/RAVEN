@@ -327,6 +327,16 @@ for i=1:numel(line_key)
                 if strcmp(tline_value,'true')
                     model.ec.geckoLight = true;
                 end
+            otherwise
+                % Caller-specific provenance key with no RAVEN-defined slot
+                % (e.g. geckopy's `geckopy_version`): preserve it instead of
+                % silently dropping it, so a write/read round trip is
+                % lossless. Mirrors writeYAMLmodel.m's symmetric fallback,
+                % which emits any model.annotation field not in its own
+                % fixed list.
+                if isvarname(tline_key)
+                    model.annotation.(tline_key) = tline_value;
+                end
         end; continue
     end
 
