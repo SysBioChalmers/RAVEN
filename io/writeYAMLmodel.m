@@ -332,6 +332,18 @@ if isfield(model,'annotation')
             emitMetaField(fid, f, model.annotation.(f));
         end
     end
+    % Any other annotation field is a caller-specific provenance key with
+    % no RAVEN-defined slot (e.g. geckopy's `geckopy_version`). Emit it
+    % too, sorted alphabetically for deterministic output, instead of
+    % silently dropping it — readYAMLmodel.m's matching `otherwise` case
+    % restores it on read, so a write/read round trip is lossless.
+    extraFields = sort(setdiff(fieldnames(model.annotation), annoFields));
+    for k = 1:numel(extraFields)
+        f = extraFields{k};
+        if ~isempty(model.annotation.(f))
+            emitMetaField(fid, f, model.annotation.(f));
+        end
+    end
 end
 % gecko_light is emitted at the top level (see geckoLight emission near
 % the GECKO ec-* sections) to match raven_python.io.yaml; keeping it

@@ -119,6 +119,22 @@ classdef tIO < RavenTestCase
             testCase.verifyEqual(m2.compMiriams{1}.value, {'GO:0005737'});
         end
 
+        function writeReadYAMLPreservesUnknownAnnotationFields(testCase)
+            % A caller-specific metaData field with no RAVEN-defined slot
+            % (e.g. geckopy's `geckopy_version`) must survive a write/read
+            % round trip instead of being silently dropped, same as the
+            % fixed annoFields set (taxonomy here).
+            m = testCase.model;
+            m.annotation.taxonomy = 'taxonomy/4932';
+            m.annotation.geckopyVersion = '0.2.1';
+            f = [tempname '.yml'];
+            testCase.addTeardown(@() delete(f));
+            evalc('writeYAMLmodel(m, f);');
+            evalc('m2 = readYAMLmodel(f);');
+            testCase.verifyEqual(m2.annotation.taxonomy, 'taxonomy/4932');
+            testCase.verifyEqual(m2.annotation.geckopyVersion, '0.2.1');
+        end
+
         function exportToTabDelimitedWritesFiles(testCase)
             d = [tempname filesep];
             mkdir(d);
