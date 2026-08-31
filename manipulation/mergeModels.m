@@ -98,27 +98,33 @@ for i=1:numel(models)
     end
 end
 for i=2:numel(models)
-    %Add the model id to the rxn id id it already exists in the model (id
-    %have to be unique) This is because it makes a "[]" string if no new
-    %reactions
+    %Add the model id to the rxn id if it already exists in the model (ids
+    %have to be unique). A renamed id can still collide --- with the
+    %existing model, or with another renamed id from the same source model
+    %when that model itself already contains duplicate ids --- so keep
+    %appending "_2", "_3", ... until each one is unique against everything
+    %assigned so far, rather than renaming once and hoping.
     if ~isempty(models{i}.rxns)
-        I=ismember(models{i}.rxns,model.rxns);
-        models{i}.rxns(I)=strcat(models{i}.rxns(I),['_' models{i}.id]);
-    end
-    
-    %Make sure that there are no conflicting reaction ids
-    [~, ~, conflicting]=intersect(model.rxns,models{i}.rxns);
-    
-    if ~isempty(conflicting)
-        printString=cell(numel(conflicting),1);
-        for j=1:numel(conflicting)
-            printString{j}=['Old: ' models{i}.rxns{conflicting(j)} ' New: ' models{i}.rxns{conflicting(j)} '_' models{i}.id];
-            models{i}.rxns{conflicting(j)}=[models{i}.rxns{conflicting(j)} '_' models{i}.id];
-        end
-        if supressWarnings==false
-            EM=['The following reaction IDs in ' models{i}.id ' are already present in the model and were renamed:'];
-            warning('RAVEN:warning', '%s', ravenList(EM, printString));
-            fprintf('\n');
+        I=find(ismember(models{i}.rxns,model.rxns));
+        if ~isempty(I)
+            printString=cell(numel(I),1);
+            for k=1:numel(I)
+                j=I(k);
+                oldId=models{i}.rxns{j};
+                newId=[oldId '_' models{i}.id];
+                suffix=2;
+                while ismember(newId,model.rxns) || ismember(newId,models{i}.rxns)
+                    newId=[oldId '_' models{i}.id '_' num2str(suffix)];
+                    suffix=suffix+1;
+                end
+                models{i}.rxns{j}=newId;
+                printString{k}=['Old: ' oldId ' New: ' newId];
+            end
+            if supressWarnings==false
+                EM=['The following reaction IDs in ' models{i}.id ' are already present in the model and were renamed:'];
+                warning('RAVEN:warning', '%s', ravenList(EM, printString));
+                fprintf('\n');
+            end
         end
     end
     

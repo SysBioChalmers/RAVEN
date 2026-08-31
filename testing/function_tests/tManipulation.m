@@ -257,6 +257,20 @@ classdef tManipulation < RavenTestCase
             testCase.verifyNotEmpty(merged.rxns);
         end
 
+        function mergeModelsSelfCollisionGetsUniqueIds(testCase)
+            % raven-gecko-parity#68: a source model with two internally
+            % duplicate reaction ids ('R1' twice) that both collide with
+            % the growing merged model used to rename to the identical new
+            % id twice, silently producing a genuine duplicate. Both must
+            % now get distinct ids instead.
+            a = tManipulation.twoMetModel();
+            b = tManipulation.duplicateRxnModel('M2');
+            evalc('merged = mergeModels({a; b});');
+            testCase.verifyEqual(numel(unique(merged.rxns)), numel(merged.rxns));
+            newIds = merged.rxns(2:3);
+            testCase.verifyTrue(all(startsWith(newIds, 'R1_M2')));
+        end
+
         function permuteModelReversesOrder(testCase)
             n = numel(testCase.model.rxns);
             m2 = permuteModel(testCase.model, n:-1:1, 'rxns');
@@ -492,6 +506,26 @@ classdef tManipulation < RavenTestCase
             m.lb = 0; m.ub = 1000; m.rev = 0; m.c = 0; m.b = zeros(2,1);
             m.genes = {}; m.grRules = {''}; m.rxnGeneMat = sparse(1,0);
             m.metFormulas = {'C6H12O6';'C'};
+        end
+
+        function m = duplicateRxnModel(modelId)
+            % Two reactions, both named 'R1' internally. mergeModels'
+            % own docstring says duplicate reaction ids "might appear" in
+            % a model, so this is a real (if unusual) input shape to
+            % guard the merge against, not a contrived one.
+            m = struct();
+            m.id        = modelId;
+            m.rxns      = {'R1'; 'R1'};
+            m.rxnNames  = {'R1a'; 'R1b'};
+            m.mets      = {'x'; 'y'; 'z'};
+            m.metNames  = m.mets;
+            m.metComps  = [1;1;1];
+            m.comps     = {'c'};
+            m.compNames = {'cytosol'};
+            m.S         = sparse([-1 0; 1 -1; 0 1]);
+            m.lb = [0;0]; m.ub = [1000;1000]; m.rev = [0;0]; m.c = [0;0]; m.b = zeros(3,1);
+            m.genes = {}; m.grRules = {'';''}; m.rxnGeneMat = sparse(2,0);
+            m.metFormulas = {'C';'C';'C'};
         end
 
     end
