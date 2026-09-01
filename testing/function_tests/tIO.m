@@ -30,13 +30,34 @@ classdef tIO < RavenTestCase
             testCase.verifyTrue(isfield(m, 'rxns'));
         end
 
-        function parseYAMLReturnsTree(testCase)
-            hasPyyaml = false;
-            try, py.importlib.import_module('yaml'); hasPyyaml = true; catch, end %#ok<NOCOM>
-            testCase.assumeDependency(hasPyyaml, 'Python pyyaml');
-            f = fullfile(testCase.ravenRoot,'tutorial','empty.yml');
+        function parseYAMLReturnsNestedTree(testCase)
+            f = [tempname '.yml'];
+            testCase.addTeardown(@() delete(f));
+            fid = fopen(f,'w');
+            fprintf(fid, [ ...
+                '# a full-line comment\n' ...
+                'prelude:\n' ...
+                '  reset_exchanges: out  # trailing comment\n' ...
+                'cofactor_pseudoreaction:\n' ...
+                '  rxn_id: r_4598\n' ...
+                '  remove_mets:\n' ...
+                '    - { met: s_3714 }\n' ...
+                'bounds:\n' ...
+                '  - { rxn: r_1654, lb: -1000 }\n' ...
+                '  - { rxn: r_1663, lb: 0, ub: 0 }\n' ...
+                'expected_uptake_count: 15\n']);
+            fclose(fid);
+
             out = parseYAML(f);
-            testCase.verifyNotEmpty(out);
+            testCase.verifyEqual(out.prelude.reset_exchanges, 'out')
+            testCase.verifyEqual(out.cofactor_pseudoreaction.rxn_id, 'r_4598')
+            testCase.verifyEqual(out.cofactor_pseudoreaction.remove_mets{1}.met, 's_3714')
+            testCase.verifyEqual(numel(out.bounds), 2)
+            testCase.verifyEqual(out.bounds{1}.rxn, 'r_1654')
+            testCase.verifyEqual(out.bounds{1}.lb, -1000)
+            testCase.verifyFalse(isfield(out.bounds{1}, 'ub'))
+            testCase.verifyEqual(out.bounds{2}.ub, 0)
+            testCase.verifyEqual(out.expected_uptake_count, 15)
         end
 
         function exportImportSBMLRoundTrip(testCase)
