@@ -3,8 +3,7 @@ function model = scaleBiomassPseudoreaction(model, biomassConfig, componentName,
 %
 % Multiply the substrate coefficients of one biomass component
 % pseudoreaction by factor and rebalance H+ to preserve charge neutrality.
-% Mirrors raven_python.biomass.rescale_pseudoreaction and yeast-GEM's
-% legacy rescalePseudoReaction.
+% The MATLAB counterpart of yeast-GEM's legacy rescalePseudoReaction.
 %
 % "Substrate" means every metabolite in the pseudoreaction whose
 % metabolite name does NOT match the component name (the component's

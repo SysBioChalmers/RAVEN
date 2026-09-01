@@ -45,8 +45,7 @@ classdef tAnnotation < RavenTestCase
         function loadDeltaGCsvStoresValuesLiterally(testCase)
             % No filtering of any kind: every matched value, including
             % yeast-GEM's own "no measurement" placeholder (10000000.0), is
-            % stored exactly as the CSV states it, matching
-            % raven_toolbox.annotation.load_delta_g_csv.
+            % stored exactly as the CSV states it.
             m = testCase.model;
             metCsv = [tempname '.csv'];
             testCase.addTeardown(@() delete(metCsv));

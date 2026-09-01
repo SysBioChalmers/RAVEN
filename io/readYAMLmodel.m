@@ -1,7 +1,8 @@
 function model=readYAMLmodel(varargin)
 % readYAMLmodel  Read a model structure from a YAML file.
 %
-% Reads a yaml file matching (roughly) the cobrapy yaml structure.
+% Reads a yaml file matching (roughly) the standard cobra-format model
+% yaml structure.
 %
 % Name-Value Arguments
 % --------------------
@@ -48,9 +49,10 @@ if verLessThan('matlab','9.9') %readlines introduced 2020b
 else
     line_raw=readlines(fileName);
 end
-% If entry is broken over multiple lines (a folded scalar --- ruamel/cobrapy
-% wraps a plain or single-quoted scalar that would exceed its configured
-% width), concatenate the continuation onto the previous line. Assumes at
+% If entry is broken over multiple lines (a folded scalar --- some YAML
+% writers wrap a plain or single-quoted scalar that would exceed a
+% configured width), concatenate the continuation onto the previous line.
+% Assumes at
 % least 6 leading spaces to avoid metaData being concatenated.
 %
 % A continuation line is recognised by NOT starting with '- ': every real
@@ -90,8 +92,8 @@ line_value = regexprep(line_value, '[^":]+: (.+)$','$1');
 % changes.
 line_value = regexprep(line_value, '^ {4,}- ','');
 % Strips wrapping quotes, either style, but only a matching pair anchored
-% at both ends of the value --- not every quote character in it. ruamel
-% single-quotes anything YAML requires quoting (a value that would
+% at both ends of the value --- not every quote character in it. Some
+% writers single-quote anything YAML requires quoting (a value that would
 % otherwise parse as a date/number/boolean, or one containing a character
 % with special meaning), where RAVEN's own writer only ever double-quotes,
 % so both styles must be handled here. Anchoring (rather than a global
@@ -166,7 +168,7 @@ for i=1:size(modelFields,1)
 end
 
 % If GECKO model — accept both the legacy `geckoLight` (inside metaData)
-% and the cobrapy / raven_python style top-level `gecko_light` key.
+% and the alternate top-level `gecko_light` key.
 if any(contains(line_key,'geckoLight')) || any(contains(line_key,'gecko_light'))
     isGECKO=true;
     ecFields = {'geckoLight', false;...
@@ -204,7 +206,7 @@ for i=1:numel(line_key)
     tline_key = line_key{i};
     tline_value = line_value{i};
     % import different sections — accept the !!omap-tagged variant as
-    % well so cobrapy / raven_python output is recognized.
+    % well, so a file using that tag is recognized too.
     switch tline_raw
         case {'- metaData:', '- metaData: !!omap'}
             section = 1;
@@ -262,10 +264,10 @@ for i=1:numel(line_key)
             continue
     end
 
-    % cobrapy-style root-level keys (id, name, version, gecko_light).
-    % Cobra writes these at the top level (no metaData section); RAVEN's
-    % own writer normally puts them inside metaData, but we accept both
-    % so a cobra-written YAML can be ingested directly.
+    % Alternate root-level keys (id, name, version, gecko_light), written
+    % at the top level with no metaData section. RAVEN's own writer
+    % normally puts them inside metaData, but we accept both layouts so a
+    % YAML file using the top-level convention can be ingested directly.
     if isempty(regexp(tline_raw, '^ {2,}', 'once'))
         switch tline_key
             case 'id'
@@ -329,8 +331,8 @@ for i=1:numel(line_key)
                 end
             otherwise
                 % Caller-specific provenance key with no RAVEN-defined slot
-                % (e.g. geckopy's `geckopy_version`): preserve it instead of
-                % silently dropping it, so a write/read round trip is
+                % (e.g. a tool-specific `_version` key): preserve it instead
+                % of silently dropping it, so a write/read round trip is
                 % lossless. Mirrors writeYAMLmodel.m's symmetric fallback,
                 % which emits any model.annotation field not in its own
                 % fixed list.
@@ -366,11 +368,10 @@ for i=1:numel(line_key)
                 model = readFieldValue(model, 'inchis', tline_value, pos);
                 readList=''; miriamKey='';
             case 'smiles'
-                % Top-level (legacy MATLAB) and inside-annotation
-                % (cobrapy / current writer) layouts both land here. The
-                % current writer always emits smiles as a block list, even
-                % for a single value (matching cobrapy/geckopy, which read
-                % it as list[str]); a state distinct from 'annotation'
+                % Top-level (legacy MATLAB) and inside-annotation (current
+                % writer) layouts both land here. The current writer
+                % always emits smiles as a block list, even for a single
+                % value; a state distinct from 'annotation'
                 % ('smilesInAnnotation') reads that list so that once it
                 % ends this can resume annotation gathering rather than
                 % getting stuck treating every later line in the same
@@ -439,10 +440,9 @@ for i=1:numel(line_key)
                 model = readFieldValue(model, 'grRules', tline_value, pos);
                 readList=''; miriamKey='';
             case {'notes','rxnNotes'}
-                % `notes` is the canonical reaction-side key (matches
-                % cobrapy and raven_python); `rxnNotes` is the legacy
-                % RAVEN MATLAB key, kept here for backward-compatible
-                % reads.
+                % `notes` is the canonical reaction-side key; `rxnNotes`
+                % is the legacy RAVEN MATLAB key, kept here for
+                % backward-compatible reads.
                 model = readFieldValue(model, 'rxnNotes', tline_value, pos);
                 readList=''; miriamKey='';
             case 'rxnFrom'
@@ -468,7 +468,7 @@ for i=1:numel(line_key)
                     ecCodeNo=ecCodeNo+1;
                 end
             case 'ec-code'
-                % EC numbers emitted inside the cobra `annotation` block
+                % EC numbers emitted inside the `annotation` block
                 % (current writer). Captured into model.eccodes the same
                 % way metabolite `smiles` is pulled out of the annotation
                 % block; the legacy top-level `eccodes` key above is still

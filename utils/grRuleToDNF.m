@@ -45,7 +45,6 @@ end
 
 
 function clauses=nodeToDNF(node)
-% Mirrors _node_to_dnf in raven-toolbox manipulation/expand.py.
 switch node.type
     case 'gene'
         clauses={{node.id}};

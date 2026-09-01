@@ -2,8 +2,7 @@ function fractions = getBiomassFractions(model, biomassConfig)
 % getBiomassFractions  Compute mass fraction per biomass component.
 %
 % Compute the mass fraction (g/gDW) per biomass component plus the total.
-% Mirrors raven_python.biomass.sum_biomass; the MATLAB counterpart of
-% yeast-GEM's legacy sumBioMass.
+% The MATLAB counterpart of yeast-GEM's legacy sumBioMass.
 %
 % The biomassConfig struct describes the per-organism biomass layout — see
 % Parameters below. Components whose pseudoreaction is missing from the

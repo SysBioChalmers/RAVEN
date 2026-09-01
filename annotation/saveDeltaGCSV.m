@@ -1,8 +1,6 @@
 function saveDeltaGCSV(model, varargin)
 % saveDeltaGCSV  Save metDeltaG and rxnDeltaG to CSV files.
 %
-% Mirrors raven_toolbox.annotation.save_delta_g_csv.
-%
 % Writes a two-column table (identifier, deltaG) per side, one row per
 % entity, in model order. An entity with no value stored is written as
 % NaN, unchanged from whatever the model field holds -- this function does

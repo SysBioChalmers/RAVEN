@@ -57,10 +57,10 @@ for i=1:prevNumRxns
     if numel(c) <= 1
         continue
     end
-    %DEVIATION from raven-toolbox expand.py, which has no such guard: the
-    %cross-product is exponential in the number of ORed complexes, and
-    %MATLAB grows the model fields eagerly, so a pathological rule would
-    %exhaust memory instead of raising. Fail with the culprit named.
+    %This guard exists because the cross-product is exponential in the
+    %number of ORed complexes, and MATLAB grows the model fields eagerly,
+    %so a pathological rule would exhaust memory instead of raising. Fail
+    %with the culprit named.
     if numel(c) > 10000
         error('RAVEN:grRuleTooComplex',['Reaction ' model.rxns{i} ' has a grRule ' ...
             'with ' num2str(numel(c)) ' isozymes after expansion. This is almost ' ...

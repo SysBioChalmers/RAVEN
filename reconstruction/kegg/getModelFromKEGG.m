@@ -4,11 +4,11 @@ function [model,KOModel]=getModelFromKEGG(varargin)
 % Loads the global KEGG reaction/gene model from keggModel.mat. On first
 % use --- when no keggModel.mat is present yet --- the underlying
 % artefacts (the gene-free reference model plus the KO/reaction/organism-
-% gene relational tables, published by the raven-toolbox Python package
-% as a raven-data release) are downloaded and assembled instead, and the
-% result is cached to keggModel.mat so later calls load instantly. The
-% first build can take a while (the organism-gene table covers every
-% KEGG organism) and needs a few hundred MB of disk.
+% gene relational tables, published as a raven-data release) are
+% downloaded and assembled instead, and the result is cached to
+% keggModel.mat so later calls load instantly. The first build can take
+% a while (the organism-gene table covers every KEGG organism) and needs
+% a few hundred MB of disk.
 %
 % Name-Value Arguments
 % --------------------

@@ -78,8 +78,7 @@ end
 
 % Particular solution v0 and nullspace basis N: v = v0 + N*x.
 % v0 is ANY particular solution; the sampled flux distribution is invariant to
-% its choice and to the nullspace basis, so the minimum-norm solution used here
-% and the Python reference's lstsq sample the same polytope.
+% its choice and to the nullspace basis.
 % lsqminnorm rather than '\': Aeq is square whenever the number of metabolites
 % plus the number of folded-in fixed reactions equals the number of reactions,
 % and it is then rank-deficient, for which '\' returns NaN. Those NaNs travel

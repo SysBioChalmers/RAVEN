@@ -61,8 +61,7 @@ if nargin < 6 || isempty(reg);     reg = 1e-8;     end
 b = b(:);
 % bnrm is the norm of the ORIGINAL b (before the row-normalisation below sets
 % b <- ones). This matches COBRA's chrrSampler reference; do not "correct" it to
-% sqrt(m), or convergence scaling diverges from the reference (and from the
-% validated Python max_volume_ellipsoid this file mirrors).
+% sqrt(m), or convergence scaling diverges from the reference.
 bnrm = norm(b);
 minmu = 1e-8;
 tau0  = 0.75;

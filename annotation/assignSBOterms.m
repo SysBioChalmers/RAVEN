@@ -2,8 +2,8 @@ function model = assignSBOterms(model, varargin)
 % assignSBOterms  Assign SBO terms to metabolites and reactions.
 %
 % Assign SBO terms to metabolites and reactions following a generic rule
-% set. Mirrors raven_python.annotation.add_sbo_terms and yeast-GEM's
-% legacy addSBOterms; organism-agnostic, parameterised entirely by opts.
+% set. The MATLAB counterpart of yeast-GEM's legacy addSBOterms;
+% organism-agnostic, parameterised entirely by opts.
 %
 % SBO is written via editMiriam(..., 'fill') so pre-existing SBO
 % annotations are preserved.

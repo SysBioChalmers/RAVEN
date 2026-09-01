@@ -36,7 +36,7 @@ function newModel=curateModelFromTables(model,metsInfo,varargin)
 %     rxnNotes, rxnReferences, rxnConfidenceScores, then MIRIAM.
 % metPrefix : char
 %     Prefix used to mint fresh metabolite ids (e.g. 's_' for yeast-GEM,
-%     'M_' for the cobrapy/BiGG default) (default 'M_').
+%     'M_' for the BiGG default) (default 'M_').
 % rxnPrefix : char
 %     Prefix used to mint fresh reaction ids (default 'R_').
 %

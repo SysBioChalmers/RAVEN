@@ -3,8 +3,7 @@ function [model,KOModel,isSpontaneous,isUndefinedStoich,isIncomplete,isGeneral]=
 %
 % Fetches the raven-data <kegg version>_core.tar.gz bundle (the
 % gene-free reference model plus the ko_reaction / organism_gene_ko /
-% rxn_flags relational tables --- see raven-toolbox's
-% docs/maintenance/kegg_data_format.md), then joins every organism's
+% rxn_flags relational tables), then joins every organism's
 % genes onto the reference reactions through their shared KO ids. The
 % KEGG version is read from keggDataVersion, not hardcoded here.
 %

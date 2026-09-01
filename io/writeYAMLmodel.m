@@ -1,13 +1,12 @@
 function writeYAMLmodel(model,varargin)
-% writeYAMLmodel  Write a model to a yaml file matching cobrapy's structure.
+% writeYAMLmodel  Write a model to a yaml file in the standard cobra-format
+% !!omap structure.
 %
-% The format is cobrapy's native !!omap layout, extended with RAVEN-only
+% The format uses the standard !!omap layout, extended with RAVEN-only
 % top-level per-entry keys (inchis, deltaG, metFrom, rxnFrom, references,
 % confidence_score, protein) and the GECKO ec-rxns / ec-enzymes sections.
 % Reaction EC numbers are written inside the `annotation` block as
-% `ec-code` (the cobrapy/geckopy convention), not as a top-level reaction
-% key. Output is byte-stable with raven_python's io.yaml.write_yaml_model
-% when called with the same model.
+% `ec-code`, not as a top-level reaction key.
 %
 % Parameters
 % ----------
@@ -74,20 +73,19 @@ fid = fopen(fileName,'wt');
 if fid == -1
     error(['Cannot write to ' fileName ', does the directory exist?'])
 end
-% cobrapy emits a bare `!!omap` root with no document-start marker;
-% match that for byte-stable round-tripping.
+% Emit a bare `!!omap` root, with no document-start marker.
 fprintf(fid,'!!omap\n');
 
 %Insert file header (metadata)
 writeMetadata(model,fid);
 
 %Metabolites:
-% Field order matches cobrapy + raven_python.io.yaml:
+% Field order:
 %   id, name, compartment, charge, formula, annotation, then RAVEN-only
 %   extras (inchis, deltaG, metFrom, notes).
-% SMILES goes inside the annotation block (cobrapy convention), not at
-% metabolite top level — the reader still accepts top-level `smiles:`
-% for backward compatibility with older yeast-GEM files.
+% SMILES goes inside the annotation block, not at metabolite top level —
+% the reader still accepts top-level `smiles:` for backward compatibility
+% with older yeast-GEM files.
 fprintf(fid,'- metabolites:\n');
 for i = 1:length(model.mets)
     fprintf(fid,'  - !!omap\n');
@@ -104,13 +102,12 @@ for i = 1:length(model.mets)
 end
 
 %Reactions:
-% Field order matches cobrapy + raven_python.io.yaml:
+% Field order:
 %   id, name, metabolites, lower_bound, upper_bound, gene_reaction_rule,
 %   objective_coefficient, subsystem, annotation (which carries the EC
-%   numbers under `ec-code`, the cobrapy/geckopy convention), then
-%   RAVEN-only extras (references, rxnFrom, deltaG, confidence_score,
-%   notes). The notes key is the canonical `notes`, not `rxnNotes`; the
-%   reader still accepts the legacy key.
+%   numbers under `ec-code`), then RAVEN-only extras (references, rxnFrom,
+%   deltaG, confidence_score, notes). The notes key is the canonical
+%   `notes`, not `rxnNotes`; the reader still accepts the legacy key.
 fprintf(fid,'- reactions:\n');
 for i = 1:length(model.rxns)
     fprintf(fid,'  - !!omap\n');
@@ -119,11 +116,9 @@ for i = 1:length(model.rxns)
     writeField(model, fid, 'S',                    'txt', i, '    - metabolites',           4)
     writeField(model, fid, 'lb',                   'flt', i, '    - lower_bound',           4)
     writeField(model, fid, 'ub',                   'flt', i, '    - upper_bound',           4)
-    % Deliberately not cobra's "required reaction attribute" here: an
-    % absent gene_reaction_rule reads back as '' on both sides (cobra's
-    % own Reaction defaults to it, and raven_toolbox.io.read_yaml_model
-    % never indexes the key directly), so dropping an empty one when
-    % writing is safe, and keeps the file free of the resulting churn.
+    % An absent gene_reaction_rule reads back as '' regardless of whether
+    % it was written, so dropping an empty one when writing is safe, and
+    % keeps the file free of the resulting churn.
     writeField(model, fid, 'grRules',              'txt', i, '    - gene_reaction_rule', 4)
     if model.c(i)~=0
         writeField(model, fid, 'c',                'flt', i, '    - objective_coefficient', 4)
@@ -138,12 +133,9 @@ for i = 1:length(model.rxns)
 end
 
 %Genes:
-% genes is one of cobra's required top-level model keys (model_to_dict
-% always emits it, empty or not) — write the flow-style empty list for
-% a gene-less model, matching raven_toolbox.io.write_yaml_model exactly,
-% rather than a bare `- genes:` with nothing following, which parses as
-% `genes: null` and crashes readers that assume a present key means a
-% list.
+% For a gene-less model, write the flow-style empty list rather than a
+% bare `- genes:` with nothing following, which parses as `genes: null`
+% and would crash a reader that assumes a present key means a list.
 if isfield(model,'genes') && ~isempty(model.genes)
     fprintf(fid,'- genes:\n');
     for i = 1:length(model.genes)
@@ -167,10 +159,9 @@ end
 
 %EC-model:
 if isfield(model,'ec')
-    % gecko_light flag at the top level (matches
-    % raven_python.io.yaml — keeps the metaData block a pure provenance
-    % container). The reader accepts both this key and the legacy
-    % geckoLight key inside metaData.
+    % gecko_light flag at the top level (keeps the metaData block a pure
+    % provenance container). The reader accepts both this key and the
+    % legacy geckoLight key inside metaData.
     if model.ec.geckoLight; geckoLightStr = 'true'; else; geckoLightStr = 'false'; end
     fprintf(fid,'- gecko_light: %s\n', geckoLightStr);
     fprintf(fid,'- ec-rxns:\n');
@@ -217,7 +208,7 @@ if isfield(model,fieldName)
     if strcmp(fieldName,'S')
         %S: create header & write each metabolite in a new line. Reactions
         %with no metabolites emit `metabolites: !!omap []` (the flow-style
-        %empty omap cobrapy uses) so the file remains a valid YAML 1.2
+        %empty omap representation) so the file remains a valid YAML 1.2
         %document.
         if sum(field(:,pos) ~= 0) > 0
             fprintf(fid,'%s: !!omap\n',name);
@@ -333,7 +324,7 @@ if isfield(model,'annotation')
         end
     end
     % Any other annotation field is a caller-specific provenance key with
-    % no RAVEN-defined slot (e.g. geckopy's `geckopy_version`). Emit it
+    % no RAVEN-defined slot (e.g. a tool-specific `_version` key). Emit it
     % too, sorted alphabetically for deterministic output, instead of
     % silently dropping it — readYAMLmodel.m's matching `otherwise` case
     % restores it on read, so a write/read round trip is lossless.
@@ -346,9 +337,8 @@ if isfield(model,'annotation')
     end
 end
 % gecko_light is emitted at the top level (see geckoLight emission near
-% the GECKO ec-* sections) to match raven_python.io.yaml; keeping it
-% out of metaData lets cobrapy/ruamel keep the section a pure
-% provenance block.
+% the GECKO ec-* sections) so that metaData stays a pure provenance
+% block.
 end
 
 function v = valueOrDefault(model, field, defaultVal)
@@ -365,7 +355,7 @@ if islogical(value)
     if value; value = 'true'; else; value = 'false'; end
     emitScalarLine(fid, ['  - ' key], value, 2, true);
 elseif isnumeric(value)
-    % defaultLB/defaultUB are genuinely floats (cobra's Reaction bounds);
+    % defaultLB/defaultUB are genuinely floats (reaction bounds);
     % every other metaData annotation value that reaches here numeric
     % (e.g. a stray numeric taxonomy id) is formatted the same way, since
     % none of RAVEN's own metaData fields are conceptually integers.
@@ -399,12 +389,12 @@ end
 function writeAnnotationSimple(model, fid, miriamsField, miriamValsField, miriamNamesField, pos, indent, subIndent)
 % Emit a bare `annotation: !!omap` block from MIRIAM cross-references only
 % (used for genes and compartments, which carry no extra non-MIRIAM
-% annotation key; cobrapy has no equivalent for either — compartments in
-% particular are a flat {id: name} map on the cobra side, with no
-% per-compartment annotation at all — so there is no reference format to
-% match here, only readYAMLmodel's own expectation that a compartment's
-% annotation sub-entries are indented >=6 spaces). Keys are emitted in
-% alphabetical order, matching cobra's sorted-dict annotation elsewhere.
+% annotation key and have no established reference format to follow —
+% compartments in particular are just a flat {id: name} map with no
+% per-compartment annotation at all — so the layout here follows only
+% readYAMLmodel's own expectation that a compartment's annotation
+% sub-entries are indented >=6 spaces). Keys are emitted in alphabetical
+% order, matching the sort order used elsewhere in this file.
 if nargin < 7
     indent = '    ';
 end
@@ -438,14 +428,11 @@ end
 
 function writeAnnotation(model, fid, kind, pos)
 % Emit the per-entry `annotation` block, fusing MIRIAM cross-references
-% with the non-MIRIAM cobrapy-style annotation keys: `smiles` for
-% metabolites and `ec-code` (EC numbers) for reactions. cobrapy and
-% geckopy read both from inside `annotation` (not as top-level entry
-% keys), so this helper keeps the YAML aligned. `ec-code` is emitted as a
-% list — matching cobrapy / raven-python and geckopy, which read it as
-% list[str] — even when there is a single code. All keys (MIRIAMs and the
-% extra key together) are emitted in alphabetical order, matching cobra's
-% sorted-dict annotation.
+% with the non-MIRIAM annotation keys: `smiles` for metabolites and
+% `ec-code` (EC numbers) for reactions — both are written inside
+% `annotation` rather than as top-level entry keys. `ec-code` is always
+% emitted as a list, even when there is a single code. All keys (MIRIAMs
+% and the extra key together) are emitted in alphabetical order.
 switch kind
     case 'met'
         miriamsField     = 'metMiriams';
@@ -476,10 +463,9 @@ if hasMiriams
     entries = collectMiriamEntries(model.(miriamNamesField), model.(miriamValsField), pos);
 end
 if hasExtra
-    % EC numbers / SMILES are always emitted as a list (matching
-    % cobrapy/raven-python/geckopy, which read `ec-code` as list[str]),
-    % even when there is a single value — unlike a MIRIAM entry, which
-    % collapses to a bare scalar when there is only one.
+    % EC numbers / SMILES are always emitted as a list, even when there is
+    % a single value — unlike a MIRIAM entry, which collapses to a bare
+    % scalar when there is only one.
     codes = strip(strsplit(strrep(model.(extraField){pos}, ' ', ''), ';'));
     codes = codes(~cellfun('isempty', codes));
     if ~isempty(codes)
@@ -538,12 +524,11 @@ end
 
 function emitScalarCore(fid, ~, value, ~, bareNumeric)
 % Shared tail for emitScalarLine / emitListItem: writes a single space
-% (as ruamel always does after ':' or '-'), then the value, double-quoted
-% when needed (matching Prettier's YAML default, rather than ruamel's own
-% single-quote default). No folding — RAVEN/raven-toolbox's shared format
-% never wraps a scalar across lines, however long, so the two unused
-% positional arguments (column and key indent) only exist to keep every
-% call site's signature stable.
+% after ':' or '-', then the value, double-quoted when needed (matching
+% Prettier's YAML default). No folding — this format never wraps a
+% scalar across lines, however long, so the two unused positional
+% arguments (column and key indent) only exist to keep every call site's
+% signature stable.
 if bareNumeric
     fprintf(fid, ' %s\n', value);
     return
@@ -558,15 +543,13 @@ end
 end
 
 function tf = needsQuote(s)
-% Whether ruamel would quote this scalar: either because a plain (bare)
-% reading would resolve to a non-string YAML type (bool/int/float/null/
-% timestamp — cobra's dumper never emits explicit type tags), or because
-% the text itself is not valid as a plain block scalar (leading
+% Whether this scalar needs quoting when written: either because a plain
+% (bare) reading would resolve to a non-string YAML type (bool/int/float/
+% null/timestamp — this writer never emits explicit type tags), or
+% because the text itself is not valid as a plain block scalar (leading
 % indicator character, a mid-string ": "/" #", leading/trailing
-% whitespace, or embedded control characters). Ports the relevant
-% subset of ruamel.yaml's Resolver.implicit_resolvers and
-% Emitter.analyze_scalar (YAML 1.2 variants; cobra's round-trip dumper
-% does not pin an older version).
+% whitespace, or embedded control characters). Implements the YAML 1.2
+% rules for resolving implicit scalar types and analyzing scalar style.
 if isempty(s)
     tf = true;
     return

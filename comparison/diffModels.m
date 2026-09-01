@@ -1,8 +1,7 @@
 function report = diffModels(modelA, modelB, varargin)
 % diffModels  Report the semantic differences between two models.
 %
-% Counterpart of raven_toolbox.comparison.diff.diff_models. Compares two
-% models entry by entry, keyed by identifier, and returns a report listing
+% Compares two models entry by entry, keyed by identifier, and returns a report listing
 % every difference found. Reactions, metabolites and genes are matched by
 % id; for the ids present in both models the reaction stoichiometry, bounds,
 % objective coefficient, grRule, EC codes, and the metabolite formula,

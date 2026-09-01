@@ -1,8 +1,7 @@
 function pairs = findDuplicateRxns(model, varargin)
 % findDuplicateRxns  Find reactions that share identical stoichiometry.
 %
-% Counterpart of raven_python.manipulation.find_duplicate_reactions, and
-% the upstream version of yeast-GEM's findDuplicatedRxns.
+% The upstream version of yeast-GEM's findDuplicatedRxns.
 %
 % Only stoichiometry is compared — bounds, GPRs, and annotations are
 % ignored. The default treats A→B and B→A as duplicates (typical curation
