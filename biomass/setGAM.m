@@ -3,8 +3,8 @@ function model = setGAM(model, value, biomassRxn, cofactorMetNames, varargin)
 %
 % Set the growth-associated maintenance (GAM) coefficient in the biomass
 % pseudoreaction, and optionally fix the non-growth maintenance (NGAM)
-% reaction's bounds. Mirrors raven_python.biomass.set_gam and yeast-GEM's
-% legacy changeGAM.
+% reaction's bounds. The MATLAB counterpart of yeast-GEM's legacy
+% changeGAM.
 %
 % For every metabolite in the biomass pseudoreaction whose model.metNames
 % entry is in cofactorMetNames, the stoichiometric coefficient is set to

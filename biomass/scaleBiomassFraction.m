@@ -3,8 +3,7 @@ function model = scaleBiomassFraction(model, biomassConfig, componentName, newVa
 %
 % Rescale a biomass component to a target g/gDW value, optionally
 % balancing a second component so the total biomass mass stays at 1 g/gDW.
-% Mirrors raven_python.biomass.scale_biomass and yeast-GEM's legacy
-% scaleBioMass.
+% The MATLAB counterpart of yeast-GEM's legacy scaleBioMass.
 %
 % Parameters
 % ----------

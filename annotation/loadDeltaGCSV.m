@@ -1,8 +1,6 @@
 function model = loadDeltaGCSV(model, varargin)
 % loadDeltaGCSV  Load metDeltaG and rxnDeltaG from CSV files.
 %
-% Mirrors raven_toolbox.annotation.load_delta_g_csv.
-%
 % Each CSV is a two-column table: identifier, deltaG. On load, rows whose
 % identifier is not in the model are silently skipped, and every matched
 % value is stored exactly as it appears in the CSV -- including yeast-GEM's

@@ -129,8 +129,7 @@ classdef tUtils < RavenTestCase
         end
 
         function isDnfGrRuleIgnoresRedundantBrackets(testCase)
-            % Bracketing alone never makes a rule non-DNF. Both of these were
-            % false positives for the one-level split this replaced.
+            % Bracketing alone never makes a rule non-DNF.
             testCase.verifyTrue(isDnfGrRule('((G1 and G2) or G3)'));
             testCase.verifyTrue(isDnfGrRule('(G1 or G2) or (G3 and G4)'));
         end

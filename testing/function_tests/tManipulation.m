@@ -258,11 +258,9 @@ classdef tManipulation < RavenTestCase
         end
 
         function mergeModelsSelfCollisionGetsUniqueIds(testCase)
-            % raven-gecko-parity#68: a source model with two internally
-            % duplicate reaction ids ('R1' twice) that both collide with
-            % the growing merged model used to rename to the identical new
-            % id twice, silently producing a genuine duplicate. Both must
-            % now get distinct ids instead.
+            % A source model with two internally duplicate reaction ids
+            % ('R1' twice) that both collide with the growing merged model
+            % must each be renamed to a distinct id, not the same one.
             a = tManipulation.twoMetModel();
             b = tManipulation.duplicateRxnModel('M2');
             evalc('merged = mergeModels({a; b});');

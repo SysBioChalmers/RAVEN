@@ -121,7 +121,7 @@ classdef tIO < RavenTestCase
 
         function writeReadYAMLPreservesUnknownAnnotationFields(testCase)
             % A caller-specific metaData field with no RAVEN-defined slot
-            % (e.g. geckopy's `geckopy_version`) must survive a write/read
+            % (e.g. a `geckopy_version` field) must survive a write/read
             % round trip instead of being silently dropped, same as the
             % fixed annoFields set (taxonomy here).
             m = testCase.model;

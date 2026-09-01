@@ -36,7 +36,6 @@ end
 
 
 function tf=isDnfNode(node)
-% Mirrors _is_dnf_node in raven-toolbox utils/gpr.py.
 switch node.type
     case 'gene'
         tf=true;
@@ -54,7 +53,6 @@ end
 
 
 function tf=containsOr(node)
-% Mirrors _contains_or in raven-toolbox utils/gpr.py.
 switch node.type
     case 'or'
         tf=true;

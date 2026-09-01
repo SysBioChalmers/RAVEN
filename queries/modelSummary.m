@@ -3,7 +3,7 @@ function modelSummary(model, varargin)
 %
 % Prints model dimensions, the objective function, and — when a flux vector
 % is supplied — the objective value plus all net exchange fluxes partitioned
-% into uptake and secretion. Inspired by COBRApy's model.summary().
+% into uptake and secretion.
 %
 % Parameters
 % ----------
