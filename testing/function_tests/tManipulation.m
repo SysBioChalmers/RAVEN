@@ -85,6 +85,21 @@ classdef tManipulation < RavenTestCase
             testCase.verifyGreaterThan(numel(m2.rxns), numel(testCase.model.rxns));
         end
 
+        function addTransportAcceptsRowOrientedMetNames(testCase)
+            % Regression test for SysBioChalmers/RAVEN#722: a metNames cell
+            % array keeps whatever orientation the caller passed it in, and
+            % a plain {'a','b'} literal is row-oriented. A single-metabolite
+            % cell (as in addTransportAddsRxn above) cannot catch this ---
+            % a 1x1 cell is the same shape whichever way you call it "row"
+            % or "column" --- so this needs two or more metabolites, both
+            % already present in the target compartment (the default
+            % onlyToExisting=true path, which is where this crashed).
+            metNames = {'CO2', 'Formate'}; %#ok<NASGU> % row-oriented on purpose
+            evalc('m2 = addTransport(testCase.model, ''c'', {''e''}, ''metNames'', metNames);');
+            testCase.verifyEqual(numel(m2.rxns), numel(testCase.model.rxns) + 2);
+            testCase.verifyEqual(size(m2.rxnNames, 2), 1);
+        end
+
         function addRxnsCleanEquationDoesNotWarn(testCase)
             % The "metabolite on both sides" warning must only fire for the
             % equations it names, not on every call.
