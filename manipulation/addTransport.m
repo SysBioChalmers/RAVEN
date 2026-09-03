@@ -65,6 +65,11 @@ if isempty(p.metNames)
 else
     metNames=convertCharArray(p.metNames);
 end
+%Normalise to a column vector regardless of the orientation the caller
+%passed metNames in (e.g. a literal {'a','b','c'} is a row): everything
+%derived from it below is concatenated against model fields, which are
+%always columns.
+metNames=metNames(:);
 
 %Check that the names are unique
 if numel(unique(metNames))~=numel(metNames)
@@ -135,6 +140,7 @@ for i=1:numel(toComps)
     filler(:)={''};
     addedRxnsID=generateNewIds(model,'rxns',prefix,nRxns);
     addedRxnsName=strcat(namesInComp, {' transport, '}, model.compNames(fromID), '-', model.compNames(toIDs(i)));
+    addedRxnsName=addedRxnsName(:); %Defensive: keep column orientation regardless of namesInComp's
     model.rxns=[model.rxns;addedRxnsID];
     model.rxnNames=[model.rxnNames;addedRxnsName];
     
