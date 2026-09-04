@@ -9,10 +9,8 @@ function exportToExcelFormat(model,varargin)
 % Name-Value Arguments
 % --------------------
 % fileName : char
-%     file name of the Excel file. Only xlsx format is supported. This can
-%     also be only a path, in which case the model is exported to a set of
-%     tab-delimited text files via exportToTabDelimited. A dialog window
-%     will open if fileName is empty.
+%     file name of the Excel file. Only xlsx format is supported. A dialog
+%     window will open if fileName is empty.
 % sortIds : logical
 %     whether metabolites, reactions and genes should be sorted
 %     alphabetically by their identifiers (default false).
@@ -38,13 +36,7 @@ end
 
 checkModelStruct(model);
 
-[~, A, B]=fileparts(fileName);
-
-%If a path was used call on exportToTabDelimited instead
-if ~any(A) || ~any(B)
-    exportToTabDelimited(model,fileName);
-    return;
-end
+[~, ~, B]=fileparts(fileName);
 
 if ~strcmpi(B,'.xlsx')
     EM='As of RAVEN version 1.9, only export to xlsx format is supported';

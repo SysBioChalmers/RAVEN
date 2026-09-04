@@ -192,14 +192,6 @@ classdef tIO < RavenTestCase
             testCase.verifyEqual(m2.annotation.geckopyVersion, '0.2.1');
         end
 
-        function exportToTabDelimitedWritesFiles(testCase)
-            d = [tempname filesep];
-            mkdir(d);
-            testCase.addTeardown(@() rmdir(d, 's'));
-            evalc('exportToTabDelimited(testCase.model, d);');
-            testCase.verifyTrue(exist(fullfile(d,'excelRxns.txt'),'file')==2);
-        end
-
         function exportForGitWritesRepo(testCase)
             d = [tempname filesep];
             mkdir(d);
