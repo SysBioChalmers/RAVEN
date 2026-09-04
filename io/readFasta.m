@@ -21,6 +21,10 @@ function fastaStruct=readFasta(fileName)
 % Examples
 % --------
 %     fastaStruct = readFasta('proteins.fa');
+%
+% See also
+% --------
+% writeFasta
 
 fileName=char(fileName);
 fid=fopen(fileName,'r');
