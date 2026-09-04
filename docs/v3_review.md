@@ -72,10 +72,10 @@ So the review does not repeat completed work. v3 already:
   cutoff filtering plus `followChanged`'s single-reference-flux comparison, with nothing of
   its own (SysBioChalmers/raven-gecko-parity#46).
 - Removed `exportToTabDelimited` and the `exportToExcelFormat` bare-path fallback that called
-  it: the fallback silently switched output format depending on whether `fileName` looked like
-  a path, contradicting `exportToExcelFormat`'s own error message ("only xlsx format is
-  supported" as of RAVEN 1.9) whenever a full filename *was* given
-  (SysBioChalmers/raven-gecko-parity#55).
+  it (SysBioChalmers/RAVEN#727): the fallback silently switched output format depending on
+  whether `fileName` looked like a path, contradicting `exportToExcelFormat`'s own error
+  message ("only xlsx format is supported" as of RAVEN 1.9) whenever a full filename *was*
+  given (SysBioChalmers/raven-gecko-parity#55).
 
 ---
 
