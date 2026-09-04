@@ -20,9 +20,10 @@ function [x,I,exitFlag]=getMinNrFluxes(model, varargin)
 % scores : double
 %     vector of weights for the reactions. Negative scores should not have
 %     flux. Positive scores are not possible in this implementation, and
-%     they are changed to max(scores(scores<0)). Must have the same
-%     dimension as toMinimize (find(toMinimize) if it is a logical vector)
-%     (default -1 for all reactions).
+%     they are changed to max(scores(scores<0)), or to 0 if scores has no
+%     negative entry at all. Must have the same dimension as toMinimize
+%     (find(toMinimize) if it is a logical vector) (default -1 for all
+%     reactions).
 %
 % Returns
 % -------
@@ -36,7 +37,6 @@ function [x,I,exitFlag]=getMinNrFluxes(model, varargin)
 %
 %     - 1 : optimal solution found
 %     - -1 : no feasible solution found
-%     - -2 : optimization time out
 %
 % Examples
 % --------
@@ -76,9 +76,18 @@ else
     end
     
     %Change positive scores to have a small negative weight. This is a
-    %temporary solution.
-    scores(scores>=0)=max(scores(scores<0));
-    
+    %temporary solution. If no score is negative there is nothing to clamp
+    %to (max([]) errors here rather than filling in a value, since the
+    %right-hand side is a computed empty array, not the literal [] MATLAB
+    %treats as a delete), so clamp to 0 instead: every reaction is then
+    %equally (un)weighted.
+    negScores=scores<0;
+    if any(negScores)
+        scores(~negScores)=max(scores(negScores));
+    else
+        scores(~negScores)=0;
+    end
+
     %It says that the default is -1, but that is to fit with other code
     scores=scores*-1;
 end
@@ -171,12 +180,6 @@ end
 
 xx=res.full(1:numel(irrevModel.rxns));
 I=res.full(numel(xx)+1:end);
-
-%Check if Mosek aborted because it reached the time limit
-%TODO: modify for cobra/gurobi
-% if strcmp("MSK_RES_TRM_MAX_TIME",res.rcode)
-%     exitFlag=-2;
-% end
 
 %Map back to original model from irrevModel
 x=xx(1:numel(model.rxns));
