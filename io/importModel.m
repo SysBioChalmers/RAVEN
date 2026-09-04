@@ -50,6 +50,9 @@ function model=importModel(varargin)
 %     - rxnNotes : reaction notes
 %     - rxnReferences : reaction references
 %     - rxnConfidenceScores : reaction confidence scores
+%     - rxnDeltaG : reaction Gibbs free energy, from a `deltaG` notes key
+%       (same convention exportModel writes and raven-toolbox reads/writes;
+%       omitted entirely if no reaction has one)
 %     - genes : list of all genes
 %     - geneComps : compartments for genes
 %     - geneMiriams : structure with MIRIAM information about the genes
@@ -61,6 +64,9 @@ function model=importModel(varargin)
 %     - metFormulas : metabolite chemical formula
 %     - metMiriams : structure with MIRIAM information about the metabolites
 %     - metCharges : metabolite charge
+%     - metDeltaG : metabolite Gibbs free energy, from a `deltaG` notes key
+%       (same convention exportModel writes and raven-toolbox reads/writes;
+%       omitted entirely if no metabolite has one)
 %     - unconstrained : true if the metabolite is an exchange metabolite
 %
 % Examples
@@ -214,6 +220,7 @@ metaboliteFormula={};
 metaboliteInChI={};
 metaboliteMiriams={};
 metaboliteCharges=[];
+metaboliteDeltaG=[];
 
 %Gene information is collected from fbc_geneProduct further below
 geneMiriams={};
@@ -308,6 +315,14 @@ for i=1:numel(modelSBML.species)
     else
         metaboliteCharges(numel(metaboliteCharges)+1,1)=NaN;
     end
+    %deltaG: same <p>deltaG: VALUE</p> notes convention exportModel writes
+    %and raven-toolbox reads/writes -- see RAVEN#724.
+    %str2double('')==NaN, matching metaboliteDeltaG's own NaN default.
+    if isfield(modelSBML.species(i),'notes')
+        metaboliteDeltaG(numel(metaboliteDeltaG)+1,1)=str2double(parseNote(modelSBML.species(i).notes,'deltaG'));
+    else
+        metaboliteDeltaG(numel(metaboliteDeltaG)+1,1)=NaN;
+    end
     %Additional information from FBC format Chemical formula
     if isfield(modelSBML.species(i),'fbc_chemicalFormula')
         if ~isempty(modelSBML.species(i).fbc_chemicalFormula)
@@ -330,6 +345,7 @@ subsystems=cell(numel(modelSBML.reaction),1);
 eccodes=cell(numel(modelSBML.reaction),1);
 eccodes(:,:)=cellstr('');
 rxnconfidencescores=NaN(numel(modelSBML.reaction),1);
+rxndeltag=NaN(numel(modelSBML.reaction),1);
 rxnreferences=cell(numel(modelSBML.reaction),1);
 rxnreferences(:,:)=cellstr('');
 rxnnotes=cell(numel(modelSBML.reaction),1);
@@ -423,6 +439,10 @@ for i=1:numel(modelSBML.reaction)
         end
         rxnreferences{counter,1}=parseNote(modelSBML.reaction(i).notes,'AUTHORS');
         rxnnotes{counter,1}=parseNote(modelSBML.reaction(i).notes,'NOTES');
+        %deltaG: same <p>deltaG: VALUE</p> notes convention exportModel
+        %writes and raven-toolbox reads/writes -- see RAVEN#724.
+        %str2double('')==NaN, matching rxndeltag's own NaN default.
+        rxndeltag(counter)=str2double(parseNote(modelSBML.reaction(i).notes,'deltaG'));
     end
 
     %Get SBO terms
@@ -503,6 +523,7 @@ reactionIDs=reactionIDs(1:counter);
 subsystems=subsystems(1:counter);
 eccodes=eccodes(1:counter);
 rxnconfidencescores=rxnconfidencescores(1:counter);
+rxndeltag=rxndeltag(1:counter);
 rxnreferences=rxnreferences(1:counter);
 rxnnotes=rxnnotes(1:counter);
 grRules=grRules(1:counter);
@@ -528,6 +549,7 @@ model.compNames=compartmentNames;
 model.rxnConfidenceScores=rxnconfidencescores;
 model.rxnReferences=rxnreferences;
 model.rxnNotes=rxnnotes;
+model.rxnDeltaG=rxndeltag;
 
 %Load annotation if available. If there are several authors, only the first
 %author credentials are imported
@@ -652,6 +674,11 @@ if ~isempty(metaboliteCharges)
     model.metCharges=metaboliteCharges;
 end
 
+%If any deltaG values have been loaded
+if ~isempty(metaboliteDeltaG) && ~all(isnan(metaboliteDeltaG))
+    model.metDeltaG=metaboliteDeltaG;
+end
+
 %If any gene short names have been loaded
 if any(~cellfun(@isempty,geneShortNames))
     model.geneShortNames=geneShortNames;
@@ -763,6 +790,9 @@ if cellfun(@isempty,model.rxnReferences)
 end
 if isempty(model.rxnConfidenceScores) || all(isnan(model.rxnConfidenceScores))
     model=rmfield(model,'rxnConfidenceScores');
+end
+if isempty(model.rxnDeltaG) || all(isnan(model.rxnDeltaG))
+    model=rmfield(model,'rxnDeltaG');
 end
 if isempty(model.genes)
     model=rmfield(model,'genes');
