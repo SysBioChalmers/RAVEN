@@ -138,6 +138,9 @@ end
 if ~isfield(model,'rxnConfidenceScores')
     model.rxnConfidenceScores=NaN(numel(model.rxns),1);
 end
+if ~isfield(model,'rxnDeltaG')
+    model.rxnDeltaG=NaN(numel(model.rxns),1);
+end
 if ~isfield(model,'rxnNotes')
     model.rxnNotes=cell(numel(model.rxns),1);
 end
@@ -353,6 +356,13 @@ for i=1:numel(model.mets)
             end
         end
     end
+    if isfield(modelSBML.species,'notes') && isfield(model,'metDeltaG') && ~isnan(model.metDeltaG(i))
+        % Key and format match exportModel's own rxnDeltaG handling and
+        % raven-toolbox's SBML notes convention -- see RAVEN#724. num2str's
+        % default precision, same as Confidence Level above: deltaG values
+        % are thermodynamic estimates, not measured to machine precision.
+        modelSBML.species(i).notes=['<notes><body xmlns="http://www.w3.org/1999/xhtml"><p>deltaG: ' num2str(model.metDeltaG(i)) '</p></body></notes>'];
+    end
 end
 
 if isfield(model,'genes')
@@ -453,7 +463,7 @@ for i=1:numel(model.rxns)
     end
 
     %Export notes information
-    if (~isnan(model.rxnConfidenceScores(i)) || ~isempty(model.rxnReferences{i}) || ~isempty(model.rxnNotes{i}))
+    if (~isnan(model.rxnConfidenceScores(i)) || ~isempty(model.rxnReferences{i}) || ~isempty(model.rxnNotes{i}) || ~isnan(model.rxnDeltaG(i)))
         modelSBML.reaction(i).notes='<notes><body xmlns="http://www.w3.org/1999/xhtml">';
         if ~isnan(model.rxnConfidenceScores(i))
             modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes '<p>Confidence Level: ' num2str(model.rxnConfidenceScores(i)) '</p>'];
@@ -463,6 +473,14 @@ for i=1:numel(model.rxns)
         end
         if ~isempty(model.rxnNotes{i})
             modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes '<p>NOTES: ' model.rxnNotes{i} '</p>'];
+        end
+        if ~isnan(model.rxnDeltaG(i))
+            % Key and format match how raven-toolbox writes
+            % model.notes["deltaG"] into the same cobra-native <notes>
+            % block -- see RAVEN#724. num2str's default precision, same as
+            % Confidence Level above: deltaG values are thermodynamic
+            % estimates, not measured to machine precision.
+            modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes '<p>deltaG: ' num2str(model.rxnDeltaG(i)) '</p>'];
         end
         modelSBML.reaction(i).notes=[modelSBML.reaction(i).notes '</body></notes>'];
     end

@@ -68,6 +68,42 @@ classdef tIO < RavenTestCase
             testCase.verifyEqual(numel(m2.rxns), numel(testCase.model.rxns));
         end
 
+        function exportImportSBMLRoundTripPreservesDeltaG(testCase)
+            % rxnDeltaG/metDeltaG round-trip through a <p>deltaG: VALUE</p>
+            % notes entry -- the same key and format raven-toolbox reads
+            % and writes, so either toolbox's SBML file is a complete
+            % round trip for the other (RAVEN#724). An untouched reaction
+            % or metabolite stays NaN, and the field is omitted entirely
+            % if nothing in the model has a value. Values are the kind of
+            % magnitude a real thermodynamic estimate has, not contrived
+            % high-precision ones: num2str's default precision (no digits
+            % argument) is exact for these, same as Confidence Level.
+            m = testCase.model;
+            m.rxnDeltaG = NaN(numel(m.rxns), 1);
+            m.rxnDeltaG(1) = -8.7;
+            m.metDeltaG = NaN(numel(m.mets), 1);
+            m.metDeltaG(1) = 7.5;
+
+            f = [tempname '.xml'];
+            testCase.addTeardown(@() delete(f));
+            evalc('exportModel(m, f);');
+            evalc('m2 = importModel(f);');
+
+            testCase.verifyEqual(m2.rxnDeltaG(1), -8.7, 'AbsTol', 1e-9);
+            testCase.verifyTrue(isnan(m2.rxnDeltaG(2)));
+            testCase.verifyEqual(m2.metDeltaG(1), 7.5, 'AbsTol', 1e-9);
+            testCase.verifyTrue(isnan(m2.metDeltaG(2)));
+        end
+
+        function exportModelOmitsDeltaGFieldWhenAllNaN(testCase)
+            f = [tempname '.xml'];
+            testCase.addTeardown(@() delete(f));
+            evalc('exportModel(testCase.model, f);');
+            evalc('m2 = importModel(f);');
+            testCase.verifyFalse(isfield(m2, 'rxnDeltaG'));
+            testCase.verifyFalse(isfield(m2, 'metDeltaG'));
+        end
+
         function exportToExcelFormatWritesFile(testCase)
             f = [tempname '.xlsx'];
             testCase.addTeardown(@() delete(f));
