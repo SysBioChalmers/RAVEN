@@ -68,6 +68,14 @@ So the review does not repeat completed work. v3 already:
   (§6.3); `getExchangeRxns` gains an optional third output returning the metabolite index per
   exchange reaction (§6.3); `getGeneData` surfaces UniProt xrefs from the GFF `Dbxref` column
   as a new `UniProt` table column (§6.3).
+- Removed `followFluxes` (SysBioChalmers/RAVEN#725): a strict subset of `printFluxes`'s
+  cutoff filtering plus `followChanged`'s single-reference-flux comparison, with nothing of
+  its own (SysBioChalmers/raven-gecko-parity#46).
+- Removed `exportToTabDelimited` and the `exportToExcelFormat` bare-path fallback that called
+  it: the fallback silently switched output format depending on whether `fileName` looked like
+  a path, contradicting `exportToExcelFormat`'s own error message ("only xlsx format is
+  supported" as of RAVEN 1.9) whenever a full filename *was* given
+  (SysBioChalmers/raven-gecko-parity#55).
 
 ---
 
