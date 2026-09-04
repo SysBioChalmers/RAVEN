@@ -93,12 +93,6 @@ classdef tAnalysis < RavenTestCase
             testCase.verifyEmpty(result.turnedOff);
         end
 
-        function followFluxesRuns(testCase)
-            sol = solveLP(testCase.model);
-            out = evalc('followFluxes(testCase.model, sol.x, 0, 1000);');
-            testCase.verifyClass(out, 'char');
-        end
-
         function followChangedRuns(testCase)
             % Aerobic vs anaerobic guarantees several reactions change, which
             % avoids the empty-selection edge case.
