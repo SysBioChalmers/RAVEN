@@ -1,4 +1,4 @@
-function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, fullMipRes] = ftINIT(prepData, tissue, celltype, hpaData, varargin)
+﻿function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, fullMipRes] = ftINIT(prepData, tissue, celltype, hpaData, varargin)
 % ftINIT  Generate a model using the ftINIT algorithm.
 %
 % Main function for generating a model using the ftINIT algorithm, based on
@@ -76,7 +76,7 @@ function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, fullMipRes
 %     array that indicates which of the metabolites in metabolomicsData that
 %     could be produced. Note that this is before the gap-filling process to
 %     enable defined tasks. To see which metabolites that can be produced in
-%     the final model, use canProduce:
+%     the final model, use canExchange:
 %
 %     - -2 : metabolite name not found in model.
 %     - -1 : metabolite found, but it could not be produced.

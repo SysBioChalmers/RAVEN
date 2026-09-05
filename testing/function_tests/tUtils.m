@@ -3,6 +3,25 @@ classdef tUtils < RavenTestCase
 
     methods (Test)
 
+        function deprecationWarningWarnsOncePerSession(testCase)
+            % A name no deprecated wrapper uses, so this test does not
+            % depend on whether some other test warned first.
+            name = 'tUtilsDeprecationDummy';
+            testCase.verifyWarning( ...
+                @() deprecationWarning(name,'somethingElse(model)'), ...
+                'RAVEN:deprecated');
+            % Second call in the same session stays quiet.
+            testCase.verifyWarningFree( ...
+                @() deprecationWarning(name,'somethingElse(model)'));
+        end
+
+        function deprecationWarningNamesTheReplacement(testCase)
+            name = 'tUtilsDeprecationNamed';
+            lastwarn('');
+            deprecationWarning(name,'findLeakMetabolite(model,''produce'',...)');
+            testCase.verifySubstring(lastwarn, 'findLeakMetabolite');
+        end
+
         function convertCharArrayFromChar(testCase)
             testCase.verifyEqual(convertCharArray('abc'), {'abc'});
         end

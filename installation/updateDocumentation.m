@@ -19,6 +19,11 @@ ravenDirs=unique({ravenDirs.folder})';
 ravenDirs(startsWith(ravenDirs,strcat(ravenDir,filesep,'software')))=[];
 ravenDirs(startsWith(ravenDirs,strcat(ravenDir,filesep,'legacy',filesep,'software')))=[];
 
+%Skip deprecated wrappers: they are on the path so existing scripts keep
+%working, but documenting them would advertise functions that are on their
+%way out. Each one names its replacement when called.
+ravenDirs(startsWith(ravenDirs,strcat(ravenDir,filesep,'deprecated')))=[];
+
 %Remove keggModel.mat if it exists
 if exist(fullfile(ravenDir,'reconstruction','kegg','keggModel.mat'), 'file') == 2
     delete(fullfile(ravenDir,'reconstruction','kegg','keggModel.mat'));

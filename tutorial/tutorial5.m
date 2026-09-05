@@ -30,7 +30,7 @@ disp(model);
 % A first control is that the model should not be able to produce any
 % metabolites without uptake of some metabolites. This commonly happens when
 % metabolites have a different meaning in different reactions. The best way
-% to find such reactions is to run makeSomething and analyze the resulting
+% to find such reactions is to run findLeakMetabolite and analyze the resulting
 % solution for bad reactions. An automated approach is to use removeBadRxns,
 % which tries to do the same thing in an automated manner. Type
 % "help removeBadRxns" for details.
@@ -50,8 +50,8 @@ disp(removedRxns);
 % According to the information in KEGG about this reaction it is a general
 % polymer reaction. One might want to look at the flux distributions
 % in more detail to try to find out if there is any better alternative to
-% delete. Use makeSomething to do this.
-[fluxes, metabolite]=makeSomething(model,{'H+'},true);
+% delete. Use findLeakMetabolite to do this.
+[fluxes, metabolite]=findLeakMetabolite(model,'produce',{'H+'},true);
 model.metNames(metabolite)
 
 % The model could produce H2O using the following reactions
@@ -83,7 +83,7 @@ model=removeReactions(model,'R02110');
 
 % The model can no longer make something from nothing. Can it consume
 % something without any output?
-[solution, metabolite]=consumeSomething(model,{'H+'},true);
+[solution, metabolite]=findLeakMetabolite(model,'consume',{'H+'},true);
 model.metNames(metabolite)
 
 % Nope, so that was good. Add some uptakes and see what it can produce.
@@ -91,11 +91,11 @@ model.metNames(metabolite)
 [model, addedRxns]=addExchangeRxns(model,'in',J);
 
 % Check which metabolites can be produced given these uptakes. The
-% canProduce function allows for output of all metabolites. This will not
+% canExchange function allows for output of all metabolites. This will not
 % happen in the real cell, but it is very useful for functionality testing
 % of the model. Once it is functional, the excretion reactions based on
 % evidence can be added as well.
-I=canProduce(model);
+I=canExchange(model,'produce');
 
 fprintf('%d%%\n', round(sum(I)/numel(model.mets)*100));
 % It seems that around 31% of the metabolites could be synthesized. It is

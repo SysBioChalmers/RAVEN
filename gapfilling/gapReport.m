@@ -111,9 +111,9 @@ end
 
 if calculateINOUT==true
     fprintf('\n***Mass balancing\n');
-    produced=canProduce(closedModel);
+    produced=canExchange(closedModel,'produce');
     canProduceWithoutInput=closedModel.mets(produced);
-    consumed=canConsume(closedModel);
+    consumed=canExchange(closedModel,'consume');
     canConsumeWithoutOutput=closedModel.mets(consumed);
     fprintf([num2str(numel(canConsumeWithoutOutput)) ' metabolites could be consumed without any outputs\n' num2str(numel(canProduceWithoutInput)) ' metabolites could be produced without any inputs\n']);
 end

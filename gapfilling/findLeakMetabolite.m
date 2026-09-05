@@ -64,7 +64,7 @@ function [solution, metabolite]=findLeakMetabolite(model, direction, varargin)
 %
 % See Also
 % --------
-% makeSomething, consumeSomething
+% canExchange
 
 direction=char(direction);
 if ~any(strcmp(direction,{'produce','consume'}))

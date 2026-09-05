@@ -13,7 +13,7 @@ refModel=readYAMLmodel('smallYeast.yml');
 model.b=[model.b inf(numel(model.b),1)];
 sol=solveLP(model,1);
 printFluxes(model,sol.x,false,10^-5,[],'%rxnID (%rxnName):\n\t%eqn\n\t%flux\n');
-I=canConsume(model);
+I=canExchange(model,'consume');
 disp(model.mets(I));
 gapReport(model,{refModel});
 

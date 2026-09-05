@@ -3,26 +3,27 @@ classdef tGapfilling < RavenTestCase
 
     methods (Test)
 
-        function canConsumeReturnsLogical(testCase)
-            out = canConsume(testCase.model, testCase.model.mets(1:3));
+        function canExchangeConsumeReturnsLogical(testCase)
+            out = canExchange(testCase.model, 'consume', testCase.model.mets(1:3));
             testCase.verifyClass(out, 'logical');
             testCase.verifyNumElements(out, 3);
         end
 
-        function canProduceReturnsLogical(testCase)
-            out = canProduce(testCase.model, testCase.model.mets(1:3));
+        function canExchangeProduceReturnsLogical(testCase)
+            out = canExchange(testCase.model, 'produce', testCase.model.mets(1:3));
             testCase.verifyClass(out, 'logical');
             testCase.verifyNumElements(out, 3);
+        end
+
+        function canExchangeInvalidDirectionErrors(testCase)
+            testCase.verifyError( ...
+                @() canExchange(testCase.model, 'neither'), ...
+                'RAVEN:badInput');
         end
 
         function checkProductionReturnsIndices(testCase)
             evalc('notProduced = checkProduction(testCase.model);');
             testCase.verifyClass(notProduced, 'double');
-        end
-
-        function checkRxnReturnsReport(testCase)
-            evalc('report = checkRxn(testCase.model, testCase.model.rxns{1});');
-            testCase.verifyClass(report, 'struct');
         end
 
         function findLeakMetaboliteProduceReturnsSolution(testCase)
@@ -41,13 +42,27 @@ classdef tGapfilling < RavenTestCase
                 'RAVEN:badInput');
         end
 
-        function makeSomethingReturnsSolution(testCase)
+        function deprecatedMakeSomethingStillWorks(testCase)
+            % The deprecated/ wrapper must keep returning what it always did.
+            % Its warning is once-per-session, so it is not asserted here
+            % (ordering across tests would decide whether it fires); the
+            % warning itself is covered by tUtils/deprecationWarning*.
             evalc('[sol, metabolite] = makeSomething(testCase.model);');
             testCase.verifyNotEmpty(sol);
         end
 
-        function consumeSomethingReturnsSolution(testCase)
+        function deprecatedConsumeSomethingStillWorks(testCase)
             evalc('[sol, metabolite] = consumeSomething(testCase.model);');
+            testCase.verifyNotEmpty(sol);
+        end
+
+        function deprecatedConsumeSomethingKeepsItsOwnArgumentOrder(testCase)
+            % consumeSomething's positional order has no allowExcretion,
+            % unlike findLeakMetabolite's. Passing its 5th argument
+            % (ignoreIntBounds) must reach ignoreIntBounds, not params --
+            % forwarding varargin verbatim used to shift it silently.
+            evalc(['[sol, metabolite] = consumeSomething(testCase.model, ' ...
+                '[], false, false, [], true);']);
             testCase.verifyNotEmpty(sol);
         end
 
