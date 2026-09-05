@@ -105,7 +105,8 @@ formulas=strrep(formulas,'-','');
 %Loop through each formula
 for i=1:numel(formulas)
     if ~isempty(formulas{i})
-        sucess=false; %To see if it works
+        sucess=false; %True once at least one element has been read
+        failed=false; %True if any part of the formula could not be read
         formula=formulas{i};
         
         %If it's an InChI code. The composition is found between the first
@@ -216,13 +217,19 @@ for i=1:numel(formulas)
                     useMat(i,I)=useMat(i,I)+coeff;
                     sucess=true;
                 else
+                    failed=true;
                     break;
                 end
             else
+                failed=true;
                 break;
             end
         end
-        if sucess==false
+        %A formula that stopped part way through is not parsed, even if the
+        %elements read before that point were recognised: reporting it as
+        %parsed would hand callers a composition that is missing everything
+        %after the first unreadable element
+        if sucess==false || failed==true
             useMat(i,:)=0; %Reset for this formula
             exitFlag(i)=-1;
         else
@@ -231,8 +238,10 @@ for i=1:numel(formulas)
     end
 end
 
-%Remove the elements which are never used
-I=~any(useMat);
+%Remove the elements which are never used. any(...,1) is needed because a
+%single formula makes useMat a row vector, for which any() would collapse
+%the whole row to one value instead of testing each element
+I=~any(useMat,1);
 useMat(:,I)=[];
 elements.abbrevs(I)=[];
 elements.names(I)=[];
@@ -245,9 +254,13 @@ if nargout>3
     P=bsxfun(@times,useMat(:,~isnan(EWs)),EWs(~isnan(EWs)).');
     MW=sum(P,2);
     
-    %Then remove the calculations for elements with unknown mass
-    I=find(useMat(:,isnan(EWs)));
-    MW(I)=nan;
+    %Then remove the calculations for the formulas that use an element of
+    %unknown mass. This has to be a per-formula test: find() on the
+    %submatrix returns linear indices into it, which are not row indices of
+    %MW once more than one unknown-mass element is in play (R and X together
+    %is the common case), so it blanked the wrong formulas and could grow MW
+    %past the number of formulas
+    MW(any(useMat(:,isnan(EWs))~=0,2))=nan;
     MW(exitFlag~=1)=nan;
 end
 end

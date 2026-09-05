@@ -37,6 +37,9 @@ verbose=p.verbose;
 
 %Set as global variable for speed improvement if optimizeProb is run many times
 global RAVENSOLVER;
+%CBT_MILP_SOLVER is a COBRA Toolbox global, set by changeCobraSolver, and
+%has to be declared as such to be readable in the MILP check below
+global CBT_MILP_SOLVER;
 if isempty(RAVENSOLVER)
     if(~ispref('RAVEN','solver'))
         error('RAVEN:badInput', '%s', 'RAVEN solver not defined or unknown. Try using setRavenSolver(''solver'').');
@@ -133,9 +136,16 @@ switch solver
             prob.sense = renameparams(prob.csense, {'L','G','E'}, {'<','>','='});
             prob = rmfield(prob, {'csense'});
         end
+        % gurobi minimises unless told otherwise, so an absent osense means
+        % minimisation; osense is also needed below to sign the duals
+        osense = 1;
         if isfield(prob, 'osense')
             osense = prob.osense;
-            prob.modelsense = renameparams(num2str(prob.osense), {'1','-1'}, {'min','max'});
+            if osense < 0
+                prob.modelsense = 'max';
+            else
+                prob.modelsense = 'min';
+            end
             prob = rmfield(prob, {'osense'});
         end
         [prob.obj, prob.rhs, prob.vtype] = deal(prob.c, prob.b, prob.vartype);
@@ -143,37 +153,51 @@ switch solver
 
         resG = gurobi(prob,solverparams);
 
-        try
-            % Name output fields the same as COBRA does
-            res.full     = resG.x;
-            res.obj      = resG.objval;
-            res.origStat = resG.status;
-            if isfield(resG,{'pi','rc'})
-                res.dual     = -resG.pi*osense;
-                res.rcost    = -resG.rc*osense;
-            end
-            if milp && strcmp(resG.status, 'TIME_LIMIT')
-                % If res has the objval field, it succeeded, regardless of
-                % time_limit status
-                resG.status = 'OPTIMAL';
-            end
-            switch resG.status
-                case 'OPTIMAL'
-                    res.stat = 1;
-                case 'UNBOUNDED'
-                    res.stat = 2;
-                otherwise
-                    res.stat = 0;
-            end
-            if ~milp
+        % Name output fields the same as COBRA does. Every field below is
+        % optional in the gurobi result: which ones are present depends on
+        % the status and on the method gurobi chose (a barrier solve returns
+        % no simplex basis, for instance). They are therefore read
+        % individually rather than under one try/catch, which would have
+        % reported a missing basis on an optimal solve as "infeasible".
+        res.origStat = resG.status;
+        if isfield(resG,'x')
+            res.full = resG.x;
+        end
+        if isfield(resG,'objval')
+            res.obj = resG.objval;
+        end
+        if isfield(resG,'pi') && isfield(resG,'rc')
+            res.dual     = -resG.pi*osense;
+            res.rcost    = -resG.rc*osense;
+        end
+        if milp && strcmp(resG.status, 'TIME_LIMIT') && isfield(resG,'x') && isfield(resG,'objval')
+            % An incumbent was found before the time limit. It is usable but
+            % not proven optimal, so it is reported as feasible rather than
+            % optimal; callers that must not act on a suboptimal MILP
+            % solution (ftINITFillGapsMILP, solveLP) key on that distinction.
+            resG.status = 'SUBOPTIMAL';
+        end
+        switch resG.status
+            case 'OPTIMAL'
+                res.stat = 1;
+            case {'UNBOUNDED','SUBOPTIMAL'}
+                res.stat = 2;
+            otherwise
+                res.stat = 0;
+        end
+        if ~milp
+            if isfield(resG,'vbasis')
                 res.vbasis = resG.vbasis;
-                res.cbasis = resG.cbasis;
-    		else
-    			res.mipgap = resG.mipgap;
             end
-        catch
+            if isfield(resG,'cbasis')
+                res.cbasis = resG.cbasis;
+            end
+        elseif isfield(resG,'mipgap')
+            res.mipgap = resG.mipgap;
+        end
+        if res.stat>0 && ~isfield(res,'full')
+            % A status that claims a solution without returning one
             res.stat = 0;
-            res.origStat = resG.status;  % useful information to have
         end
         %% Use GLPK using RAVEN-provided binary
     case 'glpk'
@@ -216,7 +240,17 @@ switch solver
         res.rcost    = -extra.redcosts*prob.osense;
         %% Use scip
     case {'soplex','scip'} % Old 'soplex' option also allowed
-        [xopt,fval,exitflag] = scip([], prob.c, prob.A,-prob.b, prob.b, prob.lb, prob.ub, prob.vartype);
+        % scip takes a row range [rl,ru] rather than a right-hand side plus
+        % a sense, so csense has to be translated into that range. Passing
+        % [-b,b] is only the same problem when every row is an equality with
+        % b = 0, which is the case for solveLP but for none of the MILPs
+        % built elsewhere in RAVEN.
+        rl = full(prob.b(:));
+        ru = rl;
+        csense = prob.csense(:);
+        rl(csense=='L') = -inf;   % A*x <= b
+        ru(csense=='G') = inf;    % A*x >= b
+        [xopt,fval,exitflag] = scip([], prob.c, prob.A, rl, ru, prob.lb, prob.ub, prob.vartype);
 
         %   [x,fval,exitflag,stats] = scip(H, f, A, rl, ru, lb, ub, xtype, sos, qc, nl, x0, opts)
         %
@@ -251,33 +285,34 @@ switch solver
         %       probfile - write problem to given file
         %       presolvedfile - write presolved problem to file
         %
-        %   Return Status:
-        %       0 - Unknown
-        %       1 - User Interrupted
-        %       2 - Node Limit Reached
-        %       3 - Total Node Limit Reached
-        %       4 - Stall Node Limit Reached
-        %       5 - Time Limit Reached
-        %       6 - Memory Limit Reached
-        %       7 - Gap Limit Reached
-        %       8 - Solution Limit Reached
-        %       9 - Solution Improvement Limit Reached
-        %      10 - Restart Limit Reached
-        %      11 - Problem Solved to Optimality
-        %      12 - Problem is Infeasible
-        %      13 - Problem is Unbounded
-        %      14 - Problem is Either Infeasible or Unbounded
+        %   Return Status, as returned by the MatlabSCIPInterface build that
+        %   RAVEN provides and that setRavenSolver points at
+        %   (github.com/scipopt/MatlabSCIPInterface). Verified against that
+        %   binary with a bounded, an infeasible and an unbounded problem:
+        %       1 - Problem Solved to Optimality
+        %       2 - Problem is Infeasible
+        %       3 - Problem is Unbounded
+        %
+        %   The OPTI Toolbox build of scip uses a different, longer set in
+        %   which optimality is 11, infeasibility 12 and unboundedness 13,
+        %   with the lower numbers meaning "a limit was reached". Those codes
+        %   are accepted below as well, so either build reports optimality
+        %   correctly; only OPTI's 1 ("User Interrupted") is ambiguous, and
+        %   reading it as optimal is no worse than the previous mapping,
+        %   which recognised no status from the shipped build at all.
         
         res.origStat = exitflag;
         res.full = xopt;
         res.obj  = fval;
 
         switch exitflag
-            case 11
+            case {1, 11}                  % solved to optimality
                 res.stat = 1;
-            case {1, 5, 6, 7, 8, 9, 10, 13} % If user-interrupted, not sure if optimal
+            case {3, 13}                  % unbounded
                 res.stat = 2;
-            otherwise
+            case {5, 6, 7, 8, 9, 10}      % OPTI: a limit was reached, so a
+                res.stat = 2;             % solution may exist but is not proven optimal
+            otherwise                     % 2/12 infeasible, 0 unknown, 4, 14
                 res.stat = 0;
         end
     otherwise

@@ -63,6 +63,23 @@ classdef tQueries < RavenTestCase
             testCase.verifyEqual(full(S), [-2;1]);
         end
 
+        function constructSSumsRepeatedMetabolite(testCase)
+            % A metabolite written more than once on the same side is one
+            % coefficient, not the last occurrence.
+            [S, mets] = constructS({'2 a + a => b'}, 'mets', {'a';'b'});
+            testCase.verifyEqual(mets, {'a';'b'});
+            testCase.verifyEqual(full(S), [-3;1]);
+        end
+
+        function constructSCancelsMetaboliteOnBothSides(testCase)
+            % A metabolite on both sides cancels, which is exactly what
+            % badRxns reports: the reaction is empty in the S matrix.
+            [S, ~, badRxns] = constructS({'atp + adp <=> adp + atp'}, ...
+                'mets', {'atp';'adp'});
+            testCase.verifyEqual(full(S), [0;0]);
+            testCase.verifyTrue(badRxns(1));
+        end
+
         function getAllRxnsFromGenesType(testCase)
             % Use a reaction that has a gene association.
             withGpr = testCase.model.rxns(find(~cellfun(@isempty, ...
@@ -165,6 +182,33 @@ classdef tQueries < RavenTestCase
             testCase.verifyEqual(testCase.model.rxns(idx), exch);
         end
 
+        function getExchangeRxnsWithBoundaryMets(testCase)
+            % A model that still carries boundary metabolites (an
+            % "unconstrained" field, as every model from importModel does)
+            % takes a different branch than one where they have been
+            % removed. Both have to return reaction indexes.
+            m = testCase.taskTestModel();  % closeModel'd, so it has boundary mets
+            testCase.assertTrue(isfield(m, 'unconstrained'));
+            testCase.assertTrue(any(m.unconstrained ~= 0));
+
+            [exch, idx] = getExchangeRxns(m);
+            testCase.verifyEqual(sort(exch), {'R1'; 'R8'});
+            testCase.verifyEqual(m.rxns(idx), exch);
+
+            % R1 supplies a[s] ("=> a[s]"), R8 removes e[s] ("e[s] =>")
+            testCase.verifyEqual(getExchangeRxns(m, 'in'), {'R1'});
+            testCase.verifyEqual(getExchangeRxns(m, 'out'), {'R8'});
+        end
+
+        function getExchangeRxnsAgreeAcrossBoundaryRemoval(testCase)
+            % Removing the boundary metabolites must not change which
+            % reactions are exchange reactions.
+            m = testCase.taskTestModel();
+            withBoundary = getExchangeRxns(m);
+            withoutBoundary = getExchangeRxns(simplifyModel(m));
+            testCase.verifyEqual(sort(withoutBoundary), sort(withBoundary));
+        end
+
         function getExchangeRxnsThirdOutputIsMetIndex(testCase)
             [~, idx, mets] = getExchangeRxns(testCase.model);
             testCase.verifyNumElements(mets, numel(idx));
@@ -219,6 +263,36 @@ classdef tQueries < RavenTestCase
             [elements, useMat, exitFlag, MW] = parseFormulas(testCase.model.metFormulas); %#ok<ASGLU>
             testCase.verifyNumElements(MW, numel(testCase.model.mets));
             testCase.verifyTrue(isfield(elements, 'abbrevs'));
+        end
+
+        function parseFormulasRejectsPartialParse(testCase)
+            % A formula that stops at an unrecognised element is not parsed,
+            % even though the part before it was readable. Reporting it as
+            % parsed would hand back a silently truncated composition.
+            [elements, useMat, exitFlag] = parseFormulas({'C6H12O6';'C6Zz3'});
+            testCase.verifyEqual(exitFlag, [1;-1]);
+            testCase.verifyEqual(sum(useMat(2,:)), 0);
+            % The good formula is unaffected
+            cIdx = strcmp(elements.abbrevs, 'C');
+            testCase.verifyEqual(useMat(1, cIdx), 6);
+        end
+
+        function parseFormulasSingleFormulaKeepsElements(testCase)
+            % With one formula useMat is a row vector; the unused-element
+            % pruning must still test each element separately.
+            [elements, useMat] = parseFormulas({'C6H12O6'});
+            testCase.verifySize(useMat, [1 numel(elements.abbrevs)]);
+            testCase.verifyEqual(sort(elements.abbrevs(:)), {'C';'H';'O'});
+        end
+
+        function parseFormulasUnknownMassBlanksOnlyItsOwnFormula(testCase)
+            % R and X have no mass. A formula that uses one gets MW = NaN;
+            % formulas that do not must keep their weight.
+            [~, ~, ~, MW] = parseFormulas({'C6H12O6';'C2R';'H2O';'CX'});
+            testCase.verifyFalse(isnan(MW(1)));
+            testCase.verifyTrue(isnan(MW(2)));
+            testCase.verifyFalse(isnan(MW(3)));
+            testCase.verifyTrue(isnan(MW(4)));
         end
 
         function parseRxnEquMetNames(testCase)
