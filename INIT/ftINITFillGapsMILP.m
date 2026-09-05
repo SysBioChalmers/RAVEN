@@ -39,8 +39,11 @@ function [x,I,exitFlag]=ftINITFillGapsMILP(model, varargin)
 %     exit status of the optimization:
 %
 %     - 1 : optimal solution found.
-%     - -1 : no feasible solution found.
-%     - -2 : optimization time out.
+%     - -1 : no solution found, either because the problem is infeasible or
+%       because the solver reached its time limit before finding one.
+%     - -2 : a solution was found but is not proven optimal, because the
+%       solver stopped on its time limit. It is returned, but the gap-fill
+%       it describes may be far from the smallest one.
 %
 % Notes
 % -----
@@ -237,12 +240,21 @@ if ~isFeasible
     x=[];
     I=[];
     exitFlag=-1;
+    if res.hitTimeLimit
+        %Nothing is returned either way, but the caller reports -1 as "no
+        %feasible solution exists", which is not what happened here.
+        EM='Time limit reached before finding a solution. Try increasing the TimeLimit parameter.';
+        warning('RAVEN:warning', '%s', EM);
+    end
     return;
 end
-if ~isOptimal
+if res.hitTimeLimit || ~isOptimal
     %A feasible but suboptimal solution, i.e. the solver stopped on its time
     %limit. The solution is still returned, but must not be reported as
     %optimal: the gap-fill it describes may be far from the smallest one.
+    %Not every solver reports this in its status, gurobi for one presents a
+    %MILP solution found before the limit as optimal, so res.hitTimeLimit is
+    %consulted as well.
     exitFlag=-2;
 end
 

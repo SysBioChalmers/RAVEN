@@ -431,7 +431,7 @@ res=optimizeProb(prob,params,verbose);
 
 
 if ~checkSolution(res)
-    if strcmp(res.origStat, 'TIME_LIMIT')
+    if res.hitTimeLimit
         EM='Time limit reached without finding a solution. Try increasing the TimeLimit parameter.';
     else
         EM='The problem is infeasible';
