@@ -160,7 +160,15 @@ if isfield(model,'genes')
     replacedGenes=regexprep(model.genes(problemGenes),'([^0-9_a-zA-Z])','__${num2str($1+0)}__');
     model.genes(problemGenes)=replacedGenes;
     for i=1:numel(problemGenes)
-        model.grRules = regexprep(model.grRules, ['(^|\s|\()' originalGenes{i} '($|\s|\))'], ['$1' replacedGenes{i} '$2']);
+        %originalGenes are by definition the identifiers containing
+        %characters outside [0-9_a-zA-Z], so they are also the ones that can
+        %contain regular-expression metacharacters: an unescaped "." in
+        %ENSG00000141510.16 matches any character, and an unescaped "(" makes
+        %the pattern itself invalid. The replacement needs no escaping, as
+        %replacedGenes only contains word characters by construction.
+        model.grRules = regexprep(model.grRules, ...
+            ['(^|\s|\()' regexptranslate('escape',originalGenes{i}) '($|\s|\))'], ...
+            ['$1' replacedGenes{i} '$2']);
     end
 end
 
