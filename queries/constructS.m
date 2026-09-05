@@ -83,9 +83,6 @@ equations=strrep(equations,' => ',' <=> ');
 %parsing
 equations=strrep(equations,' + ', '€');
 
-%Generate the stoichiometric matrix
-S=zeros(numel(mets),numel(equations));
-
 %Keep track of coefficients to be added to S-matrix
 metsToS = cell(100000,1);
 rxnsToS = zeros(100000,1);
@@ -180,9 +177,13 @@ if any(~metsPresent)
             missingMet '%s'],'');
     end
 end
-linearIndices=sub2ind(size(S),metsLoc,rxnsToS);
-S(linearIndices)=coefToS;
-S=sparse(S);
+%sparse() adds up repeated (metabolite,reaction) entries, which is what a
+%metabolite occurring more than once in one equation means: "2 H2O + H2O =>"
+%is a coefficient of 3, and a metabolite on both sides cancels to an empty
+%column, as badRxns above reports. Assigning into a preallocated matrix
+%instead kept only the last occurrence, and materialised the whole matrix
+%densely on the way.
+S=sparse(metsLoc,rxnsToS,coefToS,numel(mets),numel(equations));
 end
 
 function equ=fixEquations(equ)
