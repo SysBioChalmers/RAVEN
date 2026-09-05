@@ -37,6 +37,9 @@ function [x,I,exitFlag]=getMinNrFluxes(model, varargin)
 %
 %     - 1 : optimal solution found
 %     - -1 : no feasible solution found
+%     - -2 : the solver reached its time limit. Any solution that is
+%       returned is feasible but not proven optimal, so it may use more
+%       fluxes than the minimum
 %
 % Examples
 % --------
@@ -171,10 +174,20 @@ prob=rmfield(prob,{'blx','bux','blc','buc'});
 res = optimizeProb(prob,params,false);
 isFeasible=checkSolution(res);
 
+%A solver that ran out of time either returns nothing, or an incumbent
+%solution that is feasible but not proven to use the minimal number of
+%fluxes. Report the time limit in both cases, as it says something different
+%about the problem than an infeasible one does.
+if res.hitTimeLimit
+    exitFlag=-2;
+end
+
 if ~isFeasible
     x=[];
     I=[];
-    exitFlag=-1;
+    if exitFlag~=-2
+        exitFlag=-1;
+    end
     return;
 end
 

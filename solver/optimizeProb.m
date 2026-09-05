@@ -22,7 +22,10 @@ function res = optimizeProb(prob,varargin)
 % -------
 % res : struct
 %     the output structure from the selected solver RAVENSOLVER (COBRA
-%     style).
+%     style). In addition to the fields set by the solver, the logical field
+%     "hitTimeLimit" is true if the solver stopped because it reached its
+%     time limit. Whatever solution is in res is then either absent or not
+%     proven optimal.
 %
 % See also
 % --------
@@ -283,6 +286,13 @@ switch solver
     otherwise
         error('RAVEN solver not defined or unknown. Try using setRavenSolver(''solver'').');
 end
+%Flag a solve that ended on the time limit. res.stat cannot express this on
+%its own: a solver that times out with an incumbent solution in hand reports
+%the same status as one that finished, and a solver that times out with
+%nothing reports the same status as an infeasible problem. The raw status in
+%res.origStat does distinguish the two, but only in solver-specific terms,
+%so it is translated here where the solver is still known.
+res.hitTimeLimit=hitTimeLimit(solver,res,milp);
 if res.stat>0
     res.full=res.full(1:size(prob.a,2));
 end
@@ -306,6 +316,46 @@ function s_merged=structUpdate(s_old,s_new)
 s_merged = rmfield(s_old, intersect(fieldnames(s_old), fieldnames(s_new)));
 names = [fieldnames(s_merged); fieldnames(s_new)];
 s_merged = cell2struct([struct2cell(s_merged); struct2cell(s_new)], names, 1);
+end
+
+function timeLimit = hitTimeLimit(solver,res,milp)
+%Report whether the solver that produced res stopped on its time limit. Each
+%solver has its own status codes for this, and the "cobra" option hands the
+%status of the solver that COBRA dispatched to straight through, so that
+%solver is looked up as well.
+global CBT_LP_SOLVER CBT_MILP_SOLVER
+timeLimit=false;
+if ~isfield(res,'origStat')
+    return;
+end
+if strcmp(solver,'cobra')
+    if milp
+        solver=CBT_MILP_SOLVER;
+    else
+        solver=CBT_LP_SOLVER;
+    end
+    if isempty(solver) || ~ischar(solver)
+        return;
+    end
+end
+origStat=res.origStat;
+isText=ischar(origStat) || isstring(origStat);
+isCode=isnumeric(origStat) && isscalar(origStat);
+switch lower(solver)
+    case 'gurobi'
+        timeLimit=isText && strcmp(origStat,'TIME_LIMIT');
+    case 'mosek'
+        timeLimit=isText && strcmp(origStat,'MSK_RES_TRM_MAX_TIME');
+    case 'glpk'
+        %109 from the simplex method, 209 from the interior point method
+        timeLimit=isCode && ismember(origStat,[109 209]);
+    case {'scip','soplex'}
+        timeLimit=isCode && origStat==5;
+    case {'ibm_cplex','tomlab_cplex','cplex_direct'}
+        %11 for an LP, 107 and 108 for a MILP with and without an integer
+        %solution found before the limit was reached
+        timeLimit=isCode && ismember(origStat,[11 107 108]);
+end
 end
 
 function paramlist = renameparams(paramlist,old,new)

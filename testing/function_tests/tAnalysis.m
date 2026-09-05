@@ -25,6 +25,8 @@ classdef tAnalysis < RavenTestCase
             testCase.assumeMILPSolver();
             evalc('[x, I, exitFlag] = getMinNrFluxes(testCase.model, testCase.model.rxns);');
             testCase.verifyNotEmpty(x);
+            %A problem this small is solved well within the time limit
+            testCase.verifyEqual(exitFlag, 1);
         end
 
         function getAllSubGraphsReturnsResult(testCase)

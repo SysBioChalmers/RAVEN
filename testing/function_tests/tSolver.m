@@ -29,6 +29,14 @@ classdef tSolver < RavenTestCase
             testCase.verifyTrue(isfield(res, 'obj'));
         end
 
+        function optimizeProbReportsTimeLimit(testCase)
+            res = optimizeProb(testCase.modelLP());
+            testCase.verifyTrue(isfield(res, 'hitTimeLimit'));
+            testCase.verifyTrue(islogical(res.hitTimeLimit));
+            %The problem is solved long before the time limit is reached
+            testCase.verifyFalse(res.hitTimeLimit);
+        end
+
         function checkSolutionOnFeasibleProblem(testCase)
             res = optimizeProb(testCase.modelLP());
             [isFeasible, isOptimal] = checkSolution(res);
