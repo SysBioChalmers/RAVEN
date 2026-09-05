@@ -29,6 +29,9 @@ function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,varargin)
 % taskStructure : struct
 %     structure with the tasks, as from parseTaskList. If supplied then
 %     inputFile is ignored.
+% params : struct
+%     solver parameters, forwarded to fillGaps and from there to
+%     optimizeProb for each per-task gap-filling MILP (default []).
 %
 % Returns
 % -------
@@ -43,14 +46,16 @@ function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,varargin)
 % Examples
 % --------
 %     [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,...
-%         rxnScores,taskStructure);
+%         rxnScores,taskStructure,params);
 
 p=parseRAVENargs(varargin, {'printOutput',true; ...
     'rxnScores',[]; ...
-    'taskStructure',[]});
+    'taskStructure',[]; ...
+    'params',[]});
 printOutput=p.printOutput;
 rxnScores=p.rxnScores;
 taskStructure=p.taskStructure;
+params=p.params;
 
 if isempty(rxnScores)
     rxnScores=ones(numel(refModel.rxns),1)*-1;
@@ -270,7 +275,7 @@ for i=1:numel(taskStructure)
             %Only do gap-filling if it cannot be solved
             failed=false;
             try
-                [~, ~, newRxns, newModel, exitFlag]=fillGaps(tModel,refModel,false,true,supressWarnings,rxnScores);
+                [~, ~, newRxns, newModel, exitFlag]=fillGaps(tModel,refModel,false,true,supressWarnings,rxnScores,params);
                 if exitFlag==-2
                     EM=['"[' taskStructure(i).id '] ' taskStructure(i).description '" was aborted before reaching optimality.\n'];
                     warning('RAVEN:warning', '%s', EM);
