@@ -22,6 +22,29 @@ classdef tUtils < RavenTestCase
             testCase.verifySubstring(lastwarn, 'findLeakMetabolite');
         end
 
+        function legacyMethodNoticeWarnsOncePerSession(testCase)
+            % A name no legacy function uses, so this test does not depend on
+            % whether some other test noticed first.
+            name = 'tUtilsLegacyDummy';
+            testCase.verifyWarning( ...
+                @() legacyMethodNotice(name,'somethingElse'), ...
+                'RAVEN:legacyMethod');
+            % Second call in the same session stays quiet.
+            testCase.verifyWarningFree( ...
+                @() legacyMethodNotice(name,'somethingElse'));
+        end
+
+        function legacyMethodNoticePromisesNoRemoval(testCase)
+            % The point of a separate identifier from RAVEN:deprecated is that
+            % it commits to nothing being removed.
+            name = 'tUtilsLegacyNamed';
+            lastwarn('');
+            legacyMethodNotice(name,'ftINIT');
+            testCase.verifySubstring(lastwarn, 'ftINIT');
+            testCase.verifySubstring(lastwarn, 'remains supported');
+            testCase.verifyEmpty(strfind(lastwarn, 'will be removed'));
+        end
+
         function convertCharArrayFromChar(testCase)
             testCase.verifyEqual(convertCharArray('abc'), {'abc'});
         end

@@ -55,7 +55,7 @@ printFluxes(model,sol.x,true);
 %mmol/gDW/h
 
 %Run a single gene deletion
-[genes, fluxes, originalGenes, details]=findGeneDeletions(model,'sgd','fba');
+[genes, fluxes, originalGenes, details]=findGeneDeletions(model,'sgd');
 
 %Get the indexes of these reactions
 I=getIndexes(model,{'biomassOUT'},'rxns');
@@ -73,29 +73,6 @@ compareFluxes(model,sol.x,sol2.x,'cutoff',10^-2, ...
     'metaboliteList',{'NADPH' 'NADH' 'NAD' 'NADP'});
 
 %Step 5
-%Set the exchange rates to the recorded batch values
-%Set the upper bounds before the lower bounds, so that lb never temporarily
-%exceeds the previous ub (e.g. glcIN, whose ub was set to 1 in Step 1)
-model=setParam(model,'ub',{'acOUT' 'biomassOUT' 'co2OUT' 'ethOUT' 'glyOUT' 'glcIN' 'o2IN' 'ethIN'},[0 0.67706 22.4122 19.0946 1.4717 15 1.6 0]*1.0001);
-model=setParam(model,'lb',{'acOUT' 'biomassOUT' 'co2OUT' 'ethOUT' 'glyOUT' 'glcIN' 'o2IN' 'ethIN'},[0 0.67706 22.4122 19.0946 1.4717 15 1.6 0]*0.9999);
-
-%Define another model where all exchange reactions are open.
-model2=model;
-I=getIndexes(model,getExchangeRxns(model),'rxns');
-model2.lb(I)=0;
-model2.ub(I)=1000;
-
-%Delete ZWF gene
-model2=setParam(model2,'eq',{'ZWF'},0);
-
-%Run MOMA
-[fluxA, fluxB, flag]=qMOMA(model,model2);
-
-%As one can see, the glycerol production is higher in the deletion strain.
-%Note that this is without any objectives, just by trying to maintain the
-%cells original flux distribution.
-
-%Step 6
 %Read microarray results and calculate reporter metabolites (metabolites
 %around which there are significant transcriptional changes)
 [orfs, pvalues]=textread('expression.txt','%s%f');

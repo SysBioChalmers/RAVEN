@@ -1,10 +1,14 @@
 function [reducedModel, removedRxns, indexedDuplicateRxns]=contractModel(model,varargin)
 % contractModel  Contract a model by grouping all identical reactions.
 %
-% Similar to the deleteDuplicates part in simplifyModel but more care is
-% taken here when it comes to gene associations. If the duplicated reactions
-% have "_EXP_*" suffixes (where * is a digit), then the model is assumed to
-% have been passed through expandModel, and these suffixes are removed here.
+% This is what simplifyModel's deleteDuplicates option runs; it is not a
+% separate implementation. If the duplicated reactions have "_EXP_*" suffixes
+% (where * is a digit), then the model is assumed to have been passed through
+% expandModel, and these suffixes are removed here.
+%
+% Reactions are merged, so their gene associations are combined rather than
+% discarded. Use findDuplicateRxns instead to see which reactions are
+% duplicates without changing the model.
 %
 % Parameters
 % ----------

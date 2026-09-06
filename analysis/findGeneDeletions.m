@@ -1,8 +1,8 @@
 function [genes, fluxes, originalGenes, details, grRatioMuts]=findGeneDeletions(model,varargin)
 % findGeneDeletions  Delete genes and track the resulting fluxes.
 %
-% Deletes genes, optimizes the model, and keeps track of the resulting
-% fluxes. This is used for identifying gene deletion targets.
+% Deletes genes, optimizes the model by FBA, and keeps track of the
+% resulting fluxes. This is used for identifying gene deletion targets.
 %
 % Parameters
 % ----------
@@ -12,24 +12,10 @@ function [genes, fluxes, originalGenes, details, grRatioMuts]=findGeneDeletions(
 % Name-Value Arguments
 % --------------------
 % testType : char
-%     single/double gene deletions/over expressions. Over expression is
-%     only available if using MOMA (default "sgd"):
+%     single/double gene deletion (default "sgd"):
 %
 %     - "sgd" : single gene deletion
 %     - "dgd" : double gene deletion
-%     - "sgo" : single gene over expression
-%     - "dgo" : double gene over expression
-% analysisType : char
-%     determines whether to use FBA ("fba") or MOMA ("moma") in the
-%     optimization (default "fba").
-% refModel : struct
-%     MOMA works by fitting the flux distributions of two models to be as
-%     similar as possible. The most common application is where there is a
-%     reference model with some fluxes constrained from experimental data.
-%     This model is required when using MOMA.
-% oeFactor : double
-%     a factor by which the fluxes should be increased if a gene is
-%     overexpressed (default 10).
 %
 % Returns
 % -------
@@ -50,7 +36,7 @@ function [genes, fluxes, originalGenes, details, grRatioMuts]=findGeneDeletions(
 %     with details about each gene in originalGenes and why or why not it
 %     was deleted:
 %
-%     - 1 : was deleted/overexpressed
+%     - 1 : was deleted
 %     - 2 : proved lethal in sgd (single gene deletion)
 %     - 3 : redundant, no longer used
 %     - 4 : involved in dead-end reaction
@@ -66,14 +52,11 @@ function [genes, fluxes, originalGenes, details, grRatioMuts]=findGeneDeletions(
 % Examples
 % --------
 %     [genes, fluxes, originalGenes, details, grRatioMuts]=...
-%         findGeneDeletions(model,testType,analysisType,refModel,oeFactor);
+%         findGeneDeletions(model,testType);
 
 originalModel=model;
-p=parseRAVENargs(varargin, {'testType',[]; 'analysisType',[]; 'refModel',[]; 'oeFactor',10});
+p=parseRAVENargs(varargin, {'testType',[]});
 testType=p.testType;
-analysisType=p.analysisType;
-refModel=p.refModel;
-oeFactor=p.oeFactor;
 if isempty(testType)
     testType='sgd';
 else
@@ -81,29 +64,8 @@ else
 end
 
 %Check that the test type is correct
-if ~strcmpi(testType,'sgd') && ~strcmpi(testType,'dgd') && ~strcmpi(testType,'sgo') && ~strcmpi(testType,'dgo')
+if ~strcmpi(testType,'sgd') && ~strcmpi(testType,'dgd')
     EM='Incorrect test type';
-    error('RAVEN:badInput', '%s', EM);
-end
-
-%Check that the analysis type is correct
-if isempty(analysisType)
-    analysisType = 'fba';
-else
-    analysisType=char(analysisType);
-    if ~any(strcmpi(analysisType,{'fba','moma'}))
-        EM='Incorrect analysis type';
-        error('RAVEN:badInput', '%s', EM);
-    end
-end
-
-if (strcmpi(testType,'sgo') || strcmpi(testType,'dgo')) && strcmpi(analysisType,'fba')
-    EM='Over expression is only available when using MOMA';
-    error('RAVEN:badInput', '%s', EM);
-end
-
-if strcmpi(analysisType,'moma') && isempty(refModel)
-    EM='A reference model must be supplied when using MOMA';
     error('RAVEN:badInput', '%s', EM);
 end
 
@@ -119,33 +81,16 @@ details(~ismember(originalGenes,model.genes))=4;
 growthWT=solveLP(model);
 growthWT=growthWT.f;
 
-%Do single deletion/over expression. This is done here since the double
-%deletion depends on which single deletions prove lethal (to reduce the
-%size of the system)
-if strcmpi(testType,'sgd') || strcmpi(testType,'sgo') || strcmpi(testType,'dgd')
+%Do single deletion. This is done here since the double deletion depends
+%on which single deletions prove lethal (to reduce the size of the system)
+if strcmpi(testType,'sgd') || strcmpi(testType,'dgd')
     fluxes=zeros(numel(model.rxns),numel(model.genes));
     grRatioMuts=zeros(1,numel(model.genes));
     for i=1:numel(model.genes)
-        if strcmpi(testType,'sgd') || strcmpi(testType,'dgd')
-            %Constrain all reactions involving the gene to 0
-            tempModel=removeGenes(model,i,false,false,false);
-        else
-            %To over express a gene, the stoichiometry of the corresponding
-            %reactions are changed so that the same flux leads to a higher
-            %production
-            tempModel=model;
-            I=find(model.rxnGeneMat(:,i));
-            tempModel.S(:,I)=tempModel.S(:,I).*oeFactor;
-        end
-        if strcmpi(analysisType,'fba') || strcmpi(testType,'dgd')
-            sol=solveLP(tempModel);
-        else
-            [fluxA, ~, flag]=qMOMA(tempModel,refModel);
-            sol.x=fluxA;
-            sol.stat=flag;
-            sol.f=fluxA(logical(tempModel.c));
-        end
-        
+        %Constrain all reactions involving the gene to 0
+        tempModel=removeGenes(model,i,false,false,false);
+        sol=solveLP(tempModel);
+
         %If the optimization terminated successfully
         if sol.stat==1
             fluxes(:,i)=sol.x;
@@ -160,29 +105,7 @@ if strcmpi(testType,'sgd') || strcmpi(testType,'sgo') || strcmpi(testType,'dgd')
     genes=geneMapping;
 end
 
-%Now do for DGO. This is rather straight forward since it is always
-%solvable and it does not matter if there are iso-enzymes
-if strcmpi(testType,'dgo')
-    genesToModify=nchoosek(1:numel(model.genes),2);
-    genes=geneMapping(genesToModify);
-    %Since I assume that this is never lethal I set the details already
-    details(geneMapping)=1;
-    
-    fluxes=sparse(numel(model.rxns),size(genesToModify,1));
-    for i=1:size(genesToModify,1)
-        I=find(model.rxnGeneMat(:,genesToModify(i,:)));
-        %To over express a gene, the stoichiometry of the corresponding
-        %reactions are changed so that the same flux leads to a higher
-        %production
-        tempModel=model;
-        tempModel.S(:,I)=tempModel.S(:,I).*oeFactor;
-        fluxA=qMOMA(tempModel,refModel);
-        fluxes(:,i)=fluxA;
-        grRatioMuts(i)=fluxA(logical(model.c))/growthWT;
-    end
-end
-
-%For double deletions FBA or MOMA
+%For double deletions
 if strcmpi(testType,'dgd')
     %This is a little lazy but it is fine. Check which genes have already
     %been deleted in "sgd" analysis.
@@ -193,16 +116,8 @@ if strcmpi(testType,'dgd')
     fluxes=sparse(numel(model.rxns),size(genesToModify,1));
     for i=1:size(genesToModify,1)
         tempModel=removeGenes(model,genesToModify(i,:),false,false,false);
-        
-        if strcmpi(analysisType,'fba')
-            sol=solveLP(tempModel);
-        else
-            [fluxA, ~, flag]=qMOMA(tempModel,refModel);
-            sol.x=fluxA;
-            sol.stat=flag;
-            sol.f=fluxA(logical(tempModel.c));
-        end
-        
+        sol=solveLP(tempModel);
+
         if sol.stat==1
             fluxes(:,i)=sol.x;
             grRatioMuts(i)=sol.f/growthWT;
@@ -216,4 +131,3 @@ temp=fluxes;
 fluxes=sparse(numel(originalModel.rxns),size(temp,2));
 fluxes(I,:)=temp;
 end
-    

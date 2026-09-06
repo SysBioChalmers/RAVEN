@@ -41,252 +41,246 @@ This function is called by:
 
 <h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <ul style="list-style-image:url(../../matlabicon.gif)">
-<li><a href="#_sub1" class="code">function arrayDataMaxScoringMatches(testCase)</a></li><li><a href="#_sub2" class="code">function hpaDataMaxScoringMatches(testCase)</a></li><li><a href="#_sub3" class="code">function noGeneScoreIsHonouredByBoth(testCase)</a></li><li><a href="#_sub4" class="code">function geneScoresMatchWhereDataExists(testCase)</a></li><li><a href="#_sub5" class="code">function hpaArrayPrecedenceDiverges(testCase)</a></li><li><a href="#_sub6" class="code">function averageScoringDivergesOnNestedRules(testCase)</a></li><li><a href="#_sub7" class="code">function multiCellTypeHpaReductionDiverges(testCase)</a></li><li><a href="#_sub8" class="code">function scoringSourceFieldDiverges(testCase)</a></li><li><a href="#_sub9" class="code">function unmeasuredGeneScoreDiverges(testCase)</a></li><li><a href="#_sub10" class="code">function m = scoringTestModel(~)</a></li><li><a href="#_sub11" class="code">function a = scoringArrayData(~)</a></li><li><a href="#_sub12" class="code">function h = scoringHpaData(~)</a></li><li><a href="#_sub13" class="code">function h = scoringHpaDataLowG1(~)</a></li></ul>
+<li><a href="#_sub1" class="code">function arrayDataMaxScoringMatches(testCase)</a></li><li><a href="#_sub2" class="code">function hpaDataMaxScoringMatches(testCase)</a></li><li><a href="#_sub3" class="code">function noGeneScoreIsHonouredByBoth(testCase)</a></li><li><a href="#_sub4" class="code">function unmeasuredGeneScoreStaysMinusInf(testCase)</a></li><li><a href="#_sub5" class="code">function hpaArrayPrecedenceIsAnOption(testCase)</a></li><li><a href="#_sub6" class="code">function changesAverageToReduceDownTheRule(testCase)</a></li><li><a href="#_sub7" class="code">function changesMultiCellTypeReductionToSkipUnmeasured(testCase)</a></li><li><a href="#_sub8" class="code">function changesScoringSourceToGrRules(testCase)</a></li><li><a href="#_sub9" class="code">function rejectsUnknownDataPrecedence(testCase)</a></li><li><a href="#_sub10" class="code">function m = scoringTestModel(~)</a></li><li><a href="#_sub11" class="code">function a = scoringArrayData(~)</a></li><li><a href="#_sub12" class="code">function h = scoringHpaData(~)</a></li><li><a href="#_sub13" class="code">function h = scoringHpaDataLowG1(~)</a></li></ul>
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <div class="fragment"><pre>0001 classdef <a href="tScoringEquivalence.html" class="code" title="">tScoringEquivalence</a> &lt; <a href="RavenTestCase.html" class="code" title="">RavenTestCase</a>
-0002 <span class="comment">% tScoringEquivalence  Can scoreComplexModel stand in for scoreModel?</span>
+0002 <span class="comment">% tScoringEquivalence  scoreModel as a wrapper over scoreComplexModel.</span>
 0003 <span class="comment">%</span>
-0004 <span class="comment">%   scoreModel and scoreComplexModel both turn HPA and/or array data into a</span>
-0005 <span class="comment">%   score per reaction, but they are separate implementations: scoreModel</span>
-0006 <span class="comment">%   reduces over the genes in rxnGeneMat, scoreComplexModel evaluates the</span>
-0007 <span class="comment">%   grRule with a configurable operator for AND and for OR.</span>
-0008 <span class="comment">%</span>
-0009 <span class="comment">%   The tests below establish where the two agree and where they cannot be</span>
-0010 <span class="comment">%   made to agree by choice of options. The Matches* tests pin the settings</span>
-0011 <span class="comment">%   under which scoreComplexModel reproduces scoreModel; the Diverges* tests</span>
-0012 <span class="comment">%   pin the behaviours that a replacement would have to account for, and are</span>
-0013 <span class="comment">%   expected to fail if either function is changed to close the gap.</span>
-0014 <span class="comment">%</span>
-0015 <span class="comment">%   Agreement requires isozymeScoring = complexScoring = 'max', which makes</span>
-0016 <span class="comment">%   every grRule collapse to the maximum over its genes, i.e. what</span>
-0017 <span class="comment">%   scoreModel computes with multipleGeneScoring = 'best'.</span>
-0018 
-0019     methods (Test)
-0020 
-0021         <span class="comment">%% Where the two agree</span>
-0022 
-0023         <a name="_sub0" href="#_subfunctions" class="code">function arrayDataMaxScoringMatches(testCase)</a>
-0024             m = testCase.scoringTestModel();
-0025             a = testCase.scoringArrayData();
-0026             simple  = scoreModel(m, [], <span class="string">'arrayData'</span>, a, <span class="string">'tissue'</span>, <span class="string">'t1'</span>, <span class="keyword">...</span>
-0027                 <span class="string">'multipleGeneScoring'</span>, <span class="string">'best'</span>, <span class="string">'multipleCellScoring'</span>, <span class="string">'best'</span>);
-0028             complex = scoreComplexModel(m, [], a, <span class="string">'t1'</span>, <span class="keyword">...</span>
-0029                 <span class="string">'isozymeScoring'</span>, <span class="string">'max'</span>, <span class="string">'complexScoring'</span>, <span class="string">'max'</span>, <span class="keyword">...</span>
-0030                 <span class="string">'multipleCellScoring'</span>, <span class="string">'max'</span>);
-0031             testCase.verifyEqual(complex, simple, <span class="string">'AbsTol'</span>, 1e-12);
-0032         <span class="keyword">end</span>
-0033 
-0034         <a name="_sub1" href="#_subfunctions" class="code">function hpaDataMaxScoringMatches(testCase)</a>
-0035             m = testCase.scoringTestModel();
-0036             h = testCase.scoringHpaData();
-0037             simple  = scoreModel(m, h, <span class="string">'tissue'</span>, <span class="string">'t1'</span>, <span class="keyword">...</span>
-0038                 <span class="string">'multipleGeneScoring'</span>, <span class="string">'best'</span>, <span class="string">'multipleCellScoring'</span>, <span class="string">'best'</span>);
-0039             complex = scoreComplexModel(m, h, [], <span class="string">'t1'</span>, <span class="keyword">...</span>
-0040                 <span class="string">'isozymeScoring'</span>, <span class="string">'max'</span>, <span class="string">'complexScoring'</span>, <span class="string">'max'</span>, <span class="keyword">...</span>
-0041                 <span class="string">'multipleCellScoring'</span>, <span class="string">'max'</span>);
-0042             testCase.verifyEqual(complex, simple, <span class="string">'AbsTol'</span>, 1e-12);
-0043         <span class="keyword">end</span>
-0044 
-0045         <a name="_sub2" href="#_subfunctions" class="code">function noGeneScoreIsHonouredByBoth(testCase)</a>
-0046             <span class="comment">% A reaction without genes takes noGeneScore in both functions,</span>
-0047             <span class="comment">% and the option is respected rather than hard-coded.</span>
-0048             m = testCase.scoringTestModel();
-0049             a = testCase.scoringArrayData();
-0050             noGene  = -7;
-0051             simple  = scoreModel(m, [], <span class="string">'arrayData'</span>, a, <span class="string">'tissue'</span>, <span class="string">'t1'</span>, <span class="keyword">...</span>
-0052                 <span class="string">'noGeneScore'</span>, noGene);
-0053             complex = scoreComplexModel(m, [], a, <span class="string">'t1'</span>, <span class="string">'noGeneScore'</span>, noGene, <span class="keyword">...</span>
-0054                 <span class="string">'isozymeScoring'</span>, <span class="string">'max'</span>, <span class="string">'complexScoring'</span>, <span class="string">'max'</span>);
-0055             noGeneRxn = strcmp(m.rxns, <span class="string">'R1'</span>);
-0056             testCase.verifyEqual(simple(noGeneRxn), noGene);
-0057             testCase.verifyEqual(complex(noGeneRxn), noGene);
-0058         <span class="keyword">end</span>
-0059 
-0060         <a name="_sub3" href="#_subfunctions" class="code">function geneScoresMatchWhereDataExists(testCase)</a>
-0061             <span class="comment">% The second output is built the same way in both functions for</span>
-0062             <span class="comment">% every gene that actually has a measurement.</span>
-0063             m = testCase.scoringTestModel();
-0064             a = testCase.scoringArrayData();
-0065             [~, gSimple]  = scoreModel(m, [], <span class="string">'arrayData'</span>, a, <span class="string">'tissue'</span>, <span class="string">'t1'</span>);
-0066             [~, gComplex] = scoreComplexModel(m, [], a, <span class="string">'t1'</span>);
-0067             measured = ismember(m.genes, a.genes);
-0068             testCase.verifyEqual(gComplex(measured), gSimple(measured), <span class="string">'AbsTol'</span>, 1e-12);
-0069         <span class="keyword">end</span>
-0070 
-0071         <span class="comment">%% Where they cannot be made to agree</span>
+0004 <span class="comment">%   scoreModel is the tINIT-era scorer and scoreComplexModel the ftINIT one.</span>
+0005 <span class="comment">%   They are now one implementation: scoreModel keeps its own argument order</span>
+0006 <span class="comment">%   and its -Inf convention for unmeasured genes, and delegates the scoring.</span>
+0007 <span class="comment">%</span>
+0008 <span class="comment">%   The Matches* tests are the contract the wrapper has to keep. The Changes*</span>
+0009 <span class="comment">%   tests pin the three behaviours the fold deliberately altered, so that none</span>
+0010 <span class="comment">%   of them can drift back unnoticed.</span>
+0011 
+0012     methods (Test)
+0013 
+0014         <span class="comment">%% What the wrapper preserves</span>
+0015 
+0016         <a name="_sub0" href="#_subfunctions" class="code">function arrayDataMaxScoringMatches(testCase)</a>
+0017             m = testCase.scoringTestModel();
+0018             a = testCase.scoringArrayData();
+0019             simple  = scoreModel(m, [], <span class="string">'arrayData'</span>, a, <span class="string">'tissue'</span>, <span class="string">'t1'</span>, <span class="keyword">...</span>
+0020                 <span class="string">'multipleGeneScoring'</span>, <span class="string">'best'</span>, <span class="string">'multipleCellScoring'</span>, <span class="string">'best'</span>);
+0021             complex = scoreComplexModel(m, [], a, <span class="string">'t1'</span>, <span class="keyword">...</span>
+0022                 <span class="string">'isozymeScoring'</span>, <span class="string">'max'</span>, <span class="string">'complexScoring'</span>, <span class="string">'max'</span>, <span class="keyword">...</span>
+0023                 <span class="string">'multipleCellScoring'</span>, <span class="string">'max'</span>);
+0024             testCase.verifyEqual(complex, simple, <span class="string">'AbsTol'</span>, 1e-12);
+0025         <span class="keyword">end</span>
+0026 
+0027         <a name="_sub1" href="#_subfunctions" class="code">function hpaDataMaxScoringMatches(testCase)</a>
+0028             m = testCase.scoringTestModel();
+0029             h = testCase.scoringHpaData();
+0030             simple  = scoreModel(m, h, <span class="string">'tissue'</span>, <span class="string">'t1'</span>, <span class="keyword">...</span>
+0031                 <span class="string">'multipleGeneScoring'</span>, <span class="string">'best'</span>, <span class="string">'multipleCellScoring'</span>, <span class="string">'best'</span>);
+0032             complex = scoreComplexModel(m, h, [], <span class="string">'t1'</span>, <span class="keyword">...</span>
+0033                 <span class="string">'isozymeScoring'</span>, <span class="string">'max'</span>, <span class="string">'complexScoring'</span>, <span class="string">'max'</span>, <span class="keyword">...</span>
+0034                 <span class="string">'multipleCellScoring'</span>, <span class="string">'max'</span>);
+0035             testCase.verifyEqual(complex, simple, <span class="string">'AbsTol'</span>, 1e-12);
+0036         <span class="keyword">end</span>
+0037 
+0038         <a name="_sub2" href="#_subfunctions" class="code">function noGeneScoreIsHonouredByBoth(testCase)</a>
+0039             m = testCase.scoringTestModel();
+0040             a = testCase.scoringArrayData();
+0041             noGene  = -7;
+0042             simple  = scoreModel(m, [], <span class="string">'arrayData'</span>, a, <span class="string">'tissue'</span>, <span class="string">'t1'</span>, <span class="keyword">...</span>
+0043                 <span class="string">'noGeneScore'</span>, noGene);
+0044             complex = scoreComplexModel(m, [], a, <span class="string">'t1'</span>, <span class="string">'noGeneScore'</span>, noGene, <span class="keyword">...</span>
+0045                 <span class="string">'isozymeScoring'</span>, <span class="string">'max'</span>, <span class="string">'complexScoring'</span>, <span class="string">'max'</span>);
+0046             noGeneRxn = strcmp(m.rxns, <span class="string">'R1'</span>);
+0047             testCase.verifyEqual(simple(noGeneRxn), noGene);
+0048             testCase.verifyEqual(complex(noGeneRxn), noGene);
+0049         <span class="keyword">end</span>
+0050 
+0051         <a name="_sub3" href="#_subfunctions" class="code">function unmeasuredGeneScoreStaysMinusInf(testCase)</a>
+0052             <span class="comment">% The one convention the wrapper still translates: an unmeasured</span>
+0053             <span class="comment">% gene is -Inf here and NaN in scoreComplexModel, because</span>
+0054             <span class="comment">% removeLowScoreGenes reads NaN as &quot;no evidence&quot; and leaves the</span>
+0055             <span class="comment">% gene alone, where -Inf &lt; 0 would prune it.</span>
+0056             m = testCase.scoringTestModel();
+0057             a = testCase.scoringArrayData();
+0058             a.genes     = a.genes(1:2);        <span class="comment">% drop G3 and G4</span>
+0059             a.levels    = a.levels(1:2, :);
+0060             a.threshold = a.threshold(1:2);
+0061 
+0062             [~, gSimple]  = scoreModel(m, [], <span class="string">'arrayData'</span>, a, <span class="string">'tissue'</span>, <span class="string">'t1'</span>);
+0063             [~, gComplex] = scoreComplexModel(m, [], a, <span class="string">'t1'</span>);
+0064             unmeasured = ~ismember(m.genes, a.genes);
+0065 
+0066             testCase.verifyTrue(all(isinf(gSimple(unmeasured))));
+0067             testCase.verifyTrue(all(isnan(gComplex(unmeasured))));
+0068             <span class="comment">% Where a gene does have data the two agree exactly</span>
+0069             testCase.verifyEqual(gSimple(~unmeasured), gComplex(~unmeasured), <span class="keyword">...</span>
+0070                 <span class="string">'AbsTol'</span>, 1e-12);
+0071         <span class="keyword">end</span>
 0072 
-0073         <a name="_sub4" href="#_subfunctions" class="code">function hpaArrayPrecedenceDiverges(testCase)</a>
-0074             <span class="comment">% scoreModel decides per reaction: if any gene of a reaction has</span>
-0075             <span class="comment">% HPA data, array data is ignored for that whole reaction.</span>
-0076             <span class="comment">% scoreComplexModel decides per gene: array scores are written</span>
-0077             <span class="comment">% first and HPA overwrites only the genes it covers. R7 is</span>
-0078             <span class="comment">% &quot;G1 or G4&quot;, G1 has HPA data and G4 only array data, so the two</span>
-0079             <span class="comment">% see a different set of scores for the same rule.</span>
-0080             m = testCase.scoringTestModel();
-0081             a = testCase.scoringArrayData();
-0082             h = testCase.scoringHpaDataLowG1();
-0083             simple  = scoreModel(m, h, <span class="string">'arrayData'</span>, a, <span class="string">'tissue'</span>, <span class="string">'t1'</span>, <span class="keyword">...</span>
-0084                 <span class="string">'multipleGeneScoring'</span>, <span class="string">'best'</span>, <span class="string">'multipleCellScoring'</span>, <span class="string">'best'</span>);
-0085             complex = scoreComplexModel(m, h, a, <span class="string">'t1'</span>, <span class="keyword">...</span>
+0073         <a name="_sub4" href="#_subfunctions" class="code">function hpaArrayPrecedenceIsAnOption(testCase)</a>
+0074             <span class="comment">% scoreModel decides per reaction: any gene of a reaction having</span>
+0075             <span class="comment">% HPA data means array data is ignored for that whole reaction.</span>
+0076             <span class="comment">% That is now dataPrecedence 'reaction' rather than a difference</span>
+0077             <span class="comment">% between two implementations. R7 is &quot;G1 or G4&quot;, G1 has HPA data</span>
+0078             <span class="comment">% and G4 only array data.</span>
+0079             m = testCase.scoringTestModel();
+0080             a = testCase.scoringArrayData();
+0081             h = testCase.scoringHpaDataLowG1();
+0082             simple = scoreModel(m, h, <span class="string">'arrayData'</span>, a, <span class="string">'tissue'</span>, <span class="string">'t1'</span>);
+0083             perGene = scoreComplexModel(m, h, a, <span class="string">'t1'</span>, <span class="keyword">...</span>
+0084                 <span class="string">'isozymeScoring'</span>, <span class="string">'max'</span>, <span class="string">'complexScoring'</span>, <span class="string">'max'</span>);
+0085             perRxn  = scoreComplexModel(m, h, a, <span class="string">'t1'</span>, <span class="keyword">...</span>
 0086                 <span class="string">'isozymeScoring'</span>, <span class="string">'max'</span>, <span class="string">'complexScoring'</span>, <span class="string">'max'</span>, <span class="keyword">...</span>
-0087                 <span class="string">'multipleCellScoring'</span>, <span class="string">'max'</span>);
+0087                 <span class="string">'dataPrecedence'</span>, <span class="string">'reaction'</span>);
 0088             r7 = strcmp(m.rxns, <span class="string">'R7'</span>);
 0089 
-0090             <span class="comment">% scoreModel sees only G1's HPA score</span>
+0090             <span class="comment">% Per reaction, only G1's HPA score is in scope</span>
 0091             testCase.verifyEqual(simple(r7), -8, <span class="string">'AbsTol'</span>, 1e-12);
-0092             <span class="comment">% scoreComplexModel also sees G4's array score, which is higher</span>
-0093             testCase.verifyEqual(complex(r7), 5*log(3), <span class="string">'AbsTol'</span>, 1e-12);
-0094             testCase.verifyNotEqual(complex(r7), simple(r7));
-0095         <span class="keyword">end</span>
-0096 
-0097         <a name="_sub5" href="#_subfunctions" class="code">function averageScoringDivergesOnNestedRules(testCase)</a>
-0098             <span class="comment">% 'average' means a flat mean over the reaction's genes in</span>
-0099             <span class="comment">% scoreModel, but a mean of means down the rule tree in</span>
-0100             <span class="comment">% scoreComplexModel. R5 is &quot;(G1 and G2) or G3&quot;.</span>
-0101             m = testCase.scoringTestModel();
-0102             a = testCase.scoringArrayData();
-0103             simple  = scoreModel(m, [], <span class="string">'arrayData'</span>, a, <span class="string">'tissue'</span>, <span class="string">'t1'</span>, <span class="keyword">...</span>
-0104                 <span class="string">'multipleGeneScoring'</span>, <span class="string">'average'</span>);
-0105             complex = scoreComplexModel(m, [], a, <span class="string">'t1'</span>, <span class="keyword">...</span>
-0106                 <span class="string">'isozymeScoring'</span>, <span class="string">'average'</span>, <span class="string">'complexScoring'</span>, <span class="string">'average'</span>);
-0107             r5 = strcmp(m.rxns, <span class="string">'R5'</span>);
-0108 
-0109             g = 5*log([1.5; 2; 2.5]);          <span class="comment">% scores of G1, G2, G3</span>
-0110             testCase.verifyEqual(simple(r5), mean(g), <span class="string">'AbsTol'</span>, 1e-12);
-0111             testCase.verifyEqual(complex(r5), mean([mean(g(1:2)); g(3)]), <span class="string">'AbsTol'</span>, 1e-12);
-0112             testCase.verifyNotEqual(complex(r5), simple(r5));
-0113         <span class="keyword">end</span>
-0114 
-0115         <a name="_sub6" href="#_subfunctions" class="code">function multiCellTypeHpaReductionDiverges(testCase)</a>
-0116             <span class="comment">% When a gene is measured in some but not all cell types,</span>
-0117             <span class="comment">% scoreModel reduces over a sparse genes-by-cell-types matrix,</span>
-0118             <span class="comment">% so unmeasured pairs enter the reduction as a numeric 0. A</span>
-0119             <span class="comment">% negative level therefore reduces to 0 under 'best'.</span>
-0120             <span class="comment">% scoreComplexModel reduces only over the cell types the gene</span>
-0121             <span class="comment">% was actually measured in.</span>
-0122             m = testCase.scoringTestModel();
-0123             h = struct();
-0124             h.genes      = {<span class="string">'G1'</span>};
-0125             h.tissues    = {<span class="string">'t1'</span>; <span class="string">'t1'</span>};
-0126             h.celltypes  = {<span class="string">'ct1'</span>; <span class="string">'ct2'</span>};
-0127             h.levels     = {<span class="string">'High'</span>, <span class="string">'Medium'</span>, <span class="string">'Low'</span>, <span class="string">'None'</span>};
-0128             h.gene2Level = [4 0];              <span class="comment">% 'None' in ct1, unmeasured in ct2</span>
-0129 
-0130             simple  = scoreModel(m, h, <span class="string">'tissue'</span>, <span class="string">'t1'</span>, <span class="string">'multipleCellScoring'</span>, <span class="string">'best'</span>);
-0131             complex = scoreComplexModel(m, h, [], <span class="string">'t1'</span>, <span class="keyword">...</span>
-0132                 <span class="string">'isozymeScoring'</span>, <span class="string">'max'</span>, <span class="string">'complexScoring'</span>, <span class="string">'max'</span>, <span class="keyword">...</span>
-0133                 <span class="string">'multipleCellScoring'</span>, <span class="string">'max'</span>);
-0134             r2 = strcmp(m.rxns, <span class="string">'R2'</span>);         <span class="comment">% grRule is just &quot;G1&quot;</span>
+0092             testCase.verifyEqual(perRxn(r7), -8, <span class="string">'AbsTol'</span>, 1e-12);
+0093             <span class="comment">% Per gene, G4's array score is seen too, and it is higher</span>
+0094             testCase.verifyEqual(perGene(r7), 5*log(3), <span class="string">'AbsTol'</span>, 1e-12);
+0095             <span class="comment">% The wrapper picks the per-reaction rule, so it matches that one</span>
+0096             testCase.verifyEqual(simple, perRxn, <span class="string">'AbsTol'</span>, 1e-12);
+0097         <span class="keyword">end</span>
+0098 
+0099         <span class="comment">%% What the fold changed</span>
+0100 
+0101         <a name="_sub5" href="#_subfunctions" class="code">function changesAverageToReduceDownTheRule(testCase)</a>
+0102             <span class="comment">% multipleGeneScoring 'average' used to be a flat mean over a</span>
+0103             <span class="comment">% reaction's genes. It now averages down the grRule, so a complex</span>
+0104             <span class="comment">% counts once against its isozymes rather than once per subunit.</span>
+0105             <span class="comment">% R5 is &quot;(G1 and G2) or G3&quot;. No caller uses 'average'.</span>
+0106             m = testCase.scoringTestModel();
+0107             a = testCase.scoringArrayData();
+0108             simple  = scoreModel(m, [], <span class="string">'arrayData'</span>, a, <span class="string">'tissue'</span>, <span class="string">'t1'</span>, <span class="keyword">...</span>
+0109                 <span class="string">'multipleGeneScoring'</span>, <span class="string">'average'</span>);
+0110             complex = scoreComplexModel(m, [], a, <span class="string">'t1'</span>, <span class="keyword">...</span>
+0111                 <span class="string">'isozymeScoring'</span>, <span class="string">'average'</span>, <span class="string">'complexScoring'</span>, <span class="string">'average'</span>);
+0112             r5 = strcmp(m.rxns, <span class="string">'R5'</span>);
+0113 
+0114             g = 5*log([1.5; 2; 2.5]);          <span class="comment">% scores of G1, G2, G3</span>
+0115             testCase.verifyEqual(simple(r5), mean([mean(g(1:2)); g(3)]), <span class="keyword">...</span>
+0116                 <span class="string">'AbsTol'</span>, 1e-12);
+0117             testCase.verifyNotEqual(simple(r5), mean(g));   <span class="comment">% the old flat mean</span>
+0118             testCase.verifyEqual(simple(r5), complex(r5), <span class="string">'AbsTol'</span>, 1e-12);
+0119         <span class="keyword">end</span>
+0120 
+0121         <a name="_sub6" href="#_subfunctions" class="code">function changesMultiCellTypeReductionToSkipUnmeasured(testCase)</a>
+0122             <span class="comment">% scoreModel used to reduce over a sparse genes-by-cell-types</span>
+0123             <span class="comment">% matrix, so a cell type a gene was never measured in entered the</span>
+0124             <span class="comment">% reduction as a numeric 0. Since 0 sits between 'Low' (10) and</span>
+0125             <span class="comment">% 'Not detected' (-8), a gene not detected in one of two cell</span>
+0126             <span class="comment">% types scored 0 under 'best' and was never pruned. The reduction</span>
+0127             <span class="comment">% now runs over the measurements that exist.</span>
+0128             m = testCase.scoringTestModel();
+0129             h = struct();
+0130             h.genes      = {<span class="string">'G1'</span>};
+0131             h.tissues    = {<span class="string">'t1'</span>; <span class="string">'t1'</span>};
+0132             h.celltypes  = {<span class="string">'ct1'</span>; <span class="string">'ct2'</span>};
+0133             h.levels     = {<span class="string">'High'</span>, <span class="string">'Medium'</span>, <span class="string">'Low'</span>, <span class="string">'None'</span>};
+0134             h.gene2Level = [4 0];              <span class="comment">% 'None' in ct1, unmeasured in ct2</span>
 0135 
-0136             testCase.verifyEqual(simple(r2), 0, <span class="string">'AbsTol'</span>, 1e-12);
-0137             testCase.verifyEqual(complex(r2), -8, <span class="string">'AbsTol'</span>, 1e-12);
-0138             testCase.verifyNotEqual(complex(r2), simple(r2));
-0139         <span class="keyword">end</span>
-0140 
-0141         <a name="_sub7" href="#_subfunctions" class="code">function scoringSourceFieldDiverges(testCase)</a>
-0142             <span class="comment">% scoreModel reads rxnGeneMat, scoreComplexModel reads grRules.</span>
-0143             <span class="comment">% A model carrying gene associations in only one of the two is</span>
-0144             <span class="comment">% scored by one function and falls through to noGeneScore in the</span>
-0145             <span class="comment">% other.</span>
-0146             m = testCase.scoringTestModel();
-0147             a = testCase.scoringArrayData();
-0148             noRules = m;
-0149             noRules.grRules(:) = {<span class="string">''</span>};         <span class="comment">% rxnGeneMat left intact</span>
-0150 
-0151             simple  = scoreModel(noRules, [], <span class="string">'arrayData'</span>, a, <span class="string">'tissue'</span>, <span class="string">'t1'</span>);
-0152             complex = scoreComplexModel(noRules, [], a, <span class="string">'t1'</span>);
-0153             r2 = strcmp(m.rxns, <span class="string">'R2'</span>);
-0154 
-0155             testCase.verifyEqual(simple(r2), 5*log(1.5), <span class="string">'AbsTol'</span>, 1e-12);
-0156             testCase.verifyEqual(complex(r2), -2);       <span class="comment">% the noGeneScore default</span>
-0157             testCase.verifyNotEqual(complex(r2), simple(r2));
-0158         <span class="keyword">end</span>
+0136             simple  = scoreModel(m, h, <span class="string">'tissue'</span>, <span class="string">'t1'</span>, <span class="string">'multipleCellScoring'</span>, <span class="string">'best'</span>);
+0137             complex = scoreComplexModel(m, h, [], <span class="string">'t1'</span>, <span class="keyword">...</span>
+0138                 <span class="string">'isozymeScoring'</span>, <span class="string">'max'</span>, <span class="string">'complexScoring'</span>, <span class="string">'max'</span>, <span class="keyword">...</span>
+0139                 <span class="string">'multipleCellScoring'</span>, <span class="string">'max'</span>);
+0140             r2 = strcmp(m.rxns, <span class="string">'R2'</span>);         <span class="comment">% grRule is just &quot;G1&quot;</span>
+0141 
+0142             testCase.verifyEqual(simple(r2), -8, <span class="string">'AbsTol'</span>, 1e-12);
+0143             testCase.verifyEqual(complex(r2), -8, <span class="string">'AbsTol'</span>, 1e-12);
+0144         <span class="keyword">end</span>
+0145 
+0146         <a name="_sub7" href="#_subfunctions" class="code">function changesScoringSourceToGrRules(testCase)</a>
+0147             <span class="comment">% scoreModel used to read rxnGeneMat and now reads grRules, like</span>
+0148             <span class="comment">% scoreComplexModel. A model carrying its gene associations in</span>
+0149             <span class="comment">% only one of the two now scores the same way through either</span>
+0150             <span class="comment">% entry point. standardizeGrRules exists to keep them in step.</span>
+0151             m = testCase.scoringTestModel();
+0152             a = testCase.scoringArrayData();
+0153             noRules = m;
+0154             noRules.grRules(:) = {<span class="string">''</span>};         <span class="comment">% rxnGeneMat left intact</span>
+0155 
+0156             simple  = scoreModel(noRules, [], <span class="string">'arrayData'</span>, a, <span class="string">'tissue'</span>, <span class="string">'t1'</span>);
+0157             complex = scoreComplexModel(noRules, [], a, <span class="string">'t1'</span>);
+0158             r2 = strcmp(m.rxns, <span class="string">'R2'</span>);
 0159 
-0160         <a name="_sub8" href="#_subfunctions" class="code">function unmeasuredGeneScoreDiverges(testCase)</a>
-0161             <span class="comment">% The geneScores output marks a gene without data as -Inf in</span>
-0162             <span class="comment">% scoreModel and as NaN in scoreComplexModel. Callers that test</span>
-0163             <span class="comment">% for one will not see the other.</span>
-0164             m = testCase.scoringTestModel();
-0165             a = testCase.scoringArrayData();
-0166             a.genes     = a.genes(1:2);        <span class="comment">% drop G3 and G4</span>
-0167             a.levels    = a.levels(1:2, :);
-0168             a.threshold = a.threshold(1:2);
-0169 
-0170             [~, gSimple]  = scoreModel(m, [], <span class="string">'arrayData'</span>, a, <span class="string">'tissue'</span>, <span class="string">'t1'</span>);
-0171             [~, gComplex] = scoreComplexModel(m, [], a, <span class="string">'t1'</span>);
-0172             unmeasured = ~ismember(m.genes, a.genes);
+0160             testCase.verifyEqual(simple(r2), -2);        <span class="comment">% the noGeneScore default</span>
+0161             testCase.verifyEqual(complex(r2), -2);
+0162         <span class="keyword">end</span>
+0163 
+0164         <a name="_sub8" href="#_subfunctions" class="code">function rejectsUnknownDataPrecedence(testCase)</a>
+0165             m = testCase.scoringTestModel();
+0166             a = testCase.scoringArrayData();
+0167             testCase.verifyError( <span class="keyword">...</span>
+0168                 @() scoreComplexModel(m, [], a, <span class="string">'t1'</span>, <span class="string">'dataPrecedence'</span>, <span class="string">'model'</span>), <span class="keyword">...</span>
+0169                 <span class="string">'RAVEN:badInput'</span>);
+0170         <span class="keyword">end</span>
+0171 
+0172     <span class="keyword">end</span>
 0173 
-0174             testCase.verifyTrue(all(isinf(gSimple(unmeasured))));
-0175             testCase.verifyTrue(all(isnan(gComplex(unmeasured))));
-0176         <span class="keyword">end</span>
-0177 
-0178     <span class="keyword">end</span>
-0179 
-0180     methods (Access = private)
-0181 
-0182         <a name="_sub9" href="#_subfunctions" class="code">function m = scoringTestModel(~)</a>
-0183             <span class="comment">% Small model whose grRules cover every rule shape the two</span>
-0184             <span class="comment">% scoring functions treat differently: none, single, OR, AND,</span>
-0185             <span class="comment">% nested, and a mixed-data-source OR.</span>
-0186             m = struct();
-0187             m.id = <span class="string">'scoringTest'</span>;
-0188             m.rxns = {}; m.S = []; m.rev = [];
-0189             m.mets     = {<span class="string">'ac'</span>; <span class="string">'bc'</span>; <span class="string">'cc'</span>; <span class="string">'dc'</span>; <span class="string">'ec'</span>};
-0190             m.metNames = {<span class="string">'a'</span>; <span class="string">'b'</span>; <span class="string">'c'</span>; <span class="string">'d'</span>; <span class="string">'e'</span>};
-0191             m.comps = {<span class="string">'c'</span>}; m.compNames = m.comps;
-0192             m.metComps = [1; 1; 1; 1; 1];
-0193             m.genes = {<span class="string">'G1'</span>; <span class="string">'G2'</span>; <span class="string">'G3'</span>; <span class="string">'G4'</span>};
-0194             m.grRules = {}; m.rxnGeneMat = [];
-0195             r = struct();
-0196             r.rxns = {<span class="string">'R1'</span>; <span class="string">'R2'</span>; <span class="string">'R3'</span>; <span class="string">'R4'</span>; <span class="string">'R5'</span>; <span class="string">'R6'</span>; <span class="string">'R7'</span>};
-0197             r.equations = {<span class="string">'=&gt; a[c]'</span>; <span class="string">'a[c] =&gt; b[c]'</span>; <span class="string">'b[c] =&gt; c[c]'</span>; <span class="keyword">...</span>
-0198                 <span class="string">'c[c] =&gt; d[c]'</span>; <span class="string">'a[c] =&gt; d[c]'</span>; <span class="string">'d[c] =&gt; e[c]'</span>; <span class="string">'e[c] =&gt;'</span>};
-0199             r.grRules = {<span class="string">''</span>; <span class="string">'G1'</span>; <span class="string">'G1 or G2'</span>; <span class="string">'G1 and G2'</span>; <span class="keyword">...</span>
-0200                 <span class="string">'(G1 and G2) or G3'</span>; <span class="string">'G4'</span>; <span class="string">'G1 or G4'</span>};
-0201             evalc(<span class="string">'m = addRxns(m, r, 3);'</span>);
-0202             m.c = zeros(7, 1);
-0203             m.lb = zeros(7, 1);
-0204             m.ub = repmat(1000, 7, 1);
-0205             m.rxnNames = m.rxns;
-0206             m.b = zeros(5, 1);
-0207             evalc(<span class="string">'[m.grRules, m.rxnGeneMat] = standardizeGrRules(m, true);'</span>);
-0208         <span class="keyword">end</span>
-0209 
-0210         <a name="_sub10" href="#_subfunctions" class="code">function a = scoringArrayData(~)</a>
-0211             <span class="comment">% Distinct, uncapped scores: with a threshold of 1 the score of</span>
-0212             <span class="comment">% each gene is 5*log(level), i.e. 2.03, 3.47, 4.58 and 5.49.</span>
-0213             a = struct();
-0214             a.genes     = {<span class="string">'G1'</span>; <span class="string">'G2'</span>; <span class="string">'G3'</span>; <span class="string">'G4'</span>};
-0215             a.tissues   = {<span class="string">'t1'</span>; <span class="string">'t2'</span>};
-0216             a.celltypes = {<span class="string">'ct1'</span>; <span class="string">'ct2'</span>};
-0217             a.levels    = [1.5 1; 2 1; 2.5 1; 3 1];
-0218             a.threshold = ones(4, 1);
-0219         <span class="keyword">end</span>
-0220 
-0221         <a name="_sub11" href="#_subfunctions" class="code">function h = scoringHpaData(~)</a>
-0222             <span class="comment">% One cell type, all four genes covered, one level each.</span>
-0223             h = struct();
-0224             h.genes      = {<span class="string">'G1'</span>; <span class="string">'G2'</span>; <span class="string">'G3'</span>; <span class="string">'G4'</span>};
-0225             h.tissues    = {<span class="string">'t1'</span>};
-0226             h.celltypes  = {<span class="string">'ct1'</span>};
-0227             h.levels     = {<span class="string">'High'</span>, <span class="string">'Medium'</span>, <span class="string">'Low'</span>, <span class="string">'None'</span>};
-0228             h.gene2Level = [1; 2; 3; 4];
-0229         <span class="keyword">end</span>
-0230 
-0231         <a name="_sub12" href="#_subfunctions" class="code">function h = scoringHpaDataLowG1(~)</a>
-0232             <span class="comment">% Only G1 has HPA data, and its level is the lowest one, so any</span>
-0233             <span class="comment">% array score for the other genes outranks it.</span>
-0234             h = struct();
-0235             h.genes      = {<span class="string">'G1'</span>};
-0236             h.tissues    = {<span class="string">'t1'</span>};
-0237             h.celltypes  = {<span class="string">'ct1'</span>};
-0238             h.levels     = {<span class="string">'High'</span>, <span class="string">'Medium'</span>, <span class="string">'Low'</span>, <span class="string">'None'</span>};
-0239             h.gene2Level = 4;
-0240         <span class="keyword">end</span>
-0241 
-0242     <span class="keyword">end</span>
-0243 <span class="keyword">end</span></pre></div>
+0174     methods (Access = private)
+0175 
+0176         <a name="_sub9" href="#_subfunctions" class="code">function m = scoringTestModel(~)</a>
+0177             <span class="comment">% Small model whose grRules cover every rule shape the scoring</span>
+0178             <span class="comment">% treats differently: none, single, OR, AND, nested, and a</span>
+0179             <span class="comment">% mixed-data-source OR.</span>
+0180             m = struct();
+0181             m.id = <span class="string">'scoringTest'</span>;
+0182             m.rxns = {}; m.S = []; m.rev = [];
+0183             m.mets     = {<span class="string">'ac'</span>; <span class="string">'bc'</span>; <span class="string">'cc'</span>; <span class="string">'dc'</span>; <span class="string">'ec'</span>};
+0184             m.metNames = {<span class="string">'a'</span>; <span class="string">'b'</span>; <span class="string">'c'</span>; <span class="string">'d'</span>; <span class="string">'e'</span>};
+0185             m.comps = {<span class="string">'c'</span>}; m.compNames = m.comps;
+0186             m.metComps = [1; 1; 1; 1; 1];
+0187             m.genes = {<span class="string">'G1'</span>; <span class="string">'G2'</span>; <span class="string">'G3'</span>; <span class="string">'G4'</span>};
+0188             m.grRules = {}; m.rxnGeneMat = [];
+0189             r = struct();
+0190             r.rxns = {<span class="string">'R1'</span>; <span class="string">'R2'</span>; <span class="string">'R3'</span>; <span class="string">'R4'</span>; <span class="string">'R5'</span>; <span class="string">'R6'</span>; <span class="string">'R7'</span>};
+0191             r.equations = {<span class="string">'=&gt; a[c]'</span>; <span class="string">'a[c] =&gt; b[c]'</span>; <span class="string">'b[c] =&gt; c[c]'</span>; <span class="keyword">...</span>
+0192                 <span class="string">'c[c] =&gt; d[c]'</span>; <span class="string">'a[c] =&gt; d[c]'</span>; <span class="string">'d[c] =&gt; e[c]'</span>; <span class="string">'e[c] =&gt;'</span>};
+0193             r.grRules = {<span class="string">''</span>; <span class="string">'G1'</span>; <span class="string">'G1 or G2'</span>; <span class="string">'G1 and G2'</span>; <span class="keyword">...</span>
+0194                 <span class="string">'(G1 and G2) or G3'</span>; <span class="string">'G4'</span>; <span class="string">'G1 or G4'</span>};
+0195             evalc(<span class="string">'m = addRxns(m, r, 3);'</span>);
+0196             m.c = zeros(7, 1);
+0197             m.lb = zeros(7, 1);
+0198             m.ub = repmat(1000, 7, 1);
+0199             m.rxnNames = m.rxns;
+0200             m.b = zeros(5, 1);
+0201             evalc(<span class="string">'[m.grRules, m.rxnGeneMat] = standardizeGrRules(m, true);'</span>);
+0202         <span class="keyword">end</span>
+0203 
+0204         <a name="_sub10" href="#_subfunctions" class="code">function a = scoringArrayData(~)</a>
+0205             <span class="comment">% Distinct, uncapped scores: with a threshold of 1 the score of</span>
+0206             <span class="comment">% each gene is 5*log(level), i.e. 2.03, 3.47, 4.58 and 5.49.</span>
+0207             a = struct();
+0208             a.genes     = {<span class="string">'G1'</span>; <span class="string">'G2'</span>; <span class="string">'G3'</span>; <span class="string">'G4'</span>};
+0209             a.tissues   = {<span class="string">'t1'</span>; <span class="string">'t2'</span>};
+0210             a.celltypes = {<span class="string">'ct1'</span>; <span class="string">'ct2'</span>};
+0211             a.levels    = [1.5 1; 2 1; 2.5 1; 3 1];
+0212             a.threshold = ones(4, 1);
+0213         <span class="keyword">end</span>
+0214 
+0215         <a name="_sub11" href="#_subfunctions" class="code">function h = scoringHpaData(~)</a>
+0216             <span class="comment">% One cell type, all four genes covered, one level each.</span>
+0217             h = struct();
+0218             h.genes      = {<span class="string">'G1'</span>; <span class="string">'G2'</span>; <span class="string">'G3'</span>; <span class="string">'G4'</span>};
+0219             h.tissues    = {<span class="string">'t1'</span>};
+0220             h.celltypes  = {<span class="string">'ct1'</span>};
+0221             h.levels     = {<span class="string">'High'</span>, <span class="string">'Medium'</span>, <span class="string">'Low'</span>, <span class="string">'None'</span>};
+0222             h.gene2Level = [1; 2; 3; 4];
+0223         <span class="keyword">end</span>
+0224 
+0225         <a name="_sub12" href="#_subfunctions" class="code">function h = scoringHpaDataLowG1(~)</a>
+0226             <span class="comment">% Only G1 has HPA data, and its level is the lowest one, so any</span>
+0227             <span class="comment">% array score for the other genes outranks it.</span>
+0228             h = struct();
+0229             h.genes      = {<span class="string">'G1'</span>};
+0230             h.tissues    = {<span class="string">'t1'</span>};
+0231             h.celltypes  = {<span class="string">'ct1'</span>};
+0232             h.levels     = {<span class="string">'High'</span>, <span class="string">'Medium'</span>, <span class="string">'Low'</span>, <span class="string">'None'</span>};
+0233             h.gene2Level = 4;
+0234         <span class="keyword">end</span>
+0235 
+0236     <span class="keyword">end</span>
+0237 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

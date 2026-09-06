@@ -1,5 +1,14 @@
 function [parameters, fitnessScore, exitFlag, newModel]=fitParameters(model,xRxns,xValues,rxnsToFit,valuesToFit,parameterPositions,varargin)
-% fitParameters  Fit parameters such as maintenance ATP by quadratic programming.
+% fitParameters  Fit stoichiometric parameters such as maintenance ATP to measured data.
+%
+% Searches for the parameter values that minimise the residual sum of squares
+% between the fluxes the model predicts and the measured ones, using
+% fminsearch (Nelder-Mead). Each candidate parameter set is written into the
+% S matrix at the positions given by parameterPositions, and the model is
+% solved once per data point.
+%
+% Use this to *derive* a value from measurements; use setGAM to *apply* a
+% known growth-associated maintenance value to a biomass pseudoreaction.
 %
 % Parameters
 % ----------

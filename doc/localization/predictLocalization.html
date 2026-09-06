@@ -113,7 +113,7 @@ This function is called by:
 
 <h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="#_sub1" class="code">function [S, g2c]=moveGene(S,model,g2c,geneToMove,toComp,nRxns,nMets)</a></li><li><a href="#_sub2" class="code">function unconnected=findUnconnected(S,nEM,metsToCheck)</a></li><li><a href="#_sub3" class="code">function [geneIndex, moveTo, deltaConnected, deltaScore]=selectGenes(S,nEM,nMets,nER,nRxns,model,unconnected,g2c,GSS)</a></li><li><a href="#_sub4" class="code">function S=addTransport(S,nRxns,nER,nMets,nEM,nComps,metA,metB)</a></li><li><a href="#_sub5" class="code">function [score, geneScore, transportCost]=scoreModel(S,g2c,GSS,transportCost)</a></li><li><a href="#_sub6" class="code">function y = randsample(n, k, replace, w)</a></li></ul>
+<li><a href="#_sub1" class="code">function [S, g2c]=moveGene(S,model,g2c,geneToMove,toComp,nRxns,nMets)</a></li><li><a href="#_sub2" class="code">function unconnected=findUnconnected(S,nEM,metsToCheck)</a></li><li><a href="#_sub3" class="code">function [geneIndex, moveTo, deltaConnected, deltaScore]=selectGenes(S,nEM,nMets,nER,nRxns,model,unconnected,g2c,GSS)</a></li><li><a href="#_sub4" class="code">function S=addTransportToS(S,nRxns,nER,nMets,nEM,nComps,metA,metB)</a></li><li><a href="#_sub5" class="code">function [score, geneScore, transportCost]=scoreLocalization(S,g2c,GSS,transportCost)</a></li><li><a href="#_sub6" class="code">function y = randsample(n, k, replace, w)</a></li></ul>
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [outModel, geneLocalization, transportStruct, scores,</a><span class="keyword">...</span>
@@ -627,13 +627,13 @@ This function is called by:
 0509                 <span class="comment">%If transMet is in the default compartment then everything</span>
 0510                 <span class="comment">%is fine, just connect it to a random one</span>
 0511                 <span class="keyword">if</span> transMet==dcIndex
-0512                     newS=<a href="#_sub4" class="code" title="subfunction S=addTransport(S,nRxns,nER,nMets,nEM,nComps,metA,metB)">addTransport</a>(newS,nRxns,nER,nMets,nEM,nComps,transMet,connectedUsed(<a href="#_sub6" class="code" title="subfunction y = randsample(n, k, replace, w)">randsample</a>(numel(connectedUsed),1)));
+0512                     newS=<a href="#_sub4" class="code" title="subfunction S=addTransportToS(S,nRxns,nER,nMets,nEM,nComps,metA,metB)">addTransportToS</a>(newS,nRxns,nER,nMets,nEM,nComps,transMet,connectedUsed(<a href="#_sub6" class="code" title="subfunction y = randsample(n, k, replace, w)">randsample</a>(numel(connectedUsed),1)));
 0513                 <span class="keyword">else</span>
 0514                     <span class="comment">%If one of the connectedUsed is in the default</span>
 0515                     <span class="comment">%compartment then connect to that one</span>
 0516                     I=connectedUsed(connectedUsed&lt;(nMets+nEM));
 0517                     <span class="keyword">if</span> any(I)
-0518                         newS=<a href="#_sub4" class="code" title="subfunction S=addTransport(S,nRxns,nER,nMets,nEM,nComps,metA,metB)">addTransport</a>(newS,nRxns,nER,nMets,nEM,nComps,transMet,I(<a href="#_sub6" class="code" title="subfunction y = randsample(n, k, replace, w)">randsample</a>(numel(I),1)));
+0518                         newS=<a href="#_sub4" class="code" title="subfunction S=addTransportToS(S,nRxns,nER,nMets,nEM,nComps,metA,metB)">addTransportToS</a>(newS,nRxns,nER,nMets,nEM,nComps,transMet,I(<a href="#_sub6" class="code" title="subfunction y = randsample(n, k, replace, w)">randsample</a>(numel(I),1)));
 0519                     <span class="keyword">else</span>
 0520                         <span class="comment">%This is if the only way to connect it is by adding</span>
 0521                         <span class="comment">%two transport reactions, going via the default</span>
@@ -666,7 +666,7 @@ This function is called by:
 0548         
 0549         <span class="comment">%Score the solution and determine whether to keep it as a new</span>
 0550         <span class="comment">%solution</span>
-0551         [score, geneScore, trCost]=<a href="#_sub5" class="code" title="subfunction [score, geneScore, transportCost]=scoreModel(S,g2c,GSS,transportCost)">scoreModel</a>(newS,newg2c,GSS,transportCost);
+0551         [score, geneScore, trCost]=<a href="#_sub5" class="code" title="subfunction [score, geneScore, transportCost]=scoreLocalization(S,g2c,GSS,transportCost)">scoreLocalization</a>(newS,newg2c,GSS,transportCost);
 0552         
 0553         <span class="comment">%If it was the best solution so far, keep it</span>
 0554         <span class="keyword">if</span> score&gt;bestScore
@@ -1129,7 +1129,7 @@ This function is called by:
 1011 <span class="comment">%reactant and product. This is not a &quot;real&quot; reaction, but since all normal</span>
 1012 <span class="comment">%reactions have coefficient -1/1 or -10/10 it is a compact way of writing</span>
 1013 <span class="comment">%it</span>
-1014 <a name="_sub4" href="#_subfunctions" class="code">function S=addTransport(S,nRxns,nER,nMets,nEM,nComps,metA,metB)</a>
+1014 <a name="_sub4" href="#_subfunctions" class="code">function S=addTransportToS(S,nRxns,nER,nMets,nEM,nComps,metA,metB)</a>
 1015 mets=[metA;metB];
 1016 <span class="comment">%Find the current compartments for the metabolites</span>
 1017 comps=ceil((mets-nEM)/((size(S,1)-nEM)/nComps));
@@ -1147,7 +1147,7 @@ This function is called by:
 1029 
 1030 <span class="comment">%Scores a network based on the localization of the genes and the number of</span>
 1031 <span class="comment">%transporter reactions used</span>
-1032 <a name="_sub5" href="#_subfunctions" class="code">function [score, geneScore, transportCost]=scoreModel(S,g2c,GSS,transportCost)</a>
+1032 <a name="_sub5" href="#_subfunctions" class="code">function [score, geneScore, transportCost]=scoreLocalization(S,g2c,GSS,transportCost)</a>
 1033 [I, J]=find(g2c);
 1034 geneScore=sum(GSS.scores(sub2ind(size(g2c),I,J)));
 1035 [I, ~]=find(S==2);

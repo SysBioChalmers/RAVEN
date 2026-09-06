@@ -4,7 +4,7 @@
 <head>
   <title>Description of fitParameters</title>
   <meta name="keywords" content="fitParameters">
-  <meta name="description" content="fitParameters  Fit parameters such as maintenance ATP by quadratic programming.">
+  <meta name="description" content="fitParameters  Fit stoichiometric parameters such as maintenance ATP to measured data.">
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
   <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
   <meta name="robots" content="index, follow">
@@ -21,13 +21,22 @@
 </h1>
 
 <h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>fitParameters  Fit parameters such as maintenance ATP by quadratic programming.</strong></div>
+<div class="box"><strong>fitParameters  Fit stoichiometric parameters such as maintenance ATP to measured data.</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="box"><strong>function [parameters, fitnessScore, exitFlag, newModel]=fitParameters(model,xRxns,xValues,rxnsToFit,valuesToFit,parameterPositions,varargin) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre class="comment"> fitParameters  Fit parameters such as maintenance ATP by quadratic programming.
+<div class="fragment"><pre class="comment"> fitParameters  Fit stoichiometric parameters such as maintenance ATP to measured data.
+
+ Searches for the parameter values that minimise the residual sum of squares
+ between the fluxes the model predicts and the measured ones, using
+ fminsearch (Nelder-Mead). Each candidate parameter set is written into the
+ S matrix at the positions given by parameterPositions, and the model is
+ solved once per data point.
+
+ Use this to *derive* a value from measurements; use setGAM to *apply* a
+ known growth-associated maintenance value to a biomass pseudoreaction.
 
  Parameters
  ----------
@@ -98,135 +107,144 @@ This function is called by:
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [parameters, fitnessScore, exitFlag, newModel]=fitParameters(model,xRxns,xValues,rxnsToFit,valuesToFit,parameterPositions,varargin)</a>
-0002 <span class="comment">% fitParameters  Fit parameters such as maintenance ATP by quadratic programming.</span>
+0002 <span class="comment">% fitParameters  Fit stoichiometric parameters such as maintenance ATP to measured data.</span>
 0003 <span class="comment">%</span>
-0004 <span class="comment">% Parameters</span>
-0005 <span class="comment">% ----------</span>
-0006 <span class="comment">% model : struct</span>
-0007 <span class="comment">%     a model structure.</span>
-0008 <span class="comment">% xRxns : cell</span>
-0009 <span class="comment">%     cell array with the IDs of the reactions that will be fixed for each</span>
-0010 <span class="comment">%     data point.</span>
-0011 <span class="comment">% xValues : double</span>
-0012 <span class="comment">%     matrix with the corresponding values for each xRxns (columns are</span>
-0013 <span class="comment">%     reactions).</span>
-0014 <span class="comment">% rxnsToFit : cell</span>
-0015 <span class="comment">%     cell array with the IDs of reactions that will be fitted to.</span>
-0016 <span class="comment">% valuesToFit : double</span>
-0017 <span class="comment">%     matrix with the corresponding values for each rxnsToFit (columns are</span>
-0018 <span class="comment">%     reactions).</span>
-0019 <span class="comment">% parameterPositions : struct</span>
-0020 <span class="comment">%     structure that determines where the parameters are in the</span>
-0021 <span class="comment">%     stoichiometric matrix, with fields:</span>
-0022 <span class="comment">%</span>
-0023 <span class="comment">%     - position : cell array of vectors where each element contains the</span>
-0024 <span class="comment">%       positions in the S-matrix for that parameter</span>
-0025 <span class="comment">%     - isNegative : cell array of vectors where the elements are true if</span>
-0026 <span class="comment">%       that position should be the negative of the fitted value (to</span>
-0027 <span class="comment">%       differentiate between production/consumption)</span>
-0028 <span class="comment">%</span>
-0029 <span class="comment">% Name-Value Arguments</span>
-0030 <span class="comment">% --------------------</span>
-0031 <span class="comment">% fitToRatio : logical</span>
-0032 <span class="comment">%     if the ratio of simulated to measured values should be fitted</span>
-0033 <span class="comment">%     instead of the absolute value. Used to prevent large fluxes from</span>
-0034 <span class="comment">%     having too large an impact (default true).</span>
-0035 <span class="comment">% initialGuess : double</span>
-0036 <span class="comment">%     initial guess of the parameters (default ones).</span>
-0037 <span class="comment">% plotFitting : logical</span>
-0038 <span class="comment">%     true if the resulting fitting should be plotted (default false).</span>
-0039 <span class="comment">%</span>
-0040 <span class="comment">% Returns</span>
-0041 <span class="comment">% -------</span>
-0042 <span class="comment">% parameters : double</span>
-0043 <span class="comment">%     fitted parameters in the same order as in parameterPositions.</span>
-0044 <span class="comment">% fitnessScore : double</span>
-0045 <span class="comment">%     the corresponding residual sum of squares.</span>
-0046 <span class="comment">% exitFlag : double</span>
-0047 <span class="comment">%     exit status returned by fminsearch.</span>
-0048 <span class="comment">% newModel : struct</span>
-0049 <span class="comment">%     updated model structure with the fitted parameters.</span>
-0050 <span class="comment">%</span>
-0051 <span class="comment">% Examples</span>
-0052 <span class="comment">% --------</span>
-0053 <span class="comment">%     [parameters, fitnessScore, exitFlag, newModel]=fitParameters(model,...</span>
-0054 <span class="comment">%         xRxns,xValues,rxnsToFit,valuesToFit,parameterPositions,fitToRatio,...</span>
-0055 <span class="comment">%         initialGuess,plotFitting);</span>
-0056 
-0057 p=parseRAVENargs(varargin, {<span class="string">'fitToRatio'</span>,true; <span class="string">'initialGuess'</span>,[]; <span class="string">'plotFitting'</span>,false});
-0058 fitToRatio=p.fitToRatio;
-0059 initialGuess=p.initialGuess;
-0060 <span class="keyword">if</span> isempty(initialGuess)
-0061     initialGuess=ones(numel(parameterPositions.position),1);
-0062 <span class="keyword">end</span>
-0063 plotFitting=p.plotFitting;
-0064 
-0065 xRxns=convertCharArray(xRxns);
-0066 rxnsToFit=convertCharArray(rxnsToFit);
-0067 
-0068 <span class="comment">%Find the indexes of reactions that will be fitted</span>
-0069 [I, rxnsToFitIndexes]=ismember(rxnsToFit,model.rxns);
-0070 
-0071 <span class="keyword">if</span> ~all(I)
-0072     EM=<span class="string">'Could not find all reactions in rxnsToFit'</span>;
-0073     error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0074 <span class="keyword">end</span>
-0075 
-0076 <span class="comment">%Find the indexes of reactions that will be used for constraints.</span>
-0077 [I, xRxnsIndexes]=ismember(xRxns,model.rxns);
-0078 
-0079 <span class="keyword">if</span> ~all(I)
-0080     EM=<span class="string">'Could not find all reactions in xRxns'</span>;
-0081     error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0082 <span class="keyword">end</span>
-0083 
-0084 [parameters, fitnessScore, exitFlag]=fminsearch(@(parameters) <a href="#_sub1" class="code" title="subfunction [rss, resultingFluxes, newModel]=getRSS(parameters,model,xRxnsIndexes,xValues,rxnsToFitIndexes,valuesToFit,parameterPositions,fitToRatio)">getRSS</a>(parameters,model,xRxnsIndexes,xValues,rxnsToFitIndexes,valuesToFit,parameterPositions,fitToRatio),initialGuess);
-0085 
-0086 parameters=abs(parameters);
+0004 <span class="comment">% Searches for the parameter values that minimise the residual sum of squares</span>
+0005 <span class="comment">% between the fluxes the model predicts and the measured ones, using</span>
+0006 <span class="comment">% fminsearch (Nelder-Mead). Each candidate parameter set is written into the</span>
+0007 <span class="comment">% S matrix at the positions given by parameterPositions, and the model is</span>
+0008 <span class="comment">% solved once per data point.</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% Use this to *derive* a value from measurements; use setGAM to *apply* a</span>
+0011 <span class="comment">% known growth-associated maintenance value to a biomass pseudoreaction.</span>
+0012 <span class="comment">%</span>
+0013 <span class="comment">% Parameters</span>
+0014 <span class="comment">% ----------</span>
+0015 <span class="comment">% model : struct</span>
+0016 <span class="comment">%     a model structure.</span>
+0017 <span class="comment">% xRxns : cell</span>
+0018 <span class="comment">%     cell array with the IDs of the reactions that will be fixed for each</span>
+0019 <span class="comment">%     data point.</span>
+0020 <span class="comment">% xValues : double</span>
+0021 <span class="comment">%     matrix with the corresponding values for each xRxns (columns are</span>
+0022 <span class="comment">%     reactions).</span>
+0023 <span class="comment">% rxnsToFit : cell</span>
+0024 <span class="comment">%     cell array with the IDs of reactions that will be fitted to.</span>
+0025 <span class="comment">% valuesToFit : double</span>
+0026 <span class="comment">%     matrix with the corresponding values for each rxnsToFit (columns are</span>
+0027 <span class="comment">%     reactions).</span>
+0028 <span class="comment">% parameterPositions : struct</span>
+0029 <span class="comment">%     structure that determines where the parameters are in the</span>
+0030 <span class="comment">%     stoichiometric matrix, with fields:</span>
+0031 <span class="comment">%</span>
+0032 <span class="comment">%     - position : cell array of vectors where each element contains the</span>
+0033 <span class="comment">%       positions in the S-matrix for that parameter</span>
+0034 <span class="comment">%     - isNegative : cell array of vectors where the elements are true if</span>
+0035 <span class="comment">%       that position should be the negative of the fitted value (to</span>
+0036 <span class="comment">%       differentiate between production/consumption)</span>
+0037 <span class="comment">%</span>
+0038 <span class="comment">% Name-Value Arguments</span>
+0039 <span class="comment">% --------------------</span>
+0040 <span class="comment">% fitToRatio : logical</span>
+0041 <span class="comment">%     if the ratio of simulated to measured values should be fitted</span>
+0042 <span class="comment">%     instead of the absolute value. Used to prevent large fluxes from</span>
+0043 <span class="comment">%     having too large an impact (default true).</span>
+0044 <span class="comment">% initialGuess : double</span>
+0045 <span class="comment">%     initial guess of the parameters (default ones).</span>
+0046 <span class="comment">% plotFitting : logical</span>
+0047 <span class="comment">%     true if the resulting fitting should be plotted (default false).</span>
+0048 <span class="comment">%</span>
+0049 <span class="comment">% Returns</span>
+0050 <span class="comment">% -------</span>
+0051 <span class="comment">% parameters : double</span>
+0052 <span class="comment">%     fitted parameters in the same order as in parameterPositions.</span>
+0053 <span class="comment">% fitnessScore : double</span>
+0054 <span class="comment">%     the corresponding residual sum of squares.</span>
+0055 <span class="comment">% exitFlag : double</span>
+0056 <span class="comment">%     exit status returned by fminsearch.</span>
+0057 <span class="comment">% newModel : struct</span>
+0058 <span class="comment">%     updated model structure with the fitted parameters.</span>
+0059 <span class="comment">%</span>
+0060 <span class="comment">% Examples</span>
+0061 <span class="comment">% --------</span>
+0062 <span class="comment">%     [parameters, fitnessScore, exitFlag, newModel]=fitParameters(model,...</span>
+0063 <span class="comment">%         xRxns,xValues,rxnsToFit,valuesToFit,parameterPositions,fitToRatio,...</span>
+0064 <span class="comment">%         initialGuess,plotFitting);</span>
+0065 
+0066 p=parseRAVENargs(varargin, {<span class="string">'fitToRatio'</span>,true; <span class="string">'initialGuess'</span>,[]; <span class="string">'plotFitting'</span>,false});
+0067 fitToRatio=p.fitToRatio;
+0068 initialGuess=p.initialGuess;
+0069 <span class="keyword">if</span> isempty(initialGuess)
+0070     initialGuess=ones(numel(parameterPositions.position),1);
+0071 <span class="keyword">end</span>
+0072 plotFitting=p.plotFitting;
+0073 
+0074 xRxns=convertCharArray(xRxns);
+0075 rxnsToFit=convertCharArray(rxnsToFit);
+0076 
+0077 <span class="comment">%Find the indexes of reactions that will be fitted</span>
+0078 [I, rxnsToFitIndexes]=ismember(rxnsToFit,model.rxns);
+0079 
+0080 <span class="keyword">if</span> ~all(I)
+0081     EM=<span class="string">'Could not find all reactions in rxnsToFit'</span>;
+0082     error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0083 <span class="keyword">end</span>
+0084 
+0085 <span class="comment">%Find the indexes of reactions that will be used for constraints.</span>
+0086 [I, xRxnsIndexes]=ismember(xRxns,model.rxns);
 0087 
-0088 <span class="keyword">if</span> plotFitting==true
-0089     <span class="comment">%Set the resulting parameters</span>
-0090     [~, resultingFluxes, newModel]=<a href="#_sub1" class="code" title="subfunction [rss, resultingFluxes, newModel]=getRSS(parameters,model,xRxnsIndexes,xValues,rxnsToFitIndexes,valuesToFit,parameterPositions,fitToRatio)">getRSS</a>(parameters,model,xRxnsIndexes,xValues,rxnsToFitIndexes,valuesToFit,parameterPositions,true);
-0091     plot(xValues,valuesToFit,<span class="string">'o'</span>,xValues,resultingFluxes,<span class="string">'-*'</span>);
-0092 <span class="keyword">end</span>
-0093 <span class="keyword">end</span>
+0088 <span class="keyword">if</span> ~all(I)
+0089     EM=<span class="string">'Could not find all reactions in xRxns'</span>;
+0090     error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0091 <span class="keyword">end</span>
+0092 
+0093 [parameters, fitnessScore, exitFlag]=fminsearch(@(parameters) <a href="#_sub1" class="code" title="subfunction [rss, resultingFluxes, newModel]=getRSS(parameters,model,xRxnsIndexes,xValues,rxnsToFitIndexes,valuesToFit,parameterPositions,fitToRatio)">getRSS</a>(parameters,model,xRxnsIndexes,xValues,rxnsToFitIndexes,valuesToFit,parameterPositions,fitToRatio),initialGuess);
 0094 
-0095 <a name="_sub1" href="#_subfunctions" class="code">function [rss, resultingFluxes, newModel]=getRSS(parameters,model,xRxnsIndexes,xValues,rxnsToFitIndexes,valuesToFit,parameterPositions,fitToRatio)</a>
-0096 parameters=abs(parameters);
-0097 
-0098 <span class="comment">%Set the parameters at the positions specified in parameterPositions</span>
-0099 <span class="keyword">for</span> i=1:numel(parameterPositions.position)
-0100     <span class="comment">%Set positive</span>
-0101     model.S(parameterPositions.position{i}(parameterPositions.isNegative{i}==false))=parameters(i);
-0102     
-0103     <span class="comment">%Set negative</span>
-0104     model.S(parameterPositions.position{i}(parameterPositions.isNegative{i}==true))=parameters(i)*-1;
-0105 <span class="keyword">end</span>
+0095 parameters=abs(parameters);
+0096 
+0097 <span class="keyword">if</span> plotFitting==true
+0098     <span class="comment">%Set the resulting parameters</span>
+0099     [~, resultingFluxes, newModel]=<a href="#_sub1" class="code" title="subfunction [rss, resultingFluxes, newModel]=getRSS(parameters,model,xRxnsIndexes,xValues,rxnsToFitIndexes,valuesToFit,parameterPositions,fitToRatio)">getRSS</a>(parameters,model,xRxnsIndexes,xValues,rxnsToFitIndexes,valuesToFit,parameterPositions,true);
+0100     plot(xValues,valuesToFit,<span class="string">'o'</span>,xValues,resultingFluxes,<span class="string">'-*'</span>);
+0101 <span class="keyword">end</span>
+0102 <span class="keyword">end</span>
+0103 
+0104 <a name="_sub1" href="#_subfunctions" class="code">function [rss, resultingFluxes, newModel]=getRSS(parameters,model,xRxnsIndexes,xValues,rxnsToFitIndexes,valuesToFit,parameterPositions,fitToRatio)</a>
+0105 parameters=abs(parameters);
 0106 
-0107 <span class="comment">%Also return an updated model</span>
-0108 newModel=model;
-0109 
-0110 <span class="comment">%Loop through each data point, set xRxns to xValues and calculate the sum</span>
-0111 <span class="comment">%of squares for the rxnsToFit</span>
-0112 rss=0;
-0113 resultingFluxes=[];
-0114 <span class="keyword">for</span> i=1:size(xValues,1)
-0115     <span class="comment">%Fix for more xRxns!</span>
-0116     model.lb(xRxnsIndexes)=xValues(i,:);
-0117     model.ub(xRxnsIndexes)=xValues(i);
-0118     
-0119     sol=solveLP(model);
-0120     
-0121     <span class="comment">%Calculate the rss</span>
-0122     <span class="keyword">if</span> fitToRatio==false
-0123         rs=sol.x(rxnsToFitIndexes)'-valuesToFit(i,:);
-0124     <span class="keyword">else</span>
-0125         rs=sol.x(rxnsToFitIndexes)'./valuesToFit(i,:)-ones(1,size(valuesToFit,2));
-0126     <span class="keyword">end</span>
-0127     rss=rss+rs*rs';
-0128     resultingFluxes=[resultingFluxes sol.x(rxnsToFitIndexes)];
-0129 <span class="keyword">end</span>
-0130 <span class="keyword">end</span></pre></div>
+0107 <span class="comment">%Set the parameters at the positions specified in parameterPositions</span>
+0108 <span class="keyword">for</span> i=1:numel(parameterPositions.position)
+0109     <span class="comment">%Set positive</span>
+0110     model.S(parameterPositions.position{i}(parameterPositions.isNegative{i}==false))=parameters(i);
+0111     
+0112     <span class="comment">%Set negative</span>
+0113     model.S(parameterPositions.position{i}(parameterPositions.isNegative{i}==true))=parameters(i)*-1;
+0114 <span class="keyword">end</span>
+0115 
+0116 <span class="comment">%Also return an updated model</span>
+0117 newModel=model;
+0118 
+0119 <span class="comment">%Loop through each data point, set xRxns to xValues and calculate the sum</span>
+0120 <span class="comment">%of squares for the rxnsToFit</span>
+0121 rss=0;
+0122 resultingFluxes=[];
+0123 <span class="keyword">for</span> i=1:size(xValues,1)
+0124     <span class="comment">%Fix for more xRxns!</span>
+0125     model.lb(xRxnsIndexes)=xValues(i,:);
+0126     model.ub(xRxnsIndexes)=xValues(i);
+0127     
+0128     sol=solveLP(model);
+0129     
+0130     <span class="comment">%Calculate the rss</span>
+0131     <span class="keyword">if</span> fitToRatio==false
+0132         rs=sol.x(rxnsToFitIndexes)'-valuesToFit(i,:);
+0133     <span class="keyword">else</span>
+0134         rs=sol.x(rxnsToFitIndexes)'./valuesToFit(i,:)-ones(1,size(valuesToFit,2));
+0135     <span class="keyword">end</span>
+0136     rss=rss+rs*rs';
+0137     resultingFluxes=[resultingFluxes sol.x(rxnsToFitIndexes)];
+0138 <span class="keyword">end</span>
+0139 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

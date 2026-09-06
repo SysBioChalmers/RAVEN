@@ -3,20 +3,32 @@ classdef tComparison < RavenTestCase
 
     methods (Test)
 
-        function compareRxnsGenesMetsCompsRuns(testCase)
-            modelA = testCase.model; modelA.id = 'modelA';
-            modelB = removeReactions(testCase.model, testCase.model.rxns(1:5), ...
-                true, true, true); modelB.id = 'modelB';
-            evalc('cs = compareRxnsGenesMetsComps({modelA, modelB});');
-            testCase.verifyClass(cs, 'struct');
-        end
-
         function compareMultipleModelsRuns(testCase)
             modelA = testCase.model; modelA.id = 'modelA';
             modelB = removeReactions(testCase.model, testCase.model.rxns(1:5), ...
                 true, true, true); modelB.id = 'modelB';
             evalc('cs = compareMultipleModels({modelA, modelB});');
             testCase.verifyClass(cs, 'struct');
+        end
+
+        function compareMultipleModelsReportsIdentityOverlap(testCase)
+            % Covers the overlap comparison merged in from the now-removed
+            % compareRxnsGenesMetsComps: rxns/mets/genes/eccodes/metNames/equ/uEqu.
+            modelA = testCase.model; modelA.id = 'modelA';
+            removedRxn = testCase.model.rxns{1};
+            modelB = removeReactions(testCase.model, testCase.model.rxns(1), ...
+                true, true, true); modelB.id = 'modelB';
+            evalc('cs = compareMultipleModels({modelA, modelB});');
+            for field = {'rxns','mets','genes','eccodes','metNames','equ','uEqu'}
+                testCase.verifyTrue(isfield(cs, field{1}));
+                testCase.verifyTrue(isfield(cs.(field{1}), 'comparison'));
+                testCase.verifyTrue(isfield(cs.(field{1}), 'nElements'));
+            end
+            % modelA has one more reaction than modelB, so the rxns overlap must
+            % show a combination where only modelA is included.
+            onlyA = cs.rxns.comparison(:,1) & ~cs.rxns.comparison(:,2);
+            testCase.verifyTrue(any(cs.rxns.nElements(onlyA) > 0));
+            testCase.verifyTrue(any(strcmp(modelA.rxns, removedRxn)));
         end
 
         function diffModelsEqualToItself(testCase)

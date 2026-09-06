@@ -41,15 +41,6 @@ classdef tSolver < RavenTestCase
             testCase.verifyClass(p2, 'struct');
         end
 
-        function qMOMAReturnsFluxVectors(testCase)
-            testCase.assumeDependency(exist('quadprog','file')==2, ...
-                'Optimization Toolbox (quadprog)');
-            model2 = setParam(testCase.model, 'eq', testCase.model.rxns(1), 0);
-            evalc('[fA, fB, flag] = qMOMA(testCase.model, model2);');
-            testCase.verifyNumElements(fA, numel(testCase.model.rxns));
-            testCase.verifyNumElements(fB, numel(testCase.model.rxns));
-        end
-
     end
 
     methods (Access = private)

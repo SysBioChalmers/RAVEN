@@ -1,0 +1,209 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of tutorial7</title>
+  <meta name="keywords" content="tutorial7">
+  <meta name="description" content="tutorial7">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">tutorial</a> &gt; tutorial7.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for tutorial&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>tutorial7
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>tutorial7</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>This is a script file. </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> tutorial7
+   This exercise shows how to use the biomass/ functions to calibrate a
+   model's biomass pseudoreaction against measured condition-specific
+   composition data: getBiomassFractions to see what the model currently
+   predicts, scaleBiomassFraction to rescale individual components to
+   measured values (with one component left to absorb whatever is left,
+   so the total stays at 1 g/gDW), and setGAM to apply a
+   growth-associated maintenance value. See Tutorial 7 on the RAVEN wiki
+   for more details: https://github.com/SysBioChalmers/RAVEN/wiki/Tutorials
+
+   A small hand-built model is used instead of a real GEM, so the
+   pseudoreaction layout is visible in full below. Real GEMs lay this out
+   the same way -- one pseudoreaction per macromolecular component,
+   feeding into a top-level biomass pseudoreaction -- and the file
+   biomassConditions_template.tsv in this folder is a template for the
+   condition data itself: one row per component, one column per named
+   condition, values in g/gDW. Real, published examples of the same
+   shape of data (per-metabolite abundances a modeller derives such
+   fractions from) are yeast-GEM's data/physiology/biomassComposition_*.tsv
+   files; the numbers used here are illustrative, not measured.</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function model = buildBiomassTemplateModel()</a></li><li><a href="#_sub2" class="code">function biomassConfig = buildBiomassTemplateConfig()</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <span class="comment">% tutorial7</span>
+0002 <span class="comment">%   This exercise shows how to use the biomass/ functions to calibrate a</span>
+0003 <span class="comment">%   model's biomass pseudoreaction against measured condition-specific</span>
+0004 <span class="comment">%   composition data: getBiomassFractions to see what the model currently</span>
+0005 <span class="comment">%   predicts, scaleBiomassFraction to rescale individual components to</span>
+0006 <span class="comment">%   measured values (with one component left to absorb whatever is left,</span>
+0007 <span class="comment">%   so the total stays at 1 g/gDW), and setGAM to apply a</span>
+0008 <span class="comment">%   growth-associated maintenance value. See Tutorial 7 on the RAVEN wiki</span>
+0009 <span class="comment">%   for more details: https://github.com/SysBioChalmers/RAVEN/wiki/Tutorials</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">%   A small hand-built model is used instead of a real GEM, so the</span>
+0012 <span class="comment">%   pseudoreaction layout is visible in full below. Real GEMs lay this out</span>
+0013 <span class="comment">%   the same way -- one pseudoreaction per macromolecular component,</span>
+0014 <span class="comment">%   feeding into a top-level biomass pseudoreaction -- and the file</span>
+0015 <span class="comment">%   biomassConditions_template.tsv in this folder is a template for the</span>
+0016 <span class="comment">%   condition data itself: one row per component, one column per named</span>
+0017 <span class="comment">%   condition, values in g/gDW. Real, published examples of the same</span>
+0018 <span class="comment">%   shape of data (per-metabolite abundances a modeller derives such</span>
+0019 <span class="comment">%   fractions from) are yeast-GEM's data/physiology/biomassComposition_*.tsv</span>
+0020 <span class="comment">%   files; the numbers used here are illustrative, not measured.</span>
+0021 
+0022 model = <a href="#_sub1" class="code" title="subfunction model = buildBiomassTemplateModel()">buildBiomassTemplateModel</a>();
+0023 biomassConfig = <a href="#_sub2" class="code" title="subfunction biomassConfig = buildBiomassTemplateConfig()">buildBiomassTemplateConfig</a>();
+0024 
+0025 <span class="comment">%What the template model's biomass pseudoreaction predicts before any</span>
+0026 <span class="comment">%calibration</span>
+0027 fractions = getBiomassFractions(model, biomassConfig);
+0028 fprintf(<span class="string">'Before calibration:\n'</span>);
+0029 disp(fractions);
+0030 
+0031 <span class="comment">%Load the condition data. Each column after &quot;component&quot; is a named</span>
+0032 <span class="comment">%condition; &quot;carbohydrate&quot; is deliberately not a row in the file -- it is</span>
+0033 <span class="comment">%the component left to balance the total back to 1 g/gDW for whichever</span>
+0034 <span class="comment">%condition is applied.</span>
+0035 condData = readtable(<span class="string">'biomassConditions_template.tsv'</span>, <span class="string">'FileType'</span>, <span class="string">'text'</span>, <span class="keyword">...</span>
+0036     <span class="string">'Delimiter'</span>, <span class="string">'\t'</span>);
+0037 conditionNames = condData.Properties.VariableNames(2:end);
+0038 
+0039 <span class="keyword">for</span> c = 1:numel(conditionNames)
+0040     conditionName = conditionNames{c};
+0041     condModel = model; <span class="comment">%Start each condition from the same unscaled template</span>
+0042 
+0043     fprintf(<span class="string">'\n--- Condition: %s ---\n'</span>, conditionName);
+0044     <span class="keyword">for</span> i = 1:height(condData)
+0045         component = condData.component{i};
+0046         target = condData.(conditionName)(i);
+0047         <span class="comment">%Balance the total back to 1 g/gDW on the last explicit component,</span>
+0048         <span class="comment">%so carbohydrate absorbs whatever measuring the other four leaves.</span>
+0049         <span class="keyword">if</span> i == height(condData)
+0050             condModel = scaleBiomassFraction(condModel, biomassConfig, <span class="keyword">...</span>
+0051                 component, target, <span class="string">'balanceOut'</span>, <span class="string">'carbohydrate'</span>);
+0052         <span class="keyword">else</span>
+0053             condModel = scaleBiomassFraction(condModel, biomassConfig, <span class="keyword">...</span>
+0054                 component, target);
+0055         <span class="keyword">end</span>
+0056     <span class="keyword">end</span>
+0057 
+0058     fractions = getBiomassFractions(condModel, biomassConfig);
+0059     fprintf(<span class="string">'carbohydrate (balanced): %.4g g/gDW\n'</span>, fractions.carbohydrate);
+0060     fprintf(<span class="string">'total: %.4g g/gDW\n'</span>, fractions.total);
+0061 <span class="keyword">end</span>
+0062 
+0063 <span class="comment">%setGAM applies a known growth-associated maintenance value directly,</span>
+0064 <span class="comment">%rather than deriving one from data -- use fitParameters for that instead,</span>
+0065 <span class="comment">%against measured exchange fluxes at a fixed growth rate (see its &quot;See</span>
+0066 <span class="comment">%also&quot; cross-reference to setGAM).</span>
+0067 before = full(model.S(strcmp(model.mets, <span class="string">'atp_c'</span>), strcmp(model.rxns, biomassConfig.biomass_rxn)));
+0068 model = setGAM(model, 35, biomassConfig.biomass_rxn, <span class="keyword">...</span>
+0069     {<span class="string">'ATP'</span>, <span class="string">'ADP'</span>, <span class="string">'H2O'</span>, <span class="string">'H+'</span>, <span class="string">'phosphate'</span>});
+0070 after = full(model.S(strcmp(model.mets, <span class="string">'atp_c'</span>), strcmp(model.rxns, biomassConfig.biomass_rxn)));
+0071 fprintf(<span class="string">'\nATP coefficient in the biomass reaction: %.4g -&gt; %.4g\n'</span>, before, after);
+0072 
+0073 
+0074 <a name="_sub0" href="#_subfunctions" class="code">function model = buildBiomassTemplateModel()</a>
+0075 <span class="comment">%A minimal model with one pseudoreaction per biomass component, feeding</span>
+0076 <span class="comment">%into a top-level biomass pseudoreaction -- the layout getBiomassFractions,</span>
+0077 <span class="comment">%scaleBiomassFraction, scaleBiomassPseudoreaction and setGAM all expect.</span>
+0078 model.id = <span class="string">'biomassTemplateModel'</span>;
+0079 model.name = <span class="string">'Template model for the biomass-composition tutorial'</span>;
+0080 
+0081 model.mets = {<span class="string">'aa_c'</span>; <span class="string">'glycogen_c'</span>; <span class="string">'ntp_c'</span>; <span class="string">'dntp_c'</span>; <span class="string">'fa_c'</span>; <span class="keyword">...</span>
+0082     <span class="string">'protein_c'</span>; <span class="string">'carbohydrate_c'</span>; <span class="string">'rna_c'</span>; <span class="string">'dna_c'</span>; <span class="string">'lipid_c'</span>; <span class="keyword">...</span>
+0083     <span class="string">'atp_c'</span>; <span class="string">'adp_c'</span>; <span class="string">'h2o_c'</span>; <span class="string">'h_c'</span>; <span class="string">'pi_c'</span>};
+0084 model.metNames = {<span class="string">'amino acid pool'</span>; <span class="string">'glycogen'</span>; <span class="string">'NTP pool'</span>; <span class="string">'dNTP pool'</span>; <span class="keyword">...</span>
+0085     <span class="string">'fatty acid pool'</span>; <span class="string">'protein'</span>; <span class="string">'carbohydrate'</span>; <span class="string">'RNA'</span>; <span class="string">'DNA'</span>; <span class="keyword">...</span>
+0086     <span class="string">'lipid_backbone'</span>; <span class="string">'ATP'</span>; <span class="string">'ADP'</span>; <span class="string">'H2O'</span>; <span class="string">'H+'</span>; <span class="string">'phosphate'</span>};
+0087 model.metFormulas = {<span class="string">'C5H9NO2'</span>; <span class="string">'C6H10O5'</span>; <span class="string">'C10H12N5O10P'</span>; <span class="string">'C10H12N5O9P'</span>; <span class="keyword">...</span>
+0088     <span class="string">'C16H30O2'</span>; <span class="string">''</span>; <span class="string">''</span>; <span class="string">''</span>; <span class="string">''</span>; <span class="string">''</span>; <span class="keyword">...</span>
+0089     <span class="string">'C10H12N5O13P3'</span>; <span class="string">'C10H12N5O10P2'</span>; <span class="string">'H2O'</span>; <span class="string">'H'</span>; <span class="string">'HO4P'</span>};
+0090 model.metCharges = [0; 0; -2; -2; 0; 0; 0; 0; 0; 0; -4; -3; 0; 1; -2];
+0091 model.comps = {<span class="string">'c'</span>};
+0092 model.compNames = {<span class="string">'cytosol'</span>};
+0093 model.metComps = ones(numel(model.mets), 1);
+0094 
+0095 model.rxns = {<span class="string">'R_protein'</span>; <span class="string">'R_carb'</span>; <span class="string">'R_rna'</span>; <span class="string">'R_dna'</span>; <span class="string">'R_lipid'</span>; <span class="string">'R_biomass'</span>};
+0096 model.rxnNames = {<span class="string">'protein pseudoreaction'</span>; <span class="string">'carbohydrate pseudoreaction'</span>; <span class="keyword">...</span>
+0097     <span class="string">'RNA pseudoreaction'</span>; <span class="string">'DNA pseudoreaction'</span>; <span class="keyword">...</span>
+0098     <span class="string">'lipid backbone pseudoreaction'</span>; <span class="string">'biomass pseudoreaction'</span>};
+0099 
+0100 nMets = numel(model.mets);
+0101 nRxns = numel(model.rxns);
+0102 model.S = sparse(nMets, nRxns);
+0103 met = @(id) find(strcmp(model.mets, id));
+0104 model.S(met(<span class="string">'aa_c'</span>), 1) = -20;         model.S(met(<span class="string">'protein_c'</span>), 1) = 1;
+0105 model.S(met(<span class="string">'glycogen_c'</span>), 2) = -5;    model.S(met(<span class="string">'carbohydrate_c'</span>), 2) = 1;
+0106 model.S(met(<span class="string">'ntp_c'</span>), 3) = -10;        model.S(met(<span class="string">'rna_c'</span>), 3) = 1;
+0107 model.S(met(<span class="string">'dntp_c'</span>), 4) = -2;        model.S(met(<span class="string">'dna_c'</span>), 4) = 1;
+0108 model.S(met(<span class="string">'fa_c'</span>), 5) = -0.08;       model.S(met(<span class="string">'lipid_c'</span>), 5) = 1;
+0109 model.S(met(<span class="string">'protein_c'</span>), 6) = -1;     model.S(met(<span class="string">'carbohydrate_c'</span>), 6) = -1;
+0110 model.S(met(<span class="string">'rna_c'</span>), 6) = -1;         model.S(met(<span class="string">'dna_c'</span>), 6) = -1;
+0111 model.S(met(<span class="string">'lipid_c'</span>), 6) = -1;
+0112 model.S(met(<span class="string">'atp_c'</span>), 6) = -30;        model.S(met(<span class="string">'h2o_c'</span>), 6) = -30;
+0113 model.S(met(<span class="string">'adp_c'</span>), 6) = 30;         model.S(met(<span class="string">'h_c'</span>), 6) = 30;
+0114 model.S(met(<span class="string">'pi_c'</span>), 6) = 30;
+0115 
+0116 model.lb = zeros(nRxns, 1);
+0117 model.ub = repmat(1000, nRxns, 1);
+0118 model.rev = zeros(nRxns, 1);
+0119 model.c = [0; 0; 0; 0; 0; 1];
+0120 model.b = zeros(nMets, 1);
+0121 model.genes = {};
+0122 model.rxnGeneMat = sparse(nRxns, 0);
+0123 model.grRules = repmat({<span class="string">''</span>}, nRxns, 1);
+0124 <span class="keyword">end</span>
+0125 
+0126 
+0127 <a name="_sub1" href="#_subfunctions" class="code">function biomassConfig = buildBiomassTemplateConfig()</a>
+0128 biomassConfig.biomass_rxn = <span class="string">'R_biomass'</span>;
+0129 biomassConfig.proton_met = <span class="string">'h_c'</span>;
+0130 biomassConfig.components = { <span class="keyword">...</span>
+0131     struct(<span class="string">'name'</span>, <span class="string">'protein'</span>, <span class="string">'pseudoreaction_name'</span>, <span class="string">'protein pseudoreaction'</span>, <span class="keyword">...</span>
+0132         <span class="string">'mass_strategy'</span>, <span class="string">'mw_minus_2h'</span>), <span class="keyword">...</span>
+0133     struct(<span class="string">'name'</span>, <span class="string">'carbohydrate'</span>, <span class="string">'pseudoreaction_name'</span>, <span class="string">'carbohydrate pseudoreaction'</span>, <span class="keyword">...</span>
+0134         <span class="string">'mass_strategy'</span>, <span class="string">'mw'</span>), <span class="keyword">...</span>
+0135     struct(<span class="string">'name'</span>, <span class="string">'RNA'</span>, <span class="string">'pseudoreaction_name'</span>, <span class="string">'RNA pseudoreaction'</span>, <span class="keyword">...</span>
+0136         <span class="string">'mass_strategy'</span>, <span class="string">'mw_minus_water'</span>), <span class="keyword">...</span>
+0137     struct(<span class="string">'name'</span>, <span class="string">'DNA'</span>, <span class="string">'pseudoreaction_name'</span>, <span class="string">'DNA pseudoreaction'</span>, <span class="keyword">...</span>
+0138         <span class="string">'mass_strategy'</span>, <span class="string">'mw_minus_water'</span>), <span class="keyword">...</span>
+0139     struct(<span class="string">'name'</span>, <span class="string">'lipid_backbone'</span>, <span class="string">'pseudoreaction_name'</span>, <span class="string">'lipid backbone pseudoreaction'</span>, <span class="keyword">...</span>
+0140         <span class="string">'mass_strategy'</span>, <span class="string">'grams'</span>)};
+0141 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

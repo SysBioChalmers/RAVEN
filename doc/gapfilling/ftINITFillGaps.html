@@ -12,10 +12,10 @@
 </head>
 <body>
 <a name="_top"></a>
-<div><a href="../index.html">Home</a> &gt;  <a href="index.html">INIT</a> &gt; ftINITFillGaps.m</div>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">gapfilling</a> &gt; ftINITFillGaps.m</div>
 
 <!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
-<td align="right"><a href="index.html">Index for INIT&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+<td align="right"><a href="index.html">Index for gapfilling&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
 
 <h1>ftINITFillGaps
 </h1>
@@ -64,6 +64,10 @@
    that the constraints already set on tModel (e.g. a required biomass
    flux, or exchange bounds) can be satisfied.
 
+   See also: <a href="fillGaps.html" class="code" title="function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(model,models,varargin)">fillGaps</a>, the tINIT-side counterpart, which merges a
+   reference model with the model being gap-filled on every call instead
+   of expecting them pre-merged.
+
  Usage: [addedRxns, newModel, exitFlag]=...
            ftINITFillGaps(tModel,origModel,tRefModel,allowNetProduction,...
            supressWarnings,rxnScores,params,verbose)</pre></div>
@@ -75,7 +79,7 @@ This function calls:
 </ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="ftINITFillGapsForAllTasks.html" class="code" title="function [outModel, addedRxns, failedTasks]=ftINITFillGapsForAllTasks(model,refModel,inputFile,printOutput,rxnScores,taskStructure,params,verbose)">ftINITFillGapsForAllTasks</a>	ftINITFillGapsForAllTasks</li></ul>
+<li><a href="fitTasks.html" class="code" title="function [outModel, addedRxns, failedTasks]=fitTasks(model,refModel,inputFile,varargin)">fitTasks</a>	fitTasks  Fill gaps in a model so it can perform a list of tasks.</li></ul>
 <!-- crossreference -->
 
 
@@ -119,78 +123,82 @@ This function is called by:
 0036 <span class="comment">%   that the constraints already set on tModel (e.g. a required biomass</span>
 0037 <span class="comment">%   flux, or exchange bounds) can be satisfied.</span>
 0038 <span class="comment">%</span>
-0039 <span class="comment">% Usage: [addedRxns, newModel, exitFlag]=...</span>
-0040 <span class="comment">%           ftINITFillGaps(tModel,origModel,tRefModel,allowNetProduction,...</span>
-0041 <span class="comment">%           supressWarnings,rxnScores,params,verbose)</span>
-0042 
-0043 <span class="keyword">if</span> isempty(rxnScores)
-0044     rxnScores=ones(numel(tRefModel.rxns),1)*-1;
-0045 <span class="keyword">end</span>
+0039 <span class="comment">%   See also: fillGaps, the tINIT-side counterpart, which merges a</span>
+0040 <span class="comment">%   reference model with the model being gap-filled on every call instead</span>
+0041 <span class="comment">%   of expecting them pre-merged.</span>
+0042 <span class="comment">%</span>
+0043 <span class="comment">% Usage: [addedRxns, newModel, exitFlag]=...</span>
+0044 <span class="comment">%           ftINITFillGaps(tModel,origModel,tRefModel,allowNetProduction,...</span>
+0045 <span class="comment">%           supressWarnings,rxnScores,params,verbose)</span>
 0046 
-0047 <span class="comment">%Simplify the template models to remove constrained rxns. At the same time,</span>
-0048 <span class="comment">%check that the id of the template models isn't the same as the tModel. That</span>
-0049 <span class="comment">%would cause an error further down</span>
-0050 tRefModel.rxnScores=rxnScores;
-0051 tRefModel=simplifyModel(tRefModel,false,false,true);
-0052 
-0053 <span class="comment">%This is a rather ugly solution to the issue that it's a bit tricky to keep</span>
-0054 <span class="comment">%track of which scores belong to which reactions. This requires that</span>
-0055 <span class="comment">%removeReactions and mergeModels are modified to check for the new field.</span>
-0056 tModel.rxnScores=zeros(numel(tModel.rxns),1);
-0057 
-0058 <span class="comment">%First merge all models into one big one</span>
-0059 fullModel = tRefModel;<span class="comment">%mergeModels([{tModel};models],'metNames',true);</span>
-0060 
-0061 <span class="comment">%Add that net production is ok</span>
-0062 <span class="keyword">if</span> allowNetProduction==true
-0063     <span class="comment">%A second column in tModel.b means that the b field is lower and upper</span>
-0064     <span class="comment">%bound on the RHS.</span>
-0065     tModel.b=[tModel.b(:,1) inf(numel(tModel.mets),1)];
-0066     fullModel.b=[fullModel.b(:,1) inf(numel(fullModel.mets),1)];
-0067 <span class="keyword">end</span>
-0068 
-0069 
-0070 fullModel.c(:)=0;
-0071 
-0072 <span class="comment">%Then minimize for the number of fluxes used. The fixed rxns doesn't need</span>
-0073 <span class="comment">%to participate</span>
-0074 templateRxns = find(~ismember(fullModel.rxns, tModel.rxns)); <span class="comment">%Check if this is slow, in that case keep track of this in fitTasksOpt and send it in</span>
+0047 <span class="keyword">if</span> isempty(rxnScores)
+0048     rxnScores=ones(numel(tRefModel.rxns),1)*-1;
+0049 <span class="keyword">end</span>
+0050 
+0051 <span class="comment">%Simplify the template models to remove constrained rxns. At the same time,</span>
+0052 <span class="comment">%check that the id of the template models isn't the same as the tModel. That</span>
+0053 <span class="comment">%would cause an error further down</span>
+0054 tRefModel.rxnScores=rxnScores;
+0055 tRefModel=simplifyModel(tRefModel,false,false,true);
+0056 
+0057 <span class="comment">%This is a rather ugly solution to the issue that it's a bit tricky to keep</span>
+0058 <span class="comment">%track of which scores belong to which reactions. This requires that</span>
+0059 <span class="comment">%removeReactions and mergeModels are modified to check for the new field.</span>
+0060 tModel.rxnScores=zeros(numel(tModel.rxns),1);
+0061 
+0062 <span class="comment">%First merge all models into one big one</span>
+0063 fullModel = tRefModel;<span class="comment">%mergeModels([{tModel};models],'metNames',true);</span>
+0064 
+0065 <span class="comment">%Add that net production is ok</span>
+0066 <span class="keyword">if</span> allowNetProduction==true
+0067     <span class="comment">%A second column in tModel.b means that the b field is lower and upper</span>
+0068     <span class="comment">%bound on the RHS.</span>
+0069     tModel.b=[tModel.b(:,1) inf(numel(tModel.mets),1)];
+0070     fullModel.b=[fullModel.b(:,1) inf(numel(fullModel.mets),1)];
+0071 <span class="keyword">end</span>
+0072 
+0073 
+0074 fullModel.c(:)=0;
 0075 
-0076 <span class="keyword">if</span> isempty(templateRxns)
-0077     <span class="comment">%The reference model holds no reaction that the model does not already</span>
-0078     <span class="comment">%have, so no set of additions can satisfy the constraints. This has to</span>
-0079     <span class="comment">%be caught first: an empty toMinimize means &quot;all reactions&quot; to</span>
-0080     <span class="comment">%getMinNrFluxes, and its solution would then be indexed against an</span>
-0081     <span class="comment">%empty templateRxns.</span>
-0082     addedRxns = {};
-0083     newModel = origModel;
-0084     exitFlag = -1;
-0085     <span class="keyword">return</span>;
-0086 <span class="keyword">end</span>
-0087 
-0088 <span class="comment">%The reversible formulation uses one binary per reaction rather than one</span>
-0089 <span class="comment">%per irreversible reaction, which is what makes this fast enough to run</span>
-0090 <span class="comment">%once per task on a genome-scale reference model</span>
-0091 [~, J, exitFlag]=getMinNrFluxes(fullModel,templateRxns,params,fullModel.rxnScores(templateRxns),<span class="string">'formulation'</span>,<span class="string">'reversible'</span>,<span class="string">'verbose'</span>,verbose);<span class="comment">%only the scores from the template rxns are used, so the others doesn't matter</span>
-0092 
-0093 <span class="comment">%Remove everything except for the added ones</span>
-0094 addedRxns = fullModel.rxns(templateRxns(J));
-0095 <span class="keyword">if</span> isempty(addedRxns)
-0096     <span class="comment">%No reactions were selected, either because the MILP found no solution</span>
-0097     <span class="comment">%or because none were needed. Handing an empty set to addRxns below</span>
-0098     <span class="comment">%errors out, which would reach the caller as a thrown exception rather</span>
-0099     <span class="comment">%than as the exitFlag it keys on.</span>
-0100     addedRxns = {};
-0101     newModel = origModel;
-0102     <span class="keyword">return</span>;
-0103 <span class="keyword">end</span>
-0104 rxnsToAdd.rxns = addedRxns;
-0105 rxnsToAdd.equations = constructEquations(fullModel, addedRxns);
-0106 rxnsToAdd.ub = fullModel.ub(templateRxns(J));
-0107 rxnsToAdd.lb = fullModel.lb(templateRxns(J));
-0108 newModel = addRxns(origModel,rxnsToAdd, 3, [], true); <span class="comment">%we ignore gene rules etc here, they are not needed - we regenerate the model in the end by subtracting rxns from the full model.</span>
-0109 
-0110 <span class="keyword">end</span></pre></div>
+0076 <span class="comment">%Then minimize for the number of fluxes used. The fixed rxns doesn't need</span>
+0077 <span class="comment">%to participate</span>
+0078 templateRxns = find(~ismember(fullModel.rxns, tModel.rxns)); <span class="comment">%Check if this is slow, in that case keep track of this in fitTasksOpt and send it in</span>
+0079 
+0080 <span class="keyword">if</span> isempty(templateRxns)
+0081     <span class="comment">%The reference model holds no reaction that the model does not already</span>
+0082     <span class="comment">%have, so no set of additions can satisfy the constraints. This has to</span>
+0083     <span class="comment">%be caught first: an empty toMinimize means &quot;all reactions&quot; to</span>
+0084     <span class="comment">%getMinNrFluxes, and its solution would then be indexed against an</span>
+0085     <span class="comment">%empty templateRxns.</span>
+0086     addedRxns = {};
+0087     newModel = origModel;
+0088     exitFlag = -1;
+0089     <span class="keyword">return</span>;
+0090 <span class="keyword">end</span>
+0091 
+0092 <span class="comment">%The reversible formulation uses one binary per reaction rather than one</span>
+0093 <span class="comment">%per irreversible reaction, which is what makes this fast enough to run</span>
+0094 <span class="comment">%once per task on a genome-scale reference model</span>
+0095 [~, J, exitFlag]=getMinNrFluxes(fullModel,templateRxns,params,fullModel.rxnScores(templateRxns),<span class="string">'formulation'</span>,<span class="string">'reversible'</span>,<span class="string">'verbose'</span>,verbose);<span class="comment">%only the scores from the template rxns are used, so the others doesn't matter</span>
+0096 
+0097 <span class="comment">%Remove everything except for the added ones</span>
+0098 addedRxns = fullModel.rxns(templateRxns(J));
+0099 <span class="keyword">if</span> isempty(addedRxns)
+0100     <span class="comment">%No reactions were selected, either because the MILP found no solution</span>
+0101     <span class="comment">%or because none were needed. Handing an empty set to addRxns below</span>
+0102     <span class="comment">%errors out, which would reach the caller as a thrown exception rather</span>
+0103     <span class="comment">%than as the exitFlag it keys on.</span>
+0104     addedRxns = {};
+0105     newModel = origModel;
+0106     <span class="keyword">return</span>;
+0107 <span class="keyword">end</span>
+0108 rxnsToAdd.rxns = addedRxns;
+0109 rxnsToAdd.equations = constructEquations(fullModel, addedRxns);
+0110 rxnsToAdd.ub = fullModel.ub(templateRxns(J));
+0111 rxnsToAdd.lb = fullModel.lb(templateRxns(J));
+0112 newModel = addRxns(origModel,rxnsToAdd, 3, [], true); <span class="comment">%we ignore gene rules etc here, they are not needed - we regenerate the model in the end by subtracting rxns from the full model.</span>
+0113 
+0114 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

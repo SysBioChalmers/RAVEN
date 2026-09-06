@@ -129,6 +129,43 @@ classdef tGapfilling < RavenTestCase
             testCase.verifySubstring(out, 'Task 50% done');
         end
 
+        function fitTasksAcceptsAllMetsShorthands(testCase)
+            % ALLMETS and ALLMETSIN[comp] open uptake for a whole model or a
+            % whole compartment rather than for a listed metabolite, and
+            % write the input bounds along a different route than a named
+            % metabolite does. The task needs e[s] out of a[s], and the model
+            % is missing R2, the only route from a[s] into the cell.
+            testCase.assumeMILPSolver();
+            refModel = testCase.taskTestModel(); refModel.id = 'DB';
+            gapModel = removeReactions(refModel, {'R2'}); gapModel.id = 'testModel';
+
+            % Opening the extracellular compartment is the same thing as
+            % naming a[s], so R2 is still the reaction that has to be added
+            task = testCase.taskTestStruct();
+            task.inputs = {'ALLMETSIN[s]'};
+            evalc('outModel = fitTasks(gapModel, refModel, [], false, [], task);');
+            testCase.verifyTrue(ismember('R2', outModel.rxns));
+
+            % ALLMETS also opens uptake of the cytosolic metabolites, e[c]
+            % among them, so the task is satisfiable without crossing the
+            % membrane at all and nothing needs to be added
+            task.inputs = {'ALLMETS'};
+            evalc('outModel = fitTasks(gapModel, refModel, [], false, [], task);');
+            testCase.verifyFalse(ismember('R2', outModel.rxns));
+        end
+
+        function fitTasksRejectsUnknownAllMetsInCompartment(testCase)
+            % The compartment named in ALLMETSIN has to exist, otherwise the
+            % task silently constrains nothing.
+            refModel = testCase.taskTestModel(); refModel.id = 'DB';
+            gapModel = removeReactions(refModel, {'R2'}); gapModel.id = 'testModel';
+            task = testCase.taskTestStruct();
+            task.inputs = {'ALLMETSIN[z]'};
+            testCase.verifyError( ...
+                @() fitTasks(gapModel, refModel, [], false, [], task), ...
+                'RAVEN:badInput');
+        end
+
         function gapFillFastCoreReturnsLogical(testCase)
             % gapFillFastCore should return a logical vector the same length as model.rxns.
             model = testCase.model;

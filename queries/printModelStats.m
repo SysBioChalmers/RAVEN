@@ -18,6 +18,12 @@ function printModelStats(model, varargin)
 % Examples
 % --------
 %     printModelStats(model, printModelIssues, printDetails);
+%
+% See also
+% --------
+% modelSummary : the shorter view, without the per-compartment breakdown, but
+%     adding the objective function and - given a flux vector - the objective
+%     value and the net uptake and secretion.
 
 p=parseRAVENargs(varargin, {'printModelIssues',false; 'printDetails',true});
 printModelIssues=p.printModelIssues;

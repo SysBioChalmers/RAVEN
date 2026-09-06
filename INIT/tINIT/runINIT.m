@@ -1,12 +1,16 @@
 function [outModel, deletedRxns, metProduction, fValue]=runINIT(model,varargin)
-% runINIT  Generate a model using the original INIT algorithm.
+% runINIT  Solve the MILP of the original INIT algorithm.
 %
 % Generates a model using the INIT algorithm, based on proteomics and/or
-% transcriptomics and/or metabolomics and/or metabolic tasks.
+% transcriptomics and/or metabolomics and/or metabolic tasks. This function is
+% the actual implementation of the algorithm; see getINITModel for the
+% higher-level reconstruction function, and PLoS Comput Biol. 2012;8(5):e1002518
+% for the formulation.
 %
-% This function is the actual implementation of the algorithm. See
-% getINITModel for a higher-level function for model reconstruction. See PLoS
-% Comput Biol. 2012;8(5):e1002518 for details regarding the implementation.
+% ftINIT is the recommended method for context-specific model extraction, and
+% solves a different MILP in ftINITInternalAlg. This function remains
+% supported, and issues a RAVEN:legacyMethod notice once per session, which
+% warning('off','RAVEN:legacyMethod') silences.
 %
 % Parameters
 % ----------
@@ -66,6 +70,12 @@ function [outModel, deletedRxns, metProduction, fValue]=runINIT(model,varargin)
 % fValue : double
 %     objective value (sum of (the negative of) reaction scores for the
 %     included reactions and prodWeight*number of produced metabolites).
+%
+% See Also
+% --------
+% getINITModel, ftINITInternalAlg, ftINIT
+
+legacyMethodNotice('runINIT','ftINIT');
 
 p=parseRAVENargs(varargin, {'rxnScores',[]; 'presentMets',[]; 'essentialRxns',[]; 'prodWeight',[]; 'allowExcretion',false; 'noRevLoops',false; 'params',[]; 'eps',1});
 rxnScores=p.rxnScores;
