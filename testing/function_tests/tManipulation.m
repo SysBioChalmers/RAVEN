@@ -22,6 +22,18 @@ classdef tManipulation < RavenTestCase
             testCase.verifyTrue(all(ismember(g.genes, m2.genes)));
         end
 
+        function addGenesRavenPartialOverlapAddsRemainder(testCase)
+            % When some genesToAdd.genes already exist in the model, the
+            % others must still be added, and every parallel field must stay
+            % aligned with the (trimmed) gene list.
+            g.genes = {testCase.model.genes{1}; 'newgene1'};
+            g.geneShortNames = {'existing','s1'};
+            evalc('m2 = addGenesRaven(testCase.model, g);');
+            testCase.verifyEqual(numel(m2.genes), numel(testCase.model.genes) + 1);
+            testCase.verifyTrue(ismember('newgene1', m2.genes));
+            testCase.verifyEqual(numel(m2.geneShortNames), numel(m2.genes));
+        end
+
         function addMetsAddsMets(testCase)
             mta.metNames = {'newMetA','newMetB'};
             mta.compartments = {'c','e'};
@@ -35,6 +47,26 @@ classdef tManipulation < RavenTestCase
             evalc('m2 = addRxns(testCase.model, r, 2, ''c'', true);');
             testCase.verifyEqual(numel(m2.rxns), numel(testCase.model.rxns) + 1);
             testCase.verifyTrue(ismember('newRxn1', m2.rxns));
+        end
+
+        function addRxnsKeepsSpontaneousAligned(testCase)
+            % A model that already tracks spontaneous must keep it aligned
+            % with rxns after adding reactions that don't specify it, and
+            % accept an explicit spontaneous value for the new ones too.
+            m = testCase.model;
+            m.spontaneous = false(numel(m.rxns), 1);
+            r.rxns = 'newRxn1';
+            r.equations = '2-Oxoglutarate => TEST';
+            evalc('m2 = addRxns(m, r, 2, ''c'', true);');
+            testCase.verifyEqual(numel(m2.spontaneous), numel(m2.rxns));
+            testCase.verifyFalse(m2.spontaneous(end));
+
+            r2.rxns = 'newRxn2';
+            r2.equations = '2-Oxoglutarate => TEST2';
+            r2.spontaneous = true;
+            evalc('m3 = addRxns(m, r2, 2, ''c'', true);');
+            testCase.verifyEqual(numel(m3.spontaneous), numel(m3.rxns));
+            testCase.verifyTrue(m3.spontaneous(end));
         end
 
         function addRxnsStringEqnTypeIdAlias(testCase)
@@ -127,6 +159,31 @@ classdef tManipulation < RavenTestCase
             testCase.verifyGreaterThanOrEqual(numel(m2.rxns), numel(testCase.model.rxns));
         end
 
+        function closeModelDetectsScaledAndMultiMetSinks(testCase)
+            % closeModel's boundary-reaction rule is "metabolites on only
+            % one side" (matching getExchangeRxns), not "coefficients
+            % summing to 1 in absolute value": a scaled single-metabolite
+            % sink and a multi-metabolite one must both be detected and
+            % closed, while a genuine two-sided reaction is left alone.
+            m = tManipulation.twoMetModel();  % R1: a => b, a genuine reaction
+            r.rxns = {'R2';'R3'};
+            r.equations = {'2 a =>'; '0.5 a + 0.5 b =>'};
+            evalc('m = addRxns(m, r, 1, [], false);');
+            nMetsBefore = numel(m.mets);
+            m2 = closeModel(m);
+
+            % Exactly R2 and R3 are exchange-like, so exactly two boundary
+            % metabolites are added, one per closed reaction.
+            testCase.verifyEqual(numel(m2.mets) - nMetsBefore, 2);
+            testCase.verifyEqual(numel(m2.metNames), numel(m2.mets));
+            testCase.verifyEqual(numel(m2.metComps), numel(m2.mets));
+
+            idx = getIndexes(m2, {'R1';'R2';'R3'}, 'rxns');
+            boundaryComp = numel(m2.comps);
+            touchesBoundary = full(any(m2.S(m2.metComps==boundaryComp, idx) ~= 0, 1));
+            testCase.verifyEqual(touchesBoundary, [false true true]);
+        end
+
         function contractModelNoMoreRxns(testCase)
             evalc('m2 = contractModel(testCase.model);');
             testCase.verifyLessThanOrEqual(numel(m2.rxns), numel(testCase.model.rxns));
@@ -164,6 +221,20 @@ classdef tManipulation < RavenTestCase
             m.genes = {'g1'}; m.grRules = {'g1'}; m.rxnGeneMat = sparse(1,1,1);
             m2 = convertToIrrev(m);
             testCase.verifyEqual(m2.grRules{strcmp(m2.rxns,'R1_REV')}, 'g1');
+        end
+
+        function convertToIrrevReverseCopyInheritsSpontaneousAndPwys(testCase)
+            % The _REV copy must carry the same spontaneous/pwys annotation
+            % as the forward reaction, keeping both fields aligned with rxns.
+            m = tManipulation.twoMetModel();
+            m.rev = 1; m.lb = -500; m.ub = 1000;
+            m.spontaneous = true;
+            m.pwys = {'pathway1'};
+            m2 = convertToIrrev(m);
+            testCase.verifyEqual(numel(m2.spontaneous), numel(m2.rxns));
+            testCase.verifyEqual(numel(m2.pwys), numel(m2.rxns));
+            testCase.verifyTrue(m2.spontaneous(strcmp(m2.rxns,'R1_REV')));
+            testCase.verifyEqual(m2.pwys{strcmp(m2.rxns,'R1_REV')}, 'pathway1');
         end
 
         function findDuplicateRxnsIgnoreDirection(testCase)
@@ -216,6 +287,15 @@ classdef tManipulation < RavenTestCase
             evalc('byId   = mergeModels({a; b}, ''metParam'', ''mets'');');
             testCase.verifyEqual(nnz(strcmp(byName.metNames, 'Glucose')), 1);
             testCase.verifyEqual(nnz(strcmp(byId.metNames, 'Glucose')), 2);
+        end
+
+        function copyToCompsDefaultCompOutsideAddsCompartment(testCase)
+            % Adding a new compartment without specifying compOutside must
+            % not error when the model already tracks compOutside.
+            m = testCase.model;
+            m.compOutside = repmat({''}, numel(m.comps), 1);
+            evalc('m2 = copyToComps(m, {''p''}, ''ACKr'');');
+            testCase.verifyEqual(numel(m2.compOutside), numel(m2.comps));
         end
 
         function copyToCompsAddsCompartment(testCase)
@@ -446,6 +526,20 @@ classdef tManipulation < RavenTestCase
             m = testCase.gprTestModel('g1 and (g2 or g3)', {'g1';'g2';'g3'}, [1 1 1]);
             e = expandModel(m);
             testCase.verifyEqual(sort(e.grRules), {'g1 and g2';'g1 and g3'});
+        end
+
+        function expandModelCopiesSpontaneousAndPwys(testCase)
+            % Each isozyme copy created by splitting an OR rule must inherit
+            % the source reaction's spontaneous/pwys annotation, keeping both
+            % fields aligned with rxns.
+            m = testCase.gprTestModel('g1 or g2', {'g1';'g2'}, [1 1]);
+            m.spontaneous = true;
+            m.pwys = {'pathway1'};
+            e = expandModel(m);
+            testCase.verifyEqual(numel(e.spontaneous), numel(e.rxns));
+            testCase.verifyEqual(numel(e.pwys), numel(e.rxns));
+            testCase.verifyTrue(all(e.spontaneous));
+            testCase.verifyTrue(all(strcmp(e.pwys, 'pathway1')));
         end
 
         function expandModelDistributesBothSides(testCase)

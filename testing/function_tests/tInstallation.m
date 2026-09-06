@@ -14,6 +14,21 @@ classdef tInstallation < RavenTestCase
             testCase.verifyTrue(exist(fullfile(p,'installation','findRAVENroot.m'),'file')==2);
         end
 
+        function findRAVENrootSurvivesClearAndRepeatCalls(testCase)
+            % The resolved path is cached for the session (findRAVENroot is
+            % called on every solver invocation, so re-reading the
+            % preference from disk every time is wasteful). Repeated calls
+            % must keep returning the same root, and it must still resolve
+            % correctly after being cleared, which is what checkInstallation
+            % does when the RAVEN.ravenPath preference changes.
+            p1 = findRAVENroot();
+            p2 = findRAVENroot();
+            testCase.verifyEqual(p2, p1);
+            clear('findRAVENroot');
+            p3 = findRAVENroot();
+            testCase.verifyEqual(p3, p1);
+        end
+
         function checkInstallationReturnsVersion(testCase)
             [~, currVer] = evalc('checkInstallation(false, false)');
             testCase.verifyNotEmpty(currVer);

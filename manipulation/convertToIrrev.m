@@ -117,6 +117,12 @@ if any(revIndexesBool)
     if isfield(irrevModel,'rxnReferences')
         irrevModel.rxnReferences=[irrevModel.rxnReferences;irrevModel.rxnReferences(revIndexes)];
     end
+    if isfield(irrevModel,'pwys')
+        irrevModel.pwys=[irrevModel.pwys;irrevModel.pwys(revIndexes)];
+    end
+    if isfield(irrevModel,'spontaneous')
+        irrevModel.spontaneous=[irrevModel.spontaneous;irrevModel.spontaneous(revIndexes)];
+    end
 end
     % Additional output
     if nargout>1

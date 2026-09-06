@@ -292,6 +292,14 @@ prob.osense=1;
 prob.csense=char(zeros(1,size(prob.a,1)));
 prob.csense(:)='E';
 
+%Add that the binary reactions may only take integer values. This has to be
+%declared before the presentMets loop below: optimizeProb reads vartype on
+%every call, and the producibility test is only meaningful against the same
+%integer problem that is solved at the end.
+prob.vartype = repmat('C', 1, size(prob.A, 2));
+allInt=[(nRxns+1):(nRxns+nNonEssential) size(S,2)-nRevBounds*2+1:size(S,2)];
+prob.vartype(allInt) = 'B';
+
 %We still do not know which of the presentMets that can be produced. Go
 %through them, force production, and see if the problem can be solved
 for i=1:numel(pmIndexes)
@@ -308,11 +316,6 @@ for i=1:numel(pmIndexes)
     end
 end
 prob.lb=[prob.blx; prob.blc];
-
-%Add that the binary reactions may only take integer values.
-prob.vartype = repmat('C', 1, size(prob.A, 2));
-allInt=[(nRxns+1):(nRxns+nNonEssential) size(S,2)-nRevBounds*2+1:size(S,2)];
-prob.vartype(allInt) = 'B';
 
 % solve problem
 res=optimizeProb(prob,params);

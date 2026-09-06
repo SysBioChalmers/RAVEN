@@ -18,6 +18,16 @@ classdef tIO < RavenTestCase
             testCase.verifySubstring(dep, 'RAVEN_toolbox');
         end
 
+        function exportForGitMainBranchFlagRejectsNonMain(testCase)
+            % mainBranchFlag should error when RAVEN is *not* on main/master,
+            % which this test, run from a feature branch, always satisfies.
+            outDir = tempname; mkdir(outDir);
+            c = onCleanup(@() rmdir(outDir,'s'));
+            testCase.verifyError(@() evalc(['exportForGit(testCase.model,''path'',outDir,' ...
+                '''formats'',{''xml''},''subDirs'',false,''mainBranchFlag'',true);']), ...
+                ?MException);
+        end
+
         function importModelReadsSBML(testCase)
             f = fullfile(testCase.ravenRoot,'tutorial','empty.xml');
             evalc('m = importModel(f);');

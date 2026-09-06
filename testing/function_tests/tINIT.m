@@ -298,10 +298,13 @@ classdef tINIT < RavenTestCase
             evalc('prepData5 = prepINITModel(testModel5, {}, {''R7'';''R10''}, false, {}, ''s'');');
             evalc(['resModel = ftINIT(prepData5,arrayData.tissues{1},[],[],' ...
                 'arrayData,{},getINITSteps(),true,true,testParams,false);']);
-            % a->g->e via R11/R13 (score -2) ties the R2 path (score -2); the
-            % solver takes the R11/R13 route, avoiding R9/R10.
-            testCase.verifyTrue(all(strcmp(resModel.rxns, ...
-                {'R1';'R4';'R6';'R7';'R8';'R11';'R13'})));
+            % a->g->e via R11/R13 (score -2) ties the R2 path (score -2), so
+            % which of the two is returned is a tie-break that differs between
+            % solvers. Neither route uses R9/R10. isequal rather than strcmp,
+            % which errors on two lists of different length.
+            testCase.verifyTrue( ...
+                isequal(resModel.rxns, {'R1';'R4';'R6';'R7';'R8';'R11';'R13'}) || ...
+                isequal(resModel.rxns, {'R1';'R2';'R4';'R6';'R7';'R8'}));
 
             % adding metabolite g drops R7
             evalc('prepData5 = prepINITModel(testModel5, {}, {''R10''}, false, {}, ''s'');');

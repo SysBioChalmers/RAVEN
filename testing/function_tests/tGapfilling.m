@@ -100,6 +100,22 @@ classdef tGapfilling < RavenTestCase
             testCase.verifyTrue(active(coreIdx));  % core reaction must be active
         end
 
+        function gapFillFastCoreRejectsTriviallySelfCancelingReversibleCore(testCase)
+            % A reversible core reaction touching only its own,
+            % otherwise-unused metabolites cannot carry any real
+            % steady-state flux (mass balance on those metabolites forces
+            % v=0). Forcing both its forward and reverse irreversible
+            % copies to >= epsilon must not let them satisfy the core
+            % requirement by canceling each other out.
+            model = testCase.model;
+            r.rxns = {'isolatedRev'};
+            r.equations = {'newA[c] <=> newB[c]'};
+            evalc('model = addRxns(model, r, 3, ''c'', true);');
+            coreIdx = getIndexes(model,'isolatedRev','rxns');
+            active = gapFillFastCore(model, coreIdx, 1e-4);
+            testCase.verifyFalse(active(coreIdx));
+        end
+
         function gapFillSwiftCoreReturnsLogical(testCase)
             % gapFillSwiftCore returns same shape as gapFillFastCore.
             model = testCase.model;
@@ -108,6 +124,21 @@ classdef tGapfilling < RavenTestCase
             testCase.verifyClass(active, 'logical');
             testCase.verifyNumElements(active, numel(model.rxns));
             testCase.verifyTrue(active(coreIdx));
+        end
+
+        function fillGapsIdentifiesOwnRxnsWhenRxnFromPreset(testCase)
+            % model.rxnFrom, as e.g. getModelFromHomology output already
+            % carries it, must not stop fillGaps from recognising the
+            % model's own reactions when checking which of them regain
+            % flux via the template.
+            testCase.assumeMILPSolver();
+            modelDB = testCase.model; modelDB.id = 'DB';
+            gapModel = removeReactions(modelDB, (1:10));
+            gapModel.id = 'gapModel';
+            gapModel.rxnFrom = repmat({'someTemplate'}, numel(gapModel.rxns), 1);
+            evalc('[newConnected,~,~,newModel] = fillGaps(gapModel, modelDB);');
+            testCase.verifyNotEmpty(newConnected);
+            testCase.verifyTrue(all(ismember(gapModel.rxns, newModel.rxns)));
         end
 
         function gapFillFastLPReturnsAddedRxns(testCase)

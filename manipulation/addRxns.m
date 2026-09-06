@@ -530,6 +530,23 @@ else
     end
 end
 
+if isfield(rxnsToAdd,'spontaneous')
+    if numel(rxnsToAdd.spontaneous)~=nRxns
+        EM='rxnsToAdd.spontaneous must have the same number of elements as rxnsToAdd.rxns';
+        error('RAVEN:badInput', '%s', EM);
+    end
+    %Fill with standard if it does not exist
+    if ~isfield(newModel,'spontaneous')
+        newModel.spontaneous=false(nOldRxns,1);
+    end
+    newModel.spontaneous=[newModel.spontaneous;logical(rxnsToAdd.spontaneous(:))];
+else
+    %Fill with standard if it does not exist
+    if isfield(newModel,'spontaneous')
+        newModel.spontaneous=[newModel.spontaneous;false(nRxns,1)];
+    end
+end
+
 if isfield(rxnsToAdd,'rxnConfidenceScores')
     if numel(rxnsToAdd.rxnConfidenceScores)~=nRxns
         EM='rxnsToAdd.rxnConfidenceScores must have the same number of elements as rxnsToAdd.rxns';

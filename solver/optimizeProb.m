@@ -250,7 +250,7 @@ switch solver
         csense = prob.csense(:);
         rl(csense=='L') = -inf;   % A*x <= b
         ru(csense=='G') = inf;    % A*x >= b
-        [xopt,fval,exitflag] = scip([], prob.c, prob.A, rl, ru, prob.lb, prob.ub, prob.vartype);
+        [xopt,fval,exitflag,scipStats] = scip([], prob.c, prob.A, rl, ru, prob.lb, prob.ub, prob.vartype);
 
         %   [x,fval,exitflag,stats] = scip(H, f, A, rl, ru, lb, ub, xtype, sos, qc, nl, x0, opts)
         %
@@ -314,6 +314,24 @@ switch solver
                 res.stat = 2;             % solution may exist but is not proven optimal
             otherwise                     % 2/12 infeasible, 0 unknown, 4, 14
                 res.stat = 0;
+        end
+
+        if milp
+            % Callers such as ftINIT compare this against their own
+            % params.MIPGap, so it has to be the quantity the gurobi branch
+            % reports there: a relative gap. It is derived from the bounds
+            % rather than read from scipStats.BBgap, whose units are not
+            % documented. inf where no gap can be established, so that a
+            % caller testing "gap small enough" does not accept the solution.
+            if res.stat == 1
+                res.mipgap = 0;
+            else
+                res.mipgap = inf;
+                primal = scipStats.PrimalBound;
+                if isfinite(primal) && abs(primal) > 1e-10
+                    res.mipgap = abs(primal-scipStats.DualBound)/abs(primal);
+                end
+            end
         end
     otherwise
         error('RAVEN solver not defined or unknown. Try using setRavenSolver(''solver'').');
