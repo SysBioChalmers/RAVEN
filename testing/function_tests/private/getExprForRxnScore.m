@@ -1,0 +1,41 @@
+function expr = getExprForRxnScore(scores, varargin)
+% getExprForRxnScore  Convert a reaction score to the required gene expression.
+%
+% Converts a reaction score to the gene expression (CPM or TPM) required to
+% get that reaction score, if the GPR is only a single gene. Useful function
+% primarily in test cases, where you want to be able to define the reaction
+% scores of rxns, but need to send in gene expression.
+%
+% Parameters
+% ----------
+% scores : double
+%     vector of scores to convert.
+%
+% Name-Value Arguments
+% --------------------
+% threshold : double
+%     gene expression threshold, matching the one used to originally
+%     calculate the reaction score; scales the resulting expression value
+%     (default 1).
+%
+% Returns
+% -------
+% expr : double
+%     the resulting gene expression vector.
+%
+% Examples
+% --------
+%     expr = getExprForRxnScore(scores, threshold);
+
+p=parseRAVENargs(varargin, {'threshold',1});
+threshold=p.threshold;
+
+%This is how the score is calculated: 5*log(expression./threshold)
+%expression = threshold*10.^(scores/5)
+%This is a bit confusing - it seems that it is threshold*e.^(scores/5)
+%This is probably what is being used in scoreComplexModel, this code
+%negates that perfectly, see the T0009 test case.
+
+expr = threshold*exp(scores/5);
+
+end

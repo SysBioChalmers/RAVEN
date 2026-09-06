@@ -25,6 +25,15 @@ function modelSummary(model, varargin)
 %     modelSummary(model)
 %     modelSummary(model, 'fluxes', sol.x)
 %     modelSummary(model, 'fluxes', sol.x, 'nMax', 10)
+%
+% See also
+% --------
+% printModelStats : the structural view instead. It breaks the counts down per
+%     compartment, adds unique EC codes, biochemically unique reactions and
+%     unique metabolite names, and optionally reports dead ends and elemental
+%     imbalances. It knows nothing about fluxes or the objective.
+% printFluxes : the exchange fluxes on their own, with more control over
+%     formatting and filtering than the summary here offers.
 
 p = parseRAVENargs(varargin, {'fluxes',[]; 'cutoff',1e-8; 'nMax',20});
 fluxes = p.fluxes;

@@ -54,18 +54,13 @@ classdef tAnalysis < RavenTestCase
         end
 
         function findGeneDeletionsRuns(testCase)
-            evalc('[genes, fluxes] = findGeneDeletions(testCase.model, ''sgd'', ''fba'');');
+            evalc('[genes, fluxes] = findGeneDeletions(testCase.model, ''sgd'');');
             testCase.verifyNotEmpty(genes);
         end
 
-        function findGeneDeletionsMomaComputesGrRatio(testCase)
-            % The MOMA branch must populate sol.f itself (used to compute
-            % grRatioMuts): qMOMA returns a flux distribution and a status
-            % flag, not an objective value.
-            testCase.assumeDependency(exist('quadprog','file')==2, ...
-                'Optimization Toolbox (quadprog)');
+        function findGeneDeletionsComputesGrRatio(testCase)
             evalc(['[genes, ~, ~, ~, grRatioMuts] = findGeneDeletions(testCase.model, ' ...
-                '''sgd'', ''moma'', testCase.model);']);
+                '''sgd'');']);
             testCase.verifyNotEmpty(genes);
             testCase.verifyEqual(numel(grRatioMuts), numel(genes));
             testCase.verifyGreaterThan(max(grRatioMuts), 0);
@@ -97,6 +92,18 @@ classdef tAnalysis < RavenTestCase
             testCase.verifyEqual(f, 1.0);
             testCase.verifyNumElements(p, 1);
             testCase.verifyEmpty(m);
+        end
+
+        function walkFluxesRefusesNonInteractive(testCase)
+            % The test suite itself runs under -batch, so this exercises the
+            % real guard rather than a mocked one.
+            testCase.assumeTrue(batchStartupOptionUsed, ...
+                'Test runner is not using -batch; the non-interactive guard cannot be exercised here.');
+            testCase.assumeSolver('solveLP');
+            sol = solveLP(testCase.model);
+            biomassRxn = testCase.model.rxns{find(testCase.model.c == 1, 1)};
+            testCase.verifyError(@() walkFluxes(testCase.model, sol.x, biomassRxn), ...
+                'walkFluxes:nonInteractive');
         end
 
         function compareFluxesReturnsResult(testCase)
