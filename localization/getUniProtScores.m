@@ -19,7 +19,16 @@ function GSS = getUniProtScores(organism, varargin)
 % reviewed : logical
 %     restrict to curated Swiss-Prot entries (default true).
 % compartmentMap : containers.Map
-%     label -> compartment id and location vocabulary (default defaultCompartmentMap).
+%     UniProt location term -> your model's compartment id (default
+%     defaultCompartmentMap). Here the map is not only a renaming: its keys are
+%     also the vocabulary searched for in UniProt's "Subcellular location [CC]"
+%     free text, matched whole-word and case insensitively, so they must be
+%     UniProt's own noun forms ('endoplasmic reticulum', not 'ER') and a term
+%     that is not a key is never looked for. Several keys may share one
+%     compartment id, which merges them; since every hit scores 1.0, merging
+%     here means "annotated to any of these counts as this compartment". One
+%     key cannot be split across two compartment ids - see parseScores for why,
+%     and for the recipe to duplicate a column on the returned GSS instead.
 % extraQuery : char
 %     an additional UniProt query clause, ANDed into the query (e.g. 'gene:CIT1').
 %
@@ -32,6 +41,8 @@ function GSS = getUniProtScores(organism, varargin)
 % --------
 %     GSS = getUniProtScores(559292);                       % all reviewed S. cerevisiae proteins
 %     GSS = getUniProtScores(559292, 'idField', 'accession');
+%     map = defaultCompartmentMap; map('cell wall') = 'ce';  % extend the vocabulary
+%     GSS = getUniProtScores(559292, 'compartmentMap', map);
 %
 % See also
 % --------

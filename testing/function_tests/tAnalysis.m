@@ -106,15 +106,38 @@ classdef tAnalysis < RavenTestCase
             testCase.verifyEmpty(result.turnedOff);
         end
 
-        function followChangedRuns(testCase)
-            % Aerobic vs anaerobic guarantees several reactions change, which
-            % avoids the empty-selection edge case.
+        function compareFluxesMetaboliteListRestrictsResult(testCase)
+            testCase.assumeSolver('solveLP');
             solA = solveLP(testCase.model);
-            o2exch = find(strcmp(testCase.model.rxnNames, 'O2 exchange'));
+            o2exch = find(strcmp(testCase.model.rxnNames, 'O2 exchange'), 1);
             modelAna = setParam(testCase.model, 'eq', testCase.model.rxns(o2exch), 0);
             solB = solveLP(modelAna);
-            out = evalc('followChanged(testCase.model, solA.x, solB.x, 10, 0.01, 0);');
-            testCase.verifyClass(out, 'char');
+            unfiltered = compareFluxes(testCase.model, solA.x, solB.x, 'verbose', false);
+            testCase.assumeNotEmpty(unfiltered.changed.rxn);
+
+            % Name a metabolite of the largest-changing reaction, so the
+            % filtered result is guaranteed to be non-empty and the subset
+            % checks below are not satisfied vacuously.
+            topRxn = strcmp(testCase.model.rxns, unfiltered.changed.rxn{1});
+            met = testCase.model.metNames{find(testCase.model.S(:,topRxn) ~= 0, 1)};
+            filtered = compareFluxes(testCase.model, solA.x, solB.x, ...
+                'metaboliteList', {met}, 'verbose', false);
+            testCase.verifyNotEmpty(filtered.changed.rxn);
+
+            % Every kept reaction must involve the named metabolite, and the
+            % filtered result can only be a subset of the unfiltered one.
+            metIdx = strcmpi(met, testCase.model.metNames);
+            withMet = testCase.model.rxns(any(testCase.model.S(metIdx,:) ~= 0, 1));
+            testCase.verifyTrue(all(ismember(filtered.changed.rxn, withMet)));
+            testCase.verifyTrue(all(ismember(filtered.changed.rxn, unfiltered.changed.rxn)));
+        end
+
+        function compareFluxesUnknownMetaboliteWarns(testCase)
+            testCase.assumeSolver('solveLP');
+            sol = solveLP(testCase.model);
+            testCase.verifyWarning(@() compareFluxes(testCase.model, sol.x, sol.x, ...
+                'metaboliteList', {'no such metabolite'}, 'verbose', false), ...
+                'RAVEN:warning');
         end
 
         function getFluxZComputesScores(testCase)

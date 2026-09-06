@@ -3,7 +3,8 @@
 %   compatible Excel format and shows the most basic aspects of the
 %   stoichiometric modelling. It is shown how to build a simple model from
 %   scratch, set parameters and perform simple simulations.
-%   See Tutorial 2 in "RAVEN tutorials.docx" for more details.
+%   See Tutorial 2 on the RAVEN wiki for more details:
+%   https://github.com/SysBioChalmers/RAVEN/wiki/Tutorials
 
 %Import the model into a RAVEN model structure
 smallModel=importModel('empty.xml');

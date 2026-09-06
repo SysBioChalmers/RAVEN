@@ -4,8 +4,26 @@ function map = defaultCompartmentMap()
 % Returns a containers.Map from lower-case predictor / database compartment labels (as used by
 % DeepLoc, MULocDeep, COMPARTMENTS and UniProt) to compartment ids, tuned for yeast/fungal
 % models (e.g. yeast-GEM codes). Pass it (or your own map) to parseScores / getUniProtScores as
-% 'compartmentMap' to rename and merge compartments; labels not listed here (e.g. plastid, which
-% fungi lack) are dropped.
+% 'compartmentMap'.
+%
+% The table below is also the worked example of how such a map is built, so read it as three
+% deliberate decisions rather than a lookup list:
+%
+% - **Which compartments exist.** A label absent from the map is dropped along with its score
+%   column, so listing only the ids your model has is how unwanted compartments are excluded.
+%   'plastid' is absent because fungi lack one; a plant model would add it.
+% - **Which labels are the same thing.** Predictors disagree on wording, so 'cytoplasm' and
+%   'cytosol' both map to 'c', and 'mitochondrion' / 'mitochondria' / 'mitochondrial' all map
+%   to 'm'. Merged columns are combined by maximum, not sum.
+% - **Which distinct compartments to collapse.** 'lysosome' maps to 'v' not because it is a
+%   vacuole but because a yeast model has no lysosome and the vacuole is its functional
+%   equivalent. Change this if your model separates them.
+%
+% Extend a copy rather than editing this function, e.g.
+%
+%     map = defaultCompartmentMap;
+%     map('cell wall') = 'ce';
+%     GSS = parseScores(file, 'compartmentMap', map);
 %
 % Returns
 % -------

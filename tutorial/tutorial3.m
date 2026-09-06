@@ -3,7 +3,8 @@
 %   adjustment (MOMA) simulations and how one can use GEMs as a scaffold
 %   for interpreting microarray data. A simplified model of yeast
 %   metabolism is used in this approach as an example.
-%   See Tutorial 3 in "RAVEN tutorials.docx" for more details.
+%   See Tutorial 3 on the RAVEN wiki for more details:
+%   https://github.com/SysBioChalmers/RAVEN/wiki/Tutorials
 %
 %   It is assumed that the user has already completed Tutorial 2
 
@@ -34,10 +35,12 @@ okSolutions=find(fluxes(I,:)>10^-2); %Only look at solutions which are still gro
 disp(maxGlycerol);
 disp(originalGenes(genes(okSolutions(J),:)));
 
-%Compare the ZWF1 deletion strain to wild type
+%Compare the ZWF1 deletion strain to wild type, looking only at the
+%reactions that involve the redox cofactors
 model2=setParam(model,'eq',{'ZWF'},0);
 sol2=solveLP(model2);
-followChanged(model,sol2.x,sol.x, 10, 10^-2, 0,{'NADPH' 'NADH' 'NAD' 'NADP'});
+compareFluxes(model,sol.x,sol2.x,'cutoff',10^-2, ...
+    'metaboliteList',{'NADPH' 'NADH' 'NAD' 'NADP'});
 
 %Reload the model with exchange metabolites removed for simulation
 model=readYAMLmodel('smallYeast.yml');

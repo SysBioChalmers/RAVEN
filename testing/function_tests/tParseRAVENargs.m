@@ -50,14 +50,14 @@ classdef tParseRAVENargs < matlab.unittest.TestCase
         end
 
         function validatorRejectsInvalid(testCase)
-            spec = {'flag', false, @emptyOrLogicalScalar};
-            testCase.verifyError(@() parseRAVENargs({'flag', [1 2 3]}, spec), ?MException);
+            spec = {'n', 1, @mustBeScalarOrEmpty};
+            testCase.verifyError(@() parseRAVENargs({'n', [1 2 3]}, spec), ?MException);
         end
 
         function validatorAcceptsValid(testCase)
-            spec = {'flag', false, @emptyOrLogicalScalar};
-            p = parseRAVENargs({'flag', true}, spec);
-            testCase.verifyTrue(p.flag);
+            spec = {'n', 1, @mustBeScalarOrEmpty};
+            p = parseRAVENargs({'n', 7}, spec);
+            testCase.verifyEqual(p.n, 7);
         end
 
     end
