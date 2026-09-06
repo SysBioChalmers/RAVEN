@@ -41,7 +41,7 @@ This function is called by:
 
 <h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <ul style="list-style-image:url(../../matlabicon.gif)">
-<li><a href="#_sub1" class="code">function guessCompositionRuns(testCase)</a></li><li><a href="#_sub2" class="code">function makeFakeBlastStructureReturnsStruct(testCase)</a></li><li><a href="#_sub3" class="code">function getModelFromHomologyBuildsDraft(testCase)</a></li><li><a href="#_sub4" class="code">function getBlastRunsWhenAvailable(testCase)</a></li><li><a href="#_sub5" class="code">function getDiamondRunsWhenAvailable(testCase)</a></li><li><a href="#_sub6" class="code">function getKEGGModelForOrganismNeedsData(testCase)</a></li><li><a href="#_sub7" class="code">function getModelFromKEGGNeedsData(testCase)</a></li><li><a href="#_sub8" class="code">function buildGlobalGPRJoinsGenesThroughSharedKO(testCase)</a></li><li><a href="#_sub9" class="code">function getPhylDistNeedsData(testCase)</a></li></ul>
+<li><a href="#_sub1" class="code">function guessCompositionRuns(testCase)</a></li><li><a href="#_sub2" class="code">function guessCompositionAccountsForStoichiometricCoefficient(testCase)</a></li><li><a href="#_sub3" class="code">function makeFakeBlastStructureReturnsStruct(testCase)</a></li><li><a href="#_sub4" class="code">function getModelFromHomologyBuildsDraft(testCase)</a></li><li><a href="#_sub5" class="code">function getBlastRunsWhenAvailable(testCase)</a></li><li><a href="#_sub6" class="code">function getDiamondRunsWhenAvailable(testCase)</a></li><li><a href="#_sub7" class="code">function getKEGGModelForOrganismNeedsData(testCase)</a></li><li><a href="#_sub8" class="code">function getModelFromKEGGNeedsData(testCase)</a></li><li><a href="#_sub9" class="code">function buildGlobalGPRJoinsGenesThroughSharedKO(testCase)</a></li><li><a href="#_sub10" class="code">function getPhylDistNeedsData(testCase)</a></li><li><a href="#_sub11" class="code">function model = toyModel()</a></li></ul>
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <div class="fragment"><pre>0001 classdef <a href="tReconstruction.html" class="code" title="">tReconstruction</a> &lt; <a href="RavenTestCase.html" class="code" title="">RavenTestCase</a>
@@ -58,77 +58,112 @@ This function is called by:
 0012             testCase.verifyClass(m2, <span class="string">'struct'</span>);
 0013         <span class="keyword">end</span>
 0014 
-0015         <a name="_sub1" href="#_subfunctions" class="code">function makeFakeBlastStructureReturnsStruct(testCase)</a>
-0016             <span class="comment">% makeFakeBlastStructure requires at least 10 ortholog pairs.</span>
-0017             ol = [testCase.model.genes(1:10), strcat(<span class="string">'t_'</span>, testCase.model.genes(1:10))];
-0018             bs = makeFakeBlastStructure(ol, <span class="string">'srcModel'</span>, <span class="string">'tgtOrg'</span>);
-0019             testCase.verifyClass(bs, <span class="string">'struct'</span>);
-0020         <span class="keyword">end</span>
-0021 
-0022         <a name="_sub2" href="#_subfunctions" class="code">function getModelFromHomologyBuildsDraft(testCase)</a>
-0023             src = testCase.model; src.id = <span class="string">'srcModel'</span>;
-0024             n = min(20, numel(src.genes));
-0025             ol = [src.genes(1:n), strcat(<span class="string">'t_'</span>, src.genes(1:n))];
-0026             bs = makeFakeBlastStructure(ol, <span class="string">'srcModel'</span>, <span class="string">'tgtOrg'</span>);
-0027             evalc(<span class="string">'draft = getModelFromHomology({src}, bs, ''tgtOrg'');'</span>);
-0028             testCase.verifyClass(draft, <span class="string">'struct'</span>);
-0029         <span class="keyword">end</span>
-0030 
-0031         <a name="_sub3" href="#_subfunctions" class="code">function getBlastRunsWhenAvailable(testCase)</a>
-0032             fa1 = fullfile(testCase.ravenRoot,<span class="string">'testing'</span>,<span class="string">'function_tests'</span>,<span class="string">'test_data'</span>,<span class="string">'human_galactosidases.fa'</span>);
-0033             fa2 = fullfile(testCase.ravenRoot,<span class="string">'testing'</span>,<span class="string">'function_tests'</span>,<span class="string">'test_data'</span>,<span class="string">'yeast_galactosidases.fa'</span>);
-0034             testCase.assumeDependency(exist(fa1,<span class="string">'file'</span>)==2, <span class="string">'test FASTA files'</span>);
-0035             ok = true;
-0036             <span class="keyword">try</span>, evalc(<span class="string">'bs = getBlast(''human'', fa1, {''yeast''}, {fa2});'</span>); <span class="keyword">catch</span>, ok = false; <span class="keyword">end</span>
-0037             testCase.assumeTrue(ok, <span class="string">'BLAST+ binary not functional in this environment'</span>);
-0038             testCase.verifyClass(bs, <span class="string">'struct'</span>);
-0039         <span class="keyword">end</span>
-0040 
-0041         <a name="_sub4" href="#_subfunctions" class="code">function getDiamondRunsWhenAvailable(testCase)</a>
-0042             fa1 = fullfile(testCase.ravenRoot,<span class="string">'testing'</span>,<span class="string">'function_tests'</span>,<span class="string">'test_data'</span>,<span class="string">'human_galactosidases.fa'</span>);
-0043             fa2 = fullfile(testCase.ravenRoot,<span class="string">'testing'</span>,<span class="string">'function_tests'</span>,<span class="string">'test_data'</span>,<span class="string">'yeast_galactosidases.fa'</span>);
-0044             testCase.assumeDependency(exist(fa1,<span class="string">'file'</span>)==2, <span class="string">'test FASTA files'</span>);
-0045             ok = true;
-0046             <span class="keyword">try</span>, evalc(<span class="string">'bs = getDiamond(''human'', fa1, {''yeast''}, {fa2});'</span>); <span class="keyword">catch</span>, ok = false; <span class="keyword">end</span>
-0047             testCase.assumeTrue(ok, <span class="string">'DIAMOND binary not functional in this environment'</span>);
-0048             testCase.verifyClass(bs, <span class="string">'struct'</span>);
-0049         <span class="keyword">end</span>
-0050 
-0051         <a name="_sub5" href="#_subfunctions" class="code">function getKEGGModelForOrganismNeedsData(testCase)</a>
-0052             testCase.assumeFail(<span class="string">'Requires keggModel.mat and an HMM library from raven-data.'</span>);
-0053         <span class="keyword">end</span>
-0054 
-0055         <a name="_sub6" href="#_subfunctions" class="code">function getModelFromKEGGNeedsData(testCase)</a>
-0056             matFile = fullfile(testCase.ravenRoot, <span class="string">'reconstruction'</span>, <span class="string">'kegg'</span>, <span class="string">'keggModel.mat'</span>);
-0057             testCase.assumeFalse(exist(matFile, <span class="string">'file'</span>) == 2, <span class="keyword">...</span>
-0058                 <span class="string">'keggModel.mat is present; skipping the build-from-artefacts path.'</span>);
-0059             testCase.assumeFail(<span class="string">'Downloads and assembles the full KEGG artefact set from raven-data; not run automatically.'</span>);
-0060         <span class="keyword">end</span>
-0061 
-0062         <a name="_sub7" href="#_subfunctions" class="code">function buildGlobalGPRJoinsGenesThroughSharedKO(testCase)</a>
-0063             <span class="comment">% Offline unit test of the join at the core of buildGlobalKEGGModel:</span>
-0064             <span class="comment">% two reactions sharing a KO, a KO used by two organisms' genes, and</span>
-0065             <span class="comment">% a reaction with no KO at all (should end up with no genes).</span>
-0066             rxns = {<span class="string">'R1'</span>; <span class="string">'R2'</span>; <span class="string">'R3'</span>};
-0067             koReaction = table({<span class="string">'K1'</span>; <span class="string">'K1'</span>; <span class="string">'K2'</span>}, {<span class="string">'R1'</span>; <span class="string">'R2'</span>; <span class="string">'R2'</span>}, <span class="keyword">...</span>
-0068                 <span class="string">'VariableNames'</span>, {<span class="string">'ko'</span>, <span class="string">'reaction'</span>});
-0069             organismGeneKO = table({<span class="string">'a'</span>; <span class="string">'a'</span>; <span class="string">'b'</span>}, {<span class="string">'g1'</span>; <span class="string">'g2'</span>; <span class="string">'g1'</span>}, {<span class="string">'K1'</span>; <span class="string">'K2'</span>; <span class="string">'K1'</span>}, <span class="keyword">...</span>
-0070                 <span class="string">'VariableNames'</span>, {<span class="string">'organism'</span>, <span class="string">'gene'</span>, <span class="string">'ko'</span>});
-0071             [genes, rxnGeneMat] = buildGlobalGPR(rxns, koReaction, organismGeneKO);
-0072             testCase.verifyEqual(genes, {<span class="string">'a:g1'</span>; <span class="string">'a:g2'</span>; <span class="string">'b:g1'</span>});
-0073             expected = [1 0 1; 1 1 1; 0 0 0];
-0074             testCase.verifyEqual(full(rxnGeneMat), expected);
-0075         <span class="keyword">end</span>
-0076 
-0077         <a name="_sub8" href="#_subfunctions" class="code">function getPhylDistNeedsData(testCase)</a>
-0078             distFile = fullfile(testCase.ravenRoot, <span class="string">'reconstruction'</span>, <span class="string">'kegg'</span>, <span class="string">'keggPhylDist.mat'</span>);
-0079             testCase.assumeFalse(exist(distFile, <span class="string">'file'</span>) == 2, <span class="keyword">...</span>
-0080                 <span class="string">'keggPhylDist.mat is present; skipping error-path test.'</span>);
-0081             testCase.verifyError(@() getPhylDist(), <span class="string">'getPhylDist:noData'</span>);
-0082         <span class="keyword">end</span>
-0083 
-0084     <span class="keyword">end</span>
-0085 <span class="keyword">end</span></pre></div>
+0015         <a name="_sub1" href="#_subfunctions" class="code">function guessCompositionAccountsForStoichiometricCoefficient(testCase)</a>
+0016             <span class="comment">% A -&gt; 2 B, with A's formula known (CH4). B's own coefficient is</span>
+0017             <span class="comment">% 2, so its atom counts must be half of A's (C0.5H4/2 = C0.5H2),</span>
+0018             <span class="comment">% not identical to A's.</span>
+0019             model = tReconstruction.toyModel();
+0020             model.metFormulas = {<span class="string">'CH4'</span>; <span class="string">''</span>};
+0021             evalc(<span class="string">'[m2, guessedFor, couldNotGuess] = guessComposition(model);'</span>);
+0022             testCase.verifyEqual(guessedFor, {<span class="string">'B'</span>});
+0023             testCase.verifyEmpty(couldNotGuess);
+0024             testCase.verifyEqual(m2.metFormulas{2}, <span class="string">'C0.5H2'</span>);
+0025         <span class="keyword">end</span>
+0026 
+0027         <a name="_sub2" href="#_subfunctions" class="code">function makeFakeBlastStructureReturnsStruct(testCase)</a>
+0028             <span class="comment">% makeFakeBlastStructure requires at least 10 ortholog pairs.</span>
+0029             ol = [testCase.model.genes(1:10), strcat(<span class="string">'t_'</span>, testCase.model.genes(1:10))];
+0030             bs = makeFakeBlastStructure(ol, <span class="string">'srcModel'</span>, <span class="string">'tgtOrg'</span>);
+0031             testCase.verifyClass(bs, <span class="string">'struct'</span>);
+0032         <span class="keyword">end</span>
+0033 
+0034         <a name="_sub3" href="#_subfunctions" class="code">function getModelFromHomologyBuildsDraft(testCase)</a>
+0035             src = testCase.model; src.id = <span class="string">'srcModel'</span>;
+0036             n = min(20, numel(src.genes));
+0037             ol = [src.genes(1:n), strcat(<span class="string">'t_'</span>, src.genes(1:n))];
+0038             bs = makeFakeBlastStructure(ol, <span class="string">'srcModel'</span>, <span class="string">'tgtOrg'</span>);
+0039             evalc(<span class="string">'draft = getModelFromHomology({src}, bs, ''tgtOrg'');'</span>);
+0040             testCase.verifyClass(draft, <span class="string">'struct'</span>);
+0041         <span class="keyword">end</span>
+0042 
+0043         <a name="_sub4" href="#_subfunctions" class="code">function getBlastRunsWhenAvailable(testCase)</a>
+0044             fa1 = fullfile(testCase.ravenRoot,<span class="string">'testing'</span>,<span class="string">'function_tests'</span>,<span class="string">'test_data'</span>,<span class="string">'human_galactosidases.fa'</span>);
+0045             fa2 = fullfile(testCase.ravenRoot,<span class="string">'testing'</span>,<span class="string">'function_tests'</span>,<span class="string">'test_data'</span>,<span class="string">'yeast_galactosidases.fa'</span>);
+0046             testCase.assumeDependency(exist(fa1,<span class="string">'file'</span>)==2, <span class="string">'test FASTA files'</span>);
+0047             ok = true;
+0048             <span class="keyword">try</span>, evalc(<span class="string">'bs = getBlast(''human'', fa1, {''yeast''}, {fa2});'</span>); <span class="keyword">catch</span>, ok = false; <span class="keyword">end</span>
+0049             testCase.assumeTrue(ok, <span class="string">'BLAST+ binary not functional in this environment'</span>);
+0050             testCase.verifyClass(bs, <span class="string">'struct'</span>);
+0051         <span class="keyword">end</span>
+0052 
+0053         <a name="_sub5" href="#_subfunctions" class="code">function getDiamondRunsWhenAvailable(testCase)</a>
+0054             fa1 = fullfile(testCase.ravenRoot,<span class="string">'testing'</span>,<span class="string">'function_tests'</span>,<span class="string">'test_data'</span>,<span class="string">'human_galactosidases.fa'</span>);
+0055             fa2 = fullfile(testCase.ravenRoot,<span class="string">'testing'</span>,<span class="string">'function_tests'</span>,<span class="string">'test_data'</span>,<span class="string">'yeast_galactosidases.fa'</span>);
+0056             testCase.assumeDependency(exist(fa1,<span class="string">'file'</span>)==2, <span class="string">'test FASTA files'</span>);
+0057             ok = true;
+0058             <span class="keyword">try</span>, evalc(<span class="string">'bs = getDiamond(''human'', fa1, {''yeast''}, {fa2});'</span>); <span class="keyword">catch</span>, ok = false; <span class="keyword">end</span>
+0059             testCase.assumeTrue(ok, <span class="string">'DIAMOND binary not functional in this environment'</span>);
+0060             testCase.verifyClass(bs, <span class="string">'struct'</span>);
+0061         <span class="keyword">end</span>
+0062 
+0063         <a name="_sub6" href="#_subfunctions" class="code">function getKEGGModelForOrganismNeedsData(testCase)</a>
+0064             testCase.assumeFail(<span class="string">'Requires keggModel.mat and an HMM library from raven-data.'</span>);
+0065         <span class="keyword">end</span>
+0066 
+0067         <a name="_sub7" href="#_subfunctions" class="code">function getModelFromKEGGNeedsData(testCase)</a>
+0068             matFile = fullfile(testCase.ravenRoot, <span class="string">'reconstruction'</span>, <span class="string">'kegg'</span>, <span class="string">'keggModel.mat'</span>);
+0069             testCase.assumeFalse(exist(matFile, <span class="string">'file'</span>) == 2, <span class="keyword">...</span>
+0070                 <span class="string">'keggModel.mat is present; skipping the build-from-artefacts path.'</span>);
+0071             testCase.assumeFail(<span class="string">'Downloads and assembles the full KEGG artefact set from raven-data; not run automatically.'</span>);
+0072         <span class="keyword">end</span>
+0073 
+0074         <a name="_sub8" href="#_subfunctions" class="code">function buildGlobalGPRJoinsGenesThroughSharedKO(testCase)</a>
+0075             <span class="comment">% Offline unit test of the join at the core of buildGlobalKEGGModel:</span>
+0076             <span class="comment">% two reactions sharing a KO, a KO used by two organisms' genes, and</span>
+0077             <span class="comment">% a reaction with no KO at all (should end up with no genes).</span>
+0078             rxns = {<span class="string">'R1'</span>; <span class="string">'R2'</span>; <span class="string">'R3'</span>};
+0079             koReaction = table({<span class="string">'K1'</span>; <span class="string">'K1'</span>; <span class="string">'K2'</span>}, {<span class="string">'R1'</span>; <span class="string">'R2'</span>; <span class="string">'R2'</span>}, <span class="keyword">...</span>
+0080                 <span class="string">'VariableNames'</span>, {<span class="string">'ko'</span>, <span class="string">'reaction'</span>});
+0081             organismGeneKO = table({<span class="string">'a'</span>; <span class="string">'a'</span>; <span class="string">'b'</span>}, {<span class="string">'g1'</span>; <span class="string">'g2'</span>; <span class="string">'g1'</span>}, {<span class="string">'K1'</span>; <span class="string">'K2'</span>; <span class="string">'K1'</span>}, <span class="keyword">...</span>
+0082                 <span class="string">'VariableNames'</span>, {<span class="string">'organism'</span>, <span class="string">'gene'</span>, <span class="string">'ko'</span>});
+0083             [genes, rxnGeneMat] = buildGlobalGPR(rxns, koReaction, organismGeneKO);
+0084             testCase.verifyEqual(genes, {<span class="string">'a:g1'</span>; <span class="string">'a:g2'</span>; <span class="string">'b:g1'</span>});
+0085             expected = [1 0 1; 1 1 1; 0 0 0];
+0086             testCase.verifyEqual(full(rxnGeneMat), expected);
+0087         <span class="keyword">end</span>
+0088 
+0089         <a name="_sub9" href="#_subfunctions" class="code">function getPhylDistNeedsData(testCase)</a>
+0090             distFile = fullfile(testCase.ravenRoot, <span class="string">'reconstruction'</span>, <span class="string">'kegg'</span>, <span class="string">'keggPhylDist.mat'</span>);
+0091             testCase.assumeFalse(exist(distFile, <span class="string">'file'</span>) == 2, <span class="keyword">...</span>
+0092                 <span class="string">'keggPhylDist.mat is present; skipping error-path test.'</span>);
+0093             testCase.verifyError(@() getPhylDist(), <span class="string">'getPhylDist:noData'</span>);
+0094         <span class="keyword">end</span>
+0095 
+0096     <span class="keyword">end</span>
+0097 
+0098     methods (Static)
+0099         <a name="_sub10" href="#_subfunctions" class="code">function model = toyModel()</a>
+0100             <span class="comment">% Single reaction: A -&gt; 2 B, one compartment.</span>
+0101             model = struct();
+0102             model.id          = <span class="string">'toy'</span>;
+0103             model.name        = <span class="string">'toy'</span>;
+0104             model.mets        = {<span class="string">'m1'</span>; <span class="string">'m2'</span>};
+0105             model.metNames    = {<span class="string">'A'</span>; <span class="string">'B'</span>};
+0106             model.comps       = {<span class="string">'c'</span>};
+0107             model.compNames   = {<span class="string">'cytosol'</span>};
+0108             model.metComps    = [1; 1];
+0109             model.metFormulas = {<span class="string">''</span>; <span class="string">''</span>};
+0110             model.rxns        = {<span class="string">'R1'</span>};
+0111             model.rxnNames    = {<span class="string">'R1'</span>};
+0112             model.S           = sparse([-1; 2]);
+0113             model.lb          = 0;
+0114             model.ub          = 1000;
+0115             model.rev         = 0;
+0116             model.c           = 0;
+0117             model.b           = zeros(2, 1);
+0118         <span class="keyword">end</span>
+0119     <span class="keyword">end</span>
+0120 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
