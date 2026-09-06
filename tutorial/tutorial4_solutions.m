@@ -54,7 +54,7 @@ model=setParam(model,'eq',getExchangeRxns(model),0);
 %Since it is checked which metabolites could be consumed without
 %production, one can no longer have free production of all metabolites
 model.b=model.b(:,1);
-I=canConsume(model);
+I=canExchange(model,'consume');
 disp(model.mets(I)); %These 12 metabolites can be consumed without any production
 
 %Allow all uptake

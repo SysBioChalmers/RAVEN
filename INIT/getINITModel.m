@@ -1,4 +1,4 @@
-function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, deletedDeadEndRxns, deletedRxnsInINIT, taskReport]=getINITModel(refModel, tissue, varargin)
+﻿function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, deletedDeadEndRxns, deletedRxnsInINIT, taskReport]=getINITModel(refModel, tissue, varargin)
 % getINITModel  Generate a model using the original INIT algorithm.
 %
 % Generates a model using the INIT algorithm, based on proteomics and/or
@@ -78,7 +78,7 @@ function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, delete
 %     array that indicates which of the metabolites in metabolomicsData that
 %     could be produced. Note that this is before the gap-filling process to
 %     enable defined tasks. To see which metabolites that can be produced in
-%     the final model, use canProduce:
+%     the final model, use canExchange:
 %
 %     - -2 : metabolite name not found in model.
 %     - -1 : metabolite found, but it could not be produced.
