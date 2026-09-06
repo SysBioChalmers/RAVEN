@@ -71,7 +71,13 @@ function [rxnScores, geneScores, hpaScores, arrayScores] = scoreComplexModel(mod
 % arrayScores : double
 %     scores for each of the genes in model if only taking arrayData into
 %     account. Genes which are not in the dataset(s) have -Inf as scores.
-
+%
+% See Also
+% --------
+% scoreModel : the scorer tINIT uses, called only by getINITModel. It reduces
+%     over the genes in rxnGeneMat rather than over the grRule, and lets HPA
+%     data take precedence per reaction rather than per gene. With
+%     isozymeScoring and complexScoring both "max" the two agree.
 
 p=parseRAVENargs(varargin, {'celltype',[]; 'noGeneScore',[]; 'isozymeScoring',[]; 'complexScoring',[]; 'multipleCellScoring',[]; 'hpaLevelScores',[]});
 celltype=p.celltype;

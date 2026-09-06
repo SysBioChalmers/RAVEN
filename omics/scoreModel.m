@@ -70,6 +70,13 @@ function [rxnScores, geneScores, hpaScores, arrayScores]=scoreModel(model,hpaDat
 %     [rxnScores, geneScores, hpaScores, arrayScores] = scoreModel(model, ...
 %         hpaData, arrayData, tissue, celltype, noGeneScore, ...
 %         multipleGeneScoring, multipleCellScoring, hpaLevelScores);
+%
+% See Also
+% --------
+% scoreComplexModel : the scorer ftINIT uses. It reduces over the grRule with a
+%     configurable operator for AND and for OR, where this function reduces over
+%     the genes in rxnGeneMat. With both operators set to "max" the two agree.
+%     getINITModel is the only caller of this function.
 
 p=parseRAVENargs(varargin, {'arrayData',[]; 'tissue',[]; 'celltype',[]; 'noGeneScore',-2; 'multipleGeneScoring','best'; 'multipleCellScoring','best'; 'hpaLevelScores',[]});
 arrayData=p.arrayData;

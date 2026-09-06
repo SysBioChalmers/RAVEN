@@ -155,6 +155,31 @@ classdef tINIT < RavenTestCase
             testCase.verifyTrue(all(abs(rxnScores - getTstModelRxnScores()) < 10^-10));
         end
 
+        function getINITModelRuns(testCase)
+            % The tINIT path is legacy but supported, and until now nothing
+            % exercised it: a refactor of the machinery it shares with ftINIT
+            % (checkTasks, simplifyModel, solveLP, removeReactions) could
+            % break it without any test noticing.
+            testCase.assumeMILPSolver();
+            refModel = getTstModel();
+            % getINITModel wants the closed form, which this fixture is not
+            % built in; its own documentation gives this as the way to add it
+            refModel.unconstrained = false(numel(refModel.mets),1);
+
+            arrayData.genes     = refModel.genes;
+            arrayData.tissues   = {'a'};
+            arrayData.levels    = getExprForRxnScore(getTstModelRxnScores());
+            arrayData.threshold = 1;
+
+            evalc(['m = getINITModel(refModel, arrayData.tissues{1}, ' ...
+                '''arrayData'', arrayData, ''printReport'', false);']);
+            testCase.verifyClass(m, 'struct');
+            testCase.verifyNotEmpty(m.rxns);
+            testCase.verifyTrue(all(ismember(m.rxns, refModel.rxns)));
+            % R4 and R10 carry the highest scores, so neither should be cut
+            testCase.verifyTrue(all(ismember({'R4';'R10'}, m.rxns)));
+        end
+
         function ftINITPipelineRuns(testCase)
             % prepINITModel + ftINIT end-to-end on testModel without tasks.
             testCase.assumeMILPSolver();

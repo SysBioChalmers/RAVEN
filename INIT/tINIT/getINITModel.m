@@ -1,14 +1,17 @@
 ﻿function [model, metProduction, essentialRxnsForTasks, addedRxnsForTasks, deletedDeadEndRxns, deletedRxnsInINIT, taskReport]=getINITModel(refModel, tissue, varargin)
-% getINITModel  Generate a model using the original INIT algorithm.
+% getINITModel  Generate a model using the original tINIT algorithm.
 %
-% Generates a model using the INIT algorithm, based on proteomics and/or
-% transcriptomics and/or metabolomics and/or metabolic tasks.
+% Generates a model using the tINIT algorithm, based on proteomics and/or
+% transcriptomics and/or metabolomics and/or metabolic tasks (PLoS Comput Biol.
+% 2012;8(5):e1002518, Mol Syst Biol. 2014;10:721).
 %
-% This is the main function for automatic reconstruction of models based on the
-% (t)INIT algorithm (PLoS Comput Biol. 2012;8(5):e1002518, Mol Syst Biol.
-% 2014;10:721). Not all settings are possible using this function, and you may
-% want to call the functions scoreModel, runINIT and fitTasks individually
-% instead.
+% ftINIT is the recommended method for context-specific model extraction. Use
+% this function to reproduce models built with the original tINIT. It remains
+% supported, and issues a RAVEN:legacyMethod notice once per session, which
+% warning('off','RAVEN:legacyMethod') silences.
+%
+% Not all settings are reachable through this function; scoreModel, runINIT and
+% fitTasks can be called individually for the ones that are not.
 %
 % Parameters
 % ----------
@@ -111,6 +114,12 @@
 % for each task. The INIT algorithm will remove exchange metabolites if any are
 % present. Use importModel(file,false) to import a model with exchange
 % metabolites remaining.
+%
+% See Also
+% --------
+% ftINIT, prepINITModel, runINIT, scoreModel
+
+legacyMethodNotice('getINITModel','ftINIT');
 
 p=parseRAVENargs(varargin, {'celltype',[]; 'hpaData',[]; 'arrayData',[]; 'metabolomicsData',[]; 'taskFile',[]; 'useScoresForTasks',[]; 'printReport',[]; 'taskStructure',[]; 'params',[]; 'paramsFT',[]});
 celltype=p.celltype;
