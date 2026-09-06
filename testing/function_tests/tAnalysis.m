@@ -161,6 +161,17 @@ classdef tAnalysis < RavenTestCase
                 'RAVEN:warning');
         end
 
+        function getFluxZZeroVarianceSignMatchesGeneralCase(testCase)
+            % The zero-variance branch's sign must agree with the general
+            % branch: positive when flux increased from A to B, negative
+            % when it decreased.
+            solA = [1 1 1; 5 5 5];    % rxn1 constant at 1, rxn2 constant at 5
+            solB = [5 5 5; 1 1 1];    % rxn1 increased to 5, rxn2 decreased to 1
+            Z = getFluxZ(solA, solB);
+            testCase.verifyEqual(Z(1), 100);
+            testCase.verifyEqual(Z(2), -100);
+        end
+
         function getFluxZComputesScores(testCase)
             n = numel(testCase.model.rxns);
             Z = getFluxZ(rand(n, 20), rand(n, 20));

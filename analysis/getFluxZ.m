@@ -56,7 +56,9 @@ toCheck=mA~=mB;
 %Z-score for the corresponding reactions
 I=find(varA==0 & varB==0 & toCheck==true);
 toCheck(I)=false;
-J=mA(I)>mB(I);
+% J true where flux increased from A to B, matching the sign convention
+% the general branch below uses ((mB-mA)/... is positive when increased)
+J=mB(I)>mA(I);
 Z(I(J))=100;
 Z(I(~J))=-100;
 toCheck=find(toCheck);
