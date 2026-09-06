@@ -99,12 +99,22 @@ if sortReactionOrder==true
         
         nRxns=numel(rxns);
         revRxns=rxns(model.rev(rxns)~=0);
-        
+
         %This variable will hold the current reversibility directions of
         %the reversible reactions. 1 means the same direction as in the
         %original model and -1 means the opposite direction.
         oldRev=ones(numel(revRxns),1);
-        
+
+        %Work on just this subsystem's own (mets x nRxns) columns rather
+        %than a full copy of model.S every iteration below: the score
+        %only ever depends on these columns, whose involved-metabolite
+        %rows and reversible-reaction positions are fixed for the whole
+        %optimization (only their order/sign changes), so both can be
+        %precomputed once instead of per iteration.
+        subS=model.S(:,rxns);
+        subS=subS(any(subS,2),:);
+        [~,revLocalIdx]=ismember(revRxns,rxns);
+
         %The problem could be solved analytically, but a simple random
         %method is used instead. Two reactions are chosen randomly and
         %their positions are switched. A score is calculated based on the
@@ -113,7 +123,7 @@ if sortReactionOrder==true
         %original the reaction order is switched. If no increase in score
         %has been seen after 1000*rxnsInSubsystem then the optimization is
         %terminated
-        
+
         rxnOrder=1:nRxns;
         oldScore=-inf;
         counter=0;
@@ -123,16 +133,16 @@ if sortReactionOrder==true
             if counter==100*nRxns
                 break;
             end
-            
+
             newRxnOrder=rxnOrder;
             rev=oldRev;
-            
+
             if firstIter==false
                 y=randperm(nRxns,2);
 
                 newRxnOrder(y(1))=rxnOrder(y(2));
                 newRxnOrder(y(2))=rxnOrder(y(1));
-                
+
                 %With a 50% chance, also switch the reversibility of one of
                 %the reactions
                 if rand()>0.5 && numel(rev)>1
@@ -141,23 +151,20 @@ if sortReactionOrder==true
                 end
             end
             firstIter=false;
-            
-            tempS=model.S;
-            
+
+            tempS=subS;
+
             %Switch the directionalities
             for j=1:numel(rev)
                 if rev(j)==-1
-                    tempS(:,revRxns(j))=tempS(:,revRxns(j)).*-1;
+                    tempS(:,revLocalIdx(j))=tempS(:,revLocalIdx(j)).*-1;
                 end
             end
-            
+
             %Get the metabolites that are involved and when they are
             %produced/consumed
             s=tempS(:,newRxnOrder);
-            
-            %Remove mets that are not used in both directions
-            s=s(any(s,2),:);
-            
+
             %Add so that all mets are produced and consumed in the end
             s=[s ones(size(s,1),1) ones(size(s,1),1)*-1];
             

@@ -671,6 +671,39 @@ classdef tManipulation < RavenTestCase
             testCase.verifyEqual(numel(m2.mets), numel(testCase.model.mets));
         end
 
+        function sortReactionOrderUsesSubsystemsOwnColumns(testCase)
+            % sortReactionOrder must score and reorder a subsystem's own
+            % reactions, not whichever columns happen to occupy the first
+            % nRxns positions of the whole model: with a chain A->B->C->D
+            % split across R2 (A=>B), R3 (B=>C) and R1 (C=>D) -- placed
+            % after two unrelated filler reactions so the subsystem is NOT
+            % at the start of model.rxns -- the only production-before-
+            % consumption order is R2, then R3, then R1.
+            m = struct();
+            m.id='t'; m.rxns={'FILLER1';'FILLER2';'R1';'R2';'R3'}; m.rxnNames=m.rxns;
+            m.mets={'fa';'fb';'fc';'fd';'A';'B';'C';'D'}; m.metNames=m.mets;
+            m.metComps=ones(8,1); m.comps={'c'}; m.compNames={'c'};
+            S=zeros(8,5);
+            S(1,1)=-1; S(2,1)=1;  % FILLER1: fa=>fb
+            S(3,2)=-1; S(4,2)=1;  % FILLER2: fc=>fd
+            S(7,3)=-1; S(8,3)=1;  % R1: C=>D
+            S(5,4)=-1; S(6,4)=1;  % R2: A=>B
+            S(6,5)=-1; S(7,5)=1;  % R3: B=>C
+            m.S=sparse(S);
+            m.lb=zeros(5,1); m.ub=ones(5,1)*1000; m.rev=zeros(5,1); m.c=zeros(5,1);
+            m.b=zeros(8,1);
+            m.genes={}; m.grRules=repmat({''},5,1); m.rxnGeneMat=sparse(5,0);
+            m.subSystems={{};{};{'CHAIN'};{'CHAIN'};{'CHAIN'}};
+
+            rng(1);
+            m2=sortModel(m,'sortReversible',false,'sortReactionOrder',true);
+            posR1=find(strcmp(m2.rxns,'R1'));
+            posR2=find(strcmp(m2.rxns,'R2'));
+            posR3=find(strcmp(m2.rxns,'R3'));
+            testCase.verifyLessThan(posR2, posR3);
+            testCase.verifyLessThan(posR3, posR1);
+        end
+
         function standardizeGrRulesReturnsRules(testCase)
             evalc('grRules = standardizeGrRules(testCase.model);');
             testCase.verifyNumElements(grRules, numel(testCase.model.rxns));
