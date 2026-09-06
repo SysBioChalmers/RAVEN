@@ -22,6 +22,18 @@ classdef tManipulation < RavenTestCase
             testCase.verifyTrue(all(ismember(g.genes, m2.genes)));
         end
 
+        function addGenesRavenPartialOverlapAddsRemainder(testCase)
+            % When some genesToAdd.genes already exist in the model, the
+            % others must still be added, and every parallel field must stay
+            % aligned with the (trimmed) gene list.
+            g.genes = {testCase.model.genes{1}; 'newgene1'};
+            g.geneShortNames = {'existing','s1'};
+            evalc('m2 = addGenesRaven(testCase.model, g);');
+            testCase.verifyEqual(numel(m2.genes), numel(testCase.model.genes) + 1);
+            testCase.verifyTrue(ismember('newgene1', m2.genes));
+            testCase.verifyEqual(numel(m2.geneShortNames), numel(m2.genes));
+        end
+
         function addMetsAddsMets(testCase)
             mta.metNames = {'newMetA','newMetB'};
             mta.compartments = {'c','e'};
@@ -216,6 +228,15 @@ classdef tManipulation < RavenTestCase
             evalc('byId   = mergeModels({a; b}, ''metParam'', ''mets'');');
             testCase.verifyEqual(nnz(strcmp(byName.metNames, 'Glucose')), 1);
             testCase.verifyEqual(nnz(strcmp(byId.metNames, 'Glucose')), 2);
+        end
+
+        function copyToCompsDefaultCompOutsideAddsCompartment(testCase)
+            % Adding a new compartment without specifying compOutside must
+            % not error when the model already tracks compOutside.
+            m = testCase.model;
+            m.compOutside = repmat({''}, numel(m.comps), 1);
+            evalc('m2 = copyToComps(m, {''p''}, ''ACKr'');');
+            testCase.verifyEqual(numel(m2.compOutside), numel(m2.comps));
         end
 
         function copyToCompsAddsCompartment(testCase)
