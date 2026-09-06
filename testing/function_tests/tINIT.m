@@ -250,6 +250,31 @@ classdef tINIT < RavenTestCase
             testCase.verifyFalse(any(addedRxnMat(:)));
         end
 
+        function ftINITFillGapsForAllTasksWarningHasRealNewlineAndPercent(testCase)
+            % The "could not be gap-filled" warning embeds the task
+            % id/description; a literal "\n" must become a real newline
+            % (not print as the two characters backslash-n), and a "%" in
+            % the task id must survive intact.
+            testCase.assumeMILPSolver();
+            testModel      = getTstModel();
+            testModelTasks = getTstModelTasks();
+            testModelTasks.id = 'Task 50% test';
+            testModelTasks.description = testModelTasks.id;
+            testRxnScores  = getTstModelRxnScores();
+
+            mTempRef = closeModel(testModel);
+            mTempRef = removeReactions(mTempRef, {'R1';'R7';'R8'});
+            mTemp    = mTempRef;
+            mTemp.id = 'tmp';
+            tmpRxnScores = testRxnScores([2;3;4;5;6;9;10]);
+            lastwarn('');
+            evalc(['ftINITFillGapsForAllTasks(mTemp,mTempRef,[],false,' ...
+                'min(tmpRxnScores,-0.1),testModelTasks,struct(),false);']);
+            msg = lastwarn();
+            testCase.verifySubstring(msg, 'Task 50% test');
+            testCase.verifyFalse(contains(msg, '\n'));
+        end
+
         function ftINITFillGapsReportsTaskNeedingAnOrphanMet(testCase)
             % e[s] takes part only in R7 and R8. With both gone from the
             % reference model no reaction touches e[s] at all, so a task

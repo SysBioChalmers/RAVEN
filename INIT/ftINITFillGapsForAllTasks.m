@@ -321,15 +321,15 @@ for i=1:numel(taskStructure)
                     %task feasible. Without this branch the task falls
                     %through and reports "Added 0 reaction(s)", which is the
                     %same thing an already-feasible task reports.
-                    EM=['"[' taskStructure(i).id '] ' taskStructure(i).description '" could not be gap-filled: no feasible solution exists using the reference model\n'];
+                    EM=['"[' taskStructure(i).id '] ' taskStructure(i).description '" could not be gap-filled: no feasible solution exists using the reference model'];
                     warning('RAVEN:warning', '%s', EM);
                     failed=true;
                 elseif exitFlag==-2
-                    EM=['"[' taskStructure(i).id '] ' taskStructure(i).description '" was aborted before reaching optimality. Consider increasing params.maxTime\n'];
+                    EM=['"[' taskStructure(i).id '] ' taskStructure(i).description '" was aborted before reaching optimality. Consider increasing params.maxTime'];
                     warning('RAVEN:warning', '%s', EM);
                 end
             catch e
-                EM=['"[' taskStructure(i).id '] ' taskStructure(i).description '" could not be performed for any set of reactions: ' e.message '\n'];
+                EM=['"[' taskStructure(i).id '] ' taskStructure(i).description '" could not be performed for any set of reactions: ' e.message];
                 warning('RAVEN:warning', '%s', EM);
                 failed=true;
             end
@@ -355,12 +355,15 @@ for i=1:numel(taskStructure)
                     addedRxns(ismember(refModel.rxns,newRxns),i)=true;
                 end
                 if printOutput==true
-                    fprintf(['[' taskStructure(i).id '] ' taskStructure(i).description ': Added ' num2str(numel(newRxns)) ' reaction(s), ' num2str(nAdded) ' reactions added in total\n']);
+                    %Task id/description are arbitrary text and may
+                    %contain "%"; print as literal data rather than as an
+                    %fprintf format string.
+                    fprintf('%s\n', ['[' taskStructure(i).id '] ' taskStructure(i).description ': Added ' num2str(numel(newRxns)) ' reaction(s), ' num2str(nAdded) ' reactions added in total']);
                 end
             end
         else
             if printOutput==true
-                fprintf(['[' taskStructure(i).id '] ' taskStructure(i).description ': Added 0 reaction(s), ' num2str(nAdded) ' reactions added in total\n']);
+                fprintf('%s\n', ['[' taskStructure(i).id '] ' taskStructure(i).description ': Added 0 reaction(s), ' num2str(nAdded) ' reactions added in total']);
             end
         end
         supressWarnings=true;
@@ -387,7 +390,7 @@ for i=1:numel(taskStructure)
         %from the task sheet
         modelMets=upper(strcat(model.metNames,'[',model.comps(model.metComps),']'));
     else
-        EM=['"[' taskStructure(i).id '] ' taskStructure(i).description '" is set as SHOULD FAIL. Such tasks cannot be modelled using this approach and the task is therefore ignored\n'];
+        EM=['"[' taskStructure(i).id '] ' taskStructure(i).description '" is set as SHOULD FAIL. Such tasks cannot be modelled using this approach and the task is therefore ignored'];
         warning('RAVEN:warning', '%s', EM);
     end
 end

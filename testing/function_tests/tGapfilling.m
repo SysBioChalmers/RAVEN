@@ -90,6 +90,22 @@ classdef tGapfilling < RavenTestCase
             testCase.verifySubstring(out, 'ecoli 50% subset');
         end
 
+        function fitTasksShouldFailWarningHasRealNewlineAndPercent(testCase)
+            % The SHOULD FAIL warning embeds the task id/description; a
+            % literal "\n" must become a real newline (not print as the
+            % two characters backslash-n), and a "%" in the task id must
+            % survive intact rather than being read as a format directive.
+            refModel = testCase.taskTestModel(); refModel.id = 'DB';
+            task = testCase.taskTestStruct();
+            task.shouldFail = true;
+            task.id = 'Task 50% done'; task.description = task.id;
+            lastwarn('');
+            evalc('fitTasks(refModel, refModel, [], true, [], task);');
+            msg = lastwarn();
+            testCase.verifySubstring(msg, 'Task 50% done');
+            testCase.verifyFalse(contains(msg, '\n'));
+        end
+
         function fitTasksProducesModel(testCase)
             testCase.assumeMILPSolver();
             refModel = testCase.taskTestModel(); refModel.id = 'DB';
@@ -98,6 +114,19 @@ classdef tGapfilling < RavenTestCase
             evalc('[outModel, addedRxns] = fitTasks(gapModel, refModel, [], true, [], task);');
             testCase.verifyClass(outModel, 'struct');
             testCase.verifyTrue(ismember('R2', outModel.rxns));
+        end
+
+        function fitTasksPrintOutputKeepsPercentInTaskId(testCase)
+            % The per-task "Added N reaction(s)" notice embeds the task
+            % id/description; a "%" there must survive intact, not be
+            % read as an fprintf format directive.
+            testCase.assumeMILPSolver();
+            refModel = testCase.taskTestModel(); refModel.id = 'DB';
+            gapModel = removeReactions(refModel, {'R2'}); gapModel.id = 'testModel';
+            task = testCase.taskTestStruct();
+            task.id = 'Task 50% done'; task.description = task.id;
+            out = evalc('fitTasks(gapModel, refModel, [], true, [], task);');
+            testCase.verifySubstring(out, 'Task 50% done');
         end
 
         function gapFillFastCoreReturnsLogical(testCase)

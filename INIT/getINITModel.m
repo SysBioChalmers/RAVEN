@@ -221,7 +221,10 @@ if ~isempty(arrayData) && isfield(arrayData,'singleCells')
 
         % Replace hpaData with singleCellData
         if printReport==true
-            warning('RAVEN:warning', '%s', 'Single cell data is not currently compatible with HPA data. \n         Replacing hpaData with single cell-based scoring.');
+            %warning()'s '%s' passes the message through literally, so its
+            %"\n" must be resolved to a real newline beforehand, not left
+            %to print as a literal backslash-n.
+            warning('RAVEN:warning', '%s', sprintf('Single cell data is not currently compatible with HPA data. \n         Replacing hpaData with single cell-based scoring.'));
         end
         hpaData.genes = arrayData.genes;
         hpaData.tissues = arrayData.tissues;
