@@ -73,6 +73,18 @@ fullModel.c(:)=0;
 %to participate
 templateRxns = find(~ismember(fullModel.rxns, tModel.rxns)); %Check if this is slow, in that case keep track of this in fitTasksOpt and send it in
 
+if isempty(templateRxns)
+    %The reference model holds no reaction that the model does not already
+    %have, so no set of additions can satisfy the constraints. This has to
+    %be caught first: an empty toMinimize means "all reactions" to
+    %getMinNrFluxes, and its solution would then be indexed against an
+    %empty templateRxns.
+    addedRxns = {};
+    newModel = origModel;
+    exitFlag = -1;
+    return;
+end
+
 %The reversible formulation uses one binary per reaction rather than one
 %per irreversible reaction, which is what makes this fast enough to run
 %once per task on a genome-scale reference model

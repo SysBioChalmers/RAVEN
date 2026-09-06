@@ -282,6 +282,37 @@ classdef tINIT < RavenTestCase
             testCase.verifyEmpty(addedRxns);
         end
 
+        function ftINITFillGapsReportsNoCandidateReactions(testCase)
+            % The reference model holds no reaction the model does not
+            % already have, so nothing can be added to satisfy the task. An
+            % empty reaction list means "all reactions" to the MILP, and its
+            % solution is then sized for every reaction rather than for the
+            % empty set of candidates it is indexed against.
+            testCase.assumeMILPSolver();
+            testModel     = getTstModel();
+            testRxnScores = getTstModelRxnScores();
+
+            m = closeModel(testModel);
+            m = removeReactions(m, {'R1'});   % R7/R8 stay, so e[s] is reachable
+            mTemp = m;
+            mTemp.id = 'tmp';
+            tmpRxnScores = min(testRxnScores(2:10), -0.1);
+
+            % Both sides hold the same reactions, so there is no candidate
+            % to add. Only the reference may take up a[s], so only it can
+            % satisfy the task.
+            tRef   = setTaskBounds(m);
+            tModel = setTaskBounds(mTemp);
+            tModel.b(strcmp(tModel.mets, 'as'), 1) = 0;
+            sol = solveLP(tModel);
+            testCase.assertEmpty(sol.x, 'the task must start out infeasible');
+
+            evalc(['[addedRxns,~,exitFlag] = ftINITFillGaps(tModel,mTemp,tRef,' ...
+                'false,true,tmpRxnScores,struct(),false);']);
+            testCase.verifyEqual(exitFlag, -1);
+            testCase.verifyEmpty(addedRxns);
+        end
+
         function ftINITMetabolomicsRuns(testCase)
             % Detected metabolites steer ftINIT towards alternative pathways.
             testCase.assumeMILPSolver();
