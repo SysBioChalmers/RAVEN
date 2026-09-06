@@ -126,6 +126,22 @@ classdef tGapfilling < RavenTestCase
             testCase.verifyTrue(active(coreIdx));
         end
 
+        function gapFillSwiftCoreRejectsTriviallySelfCancelingReversibleCore(testCase)
+            % Same issue as gapFillFastCore's identically-named test: a
+            % reversible core reaction touching only its own,
+            % otherwise-unused metabolites cannot carry any real
+            % steady-state flux, so forcing both its forward and reverse
+            % irreversible copies to >= epsilon must not let them satisfy
+            % the core requirement by canceling each other out.
+            model = testCase.model;
+            r.rxns = {'isolatedRev'};
+            r.equations = {'newA[c] <=> newB[c]'};
+            evalc('model = addRxns(model, r, 3, ''c'', true);');
+            coreIdx = getIndexes(model,'isolatedRev','rxns');
+            active = gapFillSwiftCore(model, coreIdx, 1e-4);
+            testCase.verifyFalse(active(coreIdx));
+        end
+
         function fillGapsIdentifiesOwnRxnsWhenRxnFromPreset(testCase)
             % model.rxnFrom, as e.g. getModelFromHomology output already
             % carries it, must not stop fillGaps from recognising the
