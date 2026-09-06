@@ -13,7 +13,7 @@ appear to overlap they do not:
 | | tINIT | ftINIT |
 |---|---|---|
 | Entry point | `getINITModel` | `prepINITModel`, then `ftINIT` |
-| Reaction scoring | `scoreModel` (`omics/`) | `scoreComplexModel`, `groupRxnScores` |
+| Reaction scoring | `scoreModel` | `scoreComplexModel`, `groupRxnScores` |
 | Core MILP | `runINIT` | `ftINITInternalAlg`, scheduled by `getINITSteps` |
 | Task gap-filling | `fitTasks` | `ftINITFillGapsForAllTasks` |
 | Gene pruning | inline in `getINITModel` | `removeLowScoreGenes` |
@@ -24,6 +24,5 @@ solver layer, and the model-manipulation and I/O functions.
 
 `fitTasks` has callers outside tINIT, so it stays in `gapfilling/`. `scoreModel`
 has none besides `getINITModel`, and is now a wrapper over `scoreComplexModel`
-holding the tINIT argument order, the per-reaction `dataPrecedence` this method
-scores with, and its `-Inf` convention for a gene with no data. It stays in
-`omics/` next to the other omics-integration functions.
+(`omics/`) holding the tINIT argument order, the per-reaction `dataPrecedence`
+this method scores with, and its `-Inf` convention for a gene with no data.
