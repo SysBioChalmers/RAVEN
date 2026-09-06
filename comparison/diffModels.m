@@ -6,9 +6,9 @@ function report = diffModels(modelA, modelB, varargin)
 % id; for the ids present in both models the reaction stoichiometry, bounds,
 % objective coefficient, grRule, EC codes, and the metabolite formula,
 % charge and compartment are compared. This is the structured
-% added/removed/changed diff that compareMultipleModels /
-% compareRxnsGenesMetsComps (which report overlap counts and distances) do
-% not provide.
+% added/removed/changed diff that compareMultipleModels (which reports
+% overlap counts, similarity and clustering across N models) does not
+% provide.
 %
 % grRules are compared for logical equality rather than as strings: each
 % rule is expanded to disjunctive normal form and the genes within each
@@ -50,10 +50,10 @@ function report = diffModels(modelA, modelB, varargin)
 %
 % See also
 % --------
-% compareRxnsGenesMetsComps : N models, set membership across seven identity
-%     notions (ids, EC codes, metabolite names, equations), no values.
-% compareMultipleModels : N models, similarity matrix, clustering and an
-%     optional task-based functional comparison.
+% compareMultipleModels : N models, set membership across seven identity
+%     notions (ids, EC codes, metabolite names, equations), similarity
+%     matrix, clustering and an optional task-based functional comparison --
+%     no values.
 
 p = parseRAVENargs(varargin, {'stoichTol', 1e-9; 'maxPerCategory', 50; ...
     'printResults', false});

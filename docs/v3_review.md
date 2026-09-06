@@ -236,9 +236,11 @@ impact med.** Pick this if the target users lean microbiome.
   share almost nothing. Split into `ravenToCobra` / `cobraToRaven` internals behind a thin
   dispatcher — easier to test field-by-field. **Effort M, impact med.**
 - **Cross-namespace comparison.** Once MNX mapping (#1) lands, a thin `comparison/` helper
-  could compare models built in *different* namespaces. Today `compareRxnsGenesMetsComps`
-  compares raw ID strings, so two models of the same organism in different namespaces appear to
-  share nothing. **Effort M, impact med (depends on #1).**
+  could compare models built in *different* namespaces. Today `compareMultipleModels`'
+  rxns/mets/genes overlap compares raw ID strings, so two models of the same organism in
+  different namespaces appear to share nothing there; only its eccodes/metNames/equ/uEqu overlap
+  (merged in from the former `compareRxnsGenesMetsComps`) survives a namespace mismatch.
+  **Effort M, impact med (depends on #1).**
 
 ---
 

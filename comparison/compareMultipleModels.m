@@ -1,8 +1,12 @@
 function compStruct = compareMultipleModels(models,varargin)
 % compareMultipleModels  Compare two or more condition-specific models.
 %
-% Compares two or more condition-specific models generated from the same
-% base model using high-dimensional comparisons in the reaction-space.
+% Compares two or more models on overlap of reactions, metabolites, genes,
+% EC-codes, metabolite names and reaction equations (with and without
+% compartmentalization), and on high-dimensional comparisons in the
+% reaction-space: subsystem utilization, structural similarity, an optional
+% low-dimensional structural projection, and an optional functional
+% (task-based) comparison.
 %
 % Parameters
 % ----------
@@ -31,13 +35,22 @@ function compStruct = compareMultipleModels(models,varargin)
 %     structure that contains the comparison results, with fields:
 %
 %     - modelIDs : cell array of model ids
+%     - rxns, mets, genes, eccodes, metNames, equ, uEqu : the overlap for
+%       each field, each with sub-fields comparison (binary matrix where each
+%       row indicates which models are included in the comparison) and
+%       nElements (vector with the number of elements for each comparison).
+%       "equ" are the reaction equations after sorting and "uEqu" are the
+%       equations when not taking compartmentalization into account. These
+%       are the only fields of the seven that use EC-code, metabolite name or
+%       reaction equation to compare models that do not share an id
+%       convention; the rest compare by identifier only.
+%     - subsystems : substructure containing subsystem information, with
+%       fields matrix (matrix with comparison of number of rxns per
+%       subsystem) and ID (vector consisting of names of all subsystems)
 %     - reactions : substructure containing reaction information, with
 %       fields matrix (binary matrix composed of reactions (rows) in each
 %       model (column), used as the input for the model comparisons) and IDs
 %       (list of the reactions contained in the reaction matrix)
-%     - subsystems : substructure containing subsystem information, with
-%       fields matrix (matrix with comparison of number of rxns per
-%       subsystem) and ID (vector consisting of names of all subsystems)
 %     - structComp : matrix with pairwise comparisons of model structure
 %       based on (1-Hamming distance) between models
 %     - structCompMap : matrix with 3D tSNE (or MDS) mapping of model
@@ -58,11 +71,9 @@ function compStruct = compareMultipleModels(models,varargin)
 %
 % See also
 % --------
-% compareRxnsGenesMetsComps : the same N-model question without the clustering,
-%     but broken down by metabolite, gene, EC code, metabolite name and
-%     reaction equation as well as by reaction id.
 % diffModels : takes exactly two models and reports the differing *values*
-%     rather than presence and distance.
+%     (stoichiometry, bounds, grRules), where this reports overlap counts,
+%     similarity and clustering.
 
 %% Set up input defaults
 p=parseRAVENargs(varargin, {'printResults',false; 'plotResults',false; 'groupVector',[]; 'funcCompare',false; 'taskFile',[]});
@@ -94,16 +105,37 @@ end
 
 %% Set up model ID structure
 compStruct.modelIDs = {};
-fprintf('\n Getting model IDs \n')    
+fprintf('\n Getting model IDs \n')
 for i = 1:numel(models)
     if ~ischar(models{i}.id)  % to deal with non-character IDs (cells, strings, etc)
         compStruct.modelIDs{i,1} = models{i}.id{1};
     else
         compStruct.modelIDs{i,1} = models{i}.id;
     end
+    % Equations are computed once here (with and without compartmentalization)
+    % so the overlap comparison below can treat them like any other field.
+    models{i}.equ=constructEquations(models{i},models{i}.rxns,true,true,true);
+    models{i}.uEqu=constructEquations(models{i},models{i}.rxns,false,true,true);
 end
 fprintf('*** Done \n\n')
 
+%% Compare overlap of reactions, metabolites, genes, EC-codes, metabolite
+% names and equations (with and without compartmentalization)
+fprintf('\n Comparing overlap of reactions, genes, metabolites and compartments \n')
+overlapFields={'rxns','mets','genes','eccodes','metNames','equ','uEqu'};
+overlapLabels={'reaction IDs','metabolite IDs','gene IDs','ec-numbers', ...
+    'metabolite names','equations with compartment','equations without compartment'};
+for i=1:numel(overlapFields)
+    field=overlapFields{i};
+    compStruct.(field).comparison=getToCheck(models,field);
+    compStruct.(field).nElements=checkStuff(getElements(models,field),compStruct.(field).comparison);
+    if printResults==true
+        fprintf(['*** Comparison of ' overlapLabels{i} ':\n']);
+        printList(models,compStruct.(field).comparison,compStruct.(field).nElements);
+        fprintf('\n\n');
+    end
+end
+fprintf('*** Done \n\n')
 
 %% Compare models structure & function based on high-dimensional methods
 % Compare number of reactions in each subsystem in each model using a heatmap
@@ -127,17 +159,17 @@ else
     compStruct.subsystems.ID = id;
     compStruct.subsystems.matrix = compMat;
     fprintf('*** Done \n\n')
-    
+
     if printResults
         % This could use some cleaning up
         fprintf('*** Comparison of reaction subsystem populations:\n\n');
-        
+
         nrow = min([15,numel(compStruct.subsystems.ID)]);
         ncol = min([10,numel(compStruct.modelIDs)]);
         summaryArray = [{field}, compStruct.modelIDs(1:ncol)'];
         summaryArray = [summaryArray; [compStruct.subsystems.ID(1:nrow), ...
             arrayfun(@num2str,compStruct.subsystems.matrix(1:nrow,1:ncol),'UniformOutput',false)]];
-        
+
         charArray = [];
         for i = 1:size(summaryArray,2)
             charArray = [charArray, char(strcat(summaryArray(:,i),{'   '}))];
@@ -148,7 +180,7 @@ else
         end
         fprintf('\n\n');
     end
-    
+
     if plotResults==true
         % Plot all subsystems
         figure;
@@ -156,7 +188,7 @@ else
         color_map = redblue(length(0:.01:2));
         h = genHeatMap(plottingData',compStruct.subsystems.ID,compStruct.modelIDs,'both','euclidean',color_map,[-1,1]);
         title('Subsystem Coverage - all subsystems','FontSize',18,'FontWeight','bold')
-        
+
         % Plot only subsystems with deviation from mean
         keepSubs = (sum(plottingData~=0,2) ~= 0);
         if sum(keepSubs) > 1
@@ -164,7 +196,7 @@ else
             h_small = genHeatMap(plottingData(keepSubs,:)',compStruct.subsystems.ID(keepSubs),...
                 compStruct.modelIDs,'both','euclidean',color_map,[-1,1]);
             title('Subsystem Coverage','FontSize',18,'FontWeight','bold')
-            
+
             % Plot enrichment in subsystems with deviation from mean
             figure;
             color_map_bw = [1 1 1;0 0 0];
@@ -173,7 +205,7 @@ else
             title('Subsystem Enrichment','FontSize',18,'FontWeight','bold')
         end
     end
-    
+
 end
 
 % Compare overall reaction structure across all models using a heatmap
@@ -239,7 +271,7 @@ if plotResults == true && ~isempty(proj_coords)
     xlabel(axis_labels{1}); ylabel(axis_labels{2}); zlabel(axis_labels{3});
     set(gca,'FontSize',14,'LineWidth',1.25);
     title('Structural Comparison','FontSize',18,'FontWeight','bold')
-    
+
     % add legend
     if ~isempty(groupVector)
         for i = 1:length(groupNames)
@@ -256,8 +288,8 @@ if funcCompare == true && ~isempty(taskFile)
     for i = 1:numel(models)
         fprintf('\n Checking model # %.0f \n',i)
         taskReport{i} = checkTasks(models{i},[],false,false,false,taskStructure);
-    end    
-    
+    end
+
     % Save results
     taskMatrix = zeros(length(taskReport{1}.ok),numel(taskReport));
         for i = 1:numel(taskReport)
@@ -266,7 +298,7 @@ if funcCompare == true && ~isempty(taskFile)
     compStruct.funcComp.matrix = taskMatrix;
     compStruct.funcComp.tasks = taskReport{1}.description;
     fprintf('*** Done \n\n')
-   
+
     % Plot results
     if plotResults == true
         figure;
@@ -274,7 +306,7 @@ if funcCompare == true && ~isempty(taskFile)
         h_enriched = genHeatMap(taskMatrix,compStruct.modelIDs,...
             taskReport{1}.description,'both','euclidean',color_map_bw,[0,1]);
         title('Functional Comparison - All Tasks','FontSize',18,'FontWeight','bold')
-        
+
         figure;
         color_map_bw = [1 1 1;0 0 0];
         h_enriched = genHeatMap(taskMatrix(intersect(find(sum(taskMatrix,2)~=numel(models)),find(sum(taskMatrix,2)~=0)),:),...
@@ -291,12 +323,12 @@ end
 function [id,compMat] = compareModelField(models,field)
     % Generates a list of unique field entries and a matrix quantifying the
     % number of appearances of each field entry in each model
-    
+
     % get unique list of field entries
     hasfield = cellfun(@(m) isfield(m,field),models);
     id = cellfun(@(m) m.(field),models(hasfield),'UniformOutput',false);
     id = unique(vertcat(id{:}));
-    
+
     % assemble matrix comparing frequency of each entry in each model
     compMat = zeros(numel(id),numel(models));
     for i = 1:numel(models)
@@ -305,6 +337,75 @@ function [id,compMat] = compareModelField(models,field)
     end
 end
 
+function A=getElements(models,field)
+%Gathers the raw field content (e.g. rxns, eccodes, equ) for each model that
+%has that field, for use as the universe of elements in checkStuff.
+A={};
+for i=1:numel(models)
+    if isfield(models{i},field)
+        A=[A;{models{i}.(field)}];
+    end
+end
+end
+
+function toCheck=getToCheck(models,field)
+%Get all the combinations that should be checked for overlap (including the
+%single ones)
+toCheckA=[];
+I=find(cellfun(@checkField,models));
+nI=numel(I);
+for i=nI:-1:1
+    combs=nchoosek(1:nI,i);
+    toAdd=false(size(combs,1),nI);
+    for j=1:size(combs,1)
+        toAdd(j,combs(j,:))=true;
+    end
+    toCheckA=[toCheckA;toAdd];
+end
+
+%If not all of the models have the required field
+toCheck=false(size(toCheckA,1),numel(models));
+toCheck(:,I)=toCheckA;
+
+%Ugly thing to get around parameters
+    function I=checkField(A)
+        I=isfield(A,field);
+    end
+end
+
+function printList(models,toCheck,nElements)
+%To guess how many spaces that are needed to align
+firstLen=[];
+for i=1:size(toCheck,1)
+    label=[];
+    I=find(toCheck(i,:));
+    for j=1:numel(I)
+        label=[label models{I(j)}.id '/'];
+    end
+    if i==1
+        firstLen=numel(label);
+    end
+    nSpaces=firstLen-numel(label);
+    fprintf([label(1:end-1) '  ' repmat(sprintf(' '),1,nSpaces) num2str(nElements(i)) '\n']);
+end
+end
+
+function nElements=checkStuff(A,toCheck)
+%Now loop through the toCheck matrix, starting with the combination with
+%the most models. Only elements that were not in iteration n are considered
+%in iteration n+1.
+nElements=zeros(size(toCheck,1),1);
+alreadyChecked=[];
+for i=1:size(toCheck,1)
+    I=find(toCheck(i,:));
+    inCommon=setdiff(A{I(1)},alreadyChecked);
+    for j=2:numel(I)
+        inCommon=intersect(inCommon,A{I(j)});
+    end
+    alreadyChecked=union(alreadyChecked,inCommon);
+    nElements(i)=numel(inCommon);
+end
+end
 
 function h = genHeatMap(data,colnames,rownames,clust_dim,clust_dist,col_map,col_bounds,grid_color)
 %genHeatMap  Generate a heatmap for a given matrix of data.
@@ -318,7 +419,7 @@ function h = genHeatMap(data,colnames,rownames,clust_dim,clust_dist,col_map,col_
 % data        Numerical matrix.
 %
 % colnames    Cell array of data column names.
-% 
+%
 % rownames    Cell array of data row names.
 %
 % clust_dim   "none" - the data will be plotted as provided (DEFAULT)
@@ -435,7 +536,7 @@ function c = redblue(m)
 %
 %             colormap(redblue)
 %
-%   See also HSV, GRAY, HOT, BONE, COPPER, PINK, FLAG, 
+%   See also HSV, GRAY, HOT, BONE, COPPER, PINK, FLAG,
 %   COLORMAP, RGBPLOT.
 if nargin < 1, m = size(get(gcf,'colormap'),1); end
 
