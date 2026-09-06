@@ -41,6 +41,17 @@ classdef tManipulation < RavenTestCase
             testCase.verifyEqual(numel(m2.mets), numel(testCase.model.mets) + 2);
         end
 
+        function addRxnsAllowNewGenesKeepsGeneIdsIntact(testCase)
+            % A gene id that merely contains "and"/"or" as a substring
+            % (e.g. "band1") must not be shredded by the grRule parser used
+            % to discover new genes.
+            r.rxns = 'newRxn1';
+            r.equations = '2-Oxoglutarate => TEST';
+            r.grRules = 'band1 and orfeo2';
+            evalc('m2 = addRxns(testCase.model, r, 2, ''c'', true, true);');
+            testCase.verifyTrue(all(ismember({'band1','orfeo2'}, m2.genes)));
+        end
+
         function addRxnsAddsRxn(testCase)
             r.rxns = 'newRxn1';
             r.equations = '2-Oxoglutarate => TEST';

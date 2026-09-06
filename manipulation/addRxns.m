@@ -135,12 +135,17 @@ end
 allowNewGenes=p.allowNewGenes;
 
 if allowNewGenes & isfield(rxnsToAdd,'grRules')
-    genesToAdd.genes = strjoin(convertCharArray(rxnsToAdd.grRules));
-    genesToAdd.genes = regexp(genesToAdd.genes,' |)|(|and|or','split'); % Remove all grRule punctuation
-    genesToAdd.genes = genesToAdd.genes(~cellfun(@isempty,genesToAdd.genes));  % Remove spaces and empty genes
-    genesToAdd.genes = setdiff(unique(genesToAdd.genes),model.genes); % Only keep new genes
+    % getGenesFromGrRules splits only on space-bounded "and"/"or" (or their
+    % "&"/"|" equivalents), so a gene id that merely contains "and"/"or" as
+    % a substring (e.g. "band1", "orfeo2") is not mistaken for an operator
+    % the way a plain regexp split on the bare words would.
+    genesToAdd.genes = getGenesFromGrRules(convertCharArray(rxnsToAdd.grRules));
+    genesToAdd.genes = setdiff(genesToAdd.genes,model.genes); % Only keep new genes
     if isfield(model,'geneComps')
-        genesToAdd.geneComps(1:numel(genesToAdd.genes)) = repmat(11,numel(genesToAdd.genes),1);
+        % No compartment information is available for a gene parsed out of
+        % a grRule, so it is assigned to the first compartment, matching
+        % addGenesRaven's own default for a gene added with none specified.
+        genesToAdd.geneComps(1:numel(genesToAdd.genes)) = repmat(1,numel(genesToAdd.genes),1);
     end
     if ~isempty(genesToAdd.genes)
         fprintf('\nNew genes added to the model:\n')
