@@ -248,6 +248,21 @@ classdef tManipulation < RavenTestCase
             testCase.verifyEqual(m2.pwys{strcmp(m2.rxns,'R1_REV')}, 'pathway1');
         end
 
+        function convertToIrrevRev2irrevPointsAtReverseCopy(testCase)
+            % rev2irrev{origIdx}'s second element must be the actual
+            % position of that reaction's reverse copy in irrevModel
+            % (numOrigRxns+i), not just its rank among reversible
+            % reactions.
+            m = tManipulation.twoMetModel();       % R1: a -> b
+            r.rxns = {'R2'}; r.equations = {'b <=> a'};
+            evalc('m = addRxns(m, r, 1, [], false);');
+            m.rev(2) = 1; m.lb(2) = -1000; m.ub(2) = 1000;
+            [irrevModel, ~, rev2irrev] = convertToIrrev(m);
+            pair = rev2irrev{2};
+            testCase.verifyEqual(pair(1), 2);
+            testCase.verifyEqual(irrevModel.rxns{pair(2)}, 'R2_REV');
+        end
+
         function findDuplicateRxnsIgnoreDirection(testCase)
             % a -> b and b -> a are the same reaction run backwards, so they
             % group by default and stay separate when direction matters.
@@ -340,6 +355,16 @@ classdef tManipulation < RavenTestCase
         function mergeCompartmentsSingleComp(testCase)
             evalc('m2 = mergeCompartments(testCase.model);');
             testCase.verifyNumElements(m2.comps, 1);
+        end
+
+        function mergeCompartmentsWarnsWhenUnconstrainedMissing(testCase)
+            % The warning's own text says it fires because there is no
+            % unconstrained field to tell single-metabolite reactions apart
+            % from real exchange reactions; the condition guarding it
+            % checked the opposite, firing only when the field WAS present.
+            m = testCase.model;
+            testCase.verifyWarning(@() mergeCompartments(m,'deleteRxnsWithOneMet',true), ...
+                'RAVEN:warning');
         end
 
         function mergeCompartmentsDropsStaleCompMiriams(testCase)
