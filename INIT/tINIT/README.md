@@ -23,8 +23,7 @@ What they genuinely share is RAVEN's general machinery: `checkTasks` and
 solver layer, and the model-manipulation and I/O functions.
 
 `fitTasks` has callers outside tINIT, so it stays in `gapfilling/`. `scoreModel`
-does not: `getINITModel` is its only caller, and it is left in `omics/` only
-because whether to fold it into `scoreComplexModel` is still open. With
-`isozymeScoring` and `complexScoring` both set to `max` the two already agree;
-what separates them is that `scoreModel` lets HPA data take precedence per
-reaction rather than per gene.
+has none besides `getINITModel`, and is now a wrapper over `scoreComplexModel`
+holding the tINIT argument order, the per-reaction `dataPrecedence` this method
+scores with, and its `-Inf` convention for a gene with no data. It stays in
+`omics/` next to the other omics-integration functions.

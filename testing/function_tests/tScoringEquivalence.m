@@ -1,24 +1,17 @@
 classdef tScoringEquivalence < RavenTestCase
-% tScoringEquivalence  Can scoreComplexModel stand in for scoreModel?
+% tScoringEquivalence  scoreModel as a wrapper over scoreComplexModel.
 %
-%   scoreModel and scoreComplexModel both turn HPA and/or array data into a
-%   score per reaction, but they are separate implementations: scoreModel
-%   reduces over the genes in rxnGeneMat, scoreComplexModel evaluates the
-%   grRule with a configurable operator for AND and for OR.
+%   scoreModel is the tINIT-era scorer and scoreComplexModel the ftINIT one.
+%   They are now one implementation: scoreModel keeps its own argument order
+%   and its -Inf convention for unmeasured genes, and delegates the scoring.
 %
-%   The tests below establish where the two agree and where they cannot be
-%   made to agree by choice of options. The Matches* tests pin the settings
-%   under which scoreComplexModel reproduces scoreModel; the Diverges* tests
-%   pin the behaviours that a replacement would have to account for, and are
-%   expected to fail if either function is changed to close the gap.
-%
-%   Agreement requires isozymeScoring = complexScoring = 'max', which makes
-%   every grRule collapse to the maximum over its genes, i.e. what
-%   scoreModel computes with multipleGeneScoring = 'best'.
+%   The Matches* tests are the contract the wrapper has to keep. The Changes*
+%   tests pin the three behaviours the fold deliberately altered, so that none
+%   of them can drift back unnoticed.
 
     methods (Test)
 
-        %% Where the two agree
+        %% What the wrapper preserves
 
         function arrayDataMaxScoringMatches(testCase)
             m = testCase.scoringTestModel();
@@ -43,8 +36,6 @@ classdef tScoringEquivalence < RavenTestCase
         end
 
         function noGeneScoreIsHonouredByBoth(testCase)
-            % A reaction without genes takes noGeneScore in both functions,
-            % and the option is respected rather than hard-coded.
             m = testCase.scoringTestModel();
             a = testCase.scoringArrayData();
             noGene  = -7;
@@ -57,47 +48,61 @@ classdef tScoringEquivalence < RavenTestCase
             testCase.verifyEqual(complex(noGeneRxn), noGene);
         end
 
-        function geneScoresMatchWhereDataExists(testCase)
-            % The second output is built the same way in both functions for
-            % every gene that actually has a measurement.
+        function unmeasuredGeneScoreStaysMinusInf(testCase)
+            % The one convention the wrapper still translates: an unmeasured
+            % gene is -Inf here and NaN in scoreComplexModel, because
+            % removeLowScoreGenes reads NaN as "no evidence" and leaves the
+            % gene alone, where -Inf < 0 would prune it.
             m = testCase.scoringTestModel();
             a = testCase.scoringArrayData();
+            a.genes     = a.genes(1:2);        % drop G3 and G4
+            a.levels    = a.levels(1:2, :);
+            a.threshold = a.threshold(1:2);
+
             [~, gSimple]  = scoreModel(m, [], 'arrayData', a, 'tissue', 't1');
             [~, gComplex] = scoreComplexModel(m, [], a, 't1');
-            measured = ismember(m.genes, a.genes);
-            testCase.verifyEqual(gComplex(measured), gSimple(measured), 'AbsTol', 1e-12);
+            unmeasured = ~ismember(m.genes, a.genes);
+
+            testCase.verifyTrue(all(isinf(gSimple(unmeasured))));
+            testCase.verifyTrue(all(isnan(gComplex(unmeasured))));
+            % Where a gene does have data the two agree exactly
+            testCase.verifyEqual(gSimple(~unmeasured), gComplex(~unmeasured), ...
+                'AbsTol', 1e-12);
         end
 
-        %% Where they cannot be made to agree
-
-        function hpaArrayPrecedenceDiverges(testCase)
-            % scoreModel decides per reaction: if any gene of a reaction has
-            % HPA data, array data is ignored for that whole reaction.
-            % scoreComplexModel decides per gene: array scores are written
-            % first and HPA overwrites only the genes it covers. R7 is
-            % "G1 or G4", G1 has HPA data and G4 only array data, so the two
-            % see a different set of scores for the same rule.
+        function hpaArrayPrecedenceIsAnOption(testCase)
+            % scoreModel decides per reaction: any gene of a reaction having
+            % HPA data means array data is ignored for that whole reaction.
+            % That is now dataPrecedence 'reaction' rather than a difference
+            % between two implementations. R7 is "G1 or G4", G1 has HPA data
+            % and G4 only array data.
             m = testCase.scoringTestModel();
             a = testCase.scoringArrayData();
             h = testCase.scoringHpaDataLowG1();
-            simple  = scoreModel(m, h, 'arrayData', a, 'tissue', 't1', ...
-                'multipleGeneScoring', 'best', 'multipleCellScoring', 'best');
-            complex = scoreComplexModel(m, h, a, 't1', ...
+            simple = scoreModel(m, h, 'arrayData', a, 'tissue', 't1');
+            perGene = scoreComplexModel(m, h, a, 't1', ...
+                'isozymeScoring', 'max', 'complexScoring', 'max');
+            perRxn  = scoreComplexModel(m, h, a, 't1', ...
                 'isozymeScoring', 'max', 'complexScoring', 'max', ...
-                'multipleCellScoring', 'max');
+                'dataPrecedence', 'reaction');
             r7 = strcmp(m.rxns, 'R7');
 
-            % scoreModel sees only G1's HPA score
+            % Per reaction, only G1's HPA score is in scope
             testCase.verifyEqual(simple(r7), -8, 'AbsTol', 1e-12);
-            % scoreComplexModel also sees G4's array score, which is higher
-            testCase.verifyEqual(complex(r7), 5*log(3), 'AbsTol', 1e-12);
-            testCase.verifyNotEqual(complex(r7), simple(r7));
+            testCase.verifyEqual(perRxn(r7), -8, 'AbsTol', 1e-12);
+            % Per gene, G4's array score is seen too, and it is higher
+            testCase.verifyEqual(perGene(r7), 5*log(3), 'AbsTol', 1e-12);
+            % The wrapper picks the per-reaction rule, so it matches that one
+            testCase.verifyEqual(simple, perRxn, 'AbsTol', 1e-12);
         end
 
-        function averageScoringDivergesOnNestedRules(testCase)
-            % 'average' means a flat mean over the reaction's genes in
-            % scoreModel, but a mean of means down the rule tree in
-            % scoreComplexModel. R5 is "(G1 and G2) or G3".
+        %% What the fold changed
+
+        function changesAverageToReduceDownTheRule(testCase)
+            % multipleGeneScoring 'average' used to be a flat mean over a
+            % reaction's genes. It now averages down the grRule, so a complex
+            % counts once against its isozymes rather than once per subunit.
+            % R5 is "(G1 and G2) or G3". No caller uses 'average'.
             m = testCase.scoringTestModel();
             a = testCase.scoringArrayData();
             simple  = scoreModel(m, [], 'arrayData', a, 'tissue', 't1', ...
@@ -107,18 +112,19 @@ classdef tScoringEquivalence < RavenTestCase
             r5 = strcmp(m.rxns, 'R5');
 
             g = 5*log([1.5; 2; 2.5]);          % scores of G1, G2, G3
-            testCase.verifyEqual(simple(r5), mean(g), 'AbsTol', 1e-12);
-            testCase.verifyEqual(complex(r5), mean([mean(g(1:2)); g(3)]), 'AbsTol', 1e-12);
-            testCase.verifyNotEqual(complex(r5), simple(r5));
+            testCase.verifyEqual(simple(r5), mean([mean(g(1:2)); g(3)]), ...
+                'AbsTol', 1e-12);
+            testCase.verifyNotEqual(simple(r5), mean(g));   % the old flat mean
+            testCase.verifyEqual(simple(r5), complex(r5), 'AbsTol', 1e-12);
         end
 
-        function multiCellTypeHpaReductionDiverges(testCase)
-            % When a gene is measured in some but not all cell types,
-            % scoreModel reduces over a sparse genes-by-cell-types matrix,
-            % so unmeasured pairs enter the reduction as a numeric 0. A
-            % negative level therefore reduces to 0 under 'best'.
-            % scoreComplexModel reduces only over the cell types the gene
-            % was actually measured in.
+        function changesMultiCellTypeReductionToSkipUnmeasured(testCase)
+            % scoreModel used to reduce over a sparse genes-by-cell-types
+            % matrix, so a cell type a gene was never measured in entered the
+            % reduction as a numeric 0. Since 0 sits between 'Low' (10) and
+            % 'Not detected' (-8), a gene not detected in one of two cell
+            % types scored 0 under 'best' and was never pruned. The reduction
+            % now runs over the measurements that exist.
             m = testCase.scoringTestModel();
             h = struct();
             h.genes      = {'G1'};
@@ -133,16 +139,15 @@ classdef tScoringEquivalence < RavenTestCase
                 'multipleCellScoring', 'max');
             r2 = strcmp(m.rxns, 'R2');         % grRule is just "G1"
 
-            testCase.verifyEqual(simple(r2), 0, 'AbsTol', 1e-12);
+            testCase.verifyEqual(simple(r2), -8, 'AbsTol', 1e-12);
             testCase.verifyEqual(complex(r2), -8, 'AbsTol', 1e-12);
-            testCase.verifyNotEqual(complex(r2), simple(r2));
         end
 
-        function scoringSourceFieldDiverges(testCase)
-            % scoreModel reads rxnGeneMat, scoreComplexModel reads grRules.
-            % A model carrying gene associations in only one of the two is
-            % scored by one function and falls through to noGeneScore in the
-            % other.
+        function changesScoringSourceToGrRules(testCase)
+            % scoreModel used to read rxnGeneMat and now reads grRules, like
+            % scoreComplexModel. A model carrying its gene associations in
+            % only one of the two now scores the same way through either
+            % entry point. standardizeGrRules exists to keep them in step.
             m = testCase.scoringTestModel();
             a = testCase.scoringArrayData();
             noRules = m;
@@ -152,27 +157,16 @@ classdef tScoringEquivalence < RavenTestCase
             complex = scoreComplexModel(noRules, [], a, 't1');
             r2 = strcmp(m.rxns, 'R2');
 
-            testCase.verifyEqual(simple(r2), 5*log(1.5), 'AbsTol', 1e-12);
-            testCase.verifyEqual(complex(r2), -2);       % the noGeneScore default
-            testCase.verifyNotEqual(complex(r2), simple(r2));
+            testCase.verifyEqual(simple(r2), -2);        % the noGeneScore default
+            testCase.verifyEqual(complex(r2), -2);
         end
 
-        function unmeasuredGeneScoreDiverges(testCase)
-            % The geneScores output marks a gene without data as -Inf in
-            % scoreModel and as NaN in scoreComplexModel. Callers that test
-            % for one will not see the other.
+        function rejectsUnknownDataPrecedence(testCase)
             m = testCase.scoringTestModel();
             a = testCase.scoringArrayData();
-            a.genes     = a.genes(1:2);        % drop G3 and G4
-            a.levels    = a.levels(1:2, :);
-            a.threshold = a.threshold(1:2);
-
-            [~, gSimple]  = scoreModel(m, [], 'arrayData', a, 'tissue', 't1');
-            [~, gComplex] = scoreComplexModel(m, [], a, 't1');
-            unmeasured = ~ismember(m.genes, a.genes);
-
-            testCase.verifyTrue(all(isinf(gSimple(unmeasured))));
-            testCase.verifyTrue(all(isnan(gComplex(unmeasured))));
+            testCase.verifyError( ...
+                @() scoreComplexModel(m, [], a, 't1', 'dataPrecedence', 'model'), ...
+                'RAVEN:badInput');
         end
 
     end
@@ -180,9 +174,9 @@ classdef tScoringEquivalence < RavenTestCase
     methods (Access = private)
 
         function m = scoringTestModel(~)
-            % Small model whose grRules cover every rule shape the two
-            % scoring functions treat differently: none, single, OR, AND,
-            % nested, and a mixed-data-source OR.
+            % Small model whose grRules cover every rule shape the scoring
+            % treats differently: none, single, OR, AND, nested, and a
+            % mixed-data-source OR.
             m = struct();
             m.id = 'scoringTest';
             m.rxns = {}; m.S = []; m.rev = [];
