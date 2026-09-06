@@ -284,6 +284,18 @@ for i=2:numel(models)
         end
     end
 
+    if isfield(models{i},'spontaneous')
+        if isfield(model,'spontaneous')
+            model.spontaneous=[model.spontaneous;models{i}.spontaneous];
+        else
+            model.spontaneous=[false(numel(model.rxns)-numel(models{i}.rxns),1);models{i}.spontaneous];
+        end
+    else
+        if isfield(model,'spontaneous')
+            model.spontaneous=[model.spontaneous;false(numel(models{i}.rxns),1)];
+        end
+    end
+
     if strcmpi(metParam,'metNames')
     %Get the new metabolites from matching the models. Metabolites are said
     %to be the same if they share name and compartment id. This means that

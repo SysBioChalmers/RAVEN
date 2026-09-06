@@ -128,6 +128,9 @@ if toAdd > 0
     if isfield(model,'spontaneous')
         model.spontaneous=[model.spontaneous;model.spontaneous(cpyIndices)];
     end
+    if isfield(model,'rxnScores')
+        model.rxnScores=[model.rxnScores;model.rxnScores(cpyIndices)];
+    end
 
     %now expand the more complex fields - will be filled in later
     model.rxns=[model.rxns;cell(toAdd,1)];

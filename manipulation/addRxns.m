@@ -729,4 +729,16 @@ newRxnsModel.rxns=newModel.rxns(length(model.rxns)+1:end);
 [grRules,rxnGeneMat] = standardizeGrRules(newRxnsModel,true);
 newModel.rxnGeneMat = [newModel.rxnGeneMat; rxnGeneMat];
 newModel.grRules = [newModel.grRules(1:nOldRxns); grRules];
+
+if isfield(newModel,'equations')
+    %Reuse the equations as given where available (preserves the caller's
+    %own formatting); reconstruct them from the now-populated S otherwise,
+    %e.g. when rxnsToAdd used mets/stoichCoeffs instead of equations.
+    if isfield(rxnsToAdd,'equations')
+        newEquations=convertCharArray(rxnsToAdd.equations);
+    else
+        newEquations=constructEquations(newModel,newModel.rxns(nOldRxns+1:end));
+    end
+    newModel.equations=[newModel.equations;newEquations(:)];
+end
 end

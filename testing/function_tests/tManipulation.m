@@ -80,6 +80,19 @@ classdef tManipulation < RavenTestCase
             testCase.verifyTrue(m3.spontaneous(end));
         end
 
+        function addRxnsKeepsEquationsAligned(testCase)
+            % A model that already tracks equations must keep it aligned
+            % with rxns after adding a reaction, reusing the equation as
+            % given rather than leaving the field short by one.
+            m = testCase.model;
+            m.equations = constructEquations(m);
+            r.rxns = 'newRxn1';
+            r.equations = '2-Oxoglutarate => TEST';
+            evalc('m2 = addRxns(m, r, 2, ''c'', true);');
+            testCase.verifyEqual(numel(m2.equations), numel(m2.rxns));
+            testCase.verifySubstring(m2.equations{end}, 'TEST');
+        end
+
         function addRxnsStringEqnTypeIdAlias(testCase)
             % 'id' is the string alias for eqnType=1 (match by model.mets).
             r.rxns = {'idAliasRxn'};
@@ -329,6 +342,20 @@ classdef tManipulation < RavenTestCase
             evalc('byId   = mergeModels({a; b}, ''metParam'', ''mets'');');
             testCase.verifyEqual(nnz(strcmp(byName.metNames, 'Glucose')), 1);
             testCase.verifyEqual(nnz(strcmp(byId.metNames, 'Glucose')), 2);
+        end
+
+        function mergeModelsKeepsSpontaneousAligned(testCase)
+            % A model carrying spontaneous merged with one that doesn't
+            % must keep the field aligned with rxns, defaulting the
+            % other model's reactions to false rather than leaving it
+            % short.
+            a = tManipulation.namedMetModel('glc_c', 'A');
+            a.spontaneous = true;
+            b = tManipulation.namedMetModel('glucose_c', 'B');
+            evalc('merged = mergeModels({a; b}, ''metParam'', ''mets'');');
+            testCase.verifyEqual(numel(merged.spontaneous), numel(merged.rxns));
+            testCase.verifyTrue(merged.spontaneous(strcmp(merged.rxns,'R_A')));
+            testCase.verifyFalse(merged.spontaneous(strcmp(merged.rxns,'R_B')));
         end
 
         function copyToCompsDefaultCompOutsideAddsCompartment(testCase)
@@ -678,6 +705,17 @@ classdef tManipulation < RavenTestCase
             testCase.verifyEqual(numel(e.pwys), numel(e.rxns));
             testCase.verifyTrue(all(e.spontaneous));
             testCase.verifyTrue(all(strcmp(e.pwys, 'pathway1')));
+        end
+
+        function expandModelCopiesRxnScores(testCase)
+            % Each isozyme copy created by splitting an OR rule must
+            % inherit the source reaction's rxnScores, keeping it aligned
+            % with rxns.
+            m = testCase.gprTestModel('g1 or g2', {'g1';'g2'}, [1 1]);
+            m.rxnScores = 2.5;
+            e = expandModel(m);
+            testCase.verifyEqual(numel(e.rxnScores), numel(e.rxns));
+            testCase.verifyTrue(all(e.rxnScores == 2.5));
         end
 
         function expandModelDistributesBothSides(testCase)
