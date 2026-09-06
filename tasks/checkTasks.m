@@ -204,7 +204,11 @@ for i=1:numel(taskStructure)
         rxn.equations=taskStructure(i).equations;
         rxn.lb=taskStructure(i).LBequ;
         rxn.ub=taskStructure(i).UBequ;
-        rxn.rxns=strcat({'TEMPORARY_'},num2str((1:numel(taskStructure(i).equations))'));
+        % num2str on the whole column right-aligns every row to a common
+        % width, embedding a leading space in "TEMPORARY_ 1" once any id
+        % reaches two digits ("TEMPORARY_10"); format each one independently.
+        rxn.rxns=arrayfun(@(x) sprintf('TEMPORARY_%d',x), ...
+            (1:numel(taskStructure(i).equations))', 'UniformOutput', false);
         %Allow for new metabolites to be added. This is because it should
         %be possible to add, say, a whole new pathway
         tModel=addRxns(tModel,rxn,3,[],true);
