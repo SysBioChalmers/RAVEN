@@ -164,14 +164,21 @@ if any(strfind(outputString,'%lumped'))
     end
 end
 
+%Use getExchangeRxns' own definition of "exchange reaction" rather than a
+%local, incomplete re-implementation: a model that still carries explicit
+%boundary metabolites represents an exchange as realMet <=> realMet[b] --
+%one reactant AND one product -- which "no reactants or no products" alone
+%does not recognise, silently printing nothing for such a model.
+isExchRxn=false(numel(model.rxns),1);
+if onlyExchange==true
+    [~,exchIdx]=getExchangeRxns(model,'all');
+    isExchRxn(exchIdx)=true;
+end
+
 for i=1:numel(model.rxns)
     %Only print if it is an exchange reaction or if all reactions should be
-    %printed. Exchange reactions only have reactants or only products.
-    reactants=model.S(:,i)<0;
-    products=model.S(:,i)>0;
-    
-    %Only print if the absolute value is >= cutOffFlux
-    if (onlyExchange==false || (~any(reactants) || ~any(products)))
+    %printed.
+    if (onlyExchange==false || isExchRxn(i))
         printString=outputString;
         
         %Produce the final string

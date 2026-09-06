@@ -349,6 +349,31 @@ classdef tQueries < RavenTestCase
             testCase.verifySubstring(out, 'Objective value');
         end
 
+        function printFluxesRecognizesBoundaryMetExchanges(testCase)
+            % A model closed via closeModel represents an exchange as
+            % realMet <=> realMet[b] -- one reactant and one product --
+            % which "no reactants or no products" alone does not recognise,
+            % printing nothing for any of them.
+            m = testCase.taskTestModel();
+            [~,exchIdx] = getExchangeRxns(m,'all');
+            testCase.assumeNotEmpty(exchIdx, 'Fixture has no exchange reactions after closeModel.');
+            flux = ones(numel(m.rxns),1);
+            out = evalc('printFluxes(m, flux, ''onlyExchange'', true);');
+            testCase.verifySubstring(out, m.rxns{exchIdx(1)});
+        end
+
+        function getTransportRxnsExcludesBoundaryMetExchanges(testCase)
+            % closeModel copies the real metabolite's own name onto its
+            % boundary counterpart, so an exchange reaction has the same
+            % "same name, different compartment" shape as a genuine
+            % transport reaction.
+            m = testCase.taskTestModel();
+            [~,exchIdx] = getExchangeRxns(m,'all');
+            testCase.assumeNotEmpty(exchIdx, 'Fixture has no exchange reactions after closeModel.');
+            tr = getTransportRxns(m);
+            testCase.verifyFalse(any(tr(exchIdx)));
+        end
+
         function printFluxesRuns(testCase)
             testCase.assumeSolver('solveLP');
             sol = solveLP(testCase.model);
