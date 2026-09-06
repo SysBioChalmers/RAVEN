@@ -50,8 +50,19 @@ jobs:
         with:
           # genpath skips private/ and @class directories, so m2html's own
           # helpers (one of which is named strtok) never shadow a builtin.
+          #
+          # updateDocumentation rebuilds whichever tree findRAVENroot resolves
+          # to, and findRAVENroot prefers a stored RAVEN.ravenPath preference
+          # over the copy actually running. A runner has no such preference, but
+          # clearing it and then asserting makes that a checked fact rather than
+          # an assumption: regenerating a different checkout would otherwise
+          # commit its documentation over this one's.
           command: |
             addpath(genpath(pwd));
+            if ispref('RAVEN','ravenPath'); rmpref('RAVEN','ravenPath'); end
+            root = findRAVENroot();
+            assert(strcmp(root, pwd), ...
+                'findRAVENroot resolved to %s, not the checkout at %s', root, pwd);
             updateDocumentation();
 
       - name: Commit regenerated documentation

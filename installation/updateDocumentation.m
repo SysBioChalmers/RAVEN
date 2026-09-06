@@ -34,15 +34,28 @@ if exist(fullfile(ravenDir,'reconstruction','kegg','keggModel.mat'), 'file') == 
     delete(fullfile(ravenDir,'reconstruction','kegg','keggModel.mat'));
 end
 
-%Remove existing "doc" directory from RAVEN
-if isfolder(fullfile(ravenDir,'doc'))
-    rmdir(fullfile(ravenDir,'doc'),'s');
+%Remove the existing "doc" directory from RAVEN
+docDir=fullfile(ravenDir,'doc');
+if isfolder(docDir)
+    rmdir(docDir,'s');
 end
 
 %Make relative path
 relStart = numel(ravenDir)+2;
 for i=1:numel(ravenDirs)
     ravenDirs{i,1} = ravenDirs{i,1}(relStart:end);
+end
+
+%Recreate the output tree before handing over to m2html. m2html only creates an
+%output directory when exist() says it is not already there, and exist() keeps
+%answering "directory" for a relative path that was just deleted -- a stale
+%answer that neither rmpath nor rehash clears. It would therefore skip the
+%mkdir and then fail writing the first file into a directory that is gone.
+mkdir(docDir);
+for i=1:numel(ravenDirs)
+    if ~isempty(ravenDirs{i})
+        mkdir(fullfile(docDir,ravenDirs{i}));
+    end
 end
 
 %Save the current working directory and go to RAVEN root directory
