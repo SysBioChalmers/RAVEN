@@ -53,7 +53,9 @@
    newModel            the tModel with reactions added to fill gaps
    exitFlag            1: optimal solution found
                       -1: no feasible solution found
-                      -2: optimization time out
+                      -2: a solution was found but is not proven optimal,
+                          because the solver stopped before reaching
+                          optimality
 
    This method works by merging the tModel to the reference model and
    checking which reactions can carry flux. All reactions that can't
@@ -62,15 +64,15 @@
    that the constraints already set on tModel (e.g. a required biomass
    flux, or exchange bounds) can be satisfied.
 
- Usage: [newModel, exitFlag]=...
-           fillGaps(tModel,models,allowNetProduction,...
-           supressWarnings,rxnScores,params)</pre></div>
+ Usage: [addedRxns, newModel, exitFlag]=...
+           ftINITFillGaps(tModel,origModel,tRefModel,allowNetProduction,...
+           supressWarnings,rxnScores,params,verbose)</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="ftINITFillGapsMILP.html" class="code" title="function [x,I,exitFlag]=ftINITFillGapsMILP(model, varargin)">ftINITFillGapsMILP</a>	ftINITFillGapsMILP  Find the minimal set of fluxes that satisfy a model.</li></ul>
+</ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
 <li><a href="ftINITFillGapsForAllTasks.html" class="code" title="function [outModel, addedRxns, failedTasks]=ftINITFillGapsForAllTasks(model,refModel,inputFile,printOutput,rxnScores,taskStructure,params,verbose)">ftINITFillGapsForAllTasks</a>	ftINITFillGapsForAllTasks</li></ul>
@@ -106,66 +108,68 @@ This function is called by:
 0025 <span class="comment">%   newModel            the tModel with reactions added to fill gaps</span>
 0026 <span class="comment">%   exitFlag            1: optimal solution found</span>
 0027 <span class="comment">%                      -1: no feasible solution found</span>
-0028 <span class="comment">%                      -2: optimization time out</span>
-0029 <span class="comment">%</span>
-0030 <span class="comment">%   This method works by merging the tModel to the reference model and</span>
-0031 <span class="comment">%   checking which reactions can carry flux. All reactions that can't</span>
-0032 <span class="comment">%   carry flux are removed. It then solves the MILP problem of including</span>
-0033 <span class="comment">%   as few additional reactions as possible from the reference model so</span>
-0034 <span class="comment">%   that the constraints already set on tModel (e.g. a required biomass</span>
-0035 <span class="comment">%   flux, or exchange bounds) can be satisfied.</span>
-0036 <span class="comment">%</span>
-0037 <span class="comment">% Usage: [newModel, exitFlag]=...</span>
-0038 <span class="comment">%           fillGaps(tModel,models,allowNetProduction,...</span>
-0039 <span class="comment">%           supressWarnings,rxnScores,params)</span>
-0040 
-0041 <span class="keyword">if</span> isempty(rxnScores)
-0042     rxnScores=cell(numel(models),1);
-0043     <span class="keyword">for</span> i=1:numel(models)
-0044         rxnScores{i}=ones(numel(models{i}.rxns),1)*-1;
-0045     <span class="keyword">end</span>
-0046 <span class="keyword">end</span>
-0047 
-0048 <span class="comment">%Simplify the template models to remove constrained rxns. At the same time,</span>
-0049 <span class="comment">%check that the id of the template models isn't the same as the tModel. That</span>
-0050 <span class="comment">%would cause an error further down</span>
-0051 tRefModel.rxnScores=rxnScores;
-0052 tRefModel=simplifyModel(tRefModel,false,false,true);
-0053 
-0054 <span class="comment">%This is a rather ugly solution to the issue that it's a bit tricky to keep</span>
-0055 <span class="comment">%track of which scores belong to which reactions. This requires that</span>
-0056 <span class="comment">%removeReactions and mergeModels are modified to check for the new field.</span>
-0057 tModel.rxnScores=zeros(numel(tModel.rxns),1);
-0058 
-0059 <span class="comment">%First merge all models into one big one</span>
-0060 fullModel = tRefModel;<span class="comment">%mergeModels([{tModel};models],'metNames',true);</span>
-0061 
-0062 <span class="comment">%Add that net production is ok</span>
-0063 <span class="keyword">if</span> allowNetProduction==true
-0064     <span class="comment">%A second column in tModel.b means that the b field is lower and upper</span>
-0065     <span class="comment">%bound on the RHS.</span>
-0066     tModel.b=[tModel.b(:,1) inf(numel(tModel.mets),1)];
-0067     fullModel.b=[fullModel.b(:,1) inf(numel(fullModel.mets),1)];
-0068 <span class="keyword">end</span>
+0028 <span class="comment">%                      -2: a solution was found but is not proven optimal,</span>
+0029 <span class="comment">%                          because the solver stopped before reaching</span>
+0030 <span class="comment">%                          optimality</span>
+0031 <span class="comment">%</span>
+0032 <span class="comment">%   This method works by merging the tModel to the reference model and</span>
+0033 <span class="comment">%   checking which reactions can carry flux. All reactions that can't</span>
+0034 <span class="comment">%   carry flux are removed. It then solves the MILP problem of including</span>
+0035 <span class="comment">%   as few additional reactions as possible from the reference model so</span>
+0036 <span class="comment">%   that the constraints already set on tModel (e.g. a required biomass</span>
+0037 <span class="comment">%   flux, or exchange bounds) can be satisfied.</span>
+0038 <span class="comment">%</span>
+0039 <span class="comment">% Usage: [addedRxns, newModel, exitFlag]=...</span>
+0040 <span class="comment">%           ftINITFillGaps(tModel,origModel,tRefModel,allowNetProduction,...</span>
+0041 <span class="comment">%           supressWarnings,rxnScores,params,verbose)</span>
+0042 
+0043 <span class="keyword">if</span> isempty(rxnScores)
+0044     rxnScores=ones(numel(tRefModel.rxns),1)*-1;
+0045 <span class="keyword">end</span>
+0046 
+0047 <span class="comment">%Simplify the template models to remove constrained rxns. At the same time,</span>
+0048 <span class="comment">%check that the id of the template models isn't the same as the tModel. That</span>
+0049 <span class="comment">%would cause an error further down</span>
+0050 tRefModel.rxnScores=rxnScores;
+0051 tRefModel=simplifyModel(tRefModel,false,false,true);
+0052 
+0053 <span class="comment">%This is a rather ugly solution to the issue that it's a bit tricky to keep</span>
+0054 <span class="comment">%track of which scores belong to which reactions. This requires that</span>
+0055 <span class="comment">%removeReactions and mergeModels are modified to check for the new field.</span>
+0056 tModel.rxnScores=zeros(numel(tModel.rxns),1);
+0057 
+0058 <span class="comment">%First merge all models into one big one</span>
+0059 fullModel = tRefModel;<span class="comment">%mergeModels([{tModel};models],'metNames',true);</span>
+0060 
+0061 <span class="comment">%Add that net production is ok</span>
+0062 <span class="keyword">if</span> allowNetProduction==true
+0063     <span class="comment">%A second column in tModel.b means that the b field is lower and upper</span>
+0064     <span class="comment">%bound on the RHS.</span>
+0065     tModel.b=[tModel.b(:,1) inf(numel(tModel.mets),1)];
+0066     fullModel.b=[fullModel.b(:,1) inf(numel(fullModel.mets),1)];
+0067 <span class="keyword">end</span>
+0068 
 0069 
-0070 
-0071 fullModel.c(:)=0;
-0072 
-0073 <span class="comment">%Then minimize for the number of fluxes used. The fixed rxns doesn't need</span>
-0074 <span class="comment">%to participate</span>
-0075 templateRxns = find(~ismember(fullModel.rxns, tModel.rxns)); <span class="comment">%Check if this is slow, in that case keep track of this in fitTasksOpt and send it in</span>
-0076 
-0077 [~, J, exitFlag]=<a href="ftINITFillGapsMILP.html" class="code" title="function [x,I,exitFlag]=ftINITFillGapsMILP(model, varargin)">ftINITFillGapsMILP</a>(fullModel,templateRxns,params,fullModel.rxnScores(templateRxns),verbose);<span class="comment">%only the scores from the template rxns are used, so the others doesn't matter</span>
-0078 
-0079 <span class="comment">%Remove everything except for the added ones</span>
-0080 addedRxns = fullModel.rxns(templateRxns(J));
-0081 rxnsToAdd.rxns = addedRxns;
-0082 rxnsToAdd.equations = constructEquations(fullModel, addedRxns);
-0083 rxnsToAdd.ub = fullModel.ub(templateRxns(J));
-0084 rxnsToAdd.lb = fullModel.lb(templateRxns(J));
-0085 newModel = addRxns(origModel,rxnsToAdd, 3, [], true); <span class="comment">%we ignore gene rules etc here, they are not needed - we regenerate the model in the end by subtracting rxns from the full model.</span>
-0086 
-0087 <span class="keyword">end</span></pre></div>
+0070 fullModel.c(:)=0;
+0071 
+0072 <span class="comment">%Then minimize for the number of fluxes used. The fixed rxns doesn't need</span>
+0073 <span class="comment">%to participate</span>
+0074 templateRxns = find(~ismember(fullModel.rxns, tModel.rxns)); <span class="comment">%Check if this is slow, in that case keep track of this in fitTasksOpt and send it in</span>
+0075 
+0076 <span class="comment">%The reversible formulation uses one binary per reaction rather than one</span>
+0077 <span class="comment">%per irreversible reaction, which is what makes this fast enough to run</span>
+0078 <span class="comment">%once per task on a genome-scale reference model</span>
+0079 [~, J, exitFlag]=getMinNrFluxes(fullModel,templateRxns,params,fullModel.rxnScores(templateRxns),<span class="string">'formulation'</span>,<span class="string">'reversible'</span>,<span class="string">'verbose'</span>,verbose);<span class="comment">%only the scores from the template rxns are used, so the others doesn't matter</span>
+0080 
+0081 <span class="comment">%Remove everything except for the added ones</span>
+0082 addedRxns = fullModel.rxns(templateRxns(J));
+0083 rxnsToAdd.rxns = addedRxns;
+0084 rxnsToAdd.equations = constructEquations(fullModel, addedRxns);
+0085 rxnsToAdd.ub = fullModel.ub(templateRxns(J));
+0086 rxnsToAdd.lb = fullModel.lb(templateRxns(J));
+0087 newModel = addRxns(origModel,rxnsToAdd, 3, [], true); <span class="comment">%we ignore gene rules etc here, they are not needed - we regenerate the model in the end by subtracting rxns from the full model.</span>
+0088 
+0089 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
