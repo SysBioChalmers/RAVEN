@@ -37,6 +37,19 @@ classdef tAnalysis < RavenTestCase
             testCase.verifyNotEmpty(genes);
         end
 
+        function findGeneDeletionsMomaComputesGrRatio(testCase)
+            % The MOMA branch must populate sol.f itself (used to compute
+            % grRatioMuts): qMOMA returns a flux distribution and a status
+            % flag, not an objective value.
+            testCase.assumeDependency(exist('quadprog','file')==2, ...
+                'Optimization Toolbox (quadprog)');
+            evalc(['[genes, ~, ~, ~, grRatioMuts] = findGeneDeletions(testCase.model, ' ...
+                '''sgd'', ''moma'', testCase.model);']);
+            testCase.verifyNotEmpty(genes);
+            testCase.verifyEqual(numel(grRatioMuts), numel(genes));
+            testCase.verifyGreaterThan(max(grRatioMuts), 0);
+        end
+
         function traceFluxPathReturnsCells(testCase)
             testCase.assumeSolver('solveLP');
             sol = solveLP(testCase.model);
