@@ -94,6 +94,18 @@ classdef tAnalysis < RavenTestCase
             testCase.verifyEmpty(m);
         end
 
+        function walkFluxesRefusesNonInteractive(testCase)
+            % The test suite itself runs under -batch, so this exercises the
+            % real guard rather than a mocked one.
+            testCase.assumeTrue(batchStartupOptionUsed, ...
+                'Test runner is not using -batch; the non-interactive guard cannot be exercised here.');
+            testCase.assumeSolver('solveLP');
+            sol = solveLP(testCase.model);
+            biomassRxn = testCase.model.rxns{find(testCase.model.c == 1, 1)};
+            testCase.verifyError(@() walkFluxes(testCase.model, sol.x, biomassRxn), ...
+                'walkFluxes:nonInteractive');
+        end
+
         function compareFluxesReturnsResult(testCase)
             testCase.assumeSolver('solveLP');
             solA = solveLP(testCase.model);

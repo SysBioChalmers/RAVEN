@@ -34,6 +34,23 @@ function walkFluxes(model, fluxes, startRxn, varargin)
 %   <number>  — step to that neighbour reaction
 %   b         — go back to the previous reaction
 %   q         — quit
+%
+% This function is interactive and reads from the terminal at every step;
+% it errors immediately under -batch, in deployed code, or otherwise without
+% a real terminal, rather than blocking forever waiting for input that will
+% never arrive.
+
+isBatch = false;
+try
+    isBatch = batchStartupOptionUsed;
+catch
+end
+if isBatch || isdeployed
+    error('walkFluxes:nonInteractive', ...
+        ['walkFluxes is interactive and reads from the terminal at every step, ' ...
+         'so it cannot run under -batch or in deployed code. Run it in an ' ...
+         'interactive MATLAB session instead.']);
+end
 
 p = parseRAVENargs(varargin, {'cutoff',1e-8; 'maxPerMet',8});
 cutoff    = p.cutoff;
