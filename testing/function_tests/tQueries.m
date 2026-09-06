@@ -25,6 +25,17 @@ classdef tQueries < RavenTestCase
             checkModelStruct(testCase.model, true);
         end
 
+        function checkModelStructNoFalsePositiveOnWordStartingName(testCase)
+            % A metabolite name beginning with a non-numeric word must not be
+            % flagged as "begins with a number": str2double of that word is
+            % NaN, and any(NaN) is true in MATLAB.
+            m = testCase.model;
+            m.metNames{1} = 'alpha keto acid';
+            issues = checkModelStruct(m);
+            hit = arrayfun(@(x) contains(x.message,'begin with a number'), issues);
+            testCase.verifyFalse(any(hit));
+        end
+
         function constructEquationsAllRxns(testCase)
             eqns = constructEquations(testCase.model);
             testCase.verifyClass(eqns, 'cell');

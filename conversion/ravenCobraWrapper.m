@@ -193,7 +193,7 @@ if isRaven
     newModel.b=zeros(numel(model.mets),1);
     newModel.csense=repmat('E',size(model.mets));
     if isfield(model,'geneMiriams')
-        [~,extractedMiriamNames]=extractMiriam(model.geneMiriams);
+        [miriams,extractedMiriamNames]=extractMiriam(model.geneMiriams);
         for i = 1:length(geneCOBRAfields)
             j=ismember(extractedMiriamNames,geneNamespaces{i});
             if any(j)

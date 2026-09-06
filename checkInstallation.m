@@ -145,6 +145,7 @@ end
 fprintf(myStr(' > Store RAVEN path as MATLAB pref',40))
 try
     setpref('RAVEN','ravenPath',ravenDir);
+    clear('findRAVENroot'); % drop its cached path, in case one is already set for this session
     fprintf('Pass\n');
 catch
     printOrange('Fail\n')

@@ -25,6 +25,21 @@ classdef tConversion < RavenTestCase
             testCase.verifyEqual(size(back.S), size(testCase.model.S));
         end
 
+        function ravenCobraWrapperGeneFieldsUseGeneMiriams(testCase)
+            % Gene annotation fields must come from geneMiriams, not from
+            % whatever extractMiriam last returned for metMiriams.
+            m = testCase.model;
+            m.metMiriams = cell(numel(m.mets),1);
+            m.metMiriams{1}.name  = {'hmdb'};
+            m.metMiriams{1}.value = {'HMDB00001'};
+            m.geneMiriams = cell(numel(m.genes),1);
+            m.geneMiriams{1}.name  = {'ncbigene'};
+            m.geneMiriams{1}.value = {'12345'};
+            evalc('newModel = ravenCobraWrapper(m);');
+            testCase.verifyEqual(numel(newModel.geneEntrezID), numel(newModel.genes));
+            testCase.verifyEqual(newModel.geneEntrezID{1}, '12345');
+        end
+
         function standardizeFieldOrderPreservesFields(testCase)
             m2 = standardizeModelFieldOrder(testCase.model);
             testCase.verifyEqual(sort(fieldnames(m2)), sort(fieldnames(testCase.model)));

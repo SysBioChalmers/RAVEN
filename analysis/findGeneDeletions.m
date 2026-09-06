@@ -143,6 +143,7 @@ if strcmpi(testType,'sgd') || strcmpi(testType,'sgo') || strcmpi(testType,'dgd')
             [fluxA, ~, flag]=qMOMA(tempModel,refModel);
             sol.x=fluxA;
             sol.stat=flag;
+            sol.f=fluxA(logical(tempModel.c));
         end
         
         %If the optimization terminated successfully
@@ -199,6 +200,7 @@ if strcmpi(testType,'dgd')
             [fluxA, ~, flag]=qMOMA(tempModel,refModel);
             sol.x=fluxA;
             sol.stat=flag;
+            sol.f=fluxA(logical(tempModel.c));
         end
         
         if sol.stat==1
