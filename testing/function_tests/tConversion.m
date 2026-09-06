@@ -12,6 +12,16 @@ classdef tConversion < RavenTestCase
             testCase.verifyEqual(mr.genes, testCase.model.genes);
         end
 
+        function removeIdentifierPrefixSkipsMissingFields(testCase)
+            % A model missing an optional field (genes, metNames, rxnNames,
+            % id) must not make the default field list throw; it should
+            % just be skipped.
+            m = rmfield(testCase.model, {'genes','metNames','rxnNames','id'});
+            m.rxns = strcat('R_', m.rxns);
+            m2 = removeIdentifierPrefix(m);
+            testCase.verifyFalse(any(startsWith(m2.rxns, 'R_')));
+        end
+
         function ravenCobraWrapperMarksCobra(testCase)
             cobra = ravenCobraWrapper(testCase.model);
             testCase.verifyTrue(isfield(cobra, 'rules'));   % COBRA-only field

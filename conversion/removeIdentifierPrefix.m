@@ -60,6 +60,9 @@ hasChanged  = false(numel(modelFields(:,1)),1);
 for i=1:numel(toChangeIdx)
     currName    = modelFields{toChangeIdx(i),1};
     currPrefix  = modelFields{toChangeIdx(i),2};
+    if ~isfield(model,currName)
+        continue;
+    end
     currField   = model.(currName);
 
     if forceRemove && any(startsWith(currField,currPrefix))
@@ -70,7 +73,7 @@ for i=1:numel(toChangeIdx)
     if hasPrefix
         currField = regexprep(currField,['^' currPrefix],'');
         hasChanged(toChangeIdx(i)) = true;
-        if strcmp(currName,'genes')
+        if strcmp(currName,'genes') && isfield(model,'grRules')
             model.grRules=regexprep(model.grRules,'^G_','');
             model.grRules=regexprep(model.grRules,'\(G_','(');
             model.grRules=regexprep(model.grRules,' G_',' ');
