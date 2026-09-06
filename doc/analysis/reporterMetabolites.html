@@ -203,99 +203,109 @@ This function is called by:
 0102 metNGenes=nan(numel(model.mets),1);
 0103 meanZ=nan(numel(model.mets),1);
 0104 stdZ=nan(numel(model.mets),1);
-0105 <span class="keyword">for</span> i=1:numel(model.mets)
-0106     <span class="comment">%Get the involved rxns</span>
-0107     I=model.S(i,:);
-0108     
-0109     <span class="comment">%Get the involved genes</span>
-0110     [~, J]=find(model.rxnGeneMat(I~=0,:));
-0111     
-0112     <span class="comment">%Find the genes in the gene list</span>
-0113     K=find(ismember(genes,model.genes(J)));
-0114     
-0115     <span class="comment">%Calculate the aggregated Z-score for the metabolite</span>
-0116     <span class="keyword">if</span> any(K)
-0117         metZScores(i)=sum(geneZScores(K))/sqrt(numel(K));
-0118         meanZ(i)=mean(geneZScores(K));
-0119         stdZ(i)=std(geneZScores(K));
-0120         metNGenes(i)=numel(K);
-0121     <span class="keyword">end</span>
-0122 <span class="keyword">end</span>
-0123 
-0124 <span class="comment">%Remove the metabolites which have no Z-scores</span>
-0125 mets=model.mets(~isnan(metZScores));
-0126 metNames=model.metNames(~isnan(metZScores));
-0127 metZScores(isnan(metZScores))=[];
-0128 metNGenes(isnan(metNGenes))=[];
-0129 meanZ(isnan(meanZ))=[];
-0130 stdZ(isnan(stdZ))=[];
-0131 
-0132 <span class="comment">%Correct for background using the closed-form moments of the sampling</span>
-0133 <span class="comment">%distribution. For n genes drawn with replacement from the scored-gene pool</span>
-0134 <span class="comment">%(mean mu, std sigma), the aggregate Z = sum(z)/sqrt(n) has:</span>
-0135 <span class="comment">%  E[Z] = sqrt(n)*mu  and  Std[Z] = sigma  (independent of n)</span>
-0136 <span class="comment">%so the corrected score is (metZ - sqrt(n)*mu) / sigma.</span>
-0137 mu = mean(geneZScores);
-0138 sigma = std(geneZScores);
-0139 metZScores = (metZScores - sqrt(metNGenes) .* mu) ./ sigma;
-0140 
-0141 <span class="comment">%Calculate the P-values (upper-tail of the standard normal). Uses the base</span>
-0142 <span class="comment">%MATLAB erfc so this does not depend on the Statistics Toolbox normcdf:</span>
-0143 <span class="comment">%1 - normcdf(z) == 0.5*erfc(z/sqrt(2)).</span>
-0144 metPValues=0.5*erfc(metZScores/sqrt(2));
+0105 <span class="comment">%model.genes -&gt; genes(filtered list) index, computed once rather than</span>
+0106 <span class="comment">%re-scanning the whole &quot;genes&quot; list (via ismember) for every metabolite,</span>
+0107 <span class="comment">%which is quadratic in a genome-scale model's mets x genes.</span>
+0108 [~,geneIdxInList]=ismember(model.genes,genes);
+0109 <span class="keyword">for</span> i=1:numel(model.mets)
+0110     <span class="comment">%Get the involved rxns</span>
+0111     I=model.S(i,:);
+0112 
+0113     <span class="comment">%Get the involved genes</span>
+0114     [~, J]=find(model.rxnGeneMat(I~=0,:));
+0115 
+0116     <span class="comment">%Find the genes in the gene list</span>
+0117     K=unique(geneIdxInList(J));
+0118     K=K(K&gt;0);
+0119     
+0120     <span class="comment">%Calculate the aggregated Z-score for the metabolite</span>
+0121     <span class="keyword">if</span> any(K)
+0122         metZScores(i)=sum(geneZScores(K))/sqrt(numel(K));
+0123         meanZ(i)=mean(geneZScores(K));
+0124         stdZ(i)=std(geneZScores(K));
+0125         metNGenes(i)=numel(K);
+0126     <span class="keyword">end</span>
+0127 <span class="keyword">end</span>
+0128 
+0129 <span class="comment">%Remove the metabolites which have no Z-scores</span>
+0130 mets=model.mets(~isnan(metZScores));
+0131 metNames=model.metNames(~isnan(metZScores));
+0132 metZScores(isnan(metZScores))=[];
+0133 metNGenes(isnan(metNGenes))=[];
+0134 meanZ(isnan(meanZ))=[];
+0135 stdZ(isnan(stdZ))=[];
+0136 
+0137 <span class="comment">%Correct for background using the closed-form moments of the sampling</span>
+0138 <span class="comment">%distribution. For n genes drawn with replacement from the scored-gene pool</span>
+0139 <span class="comment">%(mean mu, std sigma), the aggregate Z = sum(z)/sqrt(n) has:</span>
+0140 <span class="comment">%  E[Z] = sqrt(n)*mu  and  Std[Z] = sigma  (independent of n)</span>
+0141 <span class="comment">%so the corrected score is (metZ - sqrt(n)*mu) / sigma.</span>
+0142 mu = mean(geneZScores);
+0143 sigma = std(geneZScores);
+0144 metZScores = (metZScores - sqrt(metNGenes) .* mu) ./ sigma;
 0145 
-0146 <span class="comment">%Sort the results</span>
-0147 [metZScores, I]=sort(metZScores,<span class="string">'descend'</span>);
-0148 mets=mets(I);
-0149 metNames=metNames(I);
-0150 metPValues=metPValues(I);
-0151 metNGenes=metNGenes(I);
-0152 meanZ=meanZ(I);
-0153 stdZ=stdZ(I);
-0154 
-0155 <span class="comment">%Prepare the output</span>
-0156 repMets.mets=mets;
-0157 repMets.metNames=metNames;
-0158 repMets.metZScores=metZScores;
-0159 repMets.metPValues=metPValues;
-0160 repMets.metNGenes=metNGenes;
-0161 repMets.meanZ=meanZ;
-0162 repMets.stdZ=stdZ;
-0163 
-0164 <span class="comment">%Call this function recursively if geneFoldChanges has been specified</span>
-0165 repMets(1).test=<span class="string">'all'</span>;
-0166 <span class="keyword">if</span> any(geneFoldChanges)
-0167     repMets=[repMets;<a href="reporterMetabolites.html" class="code" title="function repMets=reporterMetabolites(model,genes,genePValues,varargin)">reporterMetabolites</a>(model,genes(geneFoldChanges&gt;=0),genePValues(geneFoldChanges&gt;=0))];
-0168     repMets=[repMets;<a href="reporterMetabolites.html" class="code" title="function repMets=reporterMetabolites(model,genes,genePValues,varargin)">reporterMetabolites</a>(model,genes(geneFoldChanges&lt;0),genePValues(geneFoldChanges&lt;0))];
-0169     repMets(2).test=<span class="string">'only up'</span>;
-0170     repMets(3).test=<span class="string">'only down'</span>;
-0171 <span class="keyword">end</span>
-0172 
-0173 <span class="comment">%This is for printing results to the screen. For printing a full list of</span>
-0174 <span class="comment">%all scores, specify a output file</span>
-0175 <span class="keyword">if</span> printResults==true
-0176     <span class="keyword">for</span> i=1:numel(repMets)
-0177         fprintf([<span class="string">'TOP 20 REPORTER METABOLITES\nTEST TYPE: '</span> repMets(i).test <span class="string">'\nID\tNAME\tP-VALUE\n'</span>]);
-0178         <span class="keyword">for</span> j=1:min(20,numel(repMets(i).mets))
-0179             fprintf([repMets(i).mets{j} <span class="string">'\t'</span> repMets(i).metNames{j} <span class="string">'\t'</span> num2str(repMets(i).metPValues(j)) <span class="string">'\n'</span>]);
-0180         <span class="keyword">end</span>
-0181         fprintf(<span class="string">'\n'</span>);
-0182     <span class="keyword">end</span>
-0183 <span class="keyword">end</span>
+0146 <span class="comment">%Calculate the P-values (upper-tail of the standard normal). Uses the base</span>
+0147 <span class="comment">%MATLAB erfc so this does not depend on the Statistics Toolbox normcdf:</span>
+0148 <span class="comment">%1 - normcdf(z) == 0.5*erfc(z/sqrt(2)).</span>
+0149 metPValues=0.5*erfc(metZScores/sqrt(2));
+0150 
+0151 <span class="comment">%Sort the results</span>
+0152 [metZScores, I]=sort(metZScores,<span class="string">'descend'</span>);
+0153 mets=mets(I);
+0154 metNames=metNames(I);
+0155 metPValues=metPValues(I);
+0156 metNGenes=metNGenes(I);
+0157 meanZ=meanZ(I);
+0158 stdZ=stdZ(I);
+0159 
+0160 <span class="comment">%Prepare the output</span>
+0161 repMets.mets=mets;
+0162 repMets.metNames=metNames;
+0163 repMets.metZScores=metZScores;
+0164 repMets.metPValues=metPValues;
+0165 repMets.metNGenes=metNGenes;
+0166 repMets.meanZ=meanZ;
+0167 repMets.stdZ=stdZ;
+0168 
+0169 <span class="comment">%Call this function recursively if geneFoldChanges has been specified</span>
+0170 repMets(1).test=<span class="string">'all'</span>;
+0171 <span class="keyword">if</span> any(geneFoldChanges)
+0172     repMets=[repMets;<a href="reporterMetabolites.html" class="code" title="function repMets=reporterMetabolites(model,genes,genePValues,varargin)">reporterMetabolites</a>(model,genes(geneFoldChanges&gt;=0),genePValues(geneFoldChanges&gt;=0))];
+0173     repMets=[repMets;<a href="reporterMetabolites.html" class="code" title="function repMets=reporterMetabolites(model,genes,genePValues,varargin)">reporterMetabolites</a>(model,genes(geneFoldChanges&lt;0),genePValues(geneFoldChanges&lt;0))];
+0174     repMets(2).test=<span class="string">'only up'</span>;
+0175     repMets(3).test=<span class="string">'only down'</span>;
+0176 <span class="keyword">end</span>
+0177 
+0178 <span class="comment">%This is for printing results to the screen. For printing a full list of</span>
+0179 <span class="comment">%all scores, specify a output file</span>
+0180 <span class="comment">%Escapes metabolite text before it is spliced into an fprintf template,</span>
+0181 <span class="comment">%since a literal &quot;%&quot; in e.g. a metabolite name would otherwise be misread</span>
+0182 <span class="comment">%as a format directive and swallow the remainder of the line.</span>
+0183 esc=@(s) strrep(s,<span class="string">'%'</span>,<span class="string">'%%'</span>);
 0184 
-0185 <span class="comment">%Print results to file</span>
-0186 <span class="keyword">if</span> any(outputFile)
-0187     fid=fopen(outputFile,<span class="string">'w'</span>);
-0188     <span class="keyword">for</span> i=1:numel(repMets)
-0189         fprintf(fid,[<span class="string">'REPORTER METABOLITES USING TEST TYPE: '</span> repMets(i).test <span class="string">'\n'</span>]);
-0190         fprintf(fid,<span class="string">'ID\tNAME\tZ-SCORE\tP-VALUE\tNUMBER OF NEIGHBOURS\tAVERAGE Z-SCORE\tSTD Z-SCORE\n'</span>);
-0191         <span class="keyword">for</span> j=1:numel(repMets(i).mets)
-0192             fprintf(fid,[repMets(i).mets{j} <span class="string">'\t'</span> repMets(i).metNames{j} <span class="string">'\t'</span> num2str(repMets(i).metZScores(j)) <span class="string">'\t'</span> num2str(repMets(i).metPValues(j)) <span class="string">'\t'</span> num2str(repMets(i).metNGenes(j)) <span class="string">'\t'</span> num2str(repMets(i).meanZ(j)) <span class="string">'\t'</span> num2str(repMets(i).stdZ(j)) <span class="string">'\n'</span>]);
-0193         <span class="keyword">end</span>
-0194     <span class="keyword">end</span>
-0195     fclose(fid);
-0196 <span class="keyword">end</span>
-0197 <span class="keyword">end</span></pre></div>
+0185 <span class="keyword">if</span> printResults==true
+0186     <span class="keyword">for</span> i=1:numel(repMets)
+0187         fprintf([<span class="string">'TOP 20 REPORTER METABOLITES\nTEST TYPE: '</span> repMets(i).test <span class="string">'\nID\tNAME\tP-VALUE\n'</span>]);
+0188         <span class="keyword">for</span> j=1:min(20,numel(repMets(i).mets))
+0189             fprintf([esc(repMets(i).mets{j}) <span class="string">'\t'</span> esc(repMets(i).metNames{j}) <span class="string">'\t'</span> num2str(repMets(i).metPValues(j)) <span class="string">'\n'</span>]);
+0190         <span class="keyword">end</span>
+0191         fprintf(<span class="string">'\n'</span>);
+0192     <span class="keyword">end</span>
+0193 <span class="keyword">end</span>
+0194 
+0195 <span class="comment">%Print results to file</span>
+0196 <span class="keyword">if</span> any(outputFile)
+0197     fid=fopen(outputFile,<span class="string">'w'</span>);
+0198     <span class="keyword">for</span> i=1:numel(repMets)
+0199         fprintf(fid,[<span class="string">'REPORTER METABOLITES USING TEST TYPE: '</span> repMets(i).test <span class="string">'\n'</span>]);
+0200         fprintf(fid,<span class="string">'ID\tNAME\tZ-SCORE\tP-VALUE\tNUMBER OF NEIGHBOURS\tAVERAGE Z-SCORE\tSTD Z-SCORE\n'</span>);
+0201         <span class="keyword">for</span> j=1:numel(repMets(i).mets)
+0202             fprintf(fid,[esc(repMets(i).mets{j}) <span class="string">'\t'</span> esc(repMets(i).metNames{j}) <span class="string">'\t'</span> num2str(repMets(i).metZScores(j)) <span class="string">'\t'</span> num2str(repMets(i).metPValues(j)) <span class="string">'\t'</span> num2str(repMets(i).metNGenes(j)) <span class="string">'\t'</span> num2str(repMets(i).meanZ(j)) <span class="string">'\t'</span> num2str(repMets(i).stdZ(j)) <span class="string">'\n'</span>]);
+0203         <span class="keyword">end</span>
+0204     <span class="keyword">end</span>
+0205     fclose(fid);
+0206 <span class="keyword">end</span>
+0207 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

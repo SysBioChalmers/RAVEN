@@ -278,105 +278,120 @@ This function is called by:
 0179 
 0180 <span class="comment">% (3) Universal upper coupling: v_k - ub_k * y_db_k &lt;= 0   [nUniv rows, 'L']</span>
 0181 <span class="comment">%     (forces v_k &lt;= 0 when y_db_k = 0)</span>
-0182 yDbCols = nMergedRxns + nRev + (1:nUniv);
-0183 A_uniUp = sparse(<span class="keyword">...</span>
-0184     [1:nUniv, 1:nUniv], <span class="keyword">...</span>
-0185     [univIdx(:)', yDbCols], <span class="keyword">...</span>
-0186     [ones(1, nUniv), -mergedModel.ub(univIdx)'], <span class="keyword">...</span>
-0187     nUniv, nVar);
-0188 
-0189 <span class="comment">% (4) Universal lower coupling: v_k - lb_k * y_db_k &gt;= 0   [nUniv rows, 'G']</span>
-0190 <span class="comment">%     (forces v_k &gt;= 0 when y_db_k = 0; together with (3): v_k = 0 when y_db_k = 0)</span>
-0191 A_uniLo = sparse(<span class="keyword">...</span>
-0192     [1:nUniv, 1:nUniv], <span class="keyword">...</span>
-0193     [univIdx(:)', yDbCols], <span class="keyword">...</span>
-0194     [ones(1, nUniv), -mergedModel.lb(univIdx)'], <span class="keyword">...</span>
-0195     nUniv, nVar);
-0196 
-0197 <span class="comment">% (5) Reversal coupling: v_j + M * y_rev_j &gt;= 0   [nRev rows, 'G']</span>
-0198 <span class="comment">%     (forces v_j &gt;= 0 when y_rev_j = 0, i.e., preserves original irreversibility)</span>
-0199 yRevCols = nMergedRxns + (1:nRev);
-0200 A_rev = sparse(<span class="keyword">...</span>
-0201     [1:nRev, 1:nRev], <span class="keyword">...</span>
-0202     [revCandIdx(:)', yRevCols], <span class="keyword">...</span>
-0203     [ones(1, nRev), M * ones(1, nRev)], <span class="keyword">...</span>
-0204     nRev, nVar);
-0205 
-0206 <span class="comment">% --- Assemble ---</span>
-0207 prob.A = [A_SS; A_growth; A_uniUp; A_uniLo; A_rev];
-0208 prob.a = prob.A;
-0209 prob.b = [zeros(nMergedMets, 1); minGrowth; <span class="keyword">...</span>
-0210           zeros(nUniv, 1); zeros(nUniv, 1); zeros(nRev, 1)];
-0211 prob.csense = [repmat(<span class="string">'E'</span>, 1, nMergedMets), <span class="string">'G'</span>, <span class="keyword">...</span>
-0212                repmat(<span class="string">'L'</span>, 1, nUniv), <span class="keyword">...</span>
-0213                repmat(<span class="string">'G'</span>, 1, nUniv + nRev)];
-0214 prob.c      = c;
-0215 prob.osense = 1;   <span class="comment">% minimise weighted sum of binary variables</span>
-0216 prob.lb     = lb;
-0217 prob.ub     = ub;
-0218 prob.vartype = repmat(<span class="string">'C'</span>, 1, nVar);
-0219 prob.vartype(nMergedRxns + 1 : end) = <span class="string">'B'</span>;   <span class="comment">% y_rev and y_db are binary</span>
-0220 
-0221 <span class="keyword">if</span> isempty(params)
-0222     params.intTol   = 1e-9;
-0223     params.TimeLimit = 600;
-0224 <span class="keyword">end</span>
-0225 
-0226 <span class="comment">% ---- Solve ----</span>
-0227 <span class="keyword">if</span> verbose
-0228     fprintf(<span class="string">'gapFillMILP: solving MILP (%d vars, %d binary, %d constraints)...\n'</span>, <span class="keyword">...</span>
-0229         nVar, nRev + nUniv, size(prob.A, 1));
+0182 <span class="comment">% Coupling coefficients are capped at the Big-M constant: an unbounded</span>
+0183 <span class="comment">% universal reaction (ub = Inf, RAVEN's own default when no upper-bound</span>
+0184 <span class="comment">% annotation is set) would otherwise put an Inf coefficient into the</span>
+0185 <span class="comment">% constraint matrix, and Inf*0 (y_db_k = 0) is NaN, not 0.</span>
+0186 yDbCols = nMergedRxns + nRev + (1:nUniv);
+0187 uniUb = min(mergedModel.ub(univIdx), M);
+0188 uniLb = max(mergedModel.lb(univIdx), -M);
+0189 A_uniUp = sparse(<span class="keyword">...</span>
+0190     [1:nUniv, 1:nUniv], <span class="keyword">...</span>
+0191     [univIdx(:)', yDbCols], <span class="keyword">...</span>
+0192     [ones(1, nUniv), -uniUb'], <span class="keyword">...</span>
+0193     nUniv, nVar);
+0194 
+0195 <span class="comment">% (4) Universal lower coupling: v_k - lb_k * y_db_k &gt;= 0   [nUniv rows, 'G']</span>
+0196 <span class="comment">%     (forces v_k &gt;= 0 when y_db_k = 0; together with (3): v_k = 0 when y_db_k = 0)</span>
+0197 A_uniLo = sparse(<span class="keyword">...</span>
+0198     [1:nUniv, 1:nUniv], <span class="keyword">...</span>
+0199     [univIdx(:)', yDbCols], <span class="keyword">...</span>
+0200     [ones(1, nUniv), -uniLb'], <span class="keyword">...</span>
+0201     nUniv, nVar);
+0202 
+0203 <span class="comment">% (5) Reversal coupling: v_j + M * y_rev_j &gt;= 0   [nRev rows, 'G']</span>
+0204 <span class="comment">%     (forces v_j &gt;= 0 when y_rev_j = 0, i.e., preserves original irreversibility)</span>
+0205 yRevCols = nMergedRxns + (1:nRev);
+0206 A_rev = sparse(<span class="keyword">...</span>
+0207     [1:nRev, 1:nRev], <span class="keyword">...</span>
+0208     [revCandIdx(:)', yRevCols], <span class="keyword">...</span>
+0209     [ones(1, nRev), M * ones(1, nRev)], <span class="keyword">...</span>
+0210     nRev, nVar);
+0211 
+0212 <span class="comment">% --- Assemble ---</span>
+0213 prob.A = [A_SS; A_growth; A_uniUp; A_uniLo; A_rev];
+0214 prob.a = prob.A;
+0215 prob.b = [zeros(nMergedMets, 1); minGrowth; <span class="keyword">...</span>
+0216           zeros(nUniv, 1); zeros(nUniv, 1); zeros(nRev, 1)];
+0217 prob.csense = [repmat(<span class="string">'E'</span>, 1, nMergedMets), <span class="string">'G'</span>, <span class="keyword">...</span>
+0218                repmat(<span class="string">'L'</span>, 1, nUniv), <span class="keyword">...</span>
+0219                repmat(<span class="string">'G'</span>, 1, nUniv + nRev)];
+0220 prob.c      = c;
+0221 prob.osense = 1;   <span class="comment">% minimise weighted sum of binary variables</span>
+0222 prob.lb     = lb;
+0223 prob.ub     = ub;
+0224 prob.vartype = repmat(<span class="string">'C'</span>, 1, nVar);
+0225 prob.vartype(nMergedRxns + 1 : end) = <span class="string">'B'</span>;   <span class="comment">% y_rev and y_db are binary</span>
+0226 
+0227 <span class="keyword">if</span> isempty(params)
+0228     params.intTol   = 1e-9;
+0229     params.TimeLimit = 600;
 0230 <span class="keyword">end</span>
-0231 sol = optimizeProb(prob, params, verbose);
-0232 
-0233 <span class="keyword">if</span> ~checkSolution(sol)
-0234     <span class="keyword">if</span> verbose
-0235         fprintf(<span class="string">'gapFillMILP: MILP infeasible or timed out.\n'</span>);
-0236     <span class="keyword">end</span>
-0237     exitFlag = -1;
-0238     <span class="keyword">return</span>;
-0239 <span class="keyword">end</span>
-0240 
-0241 <span class="comment">% ---- Extract solution ----</span>
-0242 binThreshold = 1e-3;
-0243 yRev = sol.full(nMergedRxns + 1 : nMergedRxns + nRev);
-0244 yDb  = sol.full(nMergedRxns + nRev + 1 : end);
-0245 
-0246 revSelected = revCandIdx(yRev &gt; binThreshold);
-0247 dbSelected  = univIdx(yDb &gt; binThreshold);
-0248 
-0249 <span class="comment">% Map back to original IDs</span>
-0250 reversedRxns = mergedModel.rxns(revSelected);
-0251 addedRxns    = mergedModel.rxns(dbSelected);
-0252 <span class="comment">% Keep only universal reaction IDs (filtered by name)</span>
-0253 addedRxns = addedRxns(ismember(addedRxns, universalModel.rxns));
+0231 
+0232 <span class="comment">% ---- Solve ----</span>
+0233 <span class="keyword">if</span> verbose
+0234     fprintf(<span class="string">'gapFillMILP: solving MILP (%d vars, %d binary, %d constraints)...\n'</span>, <span class="keyword">...</span>
+0235         nVar, nRev + nUniv, size(prob.A, 1));
+0236 <span class="keyword">end</span>
+0237 sol = optimizeProb(prob, params, verbose);
+0238 
+0239 <span class="keyword">if</span> ~checkSolution(sol)
+0240     <span class="keyword">if</span> verbose
+0241         fprintf(<span class="string">'gapFillMILP: MILP infeasible or timed out.\n'</span>);
+0242     <span class="keyword">end</span>
+0243     exitFlag = -1;
+0244     <span class="keyword">return</span>;
+0245 <span class="keyword">end</span>
+0246 
+0247 <span class="comment">% ---- Extract solution ----</span>
+0248 binThreshold = 1e-3;
+0249 yRev = sol.full(nMergedRxns + 1 : nMergedRxns + nRev);
+0250 yDb  = sol.full(nMergedRxns + nRev + 1 : end);
+0251 
+0252 revSelected = revCandIdx(yRev &gt; binThreshold);
+0253 dbSelected  = univIdx(yDb &gt; binThreshold);
 0254 
-0255 <span class="keyword">if</span> verbose
-0256     fprintf(<span class="string">'gapFillMILP: reversed %d draft reaction(s), added %d universal reaction(s).\n'</span>, <span class="keyword">...</span>
-0257         numel(reversedRxns), numel(addedRxns));
-0258 <span class="keyword">end</span>
-0259 
-0260 <span class="comment">% ---- Build new model ----</span>
-0261 newModel = model;
-0262 
-0263 <span class="comment">% Apply directionality reversals: allow negative flux</span>
-0264 <span class="keyword">for</span> k = 1:numel(reversedRxns)
-0265     rxnPos = find(getIndexes(newModel, reversedRxns(k), <span class="string">'rxns'</span>, true));
-0266     <span class="keyword">if</span> ~isempty(rxnPos)
-0267         newModel.lb(rxnPos) = -M;
-0268         newModel.rev(rxnPos) = 1;
-0269     <span class="keyword">end</span>
-0270 <span class="keyword">end</span>
+0255 <span class="comment">% Map back to original IDs. dbSelected is already restricted to universal</span>
+0256 <span class="comment">% reactions via univIdx/isDraft above (an id-membership test against</span>
+0257 <span class="comment">% model.rxns, not a name it could have been renamed away from), so no</span>
+0258 <span class="comment">% further filtering against universalModel.rxns is needed here -- doing so</span>
+0259 <span class="comment">% would silently drop a universal reaction that mergeModels renamed</span>
+0260 <span class="comment">% because its id collided with one already in the draft model.</span>
+0261 reversedRxns = mergedModel.rxns(revSelected);
+0262 addedRxns    = mergedModel.rxns(dbSelected);
+0263 
+0264 <span class="keyword">if</span> verbose
+0265     fprintf(<span class="string">'gapFillMILP: reversed %d draft reaction(s), added %d universal reaction(s).\n'</span>, <span class="keyword">...</span>
+0266         numel(reversedRxns), numel(addedRxns));
+0267 <span class="keyword">end</span>
+0268 
+0269 <span class="comment">% ---- Build new model ----</span>
+0270 newModel = model;
 0271 
-0272 <span class="comment">% Add universal reactions</span>
-0273 <span class="keyword">if</span> ~isempty(addedRxns)
-0274     trimmedUniv = removeReactions(universalModel, <span class="keyword">...</span>
-0275         setdiff(universalModel.rxns, addedRxns));
-0276     newModel = mergeModels({newModel; trimmedUniv});
-0277 <span class="keyword">end</span>
-0278 
-0279 exitFlag = 1;
-0280 <span class="keyword">end</span></pre></div>
+0272 <span class="comment">% Apply directionality reversals: allow negative flux</span>
+0273 <span class="keyword">for</span> k = 1:numel(reversedRxns)
+0274     rxnPos = find(getIndexes(newModel, reversedRxns(k), <span class="string">'rxns'</span>, true));
+0275     <span class="keyword">if</span> ~isempty(rxnPos)
+0276         newModel.lb(rxnPos) = -M;
+0277         newModel.rev(rxnPos) = 1;
+0278     <span class="keyword">end</span>
+0279 <span class="keyword">end</span>
+0280 
+0281 <span class="comment">% Add universal reactions. Extracted from mergedModel by the dbSelected</span>
+0282 <span class="comment">% indices directly, not by looking addedRxns' names back up in</span>
+0283 <span class="comment">% universalModel: that lookup fails whenever mergeModels renamed one of</span>
+0284 <span class="comment">% them because its id collided with one already in the draft model, in</span>
+0285 <span class="comment">% which case setdiff would keep the (unrenamed) original in universalModel</span>
+0286 <span class="comment">% marked for removal, silently dropping the very reaction just selected.</span>
+0287 <span class="keyword">if</span> ~isempty(dbSelected)
+0288     toRemove = true(nMergedRxns, 1);
+0289     toRemove(dbSelected) = false;
+0290     trimmedUniv = removeReactions(mergedModel, toRemove);
+0291     newModel = mergeModels({newModel; trimmedUniv});
+0292 <span class="keyword">end</span>
+0293 
+0294 exitFlag = 1;
+0295 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

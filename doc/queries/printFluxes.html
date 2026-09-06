@@ -80,7 +80,7 @@
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="constructEquations.html" class="code" title="function equationStrings=constructEquations(model,varargin)">constructEquations</a>	constructEquations  Construct equation strings for reactions.</li><li><a href="getElementalBalance.html" class="code" title="function balanceStructure=getElementalBalance(model,varargin)">getElementalBalance</a>	getElementalBalance  Check whether the reactions of a model are balanced.</li></ul>
+<li><a href="constructEquations.html" class="code" title="function equationStrings=constructEquations(model,varargin)">constructEquations</a>	constructEquations  Construct equation strings for reactions.</li><li><a href="getElementalBalance.html" class="code" title="function balanceStructure=getElementalBalance(model,varargin)">getElementalBalance</a>	getElementalBalance  Check whether the reactions of a model are balanced.</li><li><a href="getExchangeRxns.html" class="code" title="function [exchangeRxns, exchangeRxnsIndexes, exchangedMets]=getExchangeRxns(model,varargin)">getExchangeRxns</a>	getExchangeRxns  Retrieve the exchange reactions from a model.</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
 </ul>
@@ -255,36 +255,49 @@ This function is called by:
 0164     <span class="keyword">end</span>
 0165 <span class="keyword">end</span>
 0166 
-0167 <span class="keyword">for</span> i=1:numel(model.rxns)
-0168     <span class="comment">%Only print if it is an exchange reaction or if all reactions should be</span>
-0169     <span class="comment">%printed. Exchange reactions only have reactants or only products.</span>
-0170     reactants=model.S(:,i)&lt;0;
-0171     products=model.S(:,i)&gt;0;
-0172     
-0173     <span class="comment">%Only print if the absolute value is &gt;= cutOffFlux</span>
-0174     <span class="keyword">if</span> (onlyExchange==false || (~any(reactants) || ~any(products)))
-0175         printString=outputString;
-0176         
-0177         <span class="comment">%Produce the final string</span>
-0178         printString=strrep(printString,<span class="string">'%rxnID'</span>,model.rxns{i});
-0179         printString=strrep(printString,<span class="string">'%eqn'</span>,eqn{i});
-0180         printString=strrep(printString,<span class="string">'%rxnName'</span>,model.rxnNames{i});
-0181         printString=strrep(printString,<span class="string">'%lower'</span>,num2str(model.lb(i)));
-0182         printString=strrep(printString,<span class="string">'%upper'</span>,num2str(model.ub(i)));
-0183         printString=strrep(printString,<span class="string">'%obj'</span>,num2str(model.c(i)));
-0184         printString=strrep(printString,<span class="string">'%flux'</span>,num2str(fluxes(i,:)));
-0185         printString=strrep(printString,<span class="string">'%element'</span>,element{i});
-0186         printString=strrep(printString,<span class="string">'%unbalanced'</span>,unbalanced{i});
-0187         printString=strrep(printString,<span class="string">'%lumped'</span>,lumped{i});
-0188         fprintf(fid,printString);
-0189     <span class="keyword">end</span>
-0190 <span class="keyword">end</span>
-0191 
-0192 <span class="keyword">if</span> fid~=1
-0193     fprintf(<span class="string">'File successfully saved.\n'</span>);
-0194     fclose(fid);
-0195 <span class="keyword">end</span>
-0196 <span class="keyword">end</span></pre></div>
+0167 <span class="comment">%Use getExchangeRxns' own definition of &quot;exchange reaction&quot; rather than a</span>
+0168 <span class="comment">%local, incomplete re-implementation: a model that still carries explicit</span>
+0169 <span class="comment">%boundary metabolites represents an exchange as realMet &lt;=&gt; realMet[b] --</span>
+0170 <span class="comment">%one reactant AND one product -- which &quot;no reactants or no products&quot; alone</span>
+0171 <span class="comment">%does not recognise, silently printing nothing for such a model.</span>
+0172 isExchRxn=false(numel(model.rxns),1);
+0173 <span class="keyword">if</span> onlyExchange==true
+0174     [~,exchIdx]=<a href="getExchangeRxns.html" class="code" title="function [exchangeRxns, exchangeRxnsIndexes, exchangedMets]=getExchangeRxns(model,varargin)">getExchangeRxns</a>(model,<span class="string">'all'</span>);
+0175     isExchRxn(exchIdx)=true;
+0176 <span class="keyword">end</span>
+0177 
+0178 <span class="keyword">for</span> i=1:numel(model.rxns)
+0179     <span class="comment">%Only print if it is an exchange reaction or if all reactions should be</span>
+0180     <span class="comment">%printed.</span>
+0181     <span class="keyword">if</span> (onlyExchange==false || isExchRxn(i))
+0182         printString=outputString;
+0183         
+0184         <span class="comment">%Produce the final string</span>
+0185         printString=strrep(printString,<span class="string">'%rxnID'</span>,model.rxns{i});
+0186         printString=strrep(printString,<span class="string">'%eqn'</span>,eqn{i});
+0187         printString=strrep(printString,<span class="string">'%rxnName'</span>,model.rxnNames{i});
+0188         printString=strrep(printString,<span class="string">'%lower'</span>,num2str(model.lb(i)));
+0189         printString=strrep(printString,<span class="string">'%upper'</span>,num2str(model.ub(i)));
+0190         printString=strrep(printString,<span class="string">'%obj'</span>,num2str(model.c(i)));
+0191         printString=strrep(printString,<span class="string">'%flux'</span>,num2str(fluxes(i,:)));
+0192         printString=strrep(printString,<span class="string">'%element'</span>,element{i});
+0193         printString=strrep(printString,<span class="string">'%unbalanced'</span>,unbalanced{i});
+0194         printString=strrep(printString,<span class="string">'%lumped'</span>,lumped{i});
+0195         <span class="comment">%Substituted model text (rxnID, eqn, rxnName, etc.) may itself</span>
+0196         <span class="comment">%contain &quot;%&quot;, which fprintf would otherwise reinterpret as a new</span>
+0197         <span class="comment">%format directive; print as literal data instead, after manually</span>
+0198         <span class="comment">%expanding the template's own \t and \n escapes.</span>
+0199         printString=strrep(printString,<span class="string">'\t'</span>,sprintf(<span class="string">'\t'</span>));
+0200         printString=strrep(printString,<span class="string">'\n'</span>,sprintf(<span class="string">'\n'</span>));
+0201         fprintf(fid,<span class="string">'%s'</span>,printString);
+0202     <span class="keyword">end</span>
+0203 <span class="keyword">end</span>
+0204 
+0205 <span class="keyword">if</span> fid~=1
+0206     fprintf(<span class="string">'File successfully saved.\n'</span>);
+0207     fclose(fid);
+0208 <span class="keyword">end</span>
+0209 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

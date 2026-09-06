@@ -247,40 +247,47 @@ This function is called by:
 0167 
 0168 <span class="keyword">if</span> any(~metsPresent)
 0169     <span class="keyword">if</span> isempty(rxns)
-0170         error([<span class="string">'Could not find the following metabolites in the metabolite list: '</span>,<span class="keyword">...</span>
-0171         strjoin(unique(metsToS(~metsPresent)),<span class="string">', '</span>)],<span class="string">''</span>)
-0172     <span class="keyword">else</span>
-0173         missingMet = find(~metsPresent);
-0174         missingMet = strcat(metsToS(missingMet),<span class="string">' (reaction:'</span>,rxns(rxnsToS(missingMet)),<span class="string">')\n'</span>);
-0175         missingMet = strjoin(missingMet,<span class="string">''</span>);
-0176         error([<span class="string">'Could not find the following metabolites (reaction indicated) in the metabolite list: \n'</span> <span class="keyword">...</span>
-0177             missingMet <span class="string">'%s'</span>],<span class="string">''</span>);
-0178     <span class="keyword">end</span>
-0179 <span class="keyword">end</span>
-0180 <span class="comment">%sparse() adds up repeated (metabolite,reaction) entries, which is what a</span>
-0181 <span class="comment">%metabolite occurring more than once in one equation means: &quot;2 H2O + H2O =&gt;&quot;</span>
-0182 <span class="comment">%is a coefficient of 3, and a metabolite on both sides cancels to an empty</span>
-0183 <span class="comment">%column, as badRxns above reports. Assigning into a preallocated matrix</span>
-0184 <span class="comment">%instead kept only the last occurrence, and materialised the whole matrix</span>
-0185 <span class="comment">%densely on the way.</span>
-0186 S=sparse(metsLoc,rxnsToS,coefToS,numel(mets),numel(equations));
-0187 <span class="keyword">end</span>
-0188 
-0189 <a name="_sub1" href="#_subfunctions" class="code">function equ=fixEquations(equ)</a>
-0190 <span class="comment">%If the equation starts with &quot;=&gt;&quot; or &quot;&lt;=&gt;&quot; then add a space again. This is</span>
-0191 <span class="comment">%an alternative way to represent uptake reactions. The opposite way for</span>
-0192 <span class="comment">%producing reactions</span>
-0193 equ=equ(:);
-0194 <span class="keyword">for</span> i=1:numel(equ)
-0195     <span class="keyword">if</span> strcmp(equ{i}(1:2),<span class="string">'=&gt;'</span>) || strcmp(equ{i}(1:3),<span class="string">'&lt;=&gt;'</span>)
-0196         equ{i}=[<span class="string">' '</span> equ{i}];
-0197     <span class="keyword">else</span>
-0198         <span class="keyword">if</span> strcmp(equ{i}(end-1:end),<span class="string">'=&gt;'</span>) || strcmp(equ{i}(end-2:end),<span class="string">'&lt;=&gt;'</span>)
-0199             equ{i}=[equ{i} <span class="string">' '</span>];
-0200         <span class="keyword">end</span>
-0201     <span class="keyword">end</span>
-0202 <span class="keyword">end</span>
-0203 <span class="keyword">end</span></pre></div>
+0170         EM=[<span class="string">'Could not find the following metabolites in the metabolite list: '</span>,<span class="keyword">...</span>
+0171             strjoin(unique(metsToS(~metsPresent)),<span class="string">', '</span>)];
+0172         error(<span class="string">'RAVEN:badInput'</span>,<span class="string">'%s'</span>,EM)
+0173     <span class="keyword">else</span>
+0174         <span class="comment">%Escaped: metabolite/reaction names are arbitrary model text and</span>
+0175         <span class="comment">%may contain &quot;%&quot;, which the sprintf below (needed to interpret</span>
+0176         <span class="comment">%the template's own &quot;\n&quot;) would otherwise misread as a format</span>
+0177         <span class="comment">%directive and truncate the rest of the message.</span>
+0178         esc=@(c) strrep(c,<span class="string">'%'</span>,<span class="string">'%%'</span>);
+0179         missingMet = find(~metsPresent);
+0180         missingMet = strcat(esc(metsToS(missingMet)),<span class="string">' (reaction:'</span>,esc(rxns(rxnsToS(missingMet))),<span class="string">')\n'</span>);
+0181         missingMet = strjoin(missingMet,<span class="string">''</span>);
+0182         EM=sprintf([<span class="string">'Could not find the following metabolites (reaction indicated) in the metabolite list: \n'</span> <span class="keyword">...</span>
+0183             missingMet]);
+0184         error(<span class="string">'RAVEN:badInput'</span>,<span class="string">'%s'</span>,EM)
+0185     <span class="keyword">end</span>
+0186 <span class="keyword">end</span>
+0187 <span class="comment">%sparse() adds up repeated (metabolite,reaction) entries, which is what a</span>
+0188 <span class="comment">%metabolite occurring more than once in one equation means: &quot;2 H2O + H2O =&gt;&quot;</span>
+0189 <span class="comment">%is a coefficient of 3, and a metabolite on both sides cancels to an empty</span>
+0190 <span class="comment">%column, as badRxns above reports. Assigning into a preallocated matrix</span>
+0191 <span class="comment">%instead kept only the last occurrence, and materialised the whole matrix</span>
+0192 <span class="comment">%densely on the way.</span>
+0193 S=sparse(metsLoc,rxnsToS,coefToS,numel(mets),numel(equations));
+0194 <span class="keyword">end</span>
+0195 
+0196 <a name="_sub1" href="#_subfunctions" class="code">function equ=fixEquations(equ)</a>
+0197 <span class="comment">%If the equation starts with &quot;=&gt;&quot; or &quot;&lt;=&gt;&quot; then add a space again. This is</span>
+0198 <span class="comment">%an alternative way to represent uptake reactions. The opposite way for</span>
+0199 <span class="comment">%producing reactions</span>
+0200 equ=equ(:);
+0201 <span class="keyword">for</span> i=1:numel(equ)
+0202     <span class="keyword">if</span> strcmp(equ{i}(1:2),<span class="string">'=&gt;'</span>) || strcmp(equ{i}(1:3),<span class="string">'&lt;=&gt;'</span>)
+0203         equ{i}=[<span class="string">' '</span> equ{i}];
+0204     <span class="keyword">else</span>
+0205         <span class="keyword">if</span> strcmp(equ{i}(end-1:end),<span class="string">'=&gt;'</span>) || strcmp(equ{i}(end-2:end),<span class="string">'&lt;=&gt;'</span>)
+0206             equ{i}=[equ{i} <span class="string">' '</span>];
+0207         <span class="keyword">end</span>
+0208     <span class="keyword">end</span>
+0209 <span class="keyword">end</span>
+0210 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

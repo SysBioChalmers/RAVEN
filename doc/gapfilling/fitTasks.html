@@ -351,191 +351,199 @@ This function is called by:
 0242             rxn.equations=taskStructure(i).equations;
 0243             rxn.lb=taskStructure(i).LBequ;
 0244             rxn.ub=taskStructure(i).UBequ;
-0245             rxn.rxns=strcat({<span class="string">'TEMPORARY_'</span>},num2str((1:numel(taskStructure(i).equations))'));
-0246             tModel=addRxns(tModel,rxn,3);
-0247             <span class="keyword">if</span> preMerged
-0248                 tRefModel=addRxns(tRefModel,rxn,3);
-0249                 tRxnScores=[tRxnScores;zeros(numel(rxn.lb),1)];
-0250             <span class="keyword">end</span>
-0251         <span class="keyword">end</span>
-0252         <span class="comment">%Add changed bounds</span>
-0253         <span class="keyword">if</span> ~isempty(taskStructure(i).changed)
-0254             tModel=setParam(tModel,<span class="string">'lb'</span>,taskStructure(i).changed,taskStructure(i).LBrxn);
-0255             tModel=setParam(tModel,<span class="string">'ub'</span>,taskStructure(i).changed,taskStructure(i).UBrxn);
-0256             <span class="keyword">if</span> preMerged
-0257                 tRefModel=setParam(tRefModel,<span class="string">'lb'</span>,taskStructure(i).changed,taskStructure(i).LBrxn);
-0258                 tRefModel=setParam(tRefModel,<span class="string">'ub'</span>,taskStructure(i).changed,taskStructure(i).UBrxn);
-0259             <span class="keyword">end</span>
-0260         <span class="keyword">end</span>
-0261         
-0262         <span class="comment">%Solve and print. Display a warning if the problem is not solveable</span>
-0263         sol=solveLP(tModel);
-0264         <span class="keyword">if</span> isempty(sol.x)
-0265             <span class="comment">%Only do gap-filling if it cannot be solved</span>
-0266             failed=false;
-0267             <span class="keyword">try</span>
-0268                 <span class="keyword">if</span> preMerged
-0269                     [newRxns, newModel, exitFlag]=<a href="ftINITFillGaps.html" class="code" title="function [addedRxns, newModel, exitFlag]=ftINITFillGaps(tModel, origModel, tRefModel,allowNetProduction,supressWarnings,rxnScores,params,verbose)">ftINITFillGaps</a>(tModel,model,tRefModel,false,supressWarnings,tRxnScores,params,verbose);
-0270                 <span class="keyword">else</span>
-0271                     [~, ~, newRxns, newModel, exitFlag]=<a href="fillGaps.html" class="code" title="function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(model,models,varargin)">fillGaps</a>(tModel,refModel,false,true,supressWarnings,rxnScores,params);
-0272                 <span class="keyword">end</span>
-0273                 <span class="keyword">if</span> exitFlag==-1
-0274                     <span class="comment">%No set of reactions from the reference model makes the</span>
-0275                     <span class="comment">%task feasible. Without this branch the task falls</span>
-0276                     <span class="comment">%through and reports &quot;Added 0 reaction(s)&quot;, which is the</span>
-0277                     <span class="comment">%same thing an already-feasible task reports.</span>
-0278                     EM=[taskLabel <span class="string">' could not be gap-filled: no feasible solution exists using the reference model\n'</span>];
-0279                     warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'%s'</span>, EM);
-0280                     failed=true;
-0281                 <span class="keyword">elseif</span> exitFlag==-2
-0282                     EM=[taskLabel <span class="string">' was aborted before reaching optimality. Consider increasing params.TimeLimit\n'</span>];
-0283                     warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'%s'</span>, EM);
-0284                 <span class="keyword">end</span>
-0285             <span class="keyword">catch</span> e
-0286                 EM=[taskLabel <span class="string">' could not be performed for any set of reactions: '</span> e.message <span class="string">'\n'</span>];
-0287                 warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'%s'</span>, EM);
-0288                 failed=true;
-0289             <span class="keyword">end</span>
-0290             <span class="keyword">if</span> failed
-0291                 failedTasks(i)=true;
-0292             <span class="keyword">end</span>
-0293             <span class="keyword">if</span> failed==false
-0294                 <span class="keyword">if</span> ~isempty(newRxns)
-0295                     nAdded=nAdded+numel(newRxns);
-0296 
-0297                     <span class="keyword">if</span> preMerged
-0298                         <span class="comment">%The reference model already contained the model, so</span>
-0299                         <span class="comment">%newModel is the model plus the added reactions</span>
-0300                         model=newModel;
-0301                     <span class="keyword">else</span>
-0302                         <span class="comment">%Add the reactions to the base model. It is not correct</span>
-0303                         <span class="comment">%to use newModel directly, as it may contain</span>
-0304                         <span class="comment">%reactions/constraints that are specific to this task</span>
-0305                         model=mergeModels({model,removeReactions(newModel,setdiff(newModel.rxns,newRxns),true,true)},<span class="string">'metNames'</span>,true);
-0306                     <span class="keyword">end</span>
-0307 
-0308                     <span class="comment">%Keep track of the added reactions</span>
-0309                     addedRxns(ismember(refModel.rxns,newRxns),i)=true;
-0310                 <span class="keyword">end</span>
-0311                 <span class="keyword">if</span> printOutput==true
-0312                     fprintf([<span class="string">'['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">': Added '</span> num2str(numel(newRxns)) <span class="string">' reaction(s), '</span> num2str(nAdded) <span class="string">' reactions added in total\n'</span>]);
-0313                 <span class="keyword">end</span>
-0314             <span class="keyword">end</span>
-0315         <span class="keyword">else</span>
-0316             <span class="keyword">if</span> printOutput==true
-0317                 fprintf([<span class="string">'['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">': Added 0 reaction(s), '</span> num2str(nAdded) <span class="string">' reactions added in total\n'</span>]);
-0318             <span class="keyword">end</span>
-0319         <span class="keyword">end</span>
-0320         supressWarnings=true;
-0321         
-0322         <span class="comment">%Print the output if chosen</span>
-0323         <span class="keyword">if</span> taskStructure(i).printFluxes &amp;&amp; printOutput
-0324             <span class="keyword">if</span> ~isempty(sol.x)
-0325                 sol=solveLP(tModel,1);
-0326                 printFluxes(tModel,sol.x,false,10^-5,[],<span class="string">'%rxnID (%eqn):%flux\n'</span>);
-0327                 fprintf(<span class="string">'\n'</span>);
-0328             <span class="keyword">else</span>
-0329                 <span class="comment">%If the problem was not solveable then the gap-filled model</span>
-0330                 <span class="comment">%should be used</span>
-0331                 <span class="keyword">if</span> failed==false
-0332                     sol=solveLP(newModel,1);
-0333                     printFluxes(newModel,sol.x,false,10^-5,[],<span class="string">'%rxnID (%eqn):%flux\n'</span>);
-0334                     fprintf(<span class="string">'\n'</span>);
-0335                 <span class="keyword">end</span>
-0336             <span class="keyword">end</span>
-0337         <span class="keyword">end</span>
-0338         
-0339         tModel=model;
-0340         <span class="comment">%Since new mets are added by merging the new reactions and not only</span>
-0341         <span class="comment">%from the task sheet</span>
-0342         modelMets=upper(strcat(model.metNames,<span class="string">'['</span>,model.comps(model.metComps),<span class="string">']'</span>));
-0343     <span class="keyword">else</span>
-0344         EM=[<span class="string">'&quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot; is set as SHOULD FAIL. Such tasks cannot be modelled using this approach and the task is therefore ignored\n'</span>];
-0345         warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'%s'</span>, EM);
-0346     <span class="keyword">end</span>
-0347 <span class="keyword">end</span>
-0348 <span class="keyword">if</span> size(model.b,2)&gt;1
-0349     model.b(:,2) = [];  <span class="comment">% resume field b</span>
-0350 <span class="keyword">end</span>
-0351 outModel=model;
-0352 <span class="keyword">end</span>
-0353 
-0354 <a name="_sub1" href="#_subfunctions" class="code">function m=applyTaskInputBounds(m,I,J,K,L,task,taskLabel)</a>
-0355 <span class="comment">%Write a task's input constraints into the b field of one model. I and J</span>
-0356 <span class="comment">%are the ismember result of the task's input metabolites against that</span>
-0357 <span class="comment">%model's metabolite names; K and L flag ALLMETS and ALLMETSIN entries.</span>
-0358 
-0359 <span class="comment">%If all metabolites should be added. Use the first match of ALLMETS, there</span>
-0360 <span class="comment">%should only be one, but still..</span>
-0361 <span class="keyword">if</span> any(K)
-0362     m.b(:,1)=task.UBin(find(K,1))*-1;
-0363 <span class="keyword">end</span>
-0364 <span class="comment">%If metabolites in a specific compartment should be used</span>
-0365 <span class="keyword">if</span> any(L)
-0366     L=find(L);
-0367     <span class="keyword">for</span> j=1:numel(L)
-0368         <span class="comment">%The compartment defined</span>
-0369         compartment=upper(task.inputs{L(j)}(11:end-1));
-0370         <span class="comment">%Check if it exists in the model</span>
-0371         C=find(ismember(upper(m.comps),compartment));
-0372         <span class="keyword">if</span> any(C)
-0373             <span class="comment">%Match to metabolites</span>
-0374             m.b(m.metComps==C,1)=task.UBin(L(j))*-1;
-0375         <span class="keyword">else</span>
-0376             EM=[<span class="string">'The compartment defined for ALLMETSIN in '</span> taskLabel <span class="string">' does not exist'</span>];
-0377             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0378         <span class="keyword">end</span>
-0379     <span class="keyword">end</span>
-0380 <span class="keyword">end</span>
-0381 <span class="comment">%Then add the normal constraints</span>
-0382 <span class="keyword">if</span> any(J(I))
-0383     m.b(J(I),1)=task.UBin(I)*-1;
-0384     m.b(J(I),2)=task.LBin(I)*-1;
-0385 <span class="keyword">end</span>
-0386 <span class="keyword">end</span>
-0387 
-0388 <a name="_sub2" href="#_subfunctions" class="code">function m=applyTaskOutputBounds(m,I,J,K,L,task,taskLabel)</a>
-0389 <span class="comment">%Write a task's output constraints into the b field of one model, as</span>
-0390 <span class="comment">%applyTaskInputBounds does for the inputs.</span>
-0391 
-0392 <span class="comment">%If all metabolites should be added. Use the first match of ALLMETS, there</span>
-0393 <span class="comment">%should only be one, but still..</span>
-0394 <span class="keyword">if</span> any(K)
-0395     m.b(:,2)=task.UBout(find(K,1));
-0396 <span class="keyword">end</span>
-0397 <span class="comment">%If metabolites in a specific compartment should be used</span>
-0398 <span class="keyword">if</span> any(L)
-0399     L=find(L);
-0400     <span class="keyword">for</span> j=1:numel(L)
-0401         <span class="comment">%The compartment defined</span>
-0402         compartment=upper(task.outputs{L(j)}(11:end-1));
-0403         <span class="comment">%Check if it exists in the model</span>
-0404         C=find(ismember(upper(m.comps),compartment));
-0405         <span class="keyword">if</span> any(C)
-0406             <span class="comment">%Match to metabolites</span>
-0407             m.b(m.metComps==C,2)=task.UBout(L(j));
-0408         <span class="keyword">else</span>
-0409             EM=[<span class="string">'The compartment defined for ALLMETSIN in '</span> taskLabel <span class="string">' does not exist'</span>];
-0410             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0411         <span class="keyword">end</span>
-0412     <span class="keyword">end</span>
-0413 <span class="keyword">end</span>
-0414 <span class="comment">%Then add the normal constraints</span>
-0415 <span class="keyword">if</span> any(J(I))
-0416     <span class="comment">%Verify that IN and OUT bounds are consistent. Cannot require that a</span>
-0417     <span class="comment">%metabolite is simultaneously input AND output at some nonzero flux.</span>
-0418     J = J(I);
-0419     I = find(I);  <span class="comment">% otherwise indexing becomes confusing</span>
-0420     nonzero_LBin = m.b(J,2) &lt; 0;
-0421     nonzero_LBout = task.LBout(I) &gt; 0;
-0422     <span class="keyword">if</span> any(nonzero_LBin &amp; nonzero_LBout)
-0423         EM=[<span class="string">'The IN LB and OUT LB in '</span> taskLabel <span class="string">' cannot be nonzero for the same metabolite'</span>];
-0424         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0425     <span class="keyword">end</span>
-0426     m.b(J(nonzero_LBout),1)=task.LBout(I(nonzero_LBout));
-0427     m.b(J,2)=task.UBout(I);
-0428 <span class="keyword">end</span>
-0429 <span class="keyword">end</span></pre></div>
+0245             <span class="comment">% num2str on the whole column right-aligns every row to a</span>
+0246             <span class="comment">% common width, embedding a leading space in &quot;TEMPORARY_ 1&quot;</span>
+0247             <span class="comment">% once any id reaches two digits (&quot;TEMPORARY_10&quot;); format each</span>
+0248             <span class="comment">% one independently instead.</span>
+0249             rxn.rxns=arrayfun(@(x) sprintf(<span class="string">'TEMPORARY_%d'</span>,x), <span class="keyword">...</span>
+0250                 (1:numel(taskStructure(i).equations))', <span class="string">'UniformOutput'</span>, false);
+0251             tModel=addRxns(tModel,rxn,3);
+0252             <span class="keyword">if</span> preMerged
+0253                 tRefModel=addRxns(tRefModel,rxn,3);
+0254                 tRxnScores=[tRxnScores;zeros(numel(rxn.lb),1)];
+0255             <span class="keyword">end</span>
+0256         <span class="keyword">end</span>
+0257         <span class="comment">%Add changed bounds</span>
+0258         <span class="keyword">if</span> ~isempty(taskStructure(i).changed)
+0259             tModel=setParam(tModel,<span class="string">'lb'</span>,taskStructure(i).changed,taskStructure(i).LBrxn);
+0260             tModel=setParam(tModel,<span class="string">'ub'</span>,taskStructure(i).changed,taskStructure(i).UBrxn);
+0261             <span class="keyword">if</span> preMerged
+0262                 tRefModel=setParam(tRefModel,<span class="string">'lb'</span>,taskStructure(i).changed,taskStructure(i).LBrxn);
+0263                 tRefModel=setParam(tRefModel,<span class="string">'ub'</span>,taskStructure(i).changed,taskStructure(i).UBrxn);
+0264             <span class="keyword">end</span>
+0265         <span class="keyword">end</span>
+0266         
+0267         <span class="comment">%Solve and print. Display a warning if the problem is not solveable</span>
+0268         sol=solveLP(tModel);
+0269         <span class="keyword">if</span> isempty(sol.x)
+0270             <span class="comment">%Only do gap-filling if it cannot be solved</span>
+0271             failed=false;
+0272             <span class="keyword">try</span>
+0273                 <span class="keyword">if</span> preMerged
+0274                     [newRxns, newModel, exitFlag]=<a href="ftINITFillGaps.html" class="code" title="function [addedRxns, newModel, exitFlag]=ftINITFillGaps(tModel, origModel, tRefModel,allowNetProduction,supressWarnings,rxnScores,params,verbose)">ftINITFillGaps</a>(tModel,model,tRefModel,false,supressWarnings,tRxnScores,params,verbose);
+0275                 <span class="keyword">else</span>
+0276                     [~, ~, newRxns, newModel, exitFlag]=<a href="fillGaps.html" class="code" title="function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(model,models,varargin)">fillGaps</a>(tModel,refModel,false,true,supressWarnings,rxnScores,params);
+0277                 <span class="keyword">end</span>
+0278                 <span class="keyword">if</span> exitFlag==-1
+0279                     <span class="comment">%No set of reactions from the reference model makes the</span>
+0280                     <span class="comment">%task feasible. Without this branch the task falls</span>
+0281                     <span class="comment">%through and reports &quot;Added 0 reaction(s)&quot;, which is the</span>
+0282                     <span class="comment">%same thing an already-feasible task reports.</span>
+0283                     EM=[taskLabel <span class="string">' could not be gap-filled: no feasible solution exists using the reference model'</span>];
+0284                     warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'%s'</span>, EM);
+0285                     failed=true;
+0286                 <span class="keyword">elseif</span> exitFlag==-2
+0287                     EM=[taskLabel <span class="string">' was aborted before reaching optimality. Consider increasing params.TimeLimit'</span>];
+0288                     warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'%s'</span>, EM);
+0289                 <span class="keyword">end</span>
+0290             <span class="keyword">catch</span> e
+0291                 EM=[taskLabel <span class="string">' could not be performed for any set of reactions: '</span> e.message];
+0292                 warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'%s'</span>, EM);
+0293                 failed=true;
+0294             <span class="keyword">end</span>
+0295             <span class="keyword">if</span> failed
+0296                 failedTasks(i)=true;
+0297             <span class="keyword">end</span>
+0298             <span class="keyword">if</span> failed==false
+0299                 <span class="keyword">if</span> ~isempty(newRxns)
+0300                     nAdded=nAdded+numel(newRxns);
+0301 
+0302                     <span class="keyword">if</span> preMerged
+0303                         <span class="comment">%The reference model already contained the model, so</span>
+0304                         <span class="comment">%newModel is the model plus the added reactions</span>
+0305                         model=newModel;
+0306                     <span class="keyword">else</span>
+0307                         <span class="comment">%Add the reactions to the base model. It is not correct</span>
+0308                         <span class="comment">%to use newModel directly, as it may contain</span>
+0309                         <span class="comment">%reactions/constraints that are specific to this task</span>
+0310                         model=mergeModels({model,removeReactions(newModel,setdiff(newModel.rxns,newRxns),true,true)},<span class="string">'metNames'</span>,true);
+0311                     <span class="keyword">end</span>
+0312 
+0313                     <span class="comment">%Keep track of the added reactions</span>
+0314                     addedRxns(ismember(refModel.rxns,newRxns),i)=true;
+0315                 <span class="keyword">end</span>
+0316                 <span class="keyword">if</span> printOutput==true
+0317                     <span class="comment">%Task id/description are arbitrary text and may</span>
+0318                     <span class="comment">%contain &quot;%&quot;; print as literal data rather than as an</span>
+0319                     <span class="comment">%fprintf format string.</span>
+0320                     fprintf(<span class="string">'%s\n'</span>, [<span class="string">'['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">': Added '</span> num2str(numel(newRxns)) <span class="string">' reaction(s), '</span> num2str(nAdded) <span class="string">' reactions added in total'</span>]);
+0321                 <span class="keyword">end</span>
+0322             <span class="keyword">end</span>
+0323         <span class="keyword">else</span>
+0324             <span class="keyword">if</span> printOutput==true
+0325                 fprintf(<span class="string">'%s\n'</span>, [<span class="string">'['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">': Added 0 reaction(s), '</span> num2str(nAdded) <span class="string">' reactions added in total'</span>]);
+0326             <span class="keyword">end</span>
+0327         <span class="keyword">end</span>
+0328         supressWarnings=true;
+0329         
+0330         <span class="comment">%Print the output if chosen</span>
+0331         <span class="keyword">if</span> taskStructure(i).printFluxes &amp;&amp; printOutput
+0332             <span class="keyword">if</span> ~isempty(sol.x)
+0333                 sol=solveLP(tModel,1);
+0334                 printFluxes(tModel,sol.x,false,10^-5,[],<span class="string">'%rxnID (%eqn):%flux\n'</span>);
+0335                 fprintf(<span class="string">'\n'</span>);
+0336             <span class="keyword">else</span>
+0337                 <span class="comment">%If the problem was not solveable then the gap-filled model</span>
+0338                 <span class="comment">%should be used</span>
+0339                 <span class="keyword">if</span> failed==false
+0340                     sol=solveLP(newModel,1);
+0341                     printFluxes(newModel,sol.x,false,10^-5,[],<span class="string">'%rxnID (%eqn):%flux\n'</span>);
+0342                     fprintf(<span class="string">'\n'</span>);
+0343                 <span class="keyword">end</span>
+0344             <span class="keyword">end</span>
+0345         <span class="keyword">end</span>
+0346         
+0347         tModel=model;
+0348         <span class="comment">%Since new mets are added by merging the new reactions and not only</span>
+0349         <span class="comment">%from the task sheet</span>
+0350         modelMets=upper(strcat(model.metNames,<span class="string">'['</span>,model.comps(model.metComps),<span class="string">']'</span>));
+0351     <span class="keyword">else</span>
+0352         EM=[<span class="string">'&quot;['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'&quot; is set as SHOULD FAIL. Such tasks cannot be modelled using this approach and the task is therefore ignored'</span>];
+0353         warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'%s'</span>, EM);
+0354     <span class="keyword">end</span>
+0355 <span class="keyword">end</span>
+0356 <span class="keyword">if</span> size(model.b,2)&gt;1
+0357     model.b(:,2) = [];  <span class="comment">% resume field b</span>
+0358 <span class="keyword">end</span>
+0359 outModel=model;
+0360 <span class="keyword">end</span>
+0361 
+0362 <a name="_sub1" href="#_subfunctions" class="code">function m=applyTaskInputBounds(m,I,J,K,L,task,taskLabel)</a>
+0363 <span class="comment">%Write a task's input constraints into the b field of one model. I and J</span>
+0364 <span class="comment">%are the ismember result of the task's input metabolites against that</span>
+0365 <span class="comment">%model's metabolite names; K and L flag ALLMETS and ALLMETSIN entries.</span>
+0366 
+0367 <span class="comment">%If all metabolites should be added. Use the first match of ALLMETS, there</span>
+0368 <span class="comment">%should only be one, but still..</span>
+0369 <span class="keyword">if</span> any(K)
+0370     m.b(:,1)=task.UBin(find(K,1))*-1;
+0371 <span class="keyword">end</span>
+0372 <span class="comment">%If metabolites in a specific compartment should be used</span>
+0373 <span class="keyword">if</span> any(L)
+0374     L=find(L);
+0375     <span class="keyword">for</span> j=1:numel(L)
+0376         <span class="comment">%The compartment defined</span>
+0377         compartment=upper(task.inputs{L(j)}(11:end-1));
+0378         <span class="comment">%Check if it exists in the model</span>
+0379         C=find(ismember(upper(m.comps),compartment));
+0380         <span class="keyword">if</span> any(C)
+0381             <span class="comment">%Match to metabolites</span>
+0382             m.b(m.metComps==C,1)=task.UBin(L(j))*-1;
+0383         <span class="keyword">else</span>
+0384             EM=[<span class="string">'The compartment defined for ALLMETSIN in '</span> taskLabel <span class="string">' does not exist'</span>];
+0385             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0386         <span class="keyword">end</span>
+0387     <span class="keyword">end</span>
+0388 <span class="keyword">end</span>
+0389 <span class="comment">%Then add the normal constraints</span>
+0390 <span class="keyword">if</span> any(J(I))
+0391     m.b(J(I),1)=task.UBin(I)*-1;
+0392     m.b(J(I),2)=task.LBin(I)*-1;
+0393 <span class="keyword">end</span>
+0394 <span class="keyword">end</span>
+0395 
+0396 <a name="_sub2" href="#_subfunctions" class="code">function m=applyTaskOutputBounds(m,I,J,K,L,task,taskLabel)</a>
+0397 <span class="comment">%Write a task's output constraints into the b field of one model, as</span>
+0398 <span class="comment">%applyTaskInputBounds does for the inputs.</span>
+0399 
+0400 <span class="comment">%If all metabolites should be added. Use the first match of ALLMETS, there</span>
+0401 <span class="comment">%should only be one, but still..</span>
+0402 <span class="keyword">if</span> any(K)
+0403     m.b(:,2)=task.UBout(find(K,1));
+0404 <span class="keyword">end</span>
+0405 <span class="comment">%If metabolites in a specific compartment should be used</span>
+0406 <span class="keyword">if</span> any(L)
+0407     L=find(L);
+0408     <span class="keyword">for</span> j=1:numel(L)
+0409         <span class="comment">%The compartment defined</span>
+0410         compartment=upper(task.outputs{L(j)}(11:end-1));
+0411         <span class="comment">%Check if it exists in the model</span>
+0412         C=find(ismember(upper(m.comps),compartment));
+0413         <span class="keyword">if</span> any(C)
+0414             <span class="comment">%Match to metabolites</span>
+0415             m.b(m.metComps==C,2)=task.UBout(L(j));
+0416         <span class="keyword">else</span>
+0417             EM=[<span class="string">'The compartment defined for ALLMETSIN in '</span> taskLabel <span class="string">' does not exist'</span>];
+0418             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0419         <span class="keyword">end</span>
+0420     <span class="keyword">end</span>
+0421 <span class="keyword">end</span>
+0422 <span class="comment">%Then add the normal constraints</span>
+0423 <span class="keyword">if</span> any(J(I))
+0424     <span class="comment">%Verify that IN and OUT bounds are consistent. Cannot require that a</span>
+0425     <span class="comment">%metabolite is simultaneously input AND output at some nonzero flux.</span>
+0426     J = J(I);
+0427     I = find(I);  <span class="comment">% otherwise indexing becomes confusing</span>
+0428     nonzero_LBin = m.b(J,2) &lt; 0;
+0429     nonzero_LBout = task.LBout(I) &gt; 0;
+0430     <span class="keyword">if</span> any(nonzero_LBin &amp; nonzero_LBout)
+0431         EM=[<span class="string">'The IN LB and OUT LB in '</span> taskLabel <span class="string">' cannot be nonzero for the same metabolite'</span>];
+0432         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0433     <span class="keyword">end</span>
+0434     m.b(J(nonzero_LBout),1)=task.LBout(I(nonzero_LBout));
+0435     m.b(J,2)=task.UBout(I);
+0436 <span class="keyword">end</span>
+0437 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

@@ -300,64 +300,68 @@ This function is called by:
 0204         rxn.equations=taskStructure(i).equations;
 0205         rxn.lb=taskStructure(i).LBequ;
 0206         rxn.ub=taskStructure(i).UBequ;
-0207         rxn.rxns=strcat({<span class="string">'TEMPORARY_'</span>},num2str((1:numel(taskStructure(i).equations))'));
-0208         <span class="comment">%Allow for new metabolites to be added. This is because it should</span>
-0209         <span class="comment">%be possible to add, say, a whole new pathway</span>
-0210         tModel=addRxns(tModel,rxn,3,[],true);
-0211     <span class="keyword">end</span>
-0212     <span class="comment">%Add changed bounds</span>
-0213     <span class="keyword">if</span> ~isempty(taskStructure(i).changed)
-0214         tModel=setParam(tModel,<span class="string">'lb'</span>,taskStructure(i).changed,taskStructure(i).LBrxn);
-0215         tModel=setParam(tModel,<span class="string">'ub'</span>,taskStructure(i).changed,taskStructure(i).UBrxn);
-0216     <span class="keyword">end</span>
-0217     
-0218     <span class="comment">%Solve and print</span>
-0219     sol=solveLP(tModel);
-0220     <span class="keyword">if</span> ~isempty(sol.x)
-0221         <span class="comment">%assign the fluxes</span>
-0222         essentialFluxes(:,i) = sol.x(1:numel(model.rxns));
-0223         
-0224         <span class="keyword">if</span> ~taskStructure(i).shouldFail
-0225             taskReport.ok(i,1)=true;
-0226             <span class="keyword">if</span> printOnlyFailed==false &amp;&amp; printOutput==true
-0227                 fprintf([<span class="string">'PASS: ['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'\n'</span>]);
-0228             <span class="keyword">end</span>
-0229             <span class="comment">%Calculate the essential reactions</span>
-0230             <span class="keyword">if</span> getEssential==true
-0231                 [~, taskEssential]=getEssentialRxns(tModel);
-0232                 <span class="comment">%This is because there could be more reactions in tModel</span>
-0233                 <span class="comment">%than in model</span>
-0234                 essentialRxns(taskEssential(taskEssential&lt;=numel(model.rxns)),i)=true;
-0235             <span class="keyword">end</span>
-0236         <span class="keyword">else</span>
-0237             taskReport.ok(i,1)=false;
-0238             <span class="keyword">if</span> printOutput==true
-0239                 fprintf([<span class="string">'PASS (should fail): ['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'\n'</span>]);
-0240             <span class="keyword">end</span>
-0241         <span class="keyword">end</span>
-0242     <span class="keyword">else</span>
-0243         <span class="keyword">if</span> ~taskStructure(i).shouldFail
-0244             taskReport.ok(i,1)=false;
-0245             <span class="keyword">if</span> printOutput==true
-0246                 fprintf([<span class="string">'FAIL: ['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'\n'</span>]);
-0247             <span class="keyword">end</span>
-0248         <span class="keyword">else</span>
-0249             taskReport.ok(i,1)=true;
-0250             <span class="keyword">if</span> printOnlyFailed==false &amp;&amp; printOutput==true
-0251                 fprintf([<span class="string">'FAIL (should fail): ['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'\n'</span>]);
-0252             <span class="keyword">end</span>
-0253         <span class="keyword">end</span>
-0254     <span class="keyword">end</span>
-0255     <span class="keyword">if</span> taskStructure(i).printFluxes &amp;&amp; ~isempty(sol.x)
-0256         sol=solveLP(tModel,1);
-0257         <span class="keyword">if</span> ~isempty(sol.x)
-0258             printFluxes(tModel,sol.x,false,10^-6,[],<span class="string">'%rxnID (%eqn):%flux\n'</span>);
-0259             fprintf(<span class="string">'\n'</span>);
-0260         <span class="keyword">end</span>
-0261     <span class="keyword">end</span>
-0262     tModel=model;
-0263 <span class="keyword">end</span>
-0264 <span class="keyword">end</span></pre></div>
+0207         <span class="comment">% num2str on the whole column right-aligns every row to a common</span>
+0208         <span class="comment">% width, embedding a leading space in &quot;TEMPORARY_ 1&quot; once any id</span>
+0209         <span class="comment">% reaches two digits (&quot;TEMPORARY_10&quot;); format each one independently.</span>
+0210         rxn.rxns=arrayfun(@(x) sprintf(<span class="string">'TEMPORARY_%d'</span>,x), <span class="keyword">...</span>
+0211             (1:numel(taskStructure(i).equations))', <span class="string">'UniformOutput'</span>, false);
+0212         <span class="comment">%Allow for new metabolites to be added. This is because it should</span>
+0213         <span class="comment">%be possible to add, say, a whole new pathway</span>
+0214         tModel=addRxns(tModel,rxn,3,[],true);
+0215     <span class="keyword">end</span>
+0216     <span class="comment">%Add changed bounds</span>
+0217     <span class="keyword">if</span> ~isempty(taskStructure(i).changed)
+0218         tModel=setParam(tModel,<span class="string">'lb'</span>,taskStructure(i).changed,taskStructure(i).LBrxn);
+0219         tModel=setParam(tModel,<span class="string">'ub'</span>,taskStructure(i).changed,taskStructure(i).UBrxn);
+0220     <span class="keyword">end</span>
+0221     
+0222     <span class="comment">%Solve and print</span>
+0223     sol=solveLP(tModel);
+0224     <span class="keyword">if</span> ~isempty(sol.x)
+0225         <span class="comment">%assign the fluxes</span>
+0226         essentialFluxes(:,i) = sol.x(1:numel(model.rxns));
+0227         
+0228         <span class="keyword">if</span> ~taskStructure(i).shouldFail
+0229             taskReport.ok(i,1)=true;
+0230             <span class="keyword">if</span> printOnlyFailed==false &amp;&amp; printOutput==true
+0231                 fprintf([<span class="string">'PASS: ['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'\n'</span>]);
+0232             <span class="keyword">end</span>
+0233             <span class="comment">%Calculate the essential reactions</span>
+0234             <span class="keyword">if</span> getEssential==true
+0235                 [~, taskEssential]=getEssentialRxns(tModel);
+0236                 <span class="comment">%This is because there could be more reactions in tModel</span>
+0237                 <span class="comment">%than in model</span>
+0238                 essentialRxns(taskEssential(taskEssential&lt;=numel(model.rxns)),i)=true;
+0239             <span class="keyword">end</span>
+0240         <span class="keyword">else</span>
+0241             taskReport.ok(i,1)=false;
+0242             <span class="keyword">if</span> printOutput==true
+0243                 fprintf([<span class="string">'PASS (should fail): ['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'\n'</span>]);
+0244             <span class="keyword">end</span>
+0245         <span class="keyword">end</span>
+0246     <span class="keyword">else</span>
+0247         <span class="keyword">if</span> ~taskStructure(i).shouldFail
+0248             taskReport.ok(i,1)=false;
+0249             <span class="keyword">if</span> printOutput==true
+0250                 fprintf([<span class="string">'FAIL: ['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'\n'</span>]);
+0251             <span class="keyword">end</span>
+0252         <span class="keyword">else</span>
+0253             taskReport.ok(i,1)=true;
+0254             <span class="keyword">if</span> printOnlyFailed==false &amp;&amp; printOutput==true
+0255                 fprintf([<span class="string">'FAIL (should fail): ['</span> taskStructure(i).id <span class="string">'] '</span> taskStructure(i).description <span class="string">'\n'</span>]);
+0256             <span class="keyword">end</span>
+0257         <span class="keyword">end</span>
+0258     <span class="keyword">end</span>
+0259     <span class="keyword">if</span> taskStructure(i).printFluxes &amp;&amp; ~isempty(sol.x)
+0260         sol=solveLP(tModel,1);
+0261         <span class="keyword">if</span> ~isempty(sol.x)
+0262             printFluxes(tModel,sol.x,false,10^-6,[],<span class="string">'%rxnID (%eqn):%flux\n'</span>);
+0263             fprintf(<span class="string">'\n'</span>);
+0264         <span class="keyword">end</span>
+0265     <span class="keyword">end</span>
+0266     tModel=model;
+0267 <span class="keyword">end</span>
+0268 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

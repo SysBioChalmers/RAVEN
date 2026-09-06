@@ -41,7 +41,7 @@ This function is called by:
 
 <h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <ul style="list-style-image:url(../../matlabicon.gif)">
-<li><a href="#_sub1" class="code">function getBiomassFractionsHandlesMissingComponents(testCase)</a></li><li><a href="#_sub2" class="code">function setGAMReturnsModel(testCase)</a></li><li><a href="#_sub3" class="code">function scaleBiomassFractionErrorsOnMissingComponent(testCase)</a></li><li><a href="#_sub4" class="code">function scaleBiomassPseudoreactionErrorsOnMissingComponent(testCase)</a></li><li><a href="#_sub5" class="code">function scaleBiomassPseudoreactionRebalancesProton(testCase)</a></li><li><a href="#_sub6" class="code">function scaleBiomassPseudoreactionRefusesUnknownCharge(testCase)</a></li><li><a href="#_sub7" class="code">function fitParametersRuns(testCase)</a></li><li><a href="#_sub8" class="code">function [m, cfg] = protonToyModel()</a></li><li><a href="#_sub9" class="code">function cfg = biomassConfig(testCase)</a></li></ul>
+<li><a href="#_sub1" class="code">function getBiomassFractionsHandlesMissingComponents(testCase)</a></li><li><a href="#_sub2" class="code">function setGAMReturnsModel(testCase)</a></li><li><a href="#_sub3" class="code">function scaleBiomassFractionErrorsOnMissingComponent(testCase)</a></li><li><a href="#_sub4" class="code">function scaleBiomassPseudoreactionErrorsOnMissingComponent(testCase)</a></li><li><a href="#_sub5" class="code">function scaleBiomassPseudoreactionRebalancesProton(testCase)</a></li><li><a href="#_sub6" class="code">function scaleBiomassPseudoreactionRefusesUnknownCharge(testCase)</a></li><li><a href="#_sub7" class="code">function fitParametersSetsUpperBoundPerXRxn(testCase)</a></li><li><a href="#_sub8" class="code">function fitParametersRuns(testCase)</a></li><li><a href="#_sub9" class="code">function [m, cfg] = protonToyModel()</a></li><li><a href="#_sub10" class="code">function cfg = biomassConfig(testCase)</a></li></ul>
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <div class="fragment"><pre>0001 classdef <a href="tBiomass.html" class="code" title="">tBiomass</a> &lt; <a href="RavenTestCase.html" class="code" title="">RavenTestCase</a>
@@ -98,62 +98,83 @@ This function is called by:
 0052                 <span class="string">'scaleBiomassPseudoreaction:unknownCharge'</span>);
 0053         <span class="keyword">end</span>
 0054 
-0055         <a name="_sub6" href="#_subfunctions" class="code">function fitParametersRuns(testCase)</a>
-0056             <span class="comment">% Minimal single-parameter fit of an exchange flux. fitParameters</span>
-0057             <span class="comment">% uses fminsearch (base MATLAB), not quadprog, so no toolbox guard.</span>
-0058             biomassRxnIdx = find(testCase.model.c == 1, 1);
-0059             biomassRxn = testCase.model.rxns{biomassRxnIdx};
-0060             <span class="comment">% parameterPositions.position/isNegative are cell arrays, one cell</span>
-0061             <span class="comment">% per fitted parameter, of linear S-matrix indices (see</span>
-0062             <span class="comment">% fitParameters' docstring) -- fit the coefficient of the first</span>
-0063             <span class="comment">% reactant in the biomass reaction.</span>
-0064             metIdx = find(testCase.model.S(:,biomassRxnIdx) &lt; 0, 1);
-0065             pos.position = {sub2ind(size(testCase.model.S), metIdx, biomassRxnIdx)};
-0066             pos.isNegative = {true};
-0067             evalc([<span class="string">'p = fitParameters(testCase.model, {biomassRxn}, 0.5, '</span> <span class="keyword">...</span>
-0068                 <span class="string">'{biomassRxn}, 0.5, pos);'</span>]);
-0069             testCase.verifyNotEmpty(p);
-0070         <span class="keyword">end</span>
-0071 
-0072     <span class="keyword">end</span>
-0073 
-0074     methods (Static, Access = private)
-0075         <a name="_sub7" href="#_subfunctions" class="code">function [m, cfg] = protonToyModel()</a>
-0076             <span class="comment">% One pseudoreaction: x_c -&gt; protein, with h_c available to carry</span>
-0077             <span class="comment">% the charge balance.</span>
-0078             m = struct();
-0079             m.id        = <span class="string">'toy'</span>;
-0080             m.rxns      = {<span class="string">'R1'</span>};
-0081             m.rxnNames  = {<span class="string">'protein pseudoreaction'</span>};
-0082             m.mets      = {<span class="string">'x_c'</span>;<span class="string">'h_c'</span>;<span class="string">'prot_c'</span>};
-0083             m.metNames  = {<span class="string">'x'</span>;<span class="string">'h'</span>;<span class="string">'protein'</span>};
-0084             m.metComps  = [1;1;1];
-0085             m.metCharges= [-2;1;0];
-0086             m.comps     = {<span class="string">'c'</span>};
-0087             m.compNames = {<span class="string">'cytosol'</span>};
-0088             m.S         = sparse([-1;0;1]);
-0089             m.lb = 0; m.ub = 1000; m.rev = 0; m.c = 1; m.b = zeros(3,1);
-0090             m.grRules = {<span class="string">''</span>}; m.genes = {}; m.rxnGeneMat = sparse(1,0);
-0091 
-0092             cfg = struct();
-0093             cfg.biomass_rxn = <span class="string">'R1'</span>;
-0094             cfg.proton_met  = <span class="string">'h_c'</span>;
-0095             cfg.components  = {struct(<span class="string">'name'</span>,<span class="string">'protein'</span>, <span class="keyword">...</span>
-0096                 <span class="string">'pseudoreaction_name'</span>,<span class="string">'protein pseudoreaction'</span>, <span class="keyword">...</span>
-0097                 <span class="string">'mass_strategy'</span>,<span class="string">'mw'</span>)};
-0098         <span class="keyword">end</span>
-0099     <span class="keyword">end</span>
-0100 
-0101     methods (Access = private)
-0102         <a name="_sub8" href="#_subfunctions" class="code">function cfg = biomassConfig(testCase)</a>
-0103             biomassRxn = testCase.model.rxns{find(testCase.model.c == 1, 1)};
-0104             cfg.biomass_rxn = biomassRxn;
-0105             cfg.proton_met = <span class="string">'h_c'</span>;
-0106             cfg.components = {struct(<span class="string">'name'</span>,<span class="string">'protein'</span>, <span class="keyword">...</span>
-0107                 <span class="string">'pseudoreaction_name'</span>,<span class="string">'no_such_pseudoreaction'</span>,<span class="string">'mass_strategy'</span>,<span class="string">'mw'</span>)};
-0108         <span class="keyword">end</span>
-0109     <span class="keyword">end</span>
-0110 <span class="keyword">end</span></pre></div>
+0055         <a name="_sub6" href="#_subfunctions" class="code">function fitParametersSetsUpperBoundPerXRxn(testCase)</a>
+0056             <span class="comment">% model.ub for a second xRxn must come from its own column of</span>
+0057             <span class="comment">% xValues, not the first column broadcast to every xRxn (which</span>
+0058             <span class="comment">% also inverts that reaction's bounds whenever its value is</span>
+0059             <span class="comment">% smaller than the first column's).</span>
+0060             m = struct();
+0061             m.id=<span class="string">'t'</span>; m.rxns={<span class="string">'R1'</span>;<span class="string">'R2'</span>;<span class="string">'R3'</span>;<span class="string">'R4'</span>}; m.rxnNames=m.rxns;
+0062             m.mets={<span class="string">'m1'</span>;<span class="string">'m2'</span>}; m.metNames=m.mets; m.metComps=[1;1];
+0063             m.comps={<span class="string">'c'</span>}; m.compNames={<span class="string">'c'</span>};
+0064             m.S=sparse([1 0 -1 0; 0 1 0 -1]); <span class="comment">% R1:=&gt;m1  R2:=&gt;m2  R3:m1=&gt;  R4:m2=&gt;</span>
+0065             m.lb=[0;0;0;0]; m.ub=[1000;1000;1000;1000]; m.rev=[0;0;0;0];
+0066             m.c=[0;0;0;0]; m.b=zeros(2,1);
+0067             m.genes={}; m.grRules={<span class="string">''</span>;<span class="string">''</span>;<span class="string">''</span>;<span class="string">''</span>}; m.rxnGeneMat=sparse(4,0);
+0068             pos.position={[]}; pos.isNegative={[]};
+0069             evalc([<span class="string">'[~,fitnessScore] = fitParameters(m, {''R1'';''R2''}, [5 7], '</span> <span class="keyword">...</span>
+0070                 <span class="string">'{''R3'';''R4''}, [5 7], pos, ''fitToRatio'', false);'</span>]);
+0071             <span class="comment">% R3/R4 are only reachable via mass balance from R1/R2's fixed</span>
+0072             <span class="comment">% (lb=ub) values, so a correct fit has exactly zero residual.</span>
+0073             testCase.verifyEqual(fitnessScore, 0, <span class="string">'AbsTol'</span>, 1e-9);
+0074         <span class="keyword">end</span>
+0075 
+0076         <a name="_sub7" href="#_subfunctions" class="code">function fitParametersRuns(testCase)</a>
+0077             <span class="comment">% Minimal single-parameter fit of an exchange flux. fitParameters</span>
+0078             <span class="comment">% uses fminsearch (base MATLAB), not quadprog, so no toolbox guard.</span>
+0079             biomassRxnIdx = find(testCase.model.c == 1, 1);
+0080             biomassRxn = testCase.model.rxns{biomassRxnIdx};
+0081             <span class="comment">% parameterPositions.position/isNegative are cell arrays, one cell</span>
+0082             <span class="comment">% per fitted parameter, of linear S-matrix indices (see</span>
+0083             <span class="comment">% fitParameters' docstring) -- fit the coefficient of the first</span>
+0084             <span class="comment">% reactant in the biomass reaction.</span>
+0085             metIdx = find(testCase.model.S(:,biomassRxnIdx) &lt; 0, 1);
+0086             pos.position = {sub2ind(size(testCase.model.S), metIdx, biomassRxnIdx)};
+0087             pos.isNegative = {true};
+0088             evalc([<span class="string">'p = fitParameters(testCase.model, {biomassRxn}, 0.5, '</span> <span class="keyword">...</span>
+0089                 <span class="string">'{biomassRxn}, 0.5, pos);'</span>]);
+0090             testCase.verifyNotEmpty(p);
+0091         <span class="keyword">end</span>
+0092 
+0093     <span class="keyword">end</span>
+0094 
+0095     methods (Static, Access = private)
+0096         <a name="_sub8" href="#_subfunctions" class="code">function [m, cfg] = protonToyModel()</a>
+0097             <span class="comment">% One pseudoreaction: x_c -&gt; protein, with h_c available to carry</span>
+0098             <span class="comment">% the charge balance.</span>
+0099             m = struct();
+0100             m.id        = <span class="string">'toy'</span>;
+0101             m.rxns      = {<span class="string">'R1'</span>};
+0102             m.rxnNames  = {<span class="string">'protein pseudoreaction'</span>};
+0103             m.mets      = {<span class="string">'x_c'</span>;<span class="string">'h_c'</span>;<span class="string">'prot_c'</span>};
+0104             m.metNames  = {<span class="string">'x'</span>;<span class="string">'h'</span>;<span class="string">'protein'</span>};
+0105             m.metComps  = [1;1;1];
+0106             m.metCharges= [-2;1;0];
+0107             m.comps     = {<span class="string">'c'</span>};
+0108             m.compNames = {<span class="string">'cytosol'</span>};
+0109             m.S         = sparse([-1;0;1]);
+0110             m.lb = 0; m.ub = 1000; m.rev = 0; m.c = 1; m.b = zeros(3,1);
+0111             m.grRules = {<span class="string">''</span>}; m.genes = {}; m.rxnGeneMat = sparse(1,0);
+0112 
+0113             cfg = struct();
+0114             cfg.biomass_rxn = <span class="string">'R1'</span>;
+0115             cfg.proton_met  = <span class="string">'h_c'</span>;
+0116             cfg.components  = {struct(<span class="string">'name'</span>,<span class="string">'protein'</span>, <span class="keyword">...</span>
+0117                 <span class="string">'pseudoreaction_name'</span>,<span class="string">'protein pseudoreaction'</span>, <span class="keyword">...</span>
+0118                 <span class="string">'mass_strategy'</span>,<span class="string">'mw'</span>)};
+0119         <span class="keyword">end</span>
+0120     <span class="keyword">end</span>
+0121 
+0122     methods (Access = private)
+0123         <a name="_sub9" href="#_subfunctions" class="code">function cfg = biomassConfig(testCase)</a>
+0124             biomassRxn = testCase.model.rxns{find(testCase.model.c == 1, 1)};
+0125             cfg.biomass_rxn = biomassRxn;
+0126             cfg.proton_met = <span class="string">'h_c'</span>;
+0127             cfg.components = {struct(<span class="string">'name'</span>,<span class="string">'protein'</span>, <span class="keyword">...</span>
+0128                 <span class="string">'pseudoreaction_name'</span>,<span class="string">'no_such_pseudoreaction'</span>,<span class="string">'mass_strategy'</span>,<span class="string">'mw'</span>)};
+0129         <span class="keyword">end</span>
+0130     <span class="keyword">end</span>
+0131 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

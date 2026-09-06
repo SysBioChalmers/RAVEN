@@ -274,241 +274,242 @@ This function is called by:
 0155 
 0156     <span class="keyword">if</span> numel(rpath) &gt; maxHops, <span class="keyword">continue</span>; <span class="keyword">end</span>
 0157 
-0158     <span class="comment">% Find metabolites net-produced by cur</span>
-0159     col  = full(model.S(:, cur));
-0160     fcur = fluxes(cur);
-0161     <span class="keyword">for</span> m = 1:numel(col)
-0162         <span class="keyword">if</span> abs(col(m)) &lt; 1e-15, <span class="keyword">continue</span>; <span class="keyword">end</span>
-0163         <span class="keyword">if</span> col(m) * fcur &lt;= 0, <span class="keyword">continue</span>; <span class="keyword">end</span>   <span class="comment">% skip consumed or zero-contribution mets</span>
-0164 
-0165         <span class="comment">% ---- Material-flux filters ----</span>
-0166         <span class="keyword">if</span> ~isempty(currencyList) &amp;&amp; <a href="#_sub5" class="code" title="subfunction tf = isCurrencyMet_(model, m, currencyList)">isCurrencyMet_</a>(model, m, currencyList)
-0167             <span class="keyword">continue</span>
-0168         <span class="keyword">end</span>
-0169         <span class="keyword">if</span> hasCarbonFilter &amp;&amp; carbonCounts(m) == 0
-0170             <span class="keyword">continue</span>
-0171         <span class="keyword">end</span>
-0172 
-0173         <span class="comment">% Reactions that net-consume this metabolite</span>
-0174         row  = full(model.S(m, :));
-0175         fVec = fluxes(:)';
-0176         consumers = find(row .* fVec &lt; -cutoff);
-0177         consumers = consumers(~ismember(consumers, rpath));  <span class="comment">% no revisiting</span>
-0178         <span class="keyword">if</span> isempty(consumers), <span class="keyword">continue</span>; <span class="keyword">end</span>
-0179 
-0180         totalCons = sum(abs(row(consumers) .* fVec(consumers)));
-0181 
-0182         <span class="keyword">for</span> ci = 1:numel(consumers)
-0183             nr      = consumers(ci);
-0184             frac_r  = abs(row(nr) * fluxes(nr)) / totalCons;
-0185             newFrac = frac * frac_r;
-0186 
-0187             <span class="keyword">if</span> newFrac &gt; bestAtNode(nr) || nr == toIdx
-0188                 bestAtNode(nr) = max(bestAtNode(nr), newFrac);
-0189                 newEntry = <a href="#_sub1" class="code" title="subfunction e = makeEntry_(rxn, frac, rpath, mpath)">makeEntry_</a>(nr, newFrac, [rpath, nr], [mpath; m]);
-0190 
-0191                 <span class="comment">% Insert in decreasing-fraction order</span>
-0192                 <span class="keyword">if</span> isempty(queue)
-0193                     queue = newEntry;
-0194                 <span class="keyword">else</span>
-0195                     fracs = [queue.frac];
-0196                     pos   = find(fracs &lt; newFrac, 1);
-0197                     <span class="keyword">if</span> isempty(pos)
-0198                         queue(end+1) = newEntry; <span class="comment">%#ok&lt;AGROW&gt;</span>
-0199                     <span class="keyword">else</span>
-0200                         queue = [queue(1:pos-1), newEntry, queue(pos:end)];
-0201                     <span class="keyword">end</span>
-0202                 <span class="keyword">end</span>
-0203             <span class="keyword">end</span>
-0204         <span class="keyword">end</span>
-0205     <span class="keyword">end</span>
-0206 <span class="keyword">end</span>
-0207 
-0208 <span class="comment">% ---- Package and display ----</span>
-0209 cumFrac = bestFrac;
-0210 <span class="keyword">if</span> ~isempty(bestRPath)
-0211     pathRxns = model.rxns(bestRPath);
-0212     pathMets = model.mets(bestMPath);
-0213 <span class="keyword">end</span>
-0214 
-0215 <span class="keyword">if</span> verbose
-0216     materialMode = traceMaterial || ~isempty(excludeMets) || carbonOnly;
-0217     <a href="#_sub2" class="code" title="subfunction printPath_(model, fluxes, pathRxns, pathMets, cumFrac, fromRxn, toRxn, materialMode)">printPath_</a>(model, fluxes, pathRxns, pathMets, cumFrac, fromRxn, toRxn, materialMode);
-0218 <span class="keyword">end</span>
+0158     <span class="comment">% Find metabolites net-produced by cur. Iterate only the structurally</span>
+0159     <span class="comment">% nonzero entries of the (sparse) column instead of every metabolite</span>
+0160     <span class="comment">% in the model, most of which a reaction never touches.</span>
+0161     col  = model.S(:, cur);
+0162     fcur = fluxes(cur);
+0163     <span class="keyword">for</span> m = find(col)'
+0164         <span class="keyword">if</span> col(m) * fcur &lt;= 0, <span class="keyword">continue</span>; <span class="keyword">end</span>   <span class="comment">% skip consumed or zero-contribution mets</span>
+0165 
+0166         <span class="comment">% ---- Material-flux filters ----</span>
+0167         <span class="keyword">if</span> ~isempty(currencyList) &amp;&amp; <a href="#_sub5" class="code" title="subfunction tf = isCurrencyMet_(model, m, currencyList)">isCurrencyMet_</a>(model, m, currencyList)
+0168             <span class="keyword">continue</span>
+0169         <span class="keyword">end</span>
+0170         <span class="keyword">if</span> hasCarbonFilter &amp;&amp; carbonCounts(m) == 0
+0171             <span class="keyword">continue</span>
+0172         <span class="keyword">end</span>
+0173 
+0174         <span class="comment">% Reactions that net-consume this metabolite</span>
+0175         row  = full(model.S(m, :));
+0176         fVec = fluxes(:)';
+0177         consumers = find(row .* fVec &lt; -cutoff);
+0178         consumers = consumers(~ismember(consumers, rpath));  <span class="comment">% no revisiting</span>
+0179         <span class="keyword">if</span> isempty(consumers), <span class="keyword">continue</span>; <span class="keyword">end</span>
+0180 
+0181         totalCons = sum(abs(row(consumers) .* fVec(consumers)));
+0182 
+0183         <span class="keyword">for</span> ci = 1:numel(consumers)
+0184             nr      = consumers(ci);
+0185             frac_r  = abs(row(nr) * fluxes(nr)) / totalCons;
+0186             newFrac = frac * frac_r;
+0187 
+0188             <span class="keyword">if</span> newFrac &gt; bestAtNode(nr) || nr == toIdx
+0189                 bestAtNode(nr) = max(bestAtNode(nr), newFrac);
+0190                 newEntry = <a href="#_sub1" class="code" title="subfunction e = makeEntry_(rxn, frac, rpath, mpath)">makeEntry_</a>(nr, newFrac, [rpath, nr], [mpath; m]);
+0191 
+0192                 <span class="comment">% Insert in decreasing-fraction order</span>
+0193                 <span class="keyword">if</span> isempty(queue)
+0194                     queue = newEntry;
+0195                 <span class="keyword">else</span>
+0196                     fracs = [queue.frac];
+0197                     pos   = find(fracs &lt; newFrac, 1);
+0198                     <span class="keyword">if</span> isempty(pos)
+0199                         queue(end+1) = newEntry; <span class="comment">%#ok&lt;AGROW&gt;</span>
+0200                     <span class="keyword">else</span>
+0201                         queue = [queue(1:pos-1), newEntry, queue(pos:end)];
+0202                     <span class="keyword">end</span>
+0203                 <span class="keyword">end</span>
+0204             <span class="keyword">end</span>
+0205         <span class="keyword">end</span>
+0206     <span class="keyword">end</span>
+0207 <span class="keyword">end</span>
+0208 
+0209 <span class="comment">% ---- Package and display ----</span>
+0210 cumFrac = bestFrac;
+0211 <span class="keyword">if</span> ~isempty(bestRPath)
+0212     pathRxns = model.rxns(bestRPath);
+0213     pathMets = model.mets(bestMPath);
+0214 <span class="keyword">end</span>
+0215 
+0216 <span class="keyword">if</span> verbose
+0217     materialMode = traceMaterial || ~isempty(excludeMets) || carbonOnly;
+0218     <a href="#_sub2" class="code" title="subfunction printPath_(model, fluxes, pathRxns, pathMets, cumFrac, fromRxn, toRxn, materialMode)">printPath_</a>(model, fluxes, pathRxns, pathMets, cumFrac, fromRxn, toRxn, materialMode);
 0219 <span class="keyword">end</span>
-0220 
-0221 <span class="comment">%--------------------------------------------------------------------------</span>
-0222 <a name="_sub1" href="#_subfunctions" class="code">function e = makeEntry_(rxn, frac, rpath, mpath)</a>
-0223     e.rxn   = rxn;
-0224     e.frac  = frac;
-0225     e.rpath = rpath;
-0226     e.mpath = mpath;
-0227 <span class="keyword">end</span>
-0228 
-0229 <a name="_sub2" href="#_subfunctions" class="code">function printPath_(model, fluxes, pathRxns, pathMets, cumFrac, fromRxn, toRxn, materialMode)</a>
-0230     W   = 66;
-0231     bar = repmat(<span class="string">'='</span>, 1, W);
-0232     fprintf(<span class="string">'\n%s\n'</span>, bar);
-0233     fprintf(<span class="string">'  Flux path: %s \x2192 %s\n'</span>, fromRxn, toRxn);
-0234     <span class="keyword">if</span> materialMode
-0235         fprintf(<span class="string">'  (material flux — currency metabolites excluded)\n'</span>);
-0236     <span class="keyword">end</span>
-0237     fprintf(<span class="string">'%s\n'</span>, bar);
-0238 
-0239     <span class="keyword">if</span> isempty(pathRxns)
-0240         fprintf(<span class="string">'  No forward flux path found between these reactions.\n'</span>);
-0241         <span class="keyword">if</span> materialMode
-0242             fprintf(<span class="string">'  Tip: try traceMaterial=false to include cofactor connections,\n'</span>);
-0243             fprintf(<span class="string">'       or excludeMets={} to see what the filter removed.\n'</span>);
-0244         <span class="keyword">else</span>
-0245             fprintf(<span class="string">'  (They may be in parallel branches or connected only in reverse.)\n'</span>);
-0246         <span class="keyword">end</span>
-0247         fprintf(<span class="string">'%s\n\n'</span>, bar);
-0248         <span class="keyword">return</span>
-0249     <span class="keyword">end</span>
-0250 
-0251     <span class="comment">% One-line path with junction fractions</span>
-0252     parts = pathRxns{1};
-0253     <span class="keyword">for</span> i = 2:numel(pathRxns)
-0254         mi = find(strcmp(model.mets, pathMets{i-1}));
-0255         row = full(model.S(mi, :));
-0256         consumers = find(row .* fluxes' &lt; -1e-12);
-0257         <span class="keyword">if</span> isempty(consumers)
-0258             pct = NaN;
-0259         <span class="keyword">else</span>
-0260             totalCons = sum(abs(row(consumers) .* fluxes(consumers)'));
-0261             ni = find(strcmp(model.rxns, pathRxns{i}));
-0262             pct = abs(row(ni) * fluxes(ni)) / totalCons * 100;
-0263         <span class="keyword">end</span>
-0264         mLbl = <a href="#_sub4" class="code" title="subfunction s = getMetLabel_(model, metIdx)">getMetLabel_</a>(model, mi);
-0265         <span class="keyword">if</span> isnan(pct)
-0266             parts = [parts sprintf(<span class="string">' \x2192[%s]\x2192 %s'</span>, mLbl, pathRxns{i})]; <span class="comment">%#ok&lt;AGROW&gt;</span>
-0267         <span class="keyword">else</span>
-0268             parts = [parts sprintf(<span class="string">' \x2192[%s: %.0f%%]\x2192 %s'</span>, mLbl, pct, pathRxns{i})]; <span class="comment">%#ok&lt;AGROW&gt;</span>
-0269         <span class="keyword">end</span>
-0270     <span class="keyword">end</span>
-0271     fprintf(<span class="string">'\n  %s\n\n'</span>, parts);
-0272 
-0273     fprintf(<span class="string">'  Cumulative fraction: %.2f%%\n'</span>, cumFrac*100);
-0274     fprintf(<span class="string">'  Path length:         %d reactions\n'</span>, numel(pathRxns));
-0275 
-0276     fprintf(<span class="string">'\n  Reactions:\n'</span>);
-0277     eqns = constructEquations(model, pathRxns);
-0278     <span class="keyword">for</span> i = 1:numel(pathRxns)
-0279         ri  = find(strcmp(model.rxns, pathRxns{i}));
-0280         nm  = <span class="string">''</span>;
-0281         <span class="keyword">if</span> isfield(model,<span class="string">'rxnNames'</span>) &amp;&amp; ri &lt;= numel(model.rxnNames)
-0282             nm = char(model.rxnNames{ri});
-0283         <span class="keyword">end</span>
-0284         <span class="keyword">if</span> numel(nm) &gt; 25, nm = [nm(1:22) <span class="string">'...'</span>]; <span class="keyword">end</span>
-0285         fprintf(<span class="string">'  %2d. %-14s  flux: %+10.4g   %-25s  %s\n'</span>, i, pathRxns{i}, fluxes(ri), nm, eqns{i});
-0286     <span class="keyword">end</span>
-0287     fprintf(<span class="string">'\n%s\n\n'</span>, bar);
-0288 <span class="keyword">end</span>
-0289 
-0290 <a name="_sub3" href="#_subfunctions" class="code">function idx = resolveRxn_(model, rxn)</a>
-0291     <span class="keyword">if</span> isnumeric(rxn)
-0292         idx = rxn;
-0293     <span class="keyword">else</span>
-0294         idx = find(strcmp(model.rxns, char(rxn)));
-0295         <span class="keyword">if</span> isempty(idx)
-0296             error(<span class="string">'Reaction ''%s'' not found in model.'</span>, rxn);
-0297         <span class="keyword">end</span>
-0298         idx = idx(1);
-0299     <span class="keyword">end</span>
-0300 <span class="keyword">end</span>
-0301 
-0302 <a name="_sub4" href="#_subfunctions" class="code">function s = getMetLabel_(model, metIdx)</a>
-0303     <span class="keyword">if</span> isfield(model,<span class="string">'metNames'</span>) &amp;&amp; ~isempty(model.metNames{metIdx})
-0304         s = model.metNames{metIdx};
-0305     <span class="keyword">else</span>
-0306         s = model.mets{metIdx};
-0307     <span class="keyword">end</span>
-0308 <span class="keyword">end</span>
-0309 
-0310 <a name="_sub5" href="#_subfunctions" class="code">function tf = isCurrencyMet_(model, m, currencyList)</a>
-0311 <span class="comment">% Returns true if metabolite m matches any entry in currencyList.</span>
-0312 <span class="comment">% Matches against metNames (case-insensitive exact) and against the</span>
-0313 <span class="comment">% metabolite ID after stripping compartment suffixes like [c], [m], _c.</span>
-0314     targets = {};
-0315     <span class="keyword">if</span> isfield(model,<span class="string">'metNames'</span>) &amp;&amp; m &lt;= numel(model.metNames) &amp;&amp; ~isempty(model.metNames{m})
-0316         targets{end+1} = lower(strtrim(model.metNames{m}));
-0317     <span class="keyword">end</span>
-0318     <span class="comment">% Strip compartment from ID: [c], (c), _c, _C at end</span>
-0319     rawId = model.mets{m};
-0320     stripped = regexprep(rawId, <span class="string">'[\[\(][^\]\)]*[\]\)]$|_[a-zA-Z]\d*$'</span>, <span class="string">''</span>);
-0321     targets{end+1} = lower(stripped);
-0322 
-0323     <span class="keyword">for</span> i = 1:numel(currencyList)
-0324         p = lower(strtrim(currencyList{i}));
-0325         <span class="keyword">for</span> j = 1:numel(targets)
-0326             <span class="keyword">if</span> strcmp(targets{j}, p)
-0327                 tf = true;
-0328                 <span class="keyword">return</span>
-0329             <span class="keyword">end</span>
-0330         <span class="keyword">end</span>
-0331     <span class="keyword">end</span>
-0332     tf = false;
-0333 <span class="keyword">end</span>
-0334 
-0335 <a name="_sub6" href="#_subfunctions" class="code">function nC = countCarbon_(formula)</a>
-0336 <span class="comment">% Count carbon atoms in a molecular formula string like 'C6H12O6'.</span>
-0337     <span class="keyword">if</span> isempty(formula)
-0338         nC = 0; <span class="keyword">return</span>
-0339     <span class="keyword">end</span>
-0340     tok = regexp(char(formula), <span class="string">'C(\d*)'</span>, <span class="string">'tokens'</span>, <span class="string">'once'</span>);
-0341     <span class="keyword">if</span> isempty(tok)
-0342         nC = 0;
-0343     <span class="keyword">elseif</span> isempty(tok{1})
-0344         nC = 1;
-0345     <span class="keyword">else</span>
-0346         nC = str2double(tok{1});
-0347     <span class="keyword">end</span>
-0348 <span class="keyword">end</span>
-0349 
-0350 <a name="_sub7" href="#_subfunctions" class="code">function lst = defaultCurrencyMets_()</a>
-0351 <span class="comment">% Common currency / cofactor metabolites matched case-insensitively.</span>
-0352 <span class="comment">% Bare comment lines inside {} act as row separators in older MATLAB, so</span>
-0353 <span class="comment">% all comments are placed after ... on data lines instead.</span>
-0354     lst = { <span class="keyword">...</span>
-0355         <span class="string">'ATP'</span>,<span class="string">'ADP'</span>,<span class="string">'AMP'</span>,<span class="string">'dATP'</span>,<span class="string">'dADP'</span>,<span class="string">'dAMP'</span>, <span class="keyword">...</span><span class="comment"> % adenosine phosphates</span>
-0356         <span class="string">'atp'</span>,<span class="string">'adp'</span>,<span class="string">'amp'</span>,<span class="string">'datp'</span>,<span class="string">'dadp'</span>,<span class="string">'damp'</span>, <span class="keyword">...</span>
-0357         <span class="string">'GTP'</span>,<span class="string">'GDP'</span>,<span class="string">'GMP'</span>,<span class="string">'dGTP'</span>,<span class="string">'dGDP'</span>,<span class="string">'dGMP'</span>, <span class="keyword">...</span><span class="comment"> % other NTPs/NDPs/NMPs</span>
-0358         <span class="string">'CTP'</span>,<span class="string">'CDP'</span>,<span class="string">'CMP'</span>,<span class="string">'dCTP'</span>,<span class="string">'dCDP'</span>,<span class="string">'dCMP'</span>, <span class="keyword">...</span>
-0359         <span class="string">'UTP'</span>,<span class="string">'UDP'</span>,<span class="string">'UMP'</span>,<span class="string">'dUTP'</span>,<span class="string">'dUDP'</span>,<span class="string">'dUMP'</span>, <span class="keyword">...</span>
-0360         <span class="string">'TTP'</span>,<span class="string">'TDP'</span>,<span class="string">'TMP'</span>,<span class="string">'dTTP'</span>,<span class="string">'dTDP'</span>,<span class="string">'dTMP'</span>, <span class="keyword">...</span>
-0361         <span class="string">'gtp'</span>,<span class="string">'gdp'</span>,<span class="string">'gmp'</span>,<span class="string">'dgtp'</span>,<span class="string">'dgdp'</span>,<span class="string">'dgmp'</span>, <span class="keyword">...</span>
-0362         <span class="string">'ctp'</span>,<span class="string">'cdp'</span>,<span class="string">'cmp'</span>,<span class="string">'dctp'</span>,<span class="string">'dcdp'</span>,<span class="string">'dcmp'</span>, <span class="keyword">...</span>
-0363         <span class="string">'utp'</span>,<span class="string">'udp'</span>,<span class="string">'ump'</span>,<span class="string">'dutp'</span>,<span class="string">'dudp'</span>,<span class="string">'dump'</span>, <span class="keyword">...</span>
-0364         <span class="string">'ttp'</span>,<span class="string">'tdp'</span>,<span class="string">'tmp'</span>,<span class="string">'dttp'</span>,<span class="string">'dtdp'</span>,<span class="string">'dtmp'</span>, <span class="keyword">...</span>
-0365         <span class="string">'NAD'</span>,<span class="string">'NADH'</span>,<span class="string">'NADP'</span>,<span class="string">'NADPH'</span>,<span class="string">'NAD+'</span>,<span class="string">'NADP+'</span>, <span class="keyword">...</span><span class="comment"> % nicotinamide cofactors</span>
-0366         <span class="string">'nad'</span>,<span class="string">'nadh'</span>,<span class="string">'nadp'</span>,<span class="string">'nadph'</span>, <span class="keyword">...</span>
-0367         <span class="string">'FAD'</span>,<span class="string">'FADH2'</span>,<span class="string">'FMN'</span>,<span class="string">'FMNH2'</span>, <span class="keyword">...</span><span class="comment"> % flavin cofactors</span>
-0368         <span class="string">'fad'</span>,<span class="string">'fadh2'</span>,<span class="string">'fmn'</span>,<span class="string">'fmnh2'</span>, <span class="keyword">...</span>
-0369         <span class="string">'CoA'</span>,<span class="string">'coenzyme A'</span>,<span class="string">'coenzyme a'</span>,<span class="string">'Coenzyme A'</span>, <span class="keyword">...</span><span class="comment"> % coenzyme A</span>
-0370         <span class="string">'coa'</span>, <span class="keyword">...</span>
-0371         <span class="string">'H2O'</span>,<span class="string">'water'</span>,<span class="string">'H+'</span>,<span class="string">'proton'</span>,<span class="string">'OH-'</span>,<span class="string">'hydroxide'</span>, <span class="keyword">...</span><span class="comment"> % water / proton</span>
-0372         <span class="string">'h2o'</span>,<span class="string">'h'</span>,<span class="string">'oh1'</span>, <span class="keyword">...</span>
-0373         <span class="string">'phosphate'</span>,<span class="string">'orthophosphate'</span>,<span class="string">'pyrophosphate'</span>,<span class="string">'diphosphate'</span>, <span class="keyword">...</span><span class="comment"> % inorganic phosphate</span>
-0374         <span class="string">'pi'</span>,<span class="string">'ppi'</span>,<span class="string">'pp'</span>, <span class="keyword">...</span>
-0375         <span class="string">'CO2'</span>,<span class="string">'carbon dioxide'</span>,<span class="string">'bicarbonate'</span>,<span class="string">'HCO3-'</span>, <span class="keyword">...</span><span class="comment"> % carbon dioxide</span>
-0376         <span class="string">'co2'</span>,<span class="string">'hco3'</span>, <span class="keyword">...</span>
-0377         <span class="string">'O2'</span>,<span class="string">'oxygen'</span>,<span class="string">'NH3'</span>,<span class="string">'ammonia'</span>,<span class="string">'NH4+'</span>,<span class="string">'ammonium'</span>,<span class="string">'nitrogen'</span>, <span class="keyword">...</span><span class="comment"> % oxygen / nitrogen</span>
-0378         <span class="string">'o2'</span>,<span class="string">'nh3'</span>,<span class="string">'nh4'</span>, <span class="keyword">...</span>
-0379         <span class="string">'sulfate'</span>,<span class="string">'sulfite'</span>,<span class="string">'sulfide'</span>,<span class="string">'thiosulfate'</span>, <span class="keyword">...</span><span class="comment"> % sulfur species</span>
-0380         <span class="string">'thioredoxin'</span>,<span class="string">'thioredoxin-SH'</span>,<span class="string">'thioredoxin-S2'</span>, <span class="keyword">...</span><span class="comment"> % redox carriers</span>
-0381         <span class="string">'trdrd'</span>,<span class="string">'trdox'</span>, <span class="keyword">...</span>
-0382         <span class="string">'ferredoxin'</span>,<span class="string">'ferredoxin reduced'</span>,<span class="string">'ferredoxin oxidized'</span>, <span class="keyword">...</span>
-0383         <span class="string">'fdred'</span>,<span class="string">'fdox'</span>, <span class="keyword">...</span>
-0384         <span class="string">'ubiquinol'</span>,<span class="string">'ubiquinone'</span>,<span class="string">'menaquinol'</span>,<span class="string">'menaquinone'</span>, <span class="keyword">...</span>
-0385         <span class="string">'q8h2'</span>,<span class="string">'q8'</span>,<span class="string">'mqn8'</span>,<span class="string">'mql8'</span>, <span class="keyword">...</span>
-0386         <span class="string">'lipoamide'</span>,<span class="string">'dihydrolipoamide'</span>, <span class="keyword">...</span>
-0387         <span class="string">'S-adenosyl-L-methionine'</span>,<span class="string">'S-adenosylhomocysteine'</span>, <span class="keyword">...</span><span class="comment"> % one-carbon donors</span>
-0388         <span class="string">'sam'</span>,<span class="string">'sah'</span>,<span class="string">'amet'</span>,<span class="string">'ahcys'</span>, <span class="keyword">...</span>
-0389         <span class="string">'5-methyltetrahydrofolate'</span>,<span class="string">'tetrahydrofolate'</span>,<span class="string">'dihydrofolate'</span>, <span class="keyword">...</span>
-0390         <span class="string">'thf'</span>,<span class="string">'dhf'</span>,<span class="string">'mlthf'</span>,<span class="string">'methf'</span> <span class="keyword">...</span>
-0391     };
-0392 <span class="keyword">end</span></pre></div>
+0220 <span class="keyword">end</span>
+0221 
+0222 <span class="comment">%--------------------------------------------------------------------------</span>
+0223 <a name="_sub1" href="#_subfunctions" class="code">function e = makeEntry_(rxn, frac, rpath, mpath)</a>
+0224     e.rxn   = rxn;
+0225     e.frac  = frac;
+0226     e.rpath = rpath;
+0227     e.mpath = mpath;
+0228 <span class="keyword">end</span>
+0229 
+0230 <a name="_sub2" href="#_subfunctions" class="code">function printPath_(model, fluxes, pathRxns, pathMets, cumFrac, fromRxn, toRxn, materialMode)</a>
+0231     W   = 66;
+0232     bar = repmat(<span class="string">'='</span>, 1, W);
+0233     fprintf(<span class="string">'\n%s\n'</span>, bar);
+0234     fprintf(<span class="string">'  Flux path: %s \x2192 %s\n'</span>, fromRxn, toRxn);
+0235     <span class="keyword">if</span> materialMode
+0236         fprintf(<span class="string">'  (material flux — currency metabolites excluded)\n'</span>);
+0237     <span class="keyword">end</span>
+0238     fprintf(<span class="string">'%s\n'</span>, bar);
+0239 
+0240     <span class="keyword">if</span> isempty(pathRxns)
+0241         fprintf(<span class="string">'  No forward flux path found between these reactions.\n'</span>);
+0242         <span class="keyword">if</span> materialMode
+0243             fprintf(<span class="string">'  Tip: try traceMaterial=false to include cofactor connections,\n'</span>);
+0244             fprintf(<span class="string">'       or excludeMets={} to see what the filter removed.\n'</span>);
+0245         <span class="keyword">else</span>
+0246             fprintf(<span class="string">'  (They may be in parallel branches or connected only in reverse.)\n'</span>);
+0247         <span class="keyword">end</span>
+0248         fprintf(<span class="string">'%s\n\n'</span>, bar);
+0249         <span class="keyword">return</span>
+0250     <span class="keyword">end</span>
+0251 
+0252     <span class="comment">% One-line path with junction fractions</span>
+0253     parts = pathRxns{1};
+0254     <span class="keyword">for</span> i = 2:numel(pathRxns)
+0255         mi = find(strcmp(model.mets, pathMets{i-1}));
+0256         row = full(model.S(mi, :));
+0257         consumers = find(row .* fluxes' &lt; -1e-12);
+0258         <span class="keyword">if</span> isempty(consumers)
+0259             pct = NaN;
+0260         <span class="keyword">else</span>
+0261             totalCons = sum(abs(row(consumers) .* fluxes(consumers)'));
+0262             ni = find(strcmp(model.rxns, pathRxns{i}));
+0263             pct = abs(row(ni) * fluxes(ni)) / totalCons * 100;
+0264         <span class="keyword">end</span>
+0265         mLbl = <a href="#_sub4" class="code" title="subfunction s = getMetLabel_(model, metIdx)">getMetLabel_</a>(model, mi);
+0266         <span class="keyword">if</span> isnan(pct)
+0267             parts = [parts sprintf(<span class="string">' \x2192[%s]\x2192 %s'</span>, mLbl, pathRxns{i})]; <span class="comment">%#ok&lt;AGROW&gt;</span>
+0268         <span class="keyword">else</span>
+0269             parts = [parts sprintf(<span class="string">' \x2192[%s: %.0f%%]\x2192 %s'</span>, mLbl, pct, pathRxns{i})]; <span class="comment">%#ok&lt;AGROW&gt;</span>
+0270         <span class="keyword">end</span>
+0271     <span class="keyword">end</span>
+0272     fprintf(<span class="string">'\n  %s\n\n'</span>, parts);
+0273 
+0274     fprintf(<span class="string">'  Cumulative fraction: %.2f%%\n'</span>, cumFrac*100);
+0275     fprintf(<span class="string">'  Path length:         %d reactions\n'</span>, numel(pathRxns));
+0276 
+0277     fprintf(<span class="string">'\n  Reactions:\n'</span>);
+0278     eqns = constructEquations(model, pathRxns);
+0279     <span class="keyword">for</span> i = 1:numel(pathRxns)
+0280         ri  = find(strcmp(model.rxns, pathRxns{i}));
+0281         nm  = <span class="string">''</span>;
+0282         <span class="keyword">if</span> isfield(model,<span class="string">'rxnNames'</span>) &amp;&amp; ri &lt;= numel(model.rxnNames)
+0283             nm = char(model.rxnNames{ri});
+0284         <span class="keyword">end</span>
+0285         <span class="keyword">if</span> numel(nm) &gt; 25, nm = [nm(1:22) <span class="string">'...'</span>]; <span class="keyword">end</span>
+0286         fprintf(<span class="string">'  %2d. %-14s  flux: %+10.4g   %-25s  %s\n'</span>, i, pathRxns{i}, fluxes(ri), nm, eqns{i});
+0287     <span class="keyword">end</span>
+0288     fprintf(<span class="string">'\n%s\n\n'</span>, bar);
+0289 <span class="keyword">end</span>
+0290 
+0291 <a name="_sub3" href="#_subfunctions" class="code">function idx = resolveRxn_(model, rxn)</a>
+0292     <span class="keyword">if</span> isnumeric(rxn)
+0293         idx = rxn;
+0294     <span class="keyword">else</span>
+0295         idx = find(strcmp(model.rxns, char(rxn)));
+0296         <span class="keyword">if</span> isempty(idx)
+0297             error(<span class="string">'Reaction ''%s'' not found in model.'</span>, rxn);
+0298         <span class="keyword">end</span>
+0299         idx = idx(1);
+0300     <span class="keyword">end</span>
+0301 <span class="keyword">end</span>
+0302 
+0303 <a name="_sub4" href="#_subfunctions" class="code">function s = getMetLabel_(model, metIdx)</a>
+0304     <span class="keyword">if</span> isfield(model,<span class="string">'metNames'</span>) &amp;&amp; ~isempty(model.metNames{metIdx})
+0305         s = model.metNames{metIdx};
+0306     <span class="keyword">else</span>
+0307         s = model.mets{metIdx};
+0308     <span class="keyword">end</span>
+0309 <span class="keyword">end</span>
+0310 
+0311 <a name="_sub5" href="#_subfunctions" class="code">function tf = isCurrencyMet_(model, m, currencyList)</a>
+0312 <span class="comment">% Returns true if metabolite m matches any entry in currencyList.</span>
+0313 <span class="comment">% Matches against metNames (case-insensitive exact) and against the</span>
+0314 <span class="comment">% metabolite ID after stripping compartment suffixes like [c], [m], _c.</span>
+0315     targets = {};
+0316     <span class="keyword">if</span> isfield(model,<span class="string">'metNames'</span>) &amp;&amp; m &lt;= numel(model.metNames) &amp;&amp; ~isempty(model.metNames{m})
+0317         targets{end+1} = lower(strtrim(model.metNames{m}));
+0318     <span class="keyword">end</span>
+0319     <span class="comment">% Strip compartment from ID: [c], (c), _c, _C at end</span>
+0320     rawId = model.mets{m};
+0321     stripped = regexprep(rawId, <span class="string">'[\[\(][^\]\)]*[\]\)]$|_[a-zA-Z]\d*$'</span>, <span class="string">''</span>);
+0322     targets{end+1} = lower(stripped);
+0323 
+0324     <span class="keyword">for</span> i = 1:numel(currencyList)
+0325         p = lower(strtrim(currencyList{i}));
+0326         <span class="keyword">for</span> j = 1:numel(targets)
+0327             <span class="keyword">if</span> strcmp(targets{j}, p)
+0328                 tf = true;
+0329                 <span class="keyword">return</span>
+0330             <span class="keyword">end</span>
+0331         <span class="keyword">end</span>
+0332     <span class="keyword">end</span>
+0333     tf = false;
+0334 <span class="keyword">end</span>
+0335 
+0336 <a name="_sub6" href="#_subfunctions" class="code">function nC = countCarbon_(formula)</a>
+0337 <span class="comment">% Count carbon atoms in a molecular formula string like 'C6H12O6'.</span>
+0338     <span class="keyword">if</span> isempty(formula)
+0339         nC = 0; <span class="keyword">return</span>
+0340     <span class="keyword">end</span>
+0341     tok = regexp(char(formula), <span class="string">'C(\d*)'</span>, <span class="string">'tokens'</span>, <span class="string">'once'</span>);
+0342     <span class="keyword">if</span> isempty(tok)
+0343         nC = 0;
+0344     <span class="keyword">elseif</span> isempty(tok{1})
+0345         nC = 1;
+0346     <span class="keyword">else</span>
+0347         nC = str2double(tok{1});
+0348     <span class="keyword">end</span>
+0349 <span class="keyword">end</span>
+0350 
+0351 <a name="_sub7" href="#_subfunctions" class="code">function lst = defaultCurrencyMets_()</a>
+0352 <span class="comment">% Common currency / cofactor metabolites matched case-insensitively.</span>
+0353 <span class="comment">% Bare comment lines inside {} act as row separators in older MATLAB, so</span>
+0354 <span class="comment">% all comments are placed after ... on data lines instead.</span>
+0355     lst = { <span class="keyword">...</span>
+0356         <span class="string">'ATP'</span>,<span class="string">'ADP'</span>,<span class="string">'AMP'</span>,<span class="string">'dATP'</span>,<span class="string">'dADP'</span>,<span class="string">'dAMP'</span>, <span class="keyword">...</span><span class="comment"> % adenosine phosphates</span>
+0357         <span class="string">'atp'</span>,<span class="string">'adp'</span>,<span class="string">'amp'</span>,<span class="string">'datp'</span>,<span class="string">'dadp'</span>,<span class="string">'damp'</span>, <span class="keyword">...</span>
+0358         <span class="string">'GTP'</span>,<span class="string">'GDP'</span>,<span class="string">'GMP'</span>,<span class="string">'dGTP'</span>,<span class="string">'dGDP'</span>,<span class="string">'dGMP'</span>, <span class="keyword">...</span><span class="comment"> % other NTPs/NDPs/NMPs</span>
+0359         <span class="string">'CTP'</span>,<span class="string">'CDP'</span>,<span class="string">'CMP'</span>,<span class="string">'dCTP'</span>,<span class="string">'dCDP'</span>,<span class="string">'dCMP'</span>, <span class="keyword">...</span>
+0360         <span class="string">'UTP'</span>,<span class="string">'UDP'</span>,<span class="string">'UMP'</span>,<span class="string">'dUTP'</span>,<span class="string">'dUDP'</span>,<span class="string">'dUMP'</span>, <span class="keyword">...</span>
+0361         <span class="string">'TTP'</span>,<span class="string">'TDP'</span>,<span class="string">'TMP'</span>,<span class="string">'dTTP'</span>,<span class="string">'dTDP'</span>,<span class="string">'dTMP'</span>, <span class="keyword">...</span>
+0362         <span class="string">'gtp'</span>,<span class="string">'gdp'</span>,<span class="string">'gmp'</span>,<span class="string">'dgtp'</span>,<span class="string">'dgdp'</span>,<span class="string">'dgmp'</span>, <span class="keyword">...</span>
+0363         <span class="string">'ctp'</span>,<span class="string">'cdp'</span>,<span class="string">'cmp'</span>,<span class="string">'dctp'</span>,<span class="string">'dcdp'</span>,<span class="string">'dcmp'</span>, <span class="keyword">...</span>
+0364         <span class="string">'utp'</span>,<span class="string">'udp'</span>,<span class="string">'ump'</span>,<span class="string">'dutp'</span>,<span class="string">'dudp'</span>,<span class="string">'dump'</span>, <span class="keyword">...</span>
+0365         <span class="string">'ttp'</span>,<span class="string">'tdp'</span>,<span class="string">'tmp'</span>,<span class="string">'dttp'</span>,<span class="string">'dtdp'</span>,<span class="string">'dtmp'</span>, <span class="keyword">...</span>
+0366         <span class="string">'NAD'</span>,<span class="string">'NADH'</span>,<span class="string">'NADP'</span>,<span class="string">'NADPH'</span>,<span class="string">'NAD+'</span>,<span class="string">'NADP+'</span>, <span class="keyword">...</span><span class="comment"> % nicotinamide cofactors</span>
+0367         <span class="string">'nad'</span>,<span class="string">'nadh'</span>,<span class="string">'nadp'</span>,<span class="string">'nadph'</span>, <span class="keyword">...</span>
+0368         <span class="string">'FAD'</span>,<span class="string">'FADH2'</span>,<span class="string">'FMN'</span>,<span class="string">'FMNH2'</span>, <span class="keyword">...</span><span class="comment"> % flavin cofactors</span>
+0369         <span class="string">'fad'</span>,<span class="string">'fadh2'</span>,<span class="string">'fmn'</span>,<span class="string">'fmnh2'</span>, <span class="keyword">...</span>
+0370         <span class="string">'CoA'</span>,<span class="string">'coenzyme A'</span>,<span class="string">'coenzyme a'</span>,<span class="string">'Coenzyme A'</span>, <span class="keyword">...</span><span class="comment"> % coenzyme A</span>
+0371         <span class="string">'coa'</span>, <span class="keyword">...</span>
+0372         <span class="string">'H2O'</span>,<span class="string">'water'</span>,<span class="string">'H+'</span>,<span class="string">'proton'</span>,<span class="string">'OH-'</span>,<span class="string">'hydroxide'</span>, <span class="keyword">...</span><span class="comment"> % water / proton</span>
+0373         <span class="string">'h2o'</span>,<span class="string">'h'</span>,<span class="string">'oh1'</span>, <span class="keyword">...</span>
+0374         <span class="string">'phosphate'</span>,<span class="string">'orthophosphate'</span>,<span class="string">'pyrophosphate'</span>,<span class="string">'diphosphate'</span>, <span class="keyword">...</span><span class="comment"> % inorganic phosphate</span>
+0375         <span class="string">'pi'</span>,<span class="string">'ppi'</span>,<span class="string">'pp'</span>, <span class="keyword">...</span>
+0376         <span class="string">'CO2'</span>,<span class="string">'carbon dioxide'</span>,<span class="string">'bicarbonate'</span>,<span class="string">'HCO3-'</span>, <span class="keyword">...</span><span class="comment"> % carbon dioxide</span>
+0377         <span class="string">'co2'</span>,<span class="string">'hco3'</span>, <span class="keyword">...</span>
+0378         <span class="string">'O2'</span>,<span class="string">'oxygen'</span>,<span class="string">'NH3'</span>,<span class="string">'ammonia'</span>,<span class="string">'NH4+'</span>,<span class="string">'ammonium'</span>,<span class="string">'nitrogen'</span>, <span class="keyword">...</span><span class="comment"> % oxygen / nitrogen</span>
+0379         <span class="string">'o2'</span>,<span class="string">'nh3'</span>,<span class="string">'nh4'</span>, <span class="keyword">...</span>
+0380         <span class="string">'sulfate'</span>,<span class="string">'sulfite'</span>,<span class="string">'sulfide'</span>,<span class="string">'thiosulfate'</span>, <span class="keyword">...</span><span class="comment"> % sulfur species</span>
+0381         <span class="string">'thioredoxin'</span>,<span class="string">'thioredoxin-SH'</span>,<span class="string">'thioredoxin-S2'</span>, <span class="keyword">...</span><span class="comment"> % redox carriers</span>
+0382         <span class="string">'trdrd'</span>,<span class="string">'trdox'</span>, <span class="keyword">...</span>
+0383         <span class="string">'ferredoxin'</span>,<span class="string">'ferredoxin reduced'</span>,<span class="string">'ferredoxin oxidized'</span>, <span class="keyword">...</span>
+0384         <span class="string">'fdred'</span>,<span class="string">'fdox'</span>, <span class="keyword">...</span>
+0385         <span class="string">'ubiquinol'</span>,<span class="string">'ubiquinone'</span>,<span class="string">'menaquinol'</span>,<span class="string">'menaquinone'</span>, <span class="keyword">...</span>
+0386         <span class="string">'q8h2'</span>,<span class="string">'q8'</span>,<span class="string">'mqn8'</span>,<span class="string">'mql8'</span>, <span class="keyword">...</span>
+0387         <span class="string">'lipoamide'</span>,<span class="string">'dihydrolipoamide'</span>, <span class="keyword">...</span>
+0388         <span class="string">'S-adenosyl-L-methionine'</span>,<span class="string">'S-adenosylhomocysteine'</span>, <span class="keyword">...</span><span class="comment"> % one-carbon donors</span>
+0389         <span class="string">'sam'</span>,<span class="string">'sah'</span>,<span class="string">'amet'</span>,<span class="string">'ahcys'</span>, <span class="keyword">...</span>
+0390         <span class="string">'5-methyltetrahydrofolate'</span>,<span class="string">'tetrahydrofolate'</span>,<span class="string">'dihydrofolate'</span>, <span class="keyword">...</span>
+0391         <span class="string">'thf'</span>,<span class="string">'dhf'</span>,<span class="string">'mlthf'</span>,<span class="string">'methf'</span> <span class="keyword">...</span>
+0392     };
+0393 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

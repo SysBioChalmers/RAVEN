@@ -195,93 +195,96 @@ This function is called by:
 0110         namesInComp=metNames; <span class="comment">%All requested metabolites now exist</span>
 0111     <span class="keyword">end</span>
 0112     
-0113     <span class="comment">%Construct the S matrix</span>
-0114     nRxns=numel(fromMetsInComp);
-0115     newS=zeros(numel(model.mets),nRxns);
-0116     newS(sub2ind(size(newS),fromMetsInComp(:),(1:nRxns)'))=-1;
-0117     newS(sub2ind(size(newS),toMets(:),(1:nRxns)'))=1;
-0118     
-0119     <span class="comment">%Add the reactions</span>
-0120     model.S=[model.S sparse(newS)];
-0121     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'defaultLB'</span>)
-0122         lb = model.annotation.defaultLB;
-0123         ub = model.annotation.defaultUB;
-0124     <span class="keyword">else</span>
-0125         lb = -inf;
-0126         ub = inf;
-0127     <span class="keyword">end</span>
-0128     <span class="keyword">if</span> isRev==true
-0129         model.lb=[model.lb;ones(nRxns,1)*lb];
-0130         model.rev=[model.rev;ones(nRxns,1)];
-0131     <span class="keyword">else</span>
-0132         model.lb=[model.lb;zeros(nRxns,1)];
-0133         model.rev=[model.rev;zeros(nRxns,1)];
-0134     <span class="keyword">end</span>
-0135     model.ub=[model.ub;ones(nRxns,1)*ub];
-0136     model.c=[model.c;zeros(nRxns,1)];
-0137     
-0138     <span class="comment">%Add annotation</span>
-0139     filler=cell(nRxns,1);
-0140     filler(:)={<span class="string">''</span>};
-0141     addedRxnsID=<a href="generateNewIds.html" class="code" title="function newIds=generateNewIds(model,type,prefix,varargin)">generateNewIds</a>(model,<span class="string">'rxns'</span>,prefix,nRxns);
-0142     addedRxnsName=strcat(namesInComp, {<span class="string">' transport, '</span>}, model.compNames(fromID), <span class="string">'-'</span>, model.compNames(toIDs(i)));
-0143     addedRxnsName=addedRxnsName(:); <span class="comment">%Defensive: keep column orientation regardless of namesInComp's</span>
-0144     model.rxns=[model.rxns;addedRxnsID];
-0145     model.rxnNames=[model.rxnNames;addedRxnsName];
-0146     
-0147     <span class="keyword">if</span> isfield(model,<span class="string">'eccodes'</span>)
-0148         model.eccodes=[model.eccodes;filler];
-0149     <span class="keyword">end</span>
-0150     <span class="keyword">if</span> isfield(model,<span class="string">'subSystems'</span>)
-0151         isNested = any(cellfun(@(x) iscell(x), model.subSystems));
-0152         ssFiller = filler;
-0153         <span class="keyword">if</span> isRev==1
-0154             ssFiller(:) = {[<span class="string">'Transport between '</span> fromComp <span class="string">' and '</span> toComps{i}]};
-0155         <span class="keyword">else</span>
-0156             ssFiller(:) = {[<span class="string">'Transport from '</span> fromComp <span class="string">' to '</span> toComps{i}]};
-0157         <span class="keyword">end</span>
-0158         <span class="keyword">if</span> isNested
-0159             ssFiller = cellfun(@(x) {x}, ssFiller, <span class="string">'uni'</span>, 0);
+0113     <span class="comment">%Construct the S matrix directly as sparse (indexed assignment on a</span>
+0114     <span class="comment">%sparse matrix still overwrites rather than summing on a repeated</span>
+0115     <span class="comment">%index, same as on a dense one): a dense (mets x newRxns) intermediate</span>
+0116     <span class="comment">%is wasted allocation for a genome-scale model.</span>
+0117     nRxns=numel(fromMetsInComp);
+0118     newS=sparse(numel(model.mets),nRxns);
+0119     newS(sub2ind(size(newS),fromMetsInComp(:),(1:nRxns)'))=-1;
+0120     newS(sub2ind(size(newS),toMets(:),(1:nRxns)'))=1;
+0121 
+0122     <span class="comment">%Add the reactions</span>
+0123     model.S=[model.S newS];
+0124     <span class="keyword">if</span> isfield(model,<span class="string">'annotation'</span>) &amp;&amp; isfield(model.annotation,<span class="string">'defaultLB'</span>)
+0125         lb = model.annotation.defaultLB;
+0126         ub = model.annotation.defaultUB;
+0127     <span class="keyword">else</span>
+0128         lb = -inf;
+0129         ub = inf;
+0130     <span class="keyword">end</span>
+0131     <span class="keyword">if</span> isRev==true
+0132         model.lb=[model.lb;ones(nRxns,1)*lb];
+0133         model.rev=[model.rev;ones(nRxns,1)];
+0134     <span class="keyword">else</span>
+0135         model.lb=[model.lb;zeros(nRxns,1)];
+0136         model.rev=[model.rev;zeros(nRxns,1)];
+0137     <span class="keyword">end</span>
+0138     model.ub=[model.ub;ones(nRxns,1)*ub];
+0139     model.c=[model.c;zeros(nRxns,1)];
+0140     
+0141     <span class="comment">%Add annotation</span>
+0142     filler=cell(nRxns,1);
+0143     filler(:)={<span class="string">''</span>};
+0144     addedRxnsID=<a href="generateNewIds.html" class="code" title="function newIds=generateNewIds(model,type,prefix,varargin)">generateNewIds</a>(model,<span class="string">'rxns'</span>,prefix,nRxns);
+0145     addedRxnsName=strcat(namesInComp, {<span class="string">' transport, '</span>}, model.compNames(fromID), <span class="string">'-'</span>, model.compNames(toIDs(i)));
+0146     addedRxnsName=addedRxnsName(:); <span class="comment">%Defensive: keep column orientation regardless of namesInComp's</span>
+0147     model.rxns=[model.rxns;addedRxnsID];
+0148     model.rxnNames=[model.rxnNames;addedRxnsName];
+0149     
+0150     <span class="keyword">if</span> isfield(model,<span class="string">'eccodes'</span>)
+0151         model.eccodes=[model.eccodes;filler];
+0152     <span class="keyword">end</span>
+0153     <span class="keyword">if</span> isfield(model,<span class="string">'subSystems'</span>)
+0154         isNested = any(cellfun(@(x) iscell(x), model.subSystems));
+0155         ssFiller = filler;
+0156         <span class="keyword">if</span> isRev==1
+0157             ssFiller(:) = {[<span class="string">'Transport between '</span> fromComp <span class="string">' and '</span> toComps{i}]};
+0158         <span class="keyword">else</span>
+0159             ssFiller(:) = {[<span class="string">'Transport from '</span> fromComp <span class="string">' to '</span> toComps{i}]};
 0160         <span class="keyword">end</span>
-0161         model.subSystems=[model.subSystems;ssFiller];
-0162     <span class="keyword">end</span>
-0163     <span class="keyword">if</span> isfield(model,<span class="string">'grRules'</span>)
-0164         model.grRules=[model.grRules;filler];
+0161         <span class="keyword">if</span> isNested
+0162             ssFiller = cellfun(@(x) {x}, ssFiller, <span class="string">'uni'</span>, 0);
+0163         <span class="keyword">end</span>
+0164         model.subSystems=[model.subSystems;ssFiller];
 0165     <span class="keyword">end</span>
-0166     <span class="keyword">if</span> isfield(model,<span class="string">'rxnFrom'</span>)
-0167         model.rxnFrom=[model.rxnFrom;filler];
+0166     <span class="keyword">if</span> isfield(model,<span class="string">'grRules'</span>)
+0167         model.grRules=[model.grRules;filler];
 0168     <span class="keyword">end</span>
-0169     <span class="keyword">if</span> isfield(model,<span class="string">'rxnMiriams'</span>)
-0170         model.rxnMiriams=[model.rxnMiriams;cell(nRxns,1)];
+0169     <span class="keyword">if</span> isfield(model,<span class="string">'rxnFrom'</span>)
+0170         model.rxnFrom=[model.rxnFrom;filler];
 0171     <span class="keyword">end</span>
-0172     <span class="keyword">if</span> isfield(model,<span class="string">'rxnComps'</span>)
-0173         model.rxnComps=[model.rxnComps;ones(nRxns,1)];
-0174         fprintf(<span class="string">'NOTE: The added transport reactions will be added to the first compartment\n'</span>);
-0175     <span class="keyword">end</span>
-0176     <span class="keyword">if</span> isfield(model,<span class="string">'rxnGeneMat'</span>)
-0177         model.rxnGeneMat=[model.rxnGeneMat;sparse(nRxns,numel(model.genes))];
+0172     <span class="keyword">if</span> isfield(model,<span class="string">'rxnMiriams'</span>)
+0173         model.rxnMiriams=[model.rxnMiriams;cell(nRxns,1)];
+0174     <span class="keyword">end</span>
+0175     <span class="keyword">if</span> isfield(model,<span class="string">'rxnComps'</span>)
+0176         model.rxnComps=[model.rxnComps;ones(nRxns,1)];
+0177         fprintf(<span class="string">'NOTE: The added transport reactions will be added to the first compartment\n'</span>);
 0178     <span class="keyword">end</span>
-0179     <span class="keyword">if</span> isfield(model,<span class="string">'rxnNotes'</span>)
-0180         model.rxnNotes=[model.rxnNotes;filler];
+0179     <span class="keyword">if</span> isfield(model,<span class="string">'rxnGeneMat'</span>)
+0180         model.rxnGeneMat=[model.rxnGeneMat;sparse(nRxns,numel(model.genes))];
 0181     <span class="keyword">end</span>
-0182     <span class="keyword">if</span> isfield(model,<span class="string">'rxnReferences'</span>)
-0183         model.rxnReferences=[model.rxnReferences;filler];
+0182     <span class="keyword">if</span> isfield(model,<span class="string">'rxnNotes'</span>)
+0183         model.rxnNotes=[model.rxnNotes;filler];
 0184     <span class="keyword">end</span>
-0185     <span class="keyword">if</span> isfield(model,<span class="string">'rxnConfidenceScores'</span>)
-0186         model.rxnConfidenceScores=[model.rxnConfidenceScores;NaN(nRxns,1)];
+0185     <span class="keyword">if</span> isfield(model,<span class="string">'rxnReferences'</span>)
+0186         model.rxnReferences=[model.rxnReferences;filler];
 0187     <span class="keyword">end</span>
-0188     <span class="keyword">if</span> isfield(model,<span class="string">'rxnDeltaG'</span>)
-0189         model.rxnDeltaG=[model.rxnDeltaG;NaN(nRxns,1)];
+0188     <span class="keyword">if</span> isfield(model,<span class="string">'rxnConfidenceScores'</span>)
+0189         model.rxnConfidenceScores=[model.rxnConfidenceScores;NaN(nRxns,1)];
 0190     <span class="keyword">end</span>
-0191     <span class="keyword">if</span> isfield(model,<span class="string">'pwys'</span>)
-0192         model.pwys=[model.pwys;filler];
+0191     <span class="keyword">if</span> isfield(model,<span class="string">'rxnDeltaG'</span>)
+0192         model.rxnDeltaG=[model.rxnDeltaG;NaN(nRxns,1)];
 0193     <span class="keyword">end</span>
-0194     <span class="keyword">if</span> isfield(model,<span class="string">'spontaneous'</span>)
-0195         model.spontaneous=[model.spontaneous;false(nRxns,1)];
+0194     <span class="keyword">if</span> isfield(model,<span class="string">'pwys'</span>)
+0195         model.pwys=[model.pwys;filler];
 0196     <span class="keyword">end</span>
-0197     addedRxns = [addedRxns; addedRxnsID];
-0198 <span class="keyword">end</span>
-0199 <span class="keyword">end</span></pre></div>
+0197     <span class="keyword">if</span> isfield(model,<span class="string">'spontaneous'</span>)
+0198         model.spontaneous=[model.spontaneous;false(nRxns,1)];
+0199     <span class="keyword">end</span>
+0200     addedRxns = [addedRxns; addedRxnsID];
+0201 <span class="keyword">end</span>
+0202 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

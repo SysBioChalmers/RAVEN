@@ -41,7 +41,7 @@ This function is called by:
 
 <h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <ul style="list-style-image:url(../../matlabicon.gif)">
-<li><a href="#_sub1" class="code">function exportForGitWritesDependencies(testCase)</a></li><li><a href="#_sub2" class="code">function exportForGitMainBranchFlagRejectsNonMain(testCase)</a></li><li><a href="#_sub3" class="code">function importModelReadsSBML(testCase)</a></li><li><a href="#_sub4" class="code">function readYAMLmodelReadsYml(testCase)</a></li><li><a href="#_sub5" class="code">function parseYAMLReturnsNestedTree(testCase)</a></li><li><a href="#_sub6" class="code">function exportImportSBMLRoundTrip(testCase)</a></li><li><a href="#_sub7" class="code">function exportImportSBMLRoundTripPreservesDeltaG(testCase)</a></li><li><a href="#_sub8" class="code">function exportModelOmitsDeltaGFieldWhenAllNaN(testCase)</a></li><li><a href="#_sub9" class="code">function exportToExcelFormatWritesFile(testCase)</a></li><li><a href="#_sub10" class="code">function exportToExcelFormatWritesEcSheets(testCase)</a></li><li><a href="#_sub11" class="code">function writeReadYAMLRoundTrip(testCase)</a></li><li><a href="#_sub12" class="code">function writeReadYAMLPreservesCompartmentAnnotations(testCase)</a></li><li><a href="#_sub13" class="code">function writeReadYAMLPreservesUnknownAnnotationFields(testCase)</a></li><li><a href="#_sub14" class="code">function exportForGitWritesRepo(testCase)</a></li><li><a href="#_sub15" class="code">function checkFileExistenceFindsFile(testCase)</a></li><li><a href="#_sub16" class="code">function checkFileExistenceAcceptsForwardSlashes(testCase)</a></li><li><a href="#_sub17" class="code">function cleanSheetTrimsComments(testCase)</a></li><li><a href="#_sub18" class="code">function writeExcelRoundTrips(testCase)</a></li></ul>
+<li><a href="#_sub1" class="code">function exportForGitWritesDependencies(testCase)</a></li><li><a href="#_sub2" class="code">function exportForGitMainBranchFlagRejectsNonMain(testCase)</a></li><li><a href="#_sub3" class="code">function importModelHandlesSpeciesAndReactionEdgeCases(testCase)</a></li><li><a href="#_sub4" class="code">function importModelStripsRegexSpecialCompartmentName(testCase)</a></li><li><a href="#_sub5" class="code">function importModelReadsSBML(testCase)</a></li><li><a href="#_sub6" class="code">function readYAMLmodelReadsYml(testCase)</a></li><li><a href="#_sub7" class="code">function parseYAMLReturnsNestedTree(testCase)</a></li><li><a href="#_sub8" class="code">function exportImportSBMLRoundTrip(testCase)</a></li><li><a href="#_sub9" class="code">function exportImportSBMLRoundTripPreservesDeltaG(testCase)</a></li><li><a href="#_sub10" class="code">function exportModelOmitsDeltaGFieldWhenAllNaN(testCase)</a></li><li><a href="#_sub11" class="code">function exportToExcelFormatWritesFile(testCase)</a></li><li><a href="#_sub12" class="code">function exportToExcelFormatWritesEcSheets(testCase)</a></li><li><a href="#_sub13" class="code">function writeReadYAMLRoundTrip(testCase)</a></li><li><a href="#_sub14" class="code">function writeReadYAMLPreservesCompartmentAnnotations(testCase)</a></li><li><a href="#_sub15" class="code">function writeReadYAMLPreservesUnknownAnnotationFields(testCase)</a></li><li><a href="#_sub16" class="code">function exportForGitWritesRepo(testCase)</a></li><li><a href="#_sub17" class="code">function checkFileExistenceFindsFile(testCase)</a></li><li><a href="#_sub18" class="code">function checkFileExistenceAcceptsForwardSlashes(testCase)</a></li><li><a href="#_sub19" class="code">function cleanSheetTrimsComments(testCase)</a></li><li><a href="#_sub20" class="code">function writeExcelRoundTrips(testCase)</a></li></ul>
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <div class="fragment"><pre>0001 classdef <a href="tIO.html" class="code" title="">tIO</a> &lt; <a href="RavenTestCase.html" class="code" title="">RavenTestCase</a>
@@ -74,232 +74,270 @@ This function is called by:
 0028                 ?MException);
 0029         <span class="keyword">end</span>
 0030 
-0031         <a name="_sub2" href="#_subfunctions" class="code">function importModelReadsSBML(testCase)</a>
-0032             f = fullfile(testCase.ravenRoot,<span class="string">'tutorial'</span>,<span class="string">'empty.xml'</span>);
-0033             evalc(<span class="string">'m = importModel(f);'</span>);
-0034             testCase.verifyTrue(isfield(m, <span class="string">'rxns'</span>));
-0035         <span class="keyword">end</span>
-0036 
-0037         <a name="_sub3" href="#_subfunctions" class="code">function readYAMLmodelReadsYml(testCase)</a>
-0038             f = fullfile(testCase.ravenRoot,<span class="string">'tutorial'</span>,<span class="string">'empty.yml'</span>);
-0039             evalc(<span class="string">'m = readYAMLmodel(f);'</span>);
-0040             testCase.verifyTrue(isfield(m, <span class="string">'rxns'</span>));
-0041         <span class="keyword">end</span>
-0042 
-0043         <a name="_sub4" href="#_subfunctions" class="code">function parseYAMLReturnsNestedTree(testCase)</a>
-0044             f = [tempname <span class="string">'.yml'</span>];
-0045             testCase.addTeardown(@() delete(f));
-0046             fid = fopen(f,<span class="string">'w'</span>);
-0047             fprintf(fid, [ <span class="keyword">...</span>
-0048                 <span class="string">'# a full-line comment\n'</span> <span class="keyword">...</span>
-0049                 <span class="string">'prelude:\n'</span> <span class="keyword">...</span>
-0050                 <span class="string">'  reset_exchanges: out  # trailing comment\n'</span> <span class="keyword">...</span>
-0051                 <span class="string">'cofactor_pseudoreaction:\n'</span> <span class="keyword">...</span>
-0052                 <span class="string">'  rxn_id: r_4598\n'</span> <span class="keyword">...</span>
-0053                 <span class="string">'  remove_mets:\n'</span> <span class="keyword">...</span>
-0054                 <span class="string">'    - { met: s_3714 }\n'</span> <span class="keyword">...</span>
-0055                 <span class="string">'bounds:\n'</span> <span class="keyword">...</span>
-0056                 <span class="string">'  - { rxn: r_1654, lb: -1000 }\n'</span> <span class="keyword">...</span>
-0057                 <span class="string">'  - { rxn: r_1663, lb: 0, ub: 0 }\n'</span> <span class="keyword">...</span>
-0058                 <span class="string">'expected_uptake_count: 15\n'</span>]);
-0059             fclose(fid);
-0060 
-0061             out = parseYAML(f);
-0062             testCase.verifyEqual(out.prelude.reset_exchanges, <span class="string">'out'</span>)
-0063             testCase.verifyEqual(out.cofactor_pseudoreaction.rxn_id, <span class="string">'r_4598'</span>)
-0064             testCase.verifyEqual(out.cofactor_pseudoreaction.remove_mets{1}.met, <span class="string">'s_3714'</span>)
-0065             testCase.verifyEqual(numel(out.bounds), 2)
-0066             testCase.verifyEqual(out.bounds{1}.rxn, <span class="string">'r_1654'</span>)
-0067             testCase.verifyEqual(out.bounds{1}.lb, -1000)
-0068             testCase.verifyFalse(isfield(out.bounds{1}, <span class="string">'ub'</span>))
-0069             testCase.verifyEqual(out.bounds{2}.ub, 0)
-0070             testCase.verifyEqual(out.expected_uptake_count, 15)
-0071         <span class="keyword">end</span>
-0072 
-0073         <a name="_sub5" href="#_subfunctions" class="code">function exportImportSBMLRoundTrip(testCase)</a>
-0074             f = [tempname <span class="string">'.xml'</span>];
-0075             testCase.addTeardown(@() delete(f));
-0076             evalc(<span class="string">'exportModel(testCase.model, f);'</span>);
-0077             evalc(<span class="string">'m2 = importModel(f);'</span>);
-0078             testCase.verifyEqual(numel(m2.rxns), numel(testCase.model.rxns));
+0031         <a name="_sub2" href="#_subfunctions" class="code">function importModelHandlesSpeciesAndReactionEdgeCases(testCase)</a>
+0032             <span class="comment">% A model where: some species have no SBO term while others do</span>
+0033             <span class="comment">% (and disagree with each other); a multi-reaction objective;</span>
+0034             <span class="comment">% a reaction with more than one SUBSYSTEM note; and species</span>
+0035             <span class="comment">% whose charge is genuinely (not just by default) zero.</span>
+0036             f = fullfile(testCase.ravenRoot,<span class="string">'testing'</span>,<span class="string">'function_tests'</span>,<span class="string">'test_data'</span>, <span class="keyword">...</span>
+0037                 <span class="string">'importModelEdgeCases.xml'</span>);
+0038             evalc(<span class="string">'m = importModel(f);'</span>);
+0039 
+0040             <span class="comment">% SBO terms must land on the metabolite that actually has them,</span>
+0041             <span class="comment">% not be shifted onto the wrong one because one species (m2)</span>
+0042             <span class="comment">% has none.</span>
+0043             testCase.verifyTrue(isfield(m,<span class="string">'metMiriams'</span>));
+0044             testCase.verifyEmpty(m.metMiriams{strcmp(m.mets,<span class="string">'m2'</span>)});
+0045             testCase.verifyNotEmpty(m.metMiriams{strcmp(m.mets,<span class="string">'m3'</span>)});
+0046 
+0047             <span class="comment">% Both reactions in the combined objective must be captured.</span>
+0048             testCase.verifyEqual(m.c(strcmp(m.rxns,<span class="string">'r1'</span>)), 1);
+0049             testCase.verifyEqual(m.c(strcmp(m.rxns,<span class="string">'r2'</span>)), 2);
+0050 
+0051             <span class="comment">% Two SUBSYSTEM notes on one reaction must stay two entries.</span>
+0052             testCase.verifyEqual(numel(m.subSystems{strcmp(m.rxns,<span class="string">'r1'</span>)}), 2);
+0053 
+0054             <span class="comment">% All-genuinely-neutral charges must not be dropped.</span>
+0055             testCase.verifyTrue(isfield(m,<span class="string">'metCharges'</span>));
+0056             testCase.verifyEqual(m.metCharges, zeros(4,1));
+0057         <span class="keyword">end</span>
+0058 
+0059         <a name="_sub3" href="#_subfunctions" class="code">function importModelStripsRegexSpecialCompartmentName(testCase)</a>
+0060             <span class="comment">% A compartment name containing regex metacharacters (&quot;Golgi</span>
+0061             <span class="comment">% (cis)&quot;) must still be recognized and stripped from the</span>
+0062             <span class="comment">% metabolite name suffix, not corrupt the matching pattern.</span>
+0063             f = fullfile(testCase.ravenRoot,<span class="string">'testing'</span>,<span class="string">'function_tests'</span>,<span class="string">'test_data'</span>, <span class="keyword">...</span>
+0064                 <span class="string">'importModelSpecialCompName.xml'</span>);
+0065             evalc(<span class="string">'m = importModel(f);'</span>);
+0066             testCase.verifyEqual(m.metNames{1}, <span class="string">'metabolite one'</span>);
+0067         <span class="keyword">end</span>
+0068 
+0069         <a name="_sub4" href="#_subfunctions" class="code">function importModelReadsSBML(testCase)</a>
+0070             f = fullfile(testCase.ravenRoot,<span class="string">'tutorial'</span>,<span class="string">'empty.xml'</span>);
+0071             evalc(<span class="string">'m = importModel(f);'</span>);
+0072             testCase.verifyTrue(isfield(m, <span class="string">'rxns'</span>));
+0073         <span class="keyword">end</span>
+0074 
+0075         <a name="_sub5" href="#_subfunctions" class="code">function readYAMLmodelReadsYml(testCase)</a>
+0076             f = fullfile(testCase.ravenRoot,<span class="string">'tutorial'</span>,<span class="string">'empty.yml'</span>);
+0077             evalc(<span class="string">'m = readYAMLmodel(f);'</span>);
+0078             testCase.verifyTrue(isfield(m, <span class="string">'rxns'</span>));
 0079         <span class="keyword">end</span>
 0080 
-0081         <a name="_sub6" href="#_subfunctions" class="code">function exportImportSBMLRoundTripPreservesDeltaG(testCase)</a>
-0082             <span class="comment">% rxnDeltaG/metDeltaG round-trip through a &lt;p&gt;deltaG: VALUE&lt;/p&gt;</span>
-0083             <span class="comment">% notes entry -- the same key and format raven-toolbox reads</span>
-0084             <span class="comment">% and writes, so either toolbox's SBML file is a complete</span>
-0085             <span class="comment">% round trip for the other (RAVEN#724). An untouched reaction</span>
-0086             <span class="comment">% or metabolite stays NaN, and the field is omitted entirely</span>
-0087             <span class="comment">% if nothing in the model has a value. Values are the kind of</span>
-0088             <span class="comment">% magnitude a real thermodynamic estimate has, not contrived</span>
-0089             <span class="comment">% high-precision ones: num2str's default precision (no digits</span>
-0090             <span class="comment">% argument) is exact for these, same as Confidence Level.</span>
-0091             m = testCase.model;
-0092             m.rxnDeltaG = NaN(numel(m.rxns), 1);
-0093             m.rxnDeltaG(1) = -8.7;
-0094             m.metDeltaG = NaN(numel(m.mets), 1);
-0095             m.metDeltaG(1) = 7.5;
-0096 
-0097             f = [tempname <span class="string">'.xml'</span>];
-0098             testCase.addTeardown(@() delete(f));
-0099             evalc(<span class="string">'exportModel(m, f);'</span>);
-0100             evalc(<span class="string">'m2 = importModel(f);'</span>);
-0101 
-0102             testCase.verifyEqual(m2.rxnDeltaG(1), -8.7, <span class="string">'AbsTol'</span>, 1e-9);
-0103             testCase.verifyTrue(isnan(m2.rxnDeltaG(2)));
-0104             testCase.verifyEqual(m2.metDeltaG(1), 7.5, <span class="string">'AbsTol'</span>, 1e-9);
-0105             testCase.verifyTrue(isnan(m2.metDeltaG(2)));
-0106         <span class="keyword">end</span>
-0107 
-0108         <a name="_sub7" href="#_subfunctions" class="code">function exportModelOmitsDeltaGFieldWhenAllNaN(testCase)</a>
-0109             f = [tempname <span class="string">'.xml'</span>];
-0110             testCase.addTeardown(@() delete(f));
-0111             evalc(<span class="string">'exportModel(testCase.model, f);'</span>);
-0112             evalc(<span class="string">'m2 = importModel(f);'</span>);
-0113             testCase.verifyFalse(isfield(m2, <span class="string">'rxnDeltaG'</span>));
-0114             testCase.verifyFalse(isfield(m2, <span class="string">'metDeltaG'</span>));
-0115         <span class="keyword">end</span>
-0116 
-0117         <a name="_sub8" href="#_subfunctions" class="code">function exportToExcelFormatWritesFile(testCase)</a>
-0118             f = [tempname <span class="string">'.xlsx'</span>];
-0119             testCase.addTeardown(@() delete(f));
-0120             evalc(<span class="string">'exportToExcelFormat(testCase.model, f);'</span>);
-0121             testCase.verifyTrue(exist(f,<span class="string">'file'</span>)==2);
-0122         <span class="keyword">end</span>
-0123 
-0124         <a name="_sub9" href="#_subfunctions" class="code">function exportToExcelFormatWritesEcSheets(testCase)</a>
-0125             <span class="comment">% Enzyme-constrained (GECKO) models get two extra export-only</span>
-0126             <span class="comment">% sheets, ENZYMES and ENZRXNS, holding the model.ec contents.</span>
-0127             model = testCase.model;
-0128             model.ec.geckoLight = false;
-0129             model.ec.rxns     = model.rxns(1:2);
-0130             model.ec.kcat     = [13.7; 0];
-0131             model.ec.source   = {<span class="string">'brenda'</span>; <span class="string">''</span>};
-0132             model.ec.notes    = {<span class="string">'note1'</span>; <span class="string">''</span>};
-0133             model.ec.eccodes  = {<span class="string">'1.1.1.1'</span>; <span class="string">'2.7.1.1;2.7.1.2'</span>};
-0134             model.ec.genes    = model.genes(1:2);
-0135             model.ec.enzymes  = {<span class="string">'P0A1'</span>; <span class="string">'P0A2'</span>};
-0136             model.ec.mw       = [51000; NaN];
-0137             model.ec.sequence = {<span class="string">'MABC'</span>; <span class="string">'MDEF'</span>};
-0138             model.ec.concs    = [NaN; 0.5];
-0139             model.ec.rxnEnzMat = [1 2; 0 1];   <span class="comment">% R1: P0A1 x1, P0A2 x2; R2: P0A2 x1</span>
-0140 
-0141             f = [tempname <span class="string">'.xlsx'</span>];
-0142             testCase.addTeardown(@() delete(f));
-0143             evalc(<span class="string">'exportToExcelFormat(model, f);'</span>);
-0144 
-0145             sheets = sheetnames(f);
-0146             testCase.verifyTrue(any(strcmp(sheets,<span class="string">'ENZYMES'</span>)));
-0147             testCase.verifyTrue(any(strcmp(sheets,<span class="string">'ENZRXNS'</span>)));
-0148 
-0149             <span class="comment">% NaN mw/conc are written as blanks; the kcat 0 sentinel is kept.</span>
-0150             enz = readcell(f,<span class="string">'Sheet'</span>,<span class="string">'ENZYMES'</span>);
-0151             testCase.verifyEqual(string(enz(1,2:6)),[&quot;ID&quot;,&quot;GENE&quot;,&quot;MW&quot;,&quot;SEQUENCE&quot;,&quot;CONC&quot;]);
-0152             testCase.verifyEqual(string(enz{2,2}),&quot;P0A1&quot;);
-0153             testCase.verifyEqual(enz{2,4},51000,<span class="string">'AbsTol'</span>,1e-9);
+0081         <a name="_sub6" href="#_subfunctions" class="code">function parseYAMLReturnsNestedTree(testCase)</a>
+0082             f = [tempname <span class="string">'.yml'</span>];
+0083             testCase.addTeardown(@() delete(f));
+0084             fid = fopen(f,<span class="string">'w'</span>);
+0085             fprintf(fid, [ <span class="keyword">...</span>
+0086                 <span class="string">'# a full-line comment\n'</span> <span class="keyword">...</span>
+0087                 <span class="string">'prelude:\n'</span> <span class="keyword">...</span>
+0088                 <span class="string">'  reset_exchanges: out  # trailing comment\n'</span> <span class="keyword">...</span>
+0089                 <span class="string">'cofactor_pseudoreaction:\n'</span> <span class="keyword">...</span>
+0090                 <span class="string">'  rxn_id: r_4598\n'</span> <span class="keyword">...</span>
+0091                 <span class="string">'  remove_mets:\n'</span> <span class="keyword">...</span>
+0092                 <span class="string">'    - { met: s_3714 }\n'</span> <span class="keyword">...</span>
+0093                 <span class="string">'bounds:\n'</span> <span class="keyword">...</span>
+0094                 <span class="string">'  - { rxn: r_1654, lb: -1000 }\n'</span> <span class="keyword">...</span>
+0095                 <span class="string">'  - { rxn: r_1663, lb: 0, ub: 0 }\n'</span> <span class="keyword">...</span>
+0096                 <span class="string">'expected_uptake_count: 15\n'</span>]);
+0097             fclose(fid);
+0098 
+0099             out = parseYAML(f);
+0100             testCase.verifyEqual(out.prelude.reset_exchanges, <span class="string">'out'</span>)
+0101             testCase.verifyEqual(out.cofactor_pseudoreaction.rxn_id, <span class="string">'r_4598'</span>)
+0102             testCase.verifyEqual(out.cofactor_pseudoreaction.remove_mets{1}.met, <span class="string">'s_3714'</span>)
+0103             testCase.verifyEqual(numel(out.bounds), 2)
+0104             testCase.verifyEqual(out.bounds{1}.rxn, <span class="string">'r_1654'</span>)
+0105             testCase.verifyEqual(out.bounds{1}.lb, -1000)
+0106             testCase.verifyFalse(isfield(out.bounds{1}, <span class="string">'ub'</span>))
+0107             testCase.verifyEqual(out.bounds{2}.ub, 0)
+0108             testCase.verifyEqual(out.expected_uptake_count, 15)
+0109         <span class="keyword">end</span>
+0110 
+0111         <a name="_sub7" href="#_subfunctions" class="code">function exportImportSBMLRoundTrip(testCase)</a>
+0112             f = [tempname <span class="string">'.xml'</span>];
+0113             testCase.addTeardown(@() delete(f));
+0114             evalc(<span class="string">'exportModel(testCase.model, f);'</span>);
+0115             evalc(<span class="string">'m2 = importModel(f);'</span>);
+0116             testCase.verifyEqual(numel(m2.rxns), numel(testCase.model.rxns));
+0117         <span class="keyword">end</span>
+0118 
+0119         <a name="_sub8" href="#_subfunctions" class="code">function exportImportSBMLRoundTripPreservesDeltaG(testCase)</a>
+0120             <span class="comment">% rxnDeltaG/metDeltaG round-trip through a &lt;p&gt;deltaG: VALUE&lt;/p&gt;</span>
+0121             <span class="comment">% notes entry -- the same key and format raven-toolbox reads</span>
+0122             <span class="comment">% and writes, so either toolbox's SBML file is a complete</span>
+0123             <span class="comment">% round trip for the other (RAVEN#724). An untouched reaction</span>
+0124             <span class="comment">% or metabolite stays NaN, and the field is omitted entirely</span>
+0125             <span class="comment">% if nothing in the model has a value. Values are the kind of</span>
+0126             <span class="comment">% magnitude a real thermodynamic estimate has, not contrived</span>
+0127             <span class="comment">% high-precision ones: num2str's default precision (no digits</span>
+0128             <span class="comment">% argument) is exact for these, same as Confidence Level.</span>
+0129             m = testCase.model;
+0130             m.rxnDeltaG = NaN(numel(m.rxns), 1);
+0131             m.rxnDeltaG(1) = -8.7;
+0132             m.metDeltaG = NaN(numel(m.mets), 1);
+0133             m.metDeltaG(1) = 7.5;
+0134 
+0135             f = [tempname <span class="string">'.xml'</span>];
+0136             testCase.addTeardown(@() delete(f));
+0137             evalc(<span class="string">'exportModel(m, f);'</span>);
+0138             evalc(<span class="string">'m2 = importModel(f);'</span>);
+0139 
+0140             testCase.verifyEqual(m2.rxnDeltaG(1), -8.7, <span class="string">'AbsTol'</span>, 1e-9);
+0141             testCase.verifyTrue(isnan(m2.rxnDeltaG(2)));
+0142             testCase.verifyEqual(m2.metDeltaG(1), 7.5, <span class="string">'AbsTol'</span>, 1e-9);
+0143             testCase.verifyTrue(isnan(m2.metDeltaG(2)));
+0144         <span class="keyword">end</span>
+0145 
+0146         <a name="_sub9" href="#_subfunctions" class="code">function exportModelOmitsDeltaGFieldWhenAllNaN(testCase)</a>
+0147             f = [tempname <span class="string">'.xml'</span>];
+0148             testCase.addTeardown(@() delete(f));
+0149             evalc(<span class="string">'exportModel(testCase.model, f);'</span>);
+0150             evalc(<span class="string">'m2 = importModel(f);'</span>);
+0151             testCase.verifyFalse(isfield(m2, <span class="string">'rxnDeltaG'</span>));
+0152             testCase.verifyFalse(isfield(m2, <span class="string">'metDeltaG'</span>));
+0153         <span class="keyword">end</span>
 0154 
-0155             ecrxn = readcell(f,<span class="string">'Sheet'</span>,<span class="string">'ENZRXNS'</span>);
-0156             testCase.verifyEqual(string(ecrxn(1,2:7)),[&quot;ID&quot;,&quot;KCAT&quot;,&quot;SOURCE&quot;,&quot;NOTE&quot;,&quot;EC-NUMBER&quot;,&quot;ENZYMES&quot;]);
-0157             testCase.verifyEqual(ecrxn{2,3},13.7,<span class="string">'AbsTol'</span>,1e-9);
-0158             testCase.verifyEqual(string(ecrxn{3,6}),&quot;2.7.1.1;2.7.1.2&quot;);
-0159             <span class="comment">% ENZYMES column: 'enzyme:count' subunit stoichiometry from rxnEnzMat</span>
-0160             testCase.verifyEqual(string(ecrxn{2,7}),&quot;P0A1:1;P0A2:2&quot;);
-0161             testCase.verifyEqual(string(ecrxn{3,7}),&quot;P0A2:1&quot;);
-0162         <span class="keyword">end</span>
-0163 
-0164         <a name="_sub10" href="#_subfunctions" class="code">function writeReadYAMLRoundTrip(testCase)</a>
-0165             f = [tempname <span class="string">'.yml'</span>];
-0166             testCase.addTeardown(@() delete(f));
-0167             evalc(<span class="string">'writeYAMLmodel(testCase.model, f);'</span>);
-0168             evalc(<span class="string">'m2 = readYAMLmodel(f);'</span>);
-0169             testCase.verifyEqual(numel(m2.rxns), numel(testCase.model.rxns));
-0170         <span class="keyword">end</span>
-0171 
-0172         <a name="_sub11" href="#_subfunctions" class="code">function writeReadYAMLPreservesCompartmentAnnotations(testCase)</a>
-0173             <span class="comment">% Compartment annotations must round-trip, and must not be read</span>
-0174             <span class="comment">% back as additional compartments.</span>
-0175             m = testCase.model;
-0176             m.compMiriams = cell(numel(m.comps),1);
-0177             m.compMiriams{1}.name  = {<span class="string">'go'</span>};
-0178             m.compMiriams{1}.value = {<span class="string">'GO:0005737'</span>};
-0179             f = [tempname <span class="string">'.yml'</span>];
+0155         <a name="_sub10" href="#_subfunctions" class="code">function exportToExcelFormatWritesFile(testCase)</a>
+0156             f = [tempname <span class="string">'.xlsx'</span>];
+0157             testCase.addTeardown(@() delete(f));
+0158             evalc(<span class="string">'exportToExcelFormat(testCase.model, f);'</span>);
+0159             testCase.verifyTrue(exist(f,<span class="string">'file'</span>)==2);
+0160         <span class="keyword">end</span>
+0161 
+0162         <a name="_sub11" href="#_subfunctions" class="code">function exportToExcelFormatWritesEcSheets(testCase)</a>
+0163             <span class="comment">% Enzyme-constrained (GECKO) models get two extra export-only</span>
+0164             <span class="comment">% sheets, ENZYMES and ENZRXNS, holding the model.ec contents.</span>
+0165             model = testCase.model;
+0166             model.ec.geckoLight = false;
+0167             model.ec.rxns     = model.rxns(1:2);
+0168             model.ec.kcat     = [13.7; 0];
+0169             model.ec.source   = {<span class="string">'brenda'</span>; <span class="string">''</span>};
+0170             model.ec.notes    = {<span class="string">'note1'</span>; <span class="string">''</span>};
+0171             model.ec.eccodes  = {<span class="string">'1.1.1.1'</span>; <span class="string">'2.7.1.1;2.7.1.2'</span>};
+0172             model.ec.genes    = model.genes(1:2);
+0173             model.ec.enzymes  = {<span class="string">'P0A1'</span>; <span class="string">'P0A2'</span>};
+0174             model.ec.mw       = [51000; NaN];
+0175             model.ec.sequence = {<span class="string">'MABC'</span>; <span class="string">'MDEF'</span>};
+0176             model.ec.concs    = [NaN; 0.5];
+0177             model.ec.rxnEnzMat = [1 2; 0 1];   <span class="comment">% R1: P0A1 x1, P0A2 x2; R2: P0A2 x1</span>
+0178 
+0179             f = [tempname <span class="string">'.xlsx'</span>];
 0180             testCase.addTeardown(@() delete(f));
-0181             evalc(<span class="string">'writeYAMLmodel(m, f);'</span>);
-0182             evalc(<span class="string">'m2 = readYAMLmodel(f);'</span>);
-0183             testCase.verifyEqual(m2.comps, m.comps);
-0184             testCase.verifyEqual(m2.compNames, m.compNames);
-0185             testCase.verifyEqual(m2.compMiriams{1}.name, {<span class="string">'go'</span>});
-0186             testCase.verifyEqual(m2.compMiriams{1}.value, {<span class="string">'GO:0005737'</span>});
-0187         <span class="keyword">end</span>
-0188 
-0189         <a name="_sub12" href="#_subfunctions" class="code">function writeReadYAMLPreservesUnknownAnnotationFields(testCase)</a>
-0190             <span class="comment">% A caller-specific metaData field with no RAVEN-defined slot</span>
-0191             <span class="comment">% (e.g. a `geckopy_version` field) must survive a write/read</span>
-0192             <span class="comment">% round trip instead of being silently dropped, same as the</span>
-0193             <span class="comment">% fixed annoFields set (taxonomy here).</span>
-0194             m = testCase.model;
-0195             m.annotation.taxonomy = <span class="string">'taxonomy/4932'</span>;
-0196             m.annotation.geckopyVersion = <span class="string">'0.2.1'</span>;
-0197             f = [tempname <span class="string">'.yml'</span>];
-0198             testCase.addTeardown(@() delete(f));
-0199             evalc(<span class="string">'writeYAMLmodel(m, f);'</span>);
-0200             evalc(<span class="string">'m2 = readYAMLmodel(f);'</span>);
-0201             testCase.verifyEqual(m2.annotation.taxonomy, <span class="string">'taxonomy/4932'</span>);
-0202             testCase.verifyEqual(m2.annotation.geckopyVersion, <span class="string">'0.2.1'</span>);
-0203         <span class="keyword">end</span>
-0204 
-0205         <a name="_sub13" href="#_subfunctions" class="code">function exportForGitWritesRepo(testCase)</a>
-0206             d = [tempname filesep];
-0207             mkdir(d);
-0208             testCase.addTeardown(@() rmdir(d, <span class="string">'s'</span>));
-0209             evalc(<span class="string">'exportForGit(testCase.model, ''ec'', d, {''yml''});'</span>);
-0210             testCase.verifyNotEmpty(dir(fullfile(d,<span class="string">'**'</span>,<span class="string">'*.yml'</span>)));
-0211         <span class="keyword">end</span>
-0212 
-0213         <a name="_sub14" href="#_subfunctions" class="code">function checkFileExistenceFindsFile(testCase)</a>
-0214             f = fullfile(testCase.ravenRoot,<span class="string">'testing'</span>,<span class="string">'function_tests'</span>, <span class="keyword">...</span>
-0215                 <span class="string">'test_data'</span>,<span class="string">'ecoli_textbook.mat'</span>);
-0216             out = checkFileExistence(f, 1, false, true);
-0217             testCase.verifyNotEmpty(out);
-0218         <span class="keyword">end</span>
-0219 
-0220         <a name="_sub15" href="#_subfunctions" class="code">function checkFileExistenceAcceptsForwardSlashes(testCase)</a>
-0221             <span class="comment">% An absolute Windows path may be written with forward slashes:</span>
-0222             <span class="comment">% MATLAB accepts them everywhere, and anything handing RAVEN a path</span>
-0223             <span class="comment">% built by another tool is likely to use them. Treating such a path</span>
-0224             <span class="comment">% as relative appends the working directory and turns</span>
-0225             <span class="comment">% &quot;C:/data/model.mat&quot; into &quot;C:\somewhere\C:\data\model.mat&quot;.</span>
-0226             f = fullfile(testCase.ravenRoot,<span class="string">'testing'</span>,<span class="string">'function_tests'</span>, <span class="keyword">...</span>
-0227                 <span class="string">'test_data'</span>,<span class="string">'ecoli_textbook.mat'</span>);
-0228             out = checkFileExistence(strrep(f,<span class="string">'\'</span>,<span class="string">'/'</span>), 1, false, true);
-0229             testCase.verifyNotEmpty(out);
-0230         <span class="keyword">end</span>
-0231 
-0232         <a name="_sub16" href="#_subfunctions" class="code">function cleanSheetTrimsComments(testCase)</a>
-0233             raw = {<span class="string">'#comment'</span>, <span class="string">'#comment'</span>; <span class="string">'a'</span>, <span class="string">'b'</span>; <span class="string">''</span>, <span class="string">''</span>};
-0234             out = cleanSheet(raw);
-0235             testCase.verifyClass(out, <span class="string">'cell'</span>);
-0236         <span class="keyword">end</span>
-0237 
-0238         <a name="_sub17" href="#_subfunctions" class="code">function writeExcelRoundTrips(testCase)</a>
-0239             <span class="comment">% writeExcel generates the .xlsx (Office Open XML) directly, with</span>
-0240             <span class="comment">% no external library; read it back with base MATLAB to confirm</span>
-0241             <span class="comment">% the sheets, values and types survive.</span>
-0242             f = [tempname <span class="string">'.xlsx'</span>];
-0243             testCase.addTeardown(@() delete(f));
-0244             s(1).name=<span class="string">'RXNS'</span>; s(1).header={<span class="string">'ID'</span>,<span class="string">'VALUE'</span>};
-0245             s(1).data={<span class="string">'r1'</span>,1.5; <span class="string">'r2'</span>,-3};
-0246             s(2).name=<span class="string">'METS'</span>; s(2).header={<span class="string">'ID'</span>}; s(2).data={<span class="string">'m1'</span>};
-0247             writeExcel(f, s);
-0248             testCase.verifyEqual(sort(string(sheetnames(f))),[&quot;METS&quot;;&quot;RXNS&quot;]);
-0249             raw = readcell(f,<span class="string">'Sheet'</span>,<span class="string">'RXNS'</span>);
-0250             testCase.verifyEqual(string(raw(1,:)),[&quot;ID&quot;,&quot;VALUE&quot;]);
-0251             testCase.verifyEqual(string(raw{2,1}),&quot;r1&quot;);
-0252             testCase.verifyEqual(raw{2,2},1.5,<span class="string">'AbsTol'</span>,1e-9);
-0253         <span class="keyword">end</span>
-0254 
-0255     <span class="keyword">end</span>
-0256 <span class="keyword">end</span></pre></div>
+0181             evalc(<span class="string">'exportToExcelFormat(model, f);'</span>);
+0182 
+0183             sheets = sheetnames(f);
+0184             testCase.verifyTrue(any(strcmp(sheets,<span class="string">'ENZYMES'</span>)));
+0185             testCase.verifyTrue(any(strcmp(sheets,<span class="string">'ENZRXNS'</span>)));
+0186 
+0187             <span class="comment">% NaN mw/conc are written as blanks; the kcat 0 sentinel is kept.</span>
+0188             enz = readcell(f,<span class="string">'Sheet'</span>,<span class="string">'ENZYMES'</span>);
+0189             testCase.verifyEqual(string(enz(1,2:6)),[&quot;ID&quot;,&quot;GENE&quot;,&quot;MW&quot;,&quot;SEQUENCE&quot;,&quot;CONC&quot;]);
+0190             testCase.verifyEqual(string(enz{2,2}),&quot;P0A1&quot;);
+0191             testCase.verifyEqual(enz{2,4},51000,<span class="string">'AbsTol'</span>,1e-9);
+0192 
+0193             ecrxn = readcell(f,<span class="string">'Sheet'</span>,<span class="string">'ENZRXNS'</span>);
+0194             testCase.verifyEqual(string(ecrxn(1,2:7)),[&quot;ID&quot;,&quot;KCAT&quot;,&quot;SOURCE&quot;,&quot;NOTE&quot;,&quot;EC-NUMBER&quot;,&quot;ENZYMES&quot;]);
+0195             testCase.verifyEqual(ecrxn{2,3},13.7,<span class="string">'AbsTol'</span>,1e-9);
+0196             testCase.verifyEqual(string(ecrxn{3,6}),&quot;2.7.1.1;2.7.1.2&quot;);
+0197             <span class="comment">% ENZYMES column: 'enzyme:count' subunit stoichiometry from rxnEnzMat</span>
+0198             testCase.verifyEqual(string(ecrxn{2,7}),&quot;P0A1:1;P0A2:2&quot;);
+0199             testCase.verifyEqual(string(ecrxn{3,7}),&quot;P0A2:1&quot;);
+0200         <span class="keyword">end</span>
+0201 
+0202         <a name="_sub12" href="#_subfunctions" class="code">function writeReadYAMLRoundTrip(testCase)</a>
+0203             f = [tempname <span class="string">'.yml'</span>];
+0204             testCase.addTeardown(@() delete(f));
+0205             evalc(<span class="string">'writeYAMLmodel(testCase.model, f);'</span>);
+0206             evalc(<span class="string">'m2 = readYAMLmodel(f);'</span>);
+0207             testCase.verifyEqual(numel(m2.rxns), numel(testCase.model.rxns));
+0208         <span class="keyword">end</span>
+0209 
+0210         <a name="_sub13" href="#_subfunctions" class="code">function writeReadYAMLPreservesCompartmentAnnotations(testCase)</a>
+0211             <span class="comment">% Compartment annotations must round-trip, and must not be read</span>
+0212             <span class="comment">% back as additional compartments.</span>
+0213             m = testCase.model;
+0214             m.compMiriams = cell(numel(m.comps),1);
+0215             m.compMiriams{1}.name  = {<span class="string">'go'</span>};
+0216             m.compMiriams{1}.value = {<span class="string">'GO:0005737'</span>};
+0217             f = [tempname <span class="string">'.yml'</span>];
+0218             testCase.addTeardown(@() delete(f));
+0219             evalc(<span class="string">'writeYAMLmodel(m, f);'</span>);
+0220             evalc(<span class="string">'m2 = readYAMLmodel(f);'</span>);
+0221             testCase.verifyEqual(m2.comps, m.comps);
+0222             testCase.verifyEqual(m2.compNames, m.compNames);
+0223             testCase.verifyEqual(m2.compMiriams{1}.name, {<span class="string">'go'</span>});
+0224             testCase.verifyEqual(m2.compMiriams{1}.value, {<span class="string">'GO:0005737'</span>});
+0225         <span class="keyword">end</span>
+0226 
+0227         <a name="_sub14" href="#_subfunctions" class="code">function writeReadYAMLPreservesUnknownAnnotationFields(testCase)</a>
+0228             <span class="comment">% A caller-specific metaData field with no RAVEN-defined slot</span>
+0229             <span class="comment">% (e.g. a `geckopy_version` field) must survive a write/read</span>
+0230             <span class="comment">% round trip instead of being silently dropped, same as the</span>
+0231             <span class="comment">% fixed annoFields set (taxonomy here).</span>
+0232             m = testCase.model;
+0233             m.annotation.taxonomy = <span class="string">'taxonomy/4932'</span>;
+0234             m.annotation.geckopyVersion = <span class="string">'0.2.1'</span>;
+0235             f = [tempname <span class="string">'.yml'</span>];
+0236             testCase.addTeardown(@() delete(f));
+0237             evalc(<span class="string">'writeYAMLmodel(m, f);'</span>);
+0238             evalc(<span class="string">'m2 = readYAMLmodel(f);'</span>);
+0239             testCase.verifyEqual(m2.annotation.taxonomy, <span class="string">'taxonomy/4932'</span>);
+0240             testCase.verifyEqual(m2.annotation.geckopyVersion, <span class="string">'0.2.1'</span>);
+0241         <span class="keyword">end</span>
+0242 
+0243         <a name="_sub15" href="#_subfunctions" class="code">function exportForGitWritesRepo(testCase)</a>
+0244             d = [tempname filesep];
+0245             mkdir(d);
+0246             testCase.addTeardown(@() rmdir(d, <span class="string">'s'</span>));
+0247             evalc(<span class="string">'exportForGit(testCase.model, ''ec'', d, {''yml''});'</span>);
+0248             testCase.verifyNotEmpty(dir(fullfile(d,<span class="string">'**'</span>,<span class="string">'*.yml'</span>)));
+0249         <span class="keyword">end</span>
+0250 
+0251         <a name="_sub16" href="#_subfunctions" class="code">function checkFileExistenceFindsFile(testCase)</a>
+0252             f = fullfile(testCase.ravenRoot,<span class="string">'testing'</span>,<span class="string">'function_tests'</span>, <span class="keyword">...</span>
+0253                 <span class="string">'test_data'</span>,<span class="string">'ecoli_textbook.mat'</span>);
+0254             out = checkFileExistence(f, 1, false, true);
+0255             testCase.verifyNotEmpty(out);
+0256         <span class="keyword">end</span>
+0257 
+0258         <a name="_sub17" href="#_subfunctions" class="code">function checkFileExistenceAcceptsForwardSlashes(testCase)</a>
+0259             <span class="comment">% An absolute Windows path may be written with forward slashes:</span>
+0260             <span class="comment">% MATLAB accepts them everywhere, and anything handing RAVEN a path</span>
+0261             <span class="comment">% built by another tool is likely to use them. Treating such a path</span>
+0262             <span class="comment">% as relative appends the working directory and turns</span>
+0263             <span class="comment">% &quot;C:/data/model.mat&quot; into &quot;C:\somewhere\C:\data\model.mat&quot;.</span>
+0264             f = fullfile(testCase.ravenRoot,<span class="string">'testing'</span>,<span class="string">'function_tests'</span>, <span class="keyword">...</span>
+0265                 <span class="string">'test_data'</span>,<span class="string">'ecoli_textbook.mat'</span>);
+0266             out = checkFileExistence(strrep(f,<span class="string">'\'</span>,<span class="string">'/'</span>), 1, false, true);
+0267             testCase.verifyNotEmpty(out);
+0268         <span class="keyword">end</span>
+0269 
+0270         <a name="_sub18" href="#_subfunctions" class="code">function cleanSheetTrimsComments(testCase)</a>
+0271             raw = {<span class="string">'#comment'</span>, <span class="string">'#comment'</span>; <span class="string">'a'</span>, <span class="string">'b'</span>; <span class="string">''</span>, <span class="string">''</span>};
+0272             out = cleanSheet(raw);
+0273             testCase.verifyClass(out, <span class="string">'cell'</span>);
+0274         <span class="keyword">end</span>
+0275 
+0276         <a name="_sub19" href="#_subfunctions" class="code">function writeExcelRoundTrips(testCase)</a>
+0277             <span class="comment">% writeExcel generates the .xlsx (Office Open XML) directly, with</span>
+0278             <span class="comment">% no external library; read it back with base MATLAB to confirm</span>
+0279             <span class="comment">% the sheets, values and types survive.</span>
+0280             f = [tempname <span class="string">'.xlsx'</span>];
+0281             testCase.addTeardown(@() delete(f));
+0282             s(1).name=<span class="string">'RXNS'</span>; s(1).header={<span class="string">'ID'</span>,<span class="string">'VALUE'</span>};
+0283             s(1).data={<span class="string">'r1'</span>,1.5; <span class="string">'r2'</span>,-3};
+0284             s(2).name=<span class="string">'METS'</span>; s(2).header={<span class="string">'ID'</span>}; s(2).data={<span class="string">'m1'</span>};
+0285             writeExcel(f, s);
+0286             testCase.verifyEqual(sort(string(sheetnames(f))),[&quot;METS&quot;;&quot;RXNS&quot;]);
+0287             raw = readcell(f,<span class="string">'Sheet'</span>,<span class="string">'RXNS'</span>);
+0288             testCase.verifyEqual(string(raw(1,:)),[&quot;ID&quot;,&quot;VALUE&quot;]);
+0289             testCase.verifyEqual(string(raw{2,1}),&quot;r1&quot;);
+0290             testCase.verifyEqual(raw{2,2},1.5,<span class="string">'AbsTol'</span>,1e-9);
+0291         <span class="keyword">end</span>
+0292 
+0293     <span class="keyword">end</span>
+0294 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
