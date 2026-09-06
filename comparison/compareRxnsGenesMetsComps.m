@@ -33,6 +33,18 @@ function compStruct=compareRxnsGenesMetsComps(models,varargin)
 % Examples
 % --------
 %     compStruct = compareRxnsGenesMetsComps(models, printResults);
+%
+% See also
+% --------
+% compareMultipleModels : also takes N models, but compares only reaction ids
+%     and subsystem counts, and spends its effort on similarity, clustering and
+%     plots rather than on the breakdown itself.
+% diffModels : takes exactly two models and reports the differing *values*
+%     (stoichiometry, bounds, grRules), where this reports set membership only.
+%
+% This is the only one of the three that compares models by EC code,
+% metabolite name and reaction equation as well as by identifier, which is
+% what to reach for when the two models do not share an id convention.
 
 p=parseRAVENargs(varargin, {'printResults',true});
 printResults=p.printResults;

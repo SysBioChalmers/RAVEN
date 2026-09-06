@@ -47,6 +47,13 @@ function report = diffModels(modelA, modelB, varargin)
 %     - genesOnlyInA / genesOnlyInB : gene ids present in only one model.
 %
 % Usage: report = diffModels(modelA, modelB, ...)
+%
+% See also
+% --------
+% compareRxnsGenesMetsComps : N models, set membership across seven identity
+%     notions (ids, EC codes, metabolite names, equations), no values.
+% compareMultipleModels : N models, similarity matrix, clustering and an
+%     optional task-based functional comparison.
 
 p = parseRAVENargs(varargin, {'stoichTol', 1e-9; 'maxPerCategory', 50; ...
     'printResults', false});

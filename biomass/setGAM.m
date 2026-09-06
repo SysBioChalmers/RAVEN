@@ -40,6 +40,11 @@ function model = setGAM(model, value, biomassRxn, cofactorMetNames, varargin)
 % Examples
 % --------
 %     model = setGAM(model, 80, 'r_4041', {'ATP','ADP','H2O','H+','phosphate'});
+%
+% See also
+% --------
+% fitParameters : estimates such a value from measured fluxes instead of
+%     applying a known one. The two are complementary - fit first, then set.
 
 if nargin < 4
     error('setGAM:missingArgs', ...

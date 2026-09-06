@@ -55,6 +55,14 @@ function compStruct = compareMultipleModels(models,varargin)
 % projection (structCompMap) and the heatmap clustering additionally use the
 % Statistics and Machine Learning Toolbox (tsne/mdscale, linkage); these
 % degrade gracefully and are skipped when the toolbox is not available.
+%
+% See also
+% --------
+% compareRxnsGenesMetsComps : the same N-model question without the clustering,
+%     but broken down by metabolite, gene, EC code, metabolite name and
+%     reaction equation as well as by reaction id.
+% diffModels : takes exactly two models and reports the differing *values*
+%     rather than presence and distance.
 
 %% Set up input defaults
 p=parseRAVENargs(varargin, {'printResults',false; 'plotResults',false; 'groupVector',[]; 'funcCompare',false; 'taskFile',[]});
