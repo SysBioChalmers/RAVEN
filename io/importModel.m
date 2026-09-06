@@ -299,9 +299,13 @@ for i=1:numel(modelSBML.species)
         metaboliteFormula{numel(metaboliteFormula)+1,1}='';
         metaboliteMiriams{numel(metaboliteMiriams)+1,1}=[];
     end
-    %Get SBO term
+    %Get SBO term. One entry per species, always, so metSBOs stays aligned
+    %with metaboliteNames below even when some species have no SBO term;
+    %-1 (SBML's own "unset" value) marks those.
     if isfield(modelSBML.species(i),'sboTerm') && ~(modelSBML.species(i).sboTerm==-1)
         metSBOs(end+1,1) = modelSBML.species(i).sboTerm;
+    else
+        metSBOs(end+1,1) = -1;
     end
 
     %Remove trailing [compartment] from metabolite name if present
@@ -334,7 +338,9 @@ end
 %Add SBO terms to metabolite miriam fields
 if numel(unique(metSBOs)) > 1
     for i = 1:numel(metaboliteNames)
-        metaboliteMiriams{i} = addSBOtoMiriam(metaboliteMiriams{i},metSBOs(i));
+        if metSBOs(i) ~= -1
+            metaboliteMiriams{i} = addSBOtoMiriam(metaboliteMiriams{i},metSBOs(i));
+        end
     end
 end
 
@@ -428,7 +434,10 @@ for i=1:numel(modelSBML.reaction)
     miriamStruct=parseMiriam(modelSBML.reaction(i).annotation);
     rxnMiriams{counter}=miriamStruct;
     if isfield(modelSBML.reaction(i),'notes')
-        subsystems{counter,1}=cellstr(parseNote(modelSBML.reaction(i).notes,'SUBSYSTEM'));
+        %parseNote joins several SUBSYSTEM notes on a reaction with ';',
+        %so split on it, or a reaction with more than one subsystem ends
+        %up with a single subsystem literally named "a;b"
+        subsystems{counter,1}=strtrim(strsplit(parseNote(modelSBML.reaction(i).notes,'SUBSYSTEM'),';'));
         subsystems{counter,1}(cellfun('isempty',subsystems{counter,1})) = [];
         if strfind(modelSBML.reaction(i).notes,'Confidence Level')
             confScore = parseNote(modelSBML.reaction(i).notes,'Confidence Level');
@@ -492,9 +501,14 @@ if isfield(modelSBML, 'fbc_activeObjective')
     for i=1:numel(modelSBML.fbc_objective)
         if strcmp(obj,modelSBML.fbc_objective(i).fbc_id)
             if ~isempty(modelSBML.fbc_objective(i).fbc_fluxObjective)
-                rxn=modelSBML.fbc_objective(i).fbc_fluxObjective.fbc_reaction;
-                idx=ismember(reactionIDs,rxn);
-                reactionObjective(idx)=modelSBML.fbc_objective(i).fbc_fluxObjective.fbc_coefficient;
+                %fbc_fluxObjective is a struct array when the objective is
+                %a combination of more than one reaction; indexing it
+                %directly would silently keep only the first
+                fluxObjective=modelSBML.fbc_objective(i).fbc_fluxObjective;
+                for k=1:numel(fluxObjective)
+                    idx=ismember(reactionIDs,fluxObjective(k).fbc_reaction);
+                    reactionObjective(idx)=fluxObjective(k).fbc_coefficient;
+                end
             end
         end
     end
@@ -820,7 +834,13 @@ end
 if isempty(model.metMiriams)
     model=rmfield(model,'metMiriams');
 end
-if ~any(model.metCharges)
+%Unlike inchis/metFormulas/metMiriams above, metCharges always gets one
+%entry per metabolite (NaN where SBML had no fbc_charge), so it is never
+%literally empty; drop it only when none of those entries are real, not
+%when they are all genuinely zero (any(zeros)==false would remove a
+%field of real, all-neutral charges; any(NaN)==true would keep an
+%all-unset field)
+if all(isnan(model.metCharges))
     model=rmfield(model,'metCharges');
 end
 
