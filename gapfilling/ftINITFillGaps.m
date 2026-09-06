@@ -36,6 +36,10 @@ function [addedRxns, newModel, exitFlag]=ftINITFillGaps(tModel, origModel, tRefM
 %   that the constraints already set on tModel (e.g. a required biomass
 %   flux, or exchange bounds) can be satisfied.
 %
+%   See also: fillGaps, the tINIT-side counterpart, which merges a
+%   reference model with the model being gap-filled on every call instead
+%   of expecting them pre-merged.
+%
 % Usage: [addedRxns, newModel, exitFlag]=...
 %           ftINITFillGaps(tModel,origModel,tRefModel,allowNetProduction,...
 %           supressWarnings,rxnScores,params,verbose)

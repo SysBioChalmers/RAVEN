@@ -57,6 +57,15 @@ function [rxnScores, geneScores, hpaScores, arrayScores] = scoreComplexModel(mod
 %     structure with numerical scores for the expression level categories from
 %     HPA. The structure should have a "names" and a "scores" field (default,
 %     see code for default scores).
+% dataPrecedence : char
+%     how hpaData takes precedence over arrayData when both are supplied
+%     (default "gene"):
+%
+%     - "gene" : per gene. A gene with HPA data is scored from it, a gene
+%       without is scored from arrayData, and a rule can mix the two.
+%     - "reaction" : per rule. As soon as any one gene in a rule has HPA data,
+%       the whole rule is scored from HPA alone and its array-only genes count
+%       as unmeasured.
 %
 % Returns
 % -------
@@ -64,25 +73,35 @@ function [rxnScores, geneScores, hpaScores, arrayScores] = scoreComplexModel(mod
 %     scores for each of the reactions in model.
 % geneScores : double
 %     scores for each of the genes in model. Genes which are not in the
-%     dataset(s) have -Inf as scores.
+%     dataset(s) have NaN as scores, which removeLowScoreGenes reads as "no
+%     evidence" and leaves in place, where a negative score would be pruned.
 % hpaScores : double
 %     scores for each of the genes in model if only taking hpaData into
 %     account. Genes which are not in the dataset(s) have -Inf as scores.
 % arrayScores : double
 %     scores for each of the genes in model if only taking arrayData into
 %     account. Genes which are not in the dataset(s) have -Inf as scores.
+%
+% See Also
+% --------
+% scoreModel : a wrapper over this function, kept for the tINIT argument order
+%     and its -Inf convention for unmeasured genes.
 
-
-p=parseRAVENargs(varargin, {'celltype',[]; 'noGeneScore',[]; 'isozymeScoring',[]; 'complexScoring',[]; 'multipleCellScoring',[]; 'hpaLevelScores',[]});
+p=parseRAVENargs(varargin, {'celltype',[]; 'noGeneScore',[]; 'isozymeScoring',[]; 'complexScoring',[]; 'multipleCellScoring',[]; 'hpaLevelScores',[]; 'dataPrecedence',[]});
 celltype=p.celltype;
 noGeneScore=p.noGeneScore;
 isozymeScoring=p.isozymeScoring;
 complexScoring=p.complexScoring;
 multipleCellScoring=p.multipleCellScoring;
 hpaLevelScores=p.hpaLevelScores;
+dataPrecedence=p.dataPrecedence;
 if isempty(noGeneScore)
     noGeneScore = -2;
 end
+if isempty(dataPrecedence)
+    dataPrecedence = 'gene';
+end
+dataPrecedence = lower(char(dataPrecedence));
 if isempty(isozymeScoring)
     isozymeScoring = 'max';
 end
@@ -112,6 +131,10 @@ if ~ismember(lower(complexScoring),{'min','max','median','average'})
 end
 if ~ismember(lower(multipleCellScoring),{'max','average'})
     EM = 'Valid options for multipleCellScoring are "max" or "average"';
+    error('RAVEN:badInput', '%s', EM);
+end
+if ~ismember(dataPrecedence,{'gene','reaction'})
+    EM = 'Valid options for dataPrecedence are "gene" or "reaction"';
     error('RAVEN:badInput', '%s', EM);
 end
 
@@ -280,18 +303,24 @@ else
     hScores = accumarray(K(:), measured, [numel(hpaData.genes) 1], @mean, 0);
 end
 
-% Assign gene scores, prioritizing HPA (protein) data over arrayData (RNA)
+% Assign gene scores, prioritizing HPA (protein) data over arrayData (RNA).
+% Keep the two sources apart as well: dataPrecedence 'reaction' decides per
+% rule which of them to read, so it needs them unmerged.
 geneScores = nan(numel(model.genes),1);
 hpaScores = -Inf(numel(model.genes),1);
 arrayScores = -Inf(numel(model.genes),1);
+arrayOnly = nan(numel(model.genes),1);
+hpaOnly = nan(numel(model.genes),1);
 
 [I, J] = ismember(model.genes,arrayData.genes);
 geneScores(I) = aScores(J(I));
 arrayScores(I) = aScores(J(I));
+arrayOnly(I) = aScores(J(I));
 
 [I, J] = ismember(model.genes,hpaData.genes);
 geneScores(I) = hScores(J(I));
 hpaScores(I) = hScores(J(I));
+hpaOnly(I) = hScores(J(I));
 
 
 % To speed things up, only need to score each unique grRule once
@@ -306,10 +335,25 @@ uRules = regexprep(uRules,' or ',' | ');
 for i = 1:numel(uRules)
     if isempty(uRules{i})
         uScores(i) = noGeneScore;
-    elseif contains(uRules{i},'&') && contains(uRules{i},'|')
-        uScores(i) = scoreComplexRule(uRules{i},model.genes,geneScores,isozymeScoring,complexScoring);
+        continue
+    end
+    ruleScores = geneScores;
+    if strcmp(dataPrecedence,'reaction')
+        % A rule is scored from HPA data alone as soon as any one of its
+        % genes has HPA data; its array-only genes then count as unmeasured
+        % rather than contributing an RNA score alongside a protein one.
+        ruleGenes = regexp(uRules{i},'[^&|()\s]+','match');
+        inRule = ismember(model.genes,ruleGenes);
+        if any(~isnan(hpaOnly(inRule)))
+            ruleScores = hpaOnly;
+        else
+            ruleScores = arrayOnly;
+        end
+    end
+    if contains(uRules{i},'&') && contains(uRules{i},'|')
+        uScores(i) = scoreComplexRule(uRules{i},model.genes,ruleScores,isozymeScoring,complexScoring);
     else
-        uScores(i) = scoreSimpleRule(uRules{i},model.genes,geneScores,isozymeScoring,complexScoring);
+        uScores(i) = scoreSimpleRule(uRules{i},model.genes,ruleScores,isozymeScoring,complexScoring);
     end
 end
 

@@ -1,4 +1,4 @@
-function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,varargin)
+function [outModel, addedRxns, failedTasks]=fitTasks(model,refModel,inputFile,varargin)
 % fitTasks  Fill gaps in a model so it can perform a list of tasks.
 %
 % Fills gaps in a model by including reactions from a reference model, so
@@ -30,8 +30,19 @@ function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,varargin)
 %     structure with the tasks, as from parseTaskList. If supplied then
 %     inputFile is ignored.
 % params : struct
-%     solver parameters, forwarded to fillGaps and from there to
-%     optimizeProb for each per-task gap-filling MILP (default []).
+%     solver parameters, forwarded to the gap-filling back-end and from there
+%     to optimizeProb for each per-task MILP (default []).
+% gapFillMode : char
+%     which gap-filling back-end to use (default 'merge'):
+%
+%     - 'merge' : refModel holds only the candidate reactions, and fillGaps
+%       merges it with the model for every task.
+%     - 'preMerged' : refModel already contains the model's own reactions,
+%       so no merge is needed per task. The task constraints are written
+%       into refModel as well, and ftINITFillGaps does the gap-filling.
+% verbose : logical
+%     if true, the MILP progression will be shown. Only read when
+%     gapFillMode is 'preMerged' (default false).
 %
 % Returns
 % -------
@@ -42,6 +53,11 @@ function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,varargin)
 %     (N). An element is true if the corresponding reaction is added in
 %     the corresponding task. Failed tasks and SHOULD FAIL tasks are
 %     ignored.
+% failedTasks : logical
+%     Nx1, true for each task that could not be gap-filled, either because
+%     no feasible solution exists using the reference model or because the
+%     attempt threw. Such tasks add no reactions, so they are otherwise
+%     indistinguishable from tasks that already worked.
 %
 % Examples
 % --------
@@ -51,11 +67,25 @@ function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,varargin)
 p=parseRAVENargs(varargin, {'printOutput',true; ...
     'rxnScores',[]; ...
     'taskStructure',[]; ...
-    'params',[]});
+    'params',[]; ...
+    'gapFillMode','merge'; ...
+    'verbose',false});
 printOutput=p.printOutput;
 rxnScores=p.rxnScores;
 taskStructure=p.taskStructure;
 params=p.params;
+gapFillMode=p.gapFillMode;
+verbose=p.verbose;
+
+if isempty(gapFillMode)
+    gapFillMode='merge';
+end
+gapFillMode=lower(char(gapFillMode));
+if ~ismember(gapFillMode,{'merge','premerged'})
+    EM='Valid options for gapFillMode are "merge" or "preMerged"';
+    error('RAVEN:badInput', '%s', EM);
+end
+preMerged=strcmp(gapFillMode,'premerged');
 
 if isempty(rxnScores)
     rxnScores=ones(numel(refModel.rxns),1)*-1;
@@ -93,10 +123,19 @@ end
 
 tModel=model;
 addedRxns=false(numel(refModel.rxns),numel(taskStructure));
+failedTasks=false(numel(taskStructure),1);
 supressWarnings=false;
 nAdded=0;
 for i=1:numel(taskStructure)
     if ~taskStructure(i).shouldFail
+        taskLabel=['"[' taskStructure(i).id '] ' taskStructure(i).description '"'];
+        %In preMerged mode the reference model is gap-filled directly, so it
+        %needs the same task constraints as the model. The scores follow it,
+        %and are extended when the task adds reactions.
+        if preMerged
+            tRefModel=refModel;
+            tRxnScores=rxnScores;
+        end
         %Set the inputs
         if ~isempty(taskStructure(i).inputs)
             [I, J]=ismember(upper(taskStructure(i).inputs),modelMets);
@@ -134,40 +173,17 @@ for i=1:numel(taskStructure)
                 EM=['The constraints on some input(s) in "[' taskStructure(i).id '] ' taskStructure(i).description '" are defined more than one time'];
                 error('RAVEN:badInput', '%s', EM);
             end
-            %If all metabolites should be added
-            if any(K)
-                %Check if ALLMETS is the first metabolite. Otherwise print
-                %a warning since it will write over any other constraints
-                %that are set
-                if K(1)==0
-                    EM=['ALLMETS is used as an input in "[' taskStructure(i).id '] ' taskStructure(i).description '" but it it not the first metabolite in the list. Constraints defined for the metabolites before it will be over-written'];
-                    warning('RAVEN:warning', '%s', EM);
-                end
-                %Use the first match of ALLMETS. There should only be one,
-                %but still..
-                tModel.b(:,1)=taskStructure(i).UBin(find(K,1))*-1;
+            %Check if ALLMETS is the first metabolite. Otherwise print a
+            %warning since it will write over any other constraints that
+            %are set
+            if any(K) && K(1)==0
+                EM=['ALLMETS is used as an input in "[' taskStructure(i).id '] ' taskStructure(i).description '" but it it not the first metabolite in the list. Constraints defined for the metabolites before it will be over-written'];
+                warning('RAVEN:warning', '%s', EM);
             end
-            %If metabolites in a specific compartment should be used
-            if any(L)
-                L=find(L);
-                for j=1:numel(L)
-                    %The compartment defined
-                    compartment=upper(taskStructure(i).inputs{L(j)}(11:end-1));
-                    %Check if it exists in the model
-                    C=find(ismember(upper(model.comps),compartment));
-                    if any(C)
-                        %Match to metabolites
-                        tModel.b(model.metComps==C,1)=taskStructure(i).UBin(L(j))*-1;
-                    else
-                        EM=['The compartment defined for ALLMETSIN in "[' taskStructure(i).id '] ' taskStructure(i).description '" does not exist'];
-                        error('RAVEN:badInput', '%s', EM);
-                    end
-                end
-            end
-            %Then add the normal constraints
-            if any(J(I))
-                tModel.b(J(I),1)=taskStructure(i).UBin(I)*-1;
-                tModel.b(J(I),2)=taskStructure(i).LBin(I)*-1;
+            tModel=applyTaskInputBounds(tModel,I,J,K,L,taskStructure(i),taskLabel);
+            if preMerged
+                [I2, J2]=ismember(upper(taskStructure(i).inputs),largeModelMets);
+                tRefModel=applyTaskInputBounds(tRefModel,I2,J2,K,L,taskStructure(i),taskLabel);
             end
         end
         %Set the outputs
@@ -207,54 +223,20 @@ for i=1:numel(taskStructure)
                 EM=['The constraints on some output(s) in "[' taskStructure(i).id '] ' taskStructure(i).description '" are defined more than one time'];
                 error('RAVEN:badInput', '%s', EM);
             end
-            %If all metabolites should be added
-            if any(K)
-                %Check if ALLMETS is the first metabolite. Otherwise print
-                %a warning since it will write over any other constraints
-                %that are set
-                if K(1)==0
-                    EM=['ALLMETS is used as an output in "[' taskStructure(i).id '] ' taskStructure(i).description '" but it it not the first metabolite in the list. Constraints defined for the metabolites before it will be over-written'];
-                    warning('RAVEN:warning', '%s', EM);
-                end
-                %Use the first match of ALLMETS. There should only be one,
-                %but still..
-                tModel.b(:,2)=taskStructure(i).UBout(find(K,1));
+            %Check if ALLMETS is the first metabolite. Otherwise print a
+            %warning since it will write over any other constraints that
+            %are set
+            if any(K) && K(1)==0
+                EM=['ALLMETS is used as an output in "[' taskStructure(i).id '] ' taskStructure(i).description '" but it it not the first metabolite in the list. Constraints defined for the metabolites before it will be over-written'];
+                warning('RAVEN:warning', '%s', EM);
             end
-            %If metabolites in a specific compartment should be used
-            if any(L)
-                L=find(L);
-                for j=1:numel(L)
-                    %The compartment defined
-                    compartment=upper(taskStructure(i).outputs{L(j)}(11:end-1));
-                    %Check if it exists in the model
-                    C=find(ismember(upper(model.comps),compartment));
-                    if any(C)
-                        %Match to metabolites
-                        tModel.b(model.metComps==C,2)=taskStructure(i).UBout(L(j));
-                    else
-                        EM=['The compartment defined for ALLMETSIN in "[' taskStructure(i).id '] ' taskStructure(i).description '" does not exist'];
-                        error('RAVEN:badInput', '%s', EM);
-                    end
-                end
-            end
-            %Then add the normal constraints
-            if any(J(I))
-                %Verify that IN and OUT bounds are consistent. Cannot require
-                %that a metabolite is simultaneously input AND output at some
-                %nonzero flux.
-                J = J(I);
-                I = find(I);  % otherwise indexing becomes confusing
-                nonzero_LBin = tModel.b(J,2) < 0;
-                nonzero_LBout = taskStructure(i).LBout(I) > 0;
-                if any(nonzero_LBin & nonzero_LBout)
-                    EM=['The IN LB and OUT LB in "[' taskStructure(i).id '] ' taskStructure(i).description '" cannot be nonzero for the same metabolite'];
-                    error('RAVEN:badInput', '%s', EM);
-                end
-                tModel.b(J(nonzero_LBout),1)=taskStructure(i).LBout(I(nonzero_LBout));
-                tModel.b(J,2)=taskStructure(i).UBout(I);
+            tModel=applyTaskOutputBounds(tModel,I,J,K,L,taskStructure(i),taskLabel);
+            if preMerged
+                [I2, J2]=ismember(upper(taskStructure(i).outputs),largeModelMets);
+                tRefModel=applyTaskOutputBounds(tRefModel,I2,J2,K,L,taskStructure(i),taskLabel);
             end
         end
-        
+
         %Add new rxns
         if ~isempty(taskStructure(i).equations)
             rxn.equations=taskStructure(i).equations;
@@ -262,11 +244,19 @@ for i=1:numel(taskStructure)
             rxn.ub=taskStructure(i).UBequ;
             rxn.rxns=strcat({'TEMPORARY_'},num2str((1:numel(taskStructure(i).equations))'));
             tModel=addRxns(tModel,rxn,3);
+            if preMerged
+                tRefModel=addRxns(tRefModel,rxn,3);
+                tRxnScores=[tRxnScores;zeros(numel(rxn.lb),1)];
+            end
         end
         %Add changed bounds
         if ~isempty(taskStructure(i).changed)
             tModel=setParam(tModel,'lb',taskStructure(i).changed,taskStructure(i).LBrxn);
             tModel=setParam(tModel,'ub',taskStructure(i).changed,taskStructure(i).UBrxn);
+            if preMerged
+                tRefModel=setParam(tRefModel,'lb',taskStructure(i).changed,taskStructure(i).LBrxn);
+                tRefModel=setParam(tRefModel,'ub',taskStructure(i).changed,taskStructure(i).UBrxn);
+            end
         end
         
         %Solve and print. Display a warning if the problem is not solveable
@@ -275,25 +265,46 @@ for i=1:numel(taskStructure)
             %Only do gap-filling if it cannot be solved
             failed=false;
             try
-                [~, ~, newRxns, newModel, exitFlag]=fillGaps(tModel,refModel,false,true,supressWarnings,rxnScores,params);
-                if exitFlag==-2
-                    EM=['"[' taskStructure(i).id '] ' taskStructure(i).description '" was aborted before reaching optimality.\n'];
+                if preMerged
+                    [newRxns, newModel, exitFlag]=ftINITFillGaps(tModel,model,tRefModel,false,supressWarnings,tRxnScores,params,verbose);
+                else
+                    [~, ~, newRxns, newModel, exitFlag]=fillGaps(tModel,refModel,false,true,supressWarnings,rxnScores,params);
+                end
+                if exitFlag==-1
+                    %No set of reactions from the reference model makes the
+                    %task feasible. Without this branch the task falls
+                    %through and reports "Added 0 reaction(s)", which is the
+                    %same thing an already-feasible task reports.
+                    EM=[taskLabel ' could not be gap-filled: no feasible solution exists using the reference model\n'];
+                    warning('RAVEN:warning', '%s', EM);
+                    failed=true;
+                elseif exitFlag==-2
+                    EM=[taskLabel ' was aborted before reaching optimality. Consider increasing params.TimeLimit\n'];
                     warning('RAVEN:warning', '%s', EM);
                 end
-            catch
-                EM=['"[' taskStructure(i).id '] ' taskStructure(i).description '" could not be performed for any set of reactions\n'];
+            catch e
+                EM=[taskLabel ' could not be performed for any set of reactions: ' e.message '\n'];
                 warning('RAVEN:warning', '%s', EM);
                 failed=true;
+            end
+            if failed
+                failedTasks(i)=true;
             end
             if failed==false
                 if ~isempty(newRxns)
                     nAdded=nAdded+numel(newRxns);
-                    
-                    %Add the reactions to the base model. It is not correct
-                    %to use newModel directly, as it may contain
-                    %reactions/constraints that are specific to this task
-                    model=mergeModels({model,removeReactions(newModel,setdiff(newModel.rxns,newRxns),true,true)},'metNames',true);
-                    
+
+                    if preMerged
+                        %The reference model already contained the model, so
+                        %newModel is the model plus the added reactions
+                        model=newModel;
+                    else
+                        %Add the reactions to the base model. It is not correct
+                        %to use newModel directly, as it may contain
+                        %reactions/constraints that are specific to this task
+                        model=mergeModels({model,removeReactions(newModel,setdiff(newModel.rxns,newRxns),true,true)},'metNames',true);
+                    end
+
                     %Keep track of the added reactions
                     addedRxns(ismember(refModel.rxns,newRxns),i)=true;
                 end
@@ -334,6 +345,85 @@ for i=1:numel(taskStructure)
         warning('RAVEN:warning', '%s', EM);
     end
 end
-model.b(:,2) = [];  % resume field b
+if size(model.b,2)>1
+    model.b(:,2) = [];  % resume field b
+end
 outModel=model;
+end
+
+function m=applyTaskInputBounds(m,I,J,K,L,task,taskLabel)
+%Write a task's input constraints into the b field of one model. I and J
+%are the ismember result of the task's input metabolites against that
+%model's metabolite names; K and L flag ALLMETS and ALLMETSIN entries.
+
+%If all metabolites should be added. Use the first match of ALLMETS, there
+%should only be one, but still..
+if any(K)
+    m.b(:,1)=task.UBin(find(K,1))*-1;
+end
+%If metabolites in a specific compartment should be used
+if any(L)
+    L=find(L);
+    for j=1:numel(L)
+        %The compartment defined
+        compartment=upper(task.inputs{L(j)}(11:end-1));
+        %Check if it exists in the model
+        C=find(ismember(upper(m.comps),compartment));
+        if any(C)
+            %Match to metabolites
+            m.b(m.metComps==C,1)=task.UBin(L(j))*-1;
+        else
+            EM=['The compartment defined for ALLMETSIN in ' taskLabel ' does not exist'];
+            error('RAVEN:badInput', '%s', EM);
+        end
+    end
+end
+%Then add the normal constraints
+if any(J(I))
+    m.b(J(I),1)=task.UBin(I)*-1;
+    m.b(J(I),2)=task.LBin(I)*-1;
+end
+end
+
+function m=applyTaskOutputBounds(m,I,J,K,L,task,taskLabel)
+%Write a task's output constraints into the b field of one model, as
+%applyTaskInputBounds does for the inputs.
+
+%If all metabolites should be added. Use the first match of ALLMETS, there
+%should only be one, but still..
+if any(K)
+    m.b(:,2)=task.UBout(find(K,1));
+end
+%If metabolites in a specific compartment should be used
+if any(L)
+    L=find(L);
+    for j=1:numel(L)
+        %The compartment defined
+        compartment=upper(task.outputs{L(j)}(11:end-1));
+        %Check if it exists in the model
+        C=find(ismember(upper(m.comps),compartment));
+        if any(C)
+            %Match to metabolites
+            m.b(m.metComps==C,2)=task.UBout(L(j));
+        else
+            EM=['The compartment defined for ALLMETSIN in ' taskLabel ' does not exist'];
+            error('RAVEN:badInput', '%s', EM);
+        end
+    end
+end
+%Then add the normal constraints
+if any(J(I))
+    %Verify that IN and OUT bounds are consistent. Cannot require that a
+    %metabolite is simultaneously input AND output at some nonzero flux.
+    J = J(I);
+    I = find(I);  % otherwise indexing becomes confusing
+    nonzero_LBin = m.b(J,2) < 0;
+    nonzero_LBout = task.LBout(I) > 0;
+    if any(nonzero_LBin & nonzero_LBout)
+        EM=['The IN LB and OUT LB in ' taskLabel ' cannot be nonzero for the same metabolite'];
+        error('RAVEN:badInput', '%s', EM);
+    end
+    m.b(J(nonzero_LBout),1)=task.LBout(I(nonzero_LBout));
+    m.b(J,2)=task.UBout(I);
+end
 end
