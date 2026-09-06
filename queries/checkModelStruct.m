@@ -400,7 +400,7 @@ if isfield(model,'metNames')
     for i=1:numel(model.metNames)
         index=strfind(model.metNames{i},' ');
         if any(index)
-            if any(str2double(model.metNames{i}(1:index(1)-1)))
+            if ~isnan(str2double(model.metNames{i}(1:index(1)-1)))
                 I(i)=true;
             end
         end
