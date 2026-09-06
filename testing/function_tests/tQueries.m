@@ -36,6 +36,30 @@ classdef tQueries < RavenTestCase
             testCase.verifyFalse(any(hit));
         end
 
+        function checkModelStructFlagsDuplicateNonSboMiriam(testCase)
+            % Two metabolites with different names sharing the same
+            % non-SBO MIRIAM (e.g. the same KEGG id) must be flagged:
+            % regexp's [] "no match" result must not be mistaken for a
+            % match via bitwise negation (~[] is also [], so the check
+            % never fired at all before the fix).
+            m = testCase.model;
+            idx = find(~strcmp(m.metNames, m.metNames{1}), 1);
+            m.metMiriams = cell(numel(m.mets),1);
+            m.metMiriams{1}.name = {'kegg.compound'}; m.metMiriams{1}.value = {'C00031'};
+            m.metMiriams{idx}.name = {'kegg.compound'}; m.metMiriams{idx}.value = {'C00031'};
+            issues = checkModelStruct(m);
+            hit = arrayfun(@(x) contains(x.message,'more than one unique metabolite name'), issues);
+            testCase.verifyTrue(any(hit));
+        end
+
+        function checkModelStructThrowErrorsFalseSkipsAfterMissingField(testCase)
+            % throwErrors=false must warn about a missing required field
+            % without then crashing trying to read that very field in a
+            % later check.
+            m = rmfield(testCase.model, 'id');
+            evalc('checkModelStruct(m, ''throwErrors'', false);');
+        end
+
         function constructEquationsAllRxns(testCase)
             eqns = constructEquations(testCase.model);
             testCase.verifyClass(eqns, 'cell');
