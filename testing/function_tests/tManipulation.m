@@ -170,6 +170,22 @@ classdef tManipulation < RavenTestCase
             testCase.verifyGreaterThanOrEqual(numel(m2.rxns), numel(testCase.model.rxns));
         end
 
+        function closeModelHandlesTwoColumnBAndMetNotes(testCase)
+            % b(numel(b)+1)=0 is a linear index, which for an N-by-2 b
+            % (net-production bounds) does not append a row; it errors.
+            % metNotes must also be padded like the other optional
+            % per-metabolite fields, or it goes out of sync with mets.
+            m = tManipulation.twoMetModel();  % R1: a => b
+            r.rxns = {'R2'}; r.equations = {'b =>'};  % sink, so closeModel adds a boundary met
+            evalc('m = addRxns(m, r, 1, [], false);');
+            m.b = [zeros(2,1) ones(2,1)];     % two-column b
+            m.metNotes = {'note a';'note b'};
+            m2 = closeModel(m);
+            testCase.verifyEqual(size(m2.b,2), 2);
+            testCase.verifyEqual(size(m2.b,1), numel(m2.mets));
+            testCase.verifyEqual(numel(m2.metNotes), numel(m2.mets));
+        end
+
         function closeModelDetectsScaledAndMultiMetSinks(testCase)
             % closeModel's boundary-reaction rule is "metabolites on only
             % one side" (matching getExchangeRxns), not "coefficients

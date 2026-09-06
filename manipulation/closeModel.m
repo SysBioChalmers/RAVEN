@@ -97,6 +97,13 @@ for i=1:numel(closedModel.rxns)
     if isfield(closedModel,'metFrom')
         closedModel.metFrom{numel(closedModel.metFrom)+1}='';
     end
+    if isfield(closedModel,'metNotes')
+        if oneMet
+            closedModel.metNotes{numel(closedModel.metNotes)+1}=closedModel.metNotes{metIdx};
+        else
+            closedModel.metNotes{numel(closedModel.metNotes)+1}='';
+        end
+    end
     if isfield(closedModel,'metCharges')
         if oneMet
             closedModel.metCharges(numel(closedModel.metCharges)+1)=closedModel.metCharges(metIdx);
@@ -112,7 +119,10 @@ for i=1:numel(closedModel.rxns)
         end
     end
     closedModel.unconstrained(numel(closedModel.unconstrained)+1)=1;
-    closedModel.b(numel(closedModel.b)+1)=0;
+    % (end+1,:), not numel(b)+1: a linear index past the end of an N-by-2
+    % b (net-production bounds) does not append a row, it errors ("grow
+    % array along ambiguous dimension").
+    closedModel.b(end+1,:)=0;
     closedModel.S=[closedModel.S;sparse(1,size(closedModel.S,2))];
     %Any nonzero value blocks the reaction once its slack is pinned to 0 by
     %model.b above, regardless of magnitude; the sign is chosen only so the
