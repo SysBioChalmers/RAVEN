@@ -174,7 +174,7 @@ switch solver
             % An incumbent was found before the time limit. It is usable but
             % not proven optimal, so it is reported as feasible rather than
             % optimal; callers that must not act on a suboptimal MILP
-            % solution (ftINITFillGapsMILP, solveLP) key on that distinction.
+            % solution (getMinNrFluxes, solveLP) key on that distinction.
             resG.status = 'SUBOPTIMAL';
         end
         switch resG.status

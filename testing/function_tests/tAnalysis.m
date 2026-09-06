@@ -27,6 +27,27 @@ classdef tAnalysis < RavenTestCase
             testCase.verifyNotEmpty(x);
         end
 
+        function getMinNrFluxesFormulationsAgree(testCase)
+            % The two formulations build different MILPs for the same
+            % problem, so they may pick different reactions, but both
+            % minimise the same objective and must therefore pick the same
+            % number of them.
+            testCase.assumeMILPSolver();
+            evalc('[xIrrev, Iirrev, flagIrrev] = getMinNrFluxes(testCase.model, testCase.model.rxns, [], [], ''irrev'');');
+            evalc('[xRev, Irev, flagRev] = getMinNrFluxes(testCase.model, testCase.model.rxns, [], [], ''reversible'');');
+            testCase.verifyEqual(flagIrrev, 1);
+            testCase.verifyEqual(flagRev, 1);
+            testCase.verifyNumElements(xRev, numel(testCase.model.rxns));
+            testCase.verifyNumElements(Irev, numel(testCase.model.rxns));
+            testCase.verifyEqual(sum(Irev), sum(Iirrev));
+        end
+
+        function getMinNrFluxesRejectsUnknownFormulation(testCase)
+            testCase.verifyError( ...
+                @() getMinNrFluxes(testCase.model, testCase.model.rxns, [], [], 'both'), ...
+                'RAVEN:badInput');
+        end
+
         function getAllSubGraphsReturnsResult(testCase)
             sg = getAllSubGraphs(testCase.model);
             testCase.verifyNotEmpty(sg);

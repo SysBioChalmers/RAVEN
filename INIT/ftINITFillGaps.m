@@ -25,7 +25,9 @@ function [addedRxns, newModel, exitFlag]=ftINITFillGaps(tModel, origModel, tRefM
 %   newModel            the tModel with reactions added to fill gaps
 %   exitFlag            1: optimal solution found
 %                      -1: no feasible solution found
-%                      -2: optimization time out
+%                      -2: a solution was found but is not proven optimal,
+%                          because the solver stopped before reaching
+%                          optimality
 %
 %   This method works by merging the tModel to the reference model and
 %   checking which reactions can carry flux. All reactions that can't
@@ -34,15 +36,12 @@ function [addedRxns, newModel, exitFlag]=ftINITFillGaps(tModel, origModel, tRefM
 %   that the constraints already set on tModel (e.g. a required biomass
 %   flux, or exchange bounds) can be satisfied.
 %
-% Usage: [newModel, exitFlag]=...
-%           fillGaps(tModel,models,allowNetProduction,...
-%           supressWarnings,rxnScores,params)
+% Usage: [addedRxns, newModel, exitFlag]=...
+%           ftINITFillGaps(tModel,origModel,tRefModel,allowNetProduction,...
+%           supressWarnings,rxnScores,params,verbose)
 
 if isempty(rxnScores)
-    rxnScores=cell(numel(models),1);
-    for i=1:numel(models)
-        rxnScores{i}=ones(numel(models{i}.rxns),1)*-1;
-    end
+    rxnScores=ones(numel(tRefModel.rxns),1)*-1;
 end
 
 %Simplify the template models to remove constrained rxns. At the same time,
@@ -74,7 +73,10 @@ fullModel.c(:)=0;
 %to participate
 templateRxns = find(~ismember(fullModel.rxns, tModel.rxns)); %Check if this is slow, in that case keep track of this in fitTasksOpt and send it in
 
-[~, J, exitFlag]=ftINITFillGapsMILP(fullModel,templateRxns,params,fullModel.rxnScores(templateRxns),verbose);%only the scores from the template rxns are used, so the others doesn't matter
+%The reversible formulation uses one binary per reaction rather than one
+%per irreversible reaction, which is what makes this fast enough to run
+%once per task on a genome-scale reference model
+[~, J, exitFlag]=getMinNrFluxes(fullModel,templateRxns,params,fullModel.rxnScores(templateRxns),'formulation','reversible','verbose',verbose);%only the scores from the template rxns are used, so the others doesn't matter
 
 %Remove everything except for the added ones
 addedRxns = fullModel.rxns(templateRxns(J));
