@@ -34,7 +34,11 @@ end
 
 fastaStruct=struct('Header',{},'Sequence',{});
 header='';
-seq='';
+%Sequence lines are collected in a cell array and joined once per record,
+%rather than repeatedly concatenating onto a growing char array (which
+%copies the whole sequence-so-far on every line, i.e. quadratic in a
+%record's line count).
+seqParts={};
 haveRecord=false;
 tline=fgetl(fid);
 while ischar(tline)
@@ -42,19 +46,19 @@ while ischar(tline)
     if ~isempty(tline) && tline(1)=='>'
         if haveRecord
             fastaStruct(end+1).Header=header; %#ok<AGROW>
-            fastaStruct(end).Sequence=seq;
+            fastaStruct(end).Sequence=[seqParts{:}];
         end
         header=strtrim(tline(2:end));
-        seq='';
+        seqParts={};
         haveRecord=true;
     elseif ~isempty(tline)
-        seq=[seq tline]; %#ok<AGROW>
+        seqParts{end+1}=tline; %#ok<AGROW>
     end
     tline=fgetl(fid);
 end
 if haveRecord
     fastaStruct(end+1).Header=header;
-    fastaStruct(end).Sequence=seq;
+    fastaStruct(end).Sequence=[seqParts{:}];
 end
 fclose(fid);
 end

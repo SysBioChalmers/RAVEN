@@ -45,28 +45,31 @@ for i=1:numel(equations)
     %empty string will exist together with the real ones. Remove it
     candidates(cellfun(@isempty,candidates))=[];
     
-    %Now remove the potential coefficient before each metabolite
+    %Now remove the potential coefficient before each metabolite.
+    %Appended one cell at a time instead of [metabolites;x], which
+    %recopies the whole (growing) array on every metabolite across every
+    %equation - quadratic in the total metabolite-occurrence count.
     for j=1:numel(candidates)
         %If the metabolite has a coefficient it will look as 'number name'
         space=strfind(candidates{j},' ');
-        
+
         if isempty(space)
             %Add the metabolite
-            metabolites=[metabolites;candidates(j)];
+            metabolites{end+1,1}=candidates{j}; %#ok<AGROW>
         else
             potNumber=candidates{j}(1:space(1));
             %I use str2double here which can't deal with fractions (1/3 glc
             %and so on). I do this because I don't want to risk calling
             %functions
             [~,isNumber]=str2num(potNumber);
-            
+
             if isNumber==1
                 %Remove the coefficient
                 metName=candidates{j}(space(1)+1:end);
-                metabolites=[metabolites;metName];
+                metabolites{end+1,1}=metName; %#ok<AGROW>
             else
                 %The metabolite name contained spaces
-                metabolites=[metabolites;candidates(j)];
+                metabolites{end+1,1}=candidates{j}; %#ok<AGROW>
             end
         end
     end

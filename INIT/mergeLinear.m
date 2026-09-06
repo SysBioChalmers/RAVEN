@@ -43,6 +43,9 @@ nextGroupId = 1;
 origRxnIds = reducedModel.rxns;
 groupIds = zeros(numel(reducedModel.rxns),1);
 reversedRxns = false(numel(reducedModel.rxns),1);
+%rxn id -> original index lookup, built once rather than re-scanning all
+%of origRxnIds (via strcmp) for every merge candidate examined below.
+origRxnIdMap = containers.Map(origRxnIds,num2cell(1:numel(origRxnIds)));
 
 %Loop through and iteratively group linear reactions
 while 1
@@ -146,8 +149,8 @@ while 1
             reducedModel.c(involvedRxns(1))=reducedModel.c(involvedRxns(1))+reducedModel.c(involvedRxns(2))*stoichRatio;
 
             %store which reactions that have been merged
-            rxnInd1 = find(strcmp(origRxnIds, reducedModel.rxns(involvedRxns(1))));
-            rxnInd2 = find(strcmp(origRxnIds, reducedModel.rxns(involvedRxns(2))));
+            rxnInd1 = origRxnIdMap(reducedModel.rxns{involvedRxns(1)});
+            rxnInd2 = origRxnIdMap(reducedModel.rxns{involvedRxns(2)});
             grpId = max(groupIds(rxnInd1),groupIds(rxnInd2));
             if grpId == 0
                grpId = nextGroupId;

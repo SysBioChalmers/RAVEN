@@ -155,11 +155,12 @@ while ~isempty(queue)
 
     if numel(rpath) > maxHops, continue; end
 
-    % Find metabolites net-produced by cur
-    col  = full(model.S(:, cur));
+    % Find metabolites net-produced by cur. Iterate only the structurally
+    % nonzero entries of the (sparse) column instead of every metabolite
+    % in the model, most of which a reaction never touches.
+    col  = model.S(:, cur);
     fcur = fluxes(cur);
-    for m = 1:numel(col)
-        if abs(col(m)) < 1e-15, continue; end
+    for m = find(col)'
         if col(m) * fcur <= 0, continue; end   % skip consumed or zero-contribution mets
 
         % ---- Material-flux filters ----
