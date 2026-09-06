@@ -81,7 +81,11 @@ fullLB=[modelA.lb;modelB.lb];
 fullUB=[modelA.ub;modelB.ub];
 fullB=zeros(size(modelA.S,1)+size(modelB.S,1),1);
 
-H=[eye(size(fullS,2)/2)*fluxMinWeight eye(size(fullS,2)/2)*-1;eye(size(fullS,2)/2)*-1 eye(size(fullS,2)/2)*fluxMinWeight];
+%speye rather than eye: H is otherwise a dense (2*nRxns x 2*nRxns)
+%matrix for a genome-scale model, even though only its diagonals are
+%nonzero; quadprog accepts a sparse H directly.
+n=size(fullS,2)/2;
+H=[speye(n)*fluxMinWeight speye(n)*-1;speye(n)*-1 speye(n)*fluxMinWeight];
 
 x=quadprog(H,zeros(size(H,1),1),[],[],fullS,fullB,fullLB,fullUB);
 

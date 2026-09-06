@@ -366,8 +366,17 @@ reactionUB=zeros(numel(modelSBML.reaction),1);
 reactionLB=zeros(numel(modelSBML.reaction),1);
 reactionObjective=zeros(numel(modelSBML.reaction),1);
 
-%Construct the stoichiometric matrix while the reaction info is read
-S=zeros(numel(metaboliteIDs),numel(modelSBML.reaction));
+%Construct the stoichiometric matrix while the reaction info is read.
+%Accumulated as (row,col,value) triples and assembled into a sparse
+%matrix in one pass at the end (sparse() sums duplicate (row,col)
+%triples, matching the +'d accumulation below), rather than allocating a
+%dense (mets x rxns) matrix, which for a genome-scale model can be
+%hundreds of MB even though S is typically >95% sparse.
+nStoichEntries=sum(arrayfun(@(r) numel(r.reactant)+numel(r.product),modelSBML.reaction));
+sRow=zeros(nStoichEntries,1);
+sCol=zeros(nStoichEntries,1);
+sVal=zeros(nStoichEntries,1);
+sN=0;
 
 counter=0;
 %If FBC, then bounds have parameter ids defined for the whole model
@@ -480,7 +489,10 @@ for i=1:numel(modelSBML.reaction)
             EM=['Could not find metabolite ' modelSBML.reaction(i).reactant(j).species ' in reaction ' reactionIDs{counter}];
             error('RAVEN:badInput', '%s', EM);
         end
-        S(metIndex,counter)=S(metIndex,counter)+modelSBML.reaction(i).reactant(j).stoichiometry*-1;
+        sN=sN+1;
+        sRow(sN)=metIndex;
+        sCol(sN)=counter;
+        sVal(sN)=modelSBML.reaction(i).reactant(j).stoichiometry*-1;
     end
 
     %Add all products
@@ -491,7 +503,10 @@ for i=1:numel(modelSBML.reaction)
             EM=['Could not find metabolite ' modelSBML.reaction(i).product(j).species ' in reaction ' reactionIDs{counter}];
             error('RAVEN:badInput', '%s', EM);
         end
-        S(metIndex,counter)=S(metIndex,counter)+modelSBML.reaction(i).product(j).stoichiometry;
+        sN=sN+1;
+        sRow(sN)=metIndex;
+        sCol(sN)=counter;
+        sVal(sN)=modelSBML.reaction(i).product(j).stoichiometry;
     end
 end
 
@@ -547,13 +562,12 @@ reactionReversibility=reactionReversibility(1:counter);
 reactionUB=reactionUB(1:counter);
 reactionLB=reactionLB(1:counter);
 reactionObjective=reactionObjective(1:counter);
-S=S(:,1:counter);
 
 model.name=modelSBML.name;
 model.id=modelSBML.id;
 model.rxns=reactionIDs;
 model.mets=metaboliteIDs;
-model.S=sparse(S);
+model.S=sparse(sRow(1:sN),sCol(1:sN),sVal(1:sN),numel(metaboliteIDs),counter);
 model.lb=reactionLB;
 model.ub=reactionUB;
 model.rev=reactionReversibility;

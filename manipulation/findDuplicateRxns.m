@@ -32,7 +32,7 @@ function pairs = findDuplicateRxns(model, varargin)
 p=parseRAVENargs(varargin, {'ignoreDirection',true});
 ignoreDirection=p.ignoreDirection;
 
-S=full(model.S)';  % nRxns x nMets
+S=model.S';  % nRxns x nMets, kept sparse: unique(...,'rows') accepts sparse input directly
 
 if ignoreDirection
     % Canonical form: flip rows whose first nonzero entry is negative so
