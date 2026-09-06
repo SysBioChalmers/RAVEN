@@ -232,7 +232,8 @@ proteins={};
 metSBOs = [];
 %Regex of compartment names, later to be used to remove from metabolite
 %names if present as suffix.
-regexCompNames = ['\s?\[((' strjoin({modelSBML.compartment.name},')|(') '))\]$'];
+escapedCompNames = regexptranslate('escape',{modelSBML.compartment.name});
+regexCompNames = ['\s?\[((' strjoin(escapedCompNames,')|(') '))\]$'];
 for i=1:numel(modelSBML.species)
     metaboliteNames{numel(metaboliteNames)+1,1}=modelSBML.species(i).name;
     metaboliteIDs{numel(metaboliteIDs)+1,1}=modelSBML.species(i).id;
@@ -661,7 +662,10 @@ end
 
 if all(cellfun(@isempty,geneShortNames))
     if isfield(modelSBML,'fbc_geneProduct')
-        for i=1:numel(genes)
+        %Iterate fbc_geneProduct directly: genes is only assigned above
+        %when grRules is non-empty, but fbc_geneProduct can be present
+        %(even as an empty list) regardless of that.
+        for i=1:numel(modelSBML.fbc_geneProduct)
             if ~isempty(modelSBML.fbc_geneProduct(i).fbc_label)
                 geneShortNames{i,1}=modelSBML.fbc_geneProduct(i).fbc_label;
             elseif ~isempty(modelSBML.fbc_geneProduct(i).fbc_name)

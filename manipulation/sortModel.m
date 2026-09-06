@@ -83,8 +83,13 @@ if sortReactionOrder==true
     end
     subsystemsUnique=unique(subsystemsUnique);
     for i=1:numel(subsystemsUnique)
-        %Get all reactions for that subsystem
-        rxns=find(~cellfun(@isempty,regexp(subsystemsConcatenated,subsystemsUnique(i))));
+        %Get all reactions for that subsystem. The subsystem name is
+        %escaped (it is arbitrary model text, not a regex pattern), and
+        %the match is anchored to a whole ';'-delimited entry, since a
+        %plain substring search would also match e.g. "Glycolysis /
+        %Gluconeogenesis" when looking for "Glycolysis".
+        pattern=['(^|;)' regexptranslate('escape',subsystemsUnique{i}) '(;|$)'];
+        rxns=find(~cellfun(@isempty,regexp(subsystemsConcatenated,pattern)));
         
         %Temporarily ignore large subsystems because of inefficient
         %implementation

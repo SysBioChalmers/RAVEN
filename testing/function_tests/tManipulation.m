@@ -395,6 +395,15 @@ classdef tManipulation < RavenTestCase
             testCase.verifyTrue(all(startsWith(ids, 'r_')));
         end
 
+        function generateNewIdsEscapesRegexPrefix(testCase)
+            % A prefix containing a regex metacharacter ('.') must be
+            % matched literally: 'pX999' does not use the 'p.' prefix and
+            % must not be picked up as if '.' were a wildcard.
+            m.rxns = {'p.001'; 'pX999'};
+            ids = generateNewIds(m, 'rxns', 'p.', 'quantity', 1);
+            testCase.verifyEqual(ids{1}, 'p.002');
+        end
+
         function mergeCompartmentsSingleComp(testCase)
             evalc('m2 = mergeCompartments(testCase.model);');
             testCase.verifyNumElements(m2.comps, 1);

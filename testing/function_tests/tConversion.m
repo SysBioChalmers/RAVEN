@@ -50,6 +50,18 @@ classdef tConversion < RavenTestCase
             testCase.verifyEqual(newModel.geneEntrezID{1}, '12345');
         end
 
+        function ravenCobraWrapperEscapesRegexGeneNames(testCase)
+            % A gene id containing a regex metacharacter ('.') must be
+            % matched literally in grRules, not as a wildcard that could
+            % also match an unrelated gene id (e.g. 'G.1' vs 'GX1').
+            m = testCase.model;
+            m.genes{1} = 'G.1';
+            m.genes{2} = 'GX1';
+            m.grRules{3} = 'GX1';
+            evalc('cobra = ravenCobraWrapper(m);');
+            testCase.verifyEqual(cobra.rules{3}, 'x(2)');
+        end
+
         function standardizeFieldOrderPreservesFields(testCase)
             m2 = standardizeModelFieldOrder(testCase.model);
             testCase.verifyEqual(sort(fieldnames(m2)), sort(fieldnames(testCase.model)));

@@ -56,6 +56,16 @@ classdef tIO < RavenTestCase
             testCase.verifyEqual(m.metCharges, zeros(4,1));
         end
 
+        function importModelStripsRegexSpecialCompartmentName(testCase)
+            % A compartment name containing regex metacharacters ("Golgi
+            % (cis)") must still be recognized and stripped from the
+            % metabolite name suffix, not corrupt the matching pattern.
+            f = fullfile(testCase.ravenRoot,'testing','function_tests','test_data', ...
+                'importModelSpecialCompName.xml');
+            evalc('m = importModel(f);');
+            testCase.verifyEqual(m.metNames{1}, 'metabolite one');
+        end
+
         function importModelReadsSBML(testCase)
             f = fullfile(testCase.ravenRoot,'tutorial','empty.xml');
             evalc('m = importModel(f);');
