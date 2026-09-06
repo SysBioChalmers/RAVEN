@@ -18,7 +18,9 @@ function prepData = prepINITModel(origRefModel, taskStruct, varargin)
 % spontRxnNames : cell
 %     the spontaneous rxns (default {}).
 % convertGenes : logical
-%     if true the genes are converted to gene names (from ENSEMBL) (default
+%     if true the genes are converted to gene names (from ENSEMBL). This
+%     relies on translateGrRules, which is distributed with Human-GEM rather
+%     than with RAVEN, so Human-GEM has to be on the MATLAB path (default
 %     false).
 % customRxnsToIgnore : cell
 %     these reactions can be ignored in the ignore mask (specifying b7=1)
@@ -54,6 +56,12 @@ disp('Step 1: Gene rules')
 [origRefModel.grRules, origRefModel.rxnGeneMat] = standardizeGrRules(origRefModel, true);
 
 if convertGenes %For mouse we might want to translate in the opposite direction - this has to be done before calling this function in that case.
+    if ~exist('translateGrRules','file')
+        EM=['convertGenes requires translateGrRules, which is distributed with ' ...
+            'Human-GEM and not with RAVEN. Add Human-GEM to the MATLAB path, or ' ...
+            'convert the gene identifiers before calling prepINITModel.'];
+        error('RAVEN:badInput', '%s', EM);
+    end
     [origRefModel.grRules, origRefModel.genes, origRefModel.rxnGeneMat] = translateGrRules(origRefModel.grRules, 'Name');
 end
 
