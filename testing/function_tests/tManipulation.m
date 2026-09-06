@@ -446,6 +446,34 @@ classdef tManipulation < RavenTestCase
             testCase.verifyLessThanOrEqual(numel(m2.rxns), numel(testCase.model.rxns));
         end
 
+        function simplifyModelKeepsMetsConstrainedByB(testCase)
+            % R2 is constrained to zero flux, so deleteZeroInterval removes
+            % it and leaves C in no reaction at all. A non-zero b is a
+            % boundary condition on C, and removing the metabolite takes
+            % that row of b with it, so whatever solves the reduced model
+            % is no longer asked to produce C.
+            m = struct();
+            m.id = 'test';
+            m.rxns = {'R1';'R2'}; m.rxnNames = m.rxns;
+            m.mets = {'A';'B';'C'}; m.metNames = m.mets; m.metComps = [1;1;1];
+            m.comps = {'c'}; m.compNames = m.comps;
+            m.S = sparse([-1 0; 1 -1; 0 1]);   % R1: A => B, R2: B => C
+            m.lb = [0;0]; m.ub = [1000;0]; m.rev = [0;0]; m.c = [0;0];
+            m.genes = {}; m.grRules = {'';''}; m.rxnGeneMat = sparse(2,0);
+            m.b = zeros(3,2);
+            m.b(3,:) = [1 1];                  % C must be produced, 1 unit
+
+            evalc('[reduced,~,deletedMets] = simplifyModel(m,false,false,true);');
+            testCase.verifyTrue(ismember('C', reduced.mets));
+            testCase.verifyFalse(ismember('C', deletedMets));
+            testCase.verifyEqual(reduced.b(strcmp(reduced.mets,'C'),:), [1 1]);
+
+            % Without that constraint C is dead weight and is removed.
+            m.b(3,:) = [0 0];
+            evalc('reduced = simplifyModel(m,false,false,true);');
+            testCase.verifyFalse(ismember('C', reduced.mets));
+        end
+
         function sortIdentifiersSortsRxns(testCase)
             m2 = sortIdentifiers(testCase.model);
             testCase.verifyEqual(sort(m2.rxns), m2.rxns);
