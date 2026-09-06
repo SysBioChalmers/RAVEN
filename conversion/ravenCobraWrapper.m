@@ -432,9 +432,13 @@ for i=1:numel(replacingGenes)
 end
 rules = strcat({' '},model.grRules,{' '});
 for i=1:length(model.genes)
-    rules=regexprep(rules,[' ' model.genes{i} ' '],[' ' replacingGenes{i} ' ']);
-    rules=regexprep(rules,['(' model.genes{i} ' '],['(' replacingGenes{i} ' ']);
-    rules=regexprep(rules,[' ' model.genes{i} ')'],[' ' replacingGenes{i} ')']);
+    %Escaped: a gene id is arbitrary model text, not a regex pattern, and
+    %commonly contains metacharacters (e.g. "ENSG00000141510.16", where an
+    %unescaped "." would match any character instead of a literal dot).
+    escapedGene=regexptranslate('escape',model.genes{i});
+    rules=regexprep(rules,[' ' escapedGene ' '],[' ' replacingGenes{i} ' ']);
+    rules=regexprep(rules,['(' escapedGene ' '],['(' replacingGenes{i} ' ']);
+    rules=regexprep(rules,[' ' escapedGene ')'],[' ' replacingGenes{i} ')']);
 end
 rules=regexprep(rules,' and ',' & ');
 rules=regexprep(rules,' or ',' | ');

@@ -69,8 +69,10 @@ if ~isempty(originalGenes)
     end
 end
 
-% construct new rxnGeneMat (if requested)
+% construct new rxnGeneMat (if requested). Each column is made sparse
+% before horzcat, so the (genes x rxns) matrix is never materialised
+% densely for a genome-scale model.
 if nargout > 1
-    rxnGeneCell = cellfun(@(rg) ismember(genes,rg),rxnGenes,'UniformOutput',false);
-    rxnGeneMat = sparse(double(horzcat(rxnGeneCell{:})'));
+    rxnGeneCell = cellfun(@(rg) sparse(double(ismember(genes,rg))),rxnGenes,'UniformOutput',false);
+    rxnGeneMat = horzcat(rxnGeneCell{:})';
 end

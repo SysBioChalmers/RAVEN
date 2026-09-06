@@ -179,11 +179,17 @@ A_growth = [sparse(mergedModel.c'), sparse(1, nRev + nUniv)];
 
 % (3) Universal upper coupling: v_k - ub_k * y_db_k <= 0   [nUniv rows, 'L']
 %     (forces v_k <= 0 when y_db_k = 0)
+% Coupling coefficients are capped at the Big-M constant: an unbounded
+% universal reaction (ub = Inf, RAVEN's own default when no upper-bound
+% annotation is set) would otherwise put an Inf coefficient into the
+% constraint matrix, and Inf*0 (y_db_k = 0) is NaN, not 0.
 yDbCols = nMergedRxns + nRev + (1:nUniv);
+uniUb = min(mergedModel.ub(univIdx), M);
+uniLb = max(mergedModel.lb(univIdx), -M);
 A_uniUp = sparse(...
     [1:nUniv, 1:nUniv], ...
     [univIdx(:)', yDbCols], ...
-    [ones(1, nUniv), -mergedModel.ub(univIdx)'], ...
+    [ones(1, nUniv), -uniUb'], ...
     nUniv, nVar);
 
 % (4) Universal lower coupling: v_k - lb_k * y_db_k >= 0   [nUniv rows, 'G']
@@ -191,7 +197,7 @@ A_uniUp = sparse(...
 A_uniLo = sparse(...
     [1:nUniv, 1:nUniv], ...
     [univIdx(:)', yDbCols], ...
-    [ones(1, nUniv), -mergedModel.lb(univIdx)'], ...
+    [ones(1, nUniv), -uniLb'], ...
     nUniv, nVar);
 
 % (5) Reversal coupling: v_j + M * y_rev_j >= 0   [nRev rows, 'G']
@@ -246,11 +252,14 @@ yDb  = sol.full(nMergedRxns + nRev + 1 : end);
 revSelected = revCandIdx(yRev > binThreshold);
 dbSelected  = univIdx(yDb > binThreshold);
 
-% Map back to original IDs
+% Map back to original IDs. dbSelected is already restricted to universal
+% reactions via univIdx/isDraft above (an id-membership test against
+% model.rxns, not a name it could have been renamed away from), so no
+% further filtering against universalModel.rxns is needed here -- doing so
+% would silently drop a universal reaction that mergeModels renamed
+% because its id collided with one already in the draft model.
 reversedRxns = mergedModel.rxns(revSelected);
 addedRxns    = mergedModel.rxns(dbSelected);
-% Keep only universal reaction IDs (filtered by name)
-addedRxns = addedRxns(ismember(addedRxns, universalModel.rxns));
 
 if verbose
     fprintf('gapFillMILP: reversed %d draft reaction(s), added %d universal reaction(s).\n', ...
@@ -269,10 +278,16 @@ for k = 1:numel(reversedRxns)
     end
 end
 
-% Add universal reactions
-if ~isempty(addedRxns)
-    trimmedUniv = removeReactions(universalModel, ...
-        setdiff(universalModel.rxns, addedRxns));
+% Add universal reactions. Extracted from mergedModel by the dbSelected
+% indices directly, not by looking addedRxns' names back up in
+% universalModel: that lookup fails whenever mergeModels renamed one of
+% them because its id collided with one already in the draft model, in
+% which case setdiff would keep the (unrenamed) original in universalModel
+% marked for removal, silently dropping the very reaction just selected.
+if ~isempty(dbSelected)
+    toRemove = true(nMergedRxns, 1);
+    toRemove(dbSelected) = false;
+    trimmedUniv = removeReactions(mergedModel, toRemove);
     newModel = mergeModels({newModel; trimmedUniv});
 end
 

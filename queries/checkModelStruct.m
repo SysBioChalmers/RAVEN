@@ -94,14 +94,19 @@ issues = struct('category',{},'target',{},'message',{});
 %Missing elements — checked inline so missing fields do not cause cascading
 %errors in the rest of the body
 fields={'id';'name';'rxns';'mets';'S';'lb';'ub';'rev';'c';'b';'comps';'metComps'};
+missingField=false;
 for i=1:numel(fields)
     if ~isfield(model,fields{i})
         EM=['The model is missing the "' fields{i} '" field'];
         reportIssue('error',EM);
+        missingField=true;
     end
 end
-if collecting && ~isempty(issues)
-    return  % missing required fields would cause access errors below
+if missingField
+    return  % missing required fields would cause access errors below; this
+            % must fire whenever a field is missing, not only when
+            % collecting -- throwErrors=false otherwise warns here and
+            % then crashes on the very field it just warned about
 end
 
 %Type check
@@ -444,7 +449,10 @@ if isfield(model,'metMiriams')
         if numel(miriams(allMiriams{i}))>1
             %Check if they all have the same name
             if numel(unique(model.metNames(miriams(allMiriams{i}))))>1
-                if ~regexp(allMiriams{i},'^sbo\/SBO:') % SBO terms are expected to be multiple
+                % regexp returns [] (not a false-like 0) when there is no
+                % match, and ~[] is [] too, so the negation itself is
+                % never true: use isempty to actually test for "no match"
+                if isempty(regexp(allMiriams{i},'^sbo\/SBO:','once')) % SBO terms are expected to be multiple
                     hasMultiple(i)=true;
                 end
             end

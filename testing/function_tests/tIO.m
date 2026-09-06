@@ -28,6 +28,44 @@ classdef tIO < RavenTestCase
                 ?MException);
         end
 
+        function importModelHandlesSpeciesAndReactionEdgeCases(testCase)
+            % A model where: some species have no SBO term while others do
+            % (and disagree with each other); a multi-reaction objective;
+            % a reaction with more than one SUBSYSTEM note; and species
+            % whose charge is genuinely (not just by default) zero.
+            f = fullfile(testCase.ravenRoot,'testing','function_tests','test_data', ...
+                'importModelEdgeCases.xml');
+            evalc('m = importModel(f);');
+
+            % SBO terms must land on the metabolite that actually has them,
+            % not be shifted onto the wrong one because one species (m2)
+            % has none.
+            testCase.verifyTrue(isfield(m,'metMiriams'));
+            testCase.verifyEmpty(m.metMiriams{strcmp(m.mets,'m2')});
+            testCase.verifyNotEmpty(m.metMiriams{strcmp(m.mets,'m3')});
+
+            % Both reactions in the combined objective must be captured.
+            testCase.verifyEqual(m.c(strcmp(m.rxns,'r1')), 1);
+            testCase.verifyEqual(m.c(strcmp(m.rxns,'r2')), 2);
+
+            % Two SUBSYSTEM notes on one reaction must stay two entries.
+            testCase.verifyEqual(numel(m.subSystems{strcmp(m.rxns,'r1')}), 2);
+
+            % All-genuinely-neutral charges must not be dropped.
+            testCase.verifyTrue(isfield(m,'metCharges'));
+            testCase.verifyEqual(m.metCharges, zeros(4,1));
+        end
+
+        function importModelStripsRegexSpecialCompartmentName(testCase)
+            % A compartment name containing regex metacharacters ("Golgi
+            % (cis)") must still be recognized and stripped from the
+            % metabolite name suffix, not corrupt the matching pattern.
+            f = fullfile(testCase.ravenRoot,'testing','function_tests','test_data', ...
+                'importModelSpecialCompName.xml');
+            evalc('m = importModel(f);');
+            testCase.verifyEqual(m.metNames{1}, 'metabolite one');
+        end
+
         function importModelReadsSBML(testCase)
             f = fullfile(testCase.ravenRoot,'tutorial','empty.xml');
             evalc('m = importModel(f);');

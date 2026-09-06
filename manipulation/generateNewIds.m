@@ -45,11 +45,13 @@ p=parseRAVENargs(varargin, {'quantity',1; 'numLength',4});
 quantity=p.quantity;
 numLength=p.numLength;
 
-% Subset only existingIds that have the prefix
-existingIds=existingIds(~cellfun(@isempty,regexp(existingIds,['^' prefix])));
+% Subset only existingIds that have the prefix. Escaped: prefix is
+% arbitrary caller-supplied text, not a regex pattern.
+escapedPrefix=regexptranslate('escape',prefix);
+existingIds=existingIds(~cellfun(@isempty,regexp(existingIds,['^' escapedPrefix])));
 
 if ~isempty(existingIds)
-    existingIds=regexprep(existingIds,['^' prefix],'');
+    existingIds=regexprep(existingIds,['^' escapedPrefix],'');
     existingIds=sort(existingIds);
     lastId=existingIds{end};
     numLength=length(lastId);

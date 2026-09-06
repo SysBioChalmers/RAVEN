@@ -96,16 +96,13 @@ for i=1:2
             %Do not change a more serious error to a less serious one
             balanceStructure.balanceStatus(j)=min(-1,balanceStructure.balanceStatus(j));
         end
-        %Loop through each element
-        for k=1:numel(balanceStructure.elements.names)
-            if i==1
-                balanceStructure.leftComp(j,k)=sum(S{i}(:,j).*useMat(:,k));
-            else
-                balanceStructure.rightComp(j,k)=sum(S{i}(:,j).*useMat(:,k));
-            end
-        end
     end
 end
+%Elemental composition per reaction, vectorized as a single matrix
+%product per side instead of a per-reaction, per-element loop (which is
+%quadratic in a genome-scale model's reaction and element counts).
+balanceStructure.leftComp=full(S{1}'*useMat);
+balanceStructure.rightComp=full(S{2}'*useMat);
 
 %Now compare the left and right sides to find which are unbalanced. This is
 %done even if the reaction as a whole could not be balanced

@@ -41,6 +41,27 @@ classdef tManipulation < RavenTestCase
             testCase.verifyEqual(numel(m2.mets), numel(testCase.model.mets) + 2);
         end
 
+        function addRxnsAllowNewGenesKeepsGeneIdsIntact(testCase)
+            % A gene id that merely contains "and"/"or" as a substring
+            % (e.g. "band1") must not be shredded by the grRule parser used
+            % to discover new genes.
+            r.rxns = 'newRxn1';
+            r.equations = '2-Oxoglutarate => TEST';
+            r.grRules = 'band1 and orfeo2';
+            evalc('m2 = addRxns(testCase.model, r, 2, ''c'', true, true);');
+            testCase.verifyTrue(all(ismember({'band1','orfeo2'}, m2.genes)));
+        end
+
+        function addRxnsPrintsNewGeneIdWithPercent(testCase)
+            % A new gene id containing "%" must not be truncated when
+            % printed to the "New genes added" notice.
+            r.rxns = 'newRxn1';
+            r.equations = '2-Oxoglutarate => TEST';
+            r.grRules = 'NEWGENE_50%_test';
+            out = evalc('addRxns(testCase.model, r, 2, ''c'', true, true);');
+            testCase.verifySubstring(out, 'NEWGENE_50%_test');
+        end
+
         function addRxnsAddsRxn(testCase)
             r.rxns = 'newRxn1';
             r.equations = '2-Oxoglutarate => TEST';
@@ -67,6 +88,19 @@ classdef tManipulation < RavenTestCase
             evalc('m3 = addRxns(m, r2, 2, ''c'', true);');
             testCase.verifyEqual(numel(m3.spontaneous), numel(m3.rxns));
             testCase.verifyTrue(m3.spontaneous(end));
+        end
+
+        function addRxnsKeepsEquationsAligned(testCase)
+            % A model that already tracks equations must keep it aligned
+            % with rxns after adding a reaction, reusing the equation as
+            % given rather than leaving the field short by one.
+            m = testCase.model;
+            m.equations = constructEquations(m);
+            r.rxns = 'newRxn1';
+            r.equations = '2-Oxoglutarate => TEST';
+            evalc('m2 = addRxns(m, r, 2, ''c'', true);');
+            testCase.verifyEqual(numel(m2.equations), numel(m2.rxns));
+            testCase.verifySubstring(m2.equations{end}, 'TEST');
         end
 
         function addRxnsStringEqnTypeIdAlias(testCase)
@@ -111,10 +145,37 @@ classdef tManipulation < RavenTestCase
             testCase.verifyTrue(ismember('r1', m2.rxns));
         end
 
+        function addRxnsGenesMetsKeepsPercentInAlreadyPresentNotice(testCase)
+            % A rxn id containing "%" that is already present in the
+            % target model must survive intact in the notice, not be
+            % truncated by fprintf misreading it as a format directive.
+            model = testCase.model;
+            model.rxns{1} = 'RXN_50%_present';
+            sourceModel = model;
+            r.rxns = 'newRxn1';
+            r.equations = [model.mets{1} ' => ' model.mets{2}];
+            evalc('sourceModel = addRxns(sourceModel, r, 1, ''c'', true);');
+            out = evalc(['addRxnsGenesMets(model, sourceModel, ' ...
+                '{''RXN_50%_present'',''newRxn1''});']);
+            testCase.verifySubstring(out, 'RXN_50%_present');
+        end
+
         function addTransportAddsRxn(testCase)
             evalc(['m2 = addTransport(testCase.model, ''c'', ''e'', ' ...
                 '{''6-phospho-D-glucono-1,5-lactone''}, false, false, ''tr_'');']);
             testCase.verifyGreaterThan(numel(m2.rxns), numel(testCase.model.rxns));
+        end
+
+        function addTransportOnModelWithoutAnnotationField(testCase)
+            % The default LB/UB fallback must not assume model.annotation
+            % exists at all, only that it may lack defaultLB/defaultUB.
+            m = testCase.model;
+            if isfield(m,'annotation')
+                m = rmfield(m,'annotation');
+            end
+            evalc(['m2 = addTransport(m, ''c'', ''e'', ' ...
+                '{''6-phospho-D-glucono-1,5-lactone''}, false, false, ''tr_'');']);
+            testCase.verifyGreaterThan(numel(m2.rxns), numel(m.rxns));
         end
 
         function addTransportAcceptsRowOrientedMetNames(testCase)
@@ -157,6 +218,22 @@ classdef tManipulation < RavenTestCase
             m2 = closeModel(testCase.model);
             testCase.verifyClass(m2, 'struct');
             testCase.verifyGreaterThanOrEqual(numel(m2.rxns), numel(testCase.model.rxns));
+        end
+
+        function closeModelHandlesTwoColumnBAndMetNotes(testCase)
+            % b(numel(b)+1)=0 is a linear index, which for an N-by-2 b
+            % (net-production bounds) does not append a row; it errors.
+            % metNotes must also be padded like the other optional
+            % per-metabolite fields, or it goes out of sync with mets.
+            m = tManipulation.twoMetModel();  % R1: a => b
+            r.rxns = {'R2'}; r.equations = {'b =>'};  % sink, so closeModel adds a boundary met
+            evalc('m = addRxns(m, r, 1, [], false);');
+            m.b = [zeros(2,1) ones(2,1)];     % two-column b
+            m.metNotes = {'note a';'note b'};
+            m2 = closeModel(m);
+            testCase.verifyEqual(size(m2.b,2), 2);
+            testCase.verifyEqual(size(m2.b,1), numel(m2.mets));
+            testCase.verifyEqual(numel(m2.metNotes), numel(m2.mets));
         end
 
         function closeModelDetectsScaledAndMultiMetSinks(testCase)
@@ -237,6 +314,21 @@ classdef tManipulation < RavenTestCase
             testCase.verifyEqual(m2.pwys{strcmp(m2.rxns,'R1_REV')}, 'pathway1');
         end
 
+        function convertToIrrevRev2irrevPointsAtReverseCopy(testCase)
+            % rev2irrev{origIdx}'s second element must be the actual
+            % position of that reaction's reverse copy in irrevModel
+            % (numOrigRxns+i), not just its rank among reversible
+            % reactions.
+            m = tManipulation.twoMetModel();       % R1: a -> b
+            r.rxns = {'R2'}; r.equations = {'b <=> a'};
+            evalc('m = addRxns(m, r, 1, [], false);');
+            m.rev(2) = 1; m.lb(2) = -1000; m.ub(2) = 1000;
+            [irrevModel, ~, rev2irrev] = convertToIrrev(m);
+            pair = rev2irrev{2};
+            testCase.verifyEqual(pair(1), 2);
+            testCase.verifyEqual(irrevModel.rxns{pair(2)}, 'R2_REV');
+        end
+
         function findDuplicateRxnsIgnoreDirection(testCase)
             % a -> b and b -> a are the same reaction run backwards, so they
             % group by default and stay separate when direction matters.
@@ -289,6 +381,20 @@ classdef tManipulation < RavenTestCase
             testCase.verifyEqual(nnz(strcmp(byId.metNames, 'Glucose')), 2);
         end
 
+        function mergeModelsKeepsSpontaneousAligned(testCase)
+            % A model carrying spontaneous merged with one that doesn't
+            % must keep the field aligned with rxns, defaulting the
+            % other model's reactions to false rather than leaving it
+            % short.
+            a = tManipulation.namedMetModel('glc_c', 'A');
+            a.spontaneous = true;
+            b = tManipulation.namedMetModel('glucose_c', 'B');
+            evalc('merged = mergeModels({a; b}, ''metParam'', ''mets'');');
+            testCase.verifyEqual(numel(merged.spontaneous), numel(merged.rxns));
+            testCase.verifyTrue(merged.spontaneous(strcmp(merged.rxns,'R_A')));
+            testCase.verifyFalse(merged.spontaneous(strcmp(merged.rxns,'R_B')));
+        end
+
         function copyToCompsDefaultCompOutsideAddsCompartment(testCase)
             % Adding a new compartment without specifying compOutside must
             % not error when the model already tracks compOutside.
@@ -326,9 +432,28 @@ classdef tManipulation < RavenTestCase
             testCase.verifyTrue(all(startsWith(ids, 'r_')));
         end
 
+        function generateNewIdsEscapesRegexPrefix(testCase)
+            % A prefix containing a regex metacharacter ('.') must be
+            % matched literally: 'pX999' does not use the 'p.' prefix and
+            % must not be picked up as if '.' were a wildcard.
+            m.rxns = {'p.001'; 'pX999'};
+            ids = generateNewIds(m, 'rxns', 'p.', 'quantity', 1);
+            testCase.verifyEqual(ids{1}, 'p.002');
+        end
+
         function mergeCompartmentsSingleComp(testCase)
             evalc('m2 = mergeCompartments(testCase.model);');
             testCase.verifyNumElements(m2.comps, 1);
+        end
+
+        function mergeCompartmentsWarnsWhenUnconstrainedMissing(testCase)
+            % The warning's own text says it fires because there is no
+            % unconstrained field to tell single-metabolite reactions apart
+            % from real exchange reactions; the condition guarding it
+            % checked the opposite, firing only when the field WAS present.
+            m = testCase.model;
+            testCase.verifyWarning(@() mergeCompartments(m,'deleteRxnsWithOneMet',true), ...
+                'RAVEN:warning');
         end
 
         function mergeCompartmentsDropsStaleCompMiriams(testCase)
@@ -401,6 +526,15 @@ classdef tManipulation < RavenTestCase
             testCase.verifyClass(m2, 'struct');
         end
 
+        function removeBadRxnsSeedIsReproducible(testCase)
+            % Which reaction is removed among several equally-valid
+            % candidates is randomised; a given seed must make the choice
+            % (and thus the result) reproducible across runs.
+            evalc(['[~, r1] = removeBadRxns(testCase.model, ''rxnRules'', 3, ''seed'', 42);' ...
+                '[~, r2] = removeBadRxns(testCase.model, ''rxnRules'', 3, ''seed'', 42);']);
+            testCase.verifyEqual(r1, r2);
+        end
+
         function removeGenesRemovesGene(testCase)
             m2 = removeGenes(testCase.model, 'b1817', true, true, false);
             testCase.verifyFalse(ismember('b1817', m2.genes));
@@ -423,9 +557,96 @@ classdef tManipulation < RavenTestCase
             testCase.verifyLessThan(numel(m2.mets), numel(testCase.model.mets));
         end
 
+        function replaceMetsVerboseKeepsPercentInRxnId(testCase)
+            % A reaction id containing "%" that is reported by 'verbose'
+            % must survive intact, not be truncated by fprintf misreading
+            % it as a format directive.
+            m = struct();
+            m.id='t'; m.rxns={'R_50%_test';'R2'}; m.rxnNames=m.rxns;
+            m.mets={'x';'y';'z'}; m.metNames=m.mets; m.metComps=[1;1;1];
+            m.comps={'c'}; m.compNames={'c'};
+            m.S=sparse([-1 0; 0 -1; 1 1]); % R_50%_test: x=>z   R2: y=>z
+            m.lb=[0;0]; m.ub=[1000;1000]; m.rev=[0;0]; m.c=[0;0]; m.b=zeros(3,1);
+            m.genes={}; m.grRules={'';''}; m.rxnGeneMat=sparse(2,0);
+            out = evalc('replaceMets(m, ''x'', ''y'', ''verbose'', true);');
+            testCase.verifySubstring(out, 'R_50%_test');
+        end
+
+        function replaceMetsByIdAddsRatherThanOverwrites(testCase)
+            % A reaction where the replacement metabolite is already itself
+            % a participant must keep that contribution: x+y=> must become
+            % 2y=>, not just y=>, once x is replaced by y.
+            m = struct();
+            m.id='t'; m.rxns={'R1';'R2'}; m.rxnNames=m.rxns;
+            m.mets={'x';'y';'z'}; m.metNames=m.mets; m.metComps=[1;1;1];
+            m.comps={'c'}; m.compNames={'c'};
+            m.S=sparse([0 -1; 0 -1; -1 0]); % R1: z=>   R2: x+y=>
+            m.lb=[0;0]; m.ub=[1000;1000]; m.rev=[0;0]; m.c=[0;0]; m.b=zeros(3,1);
+            m.genes={}; m.grRules={'';''}; m.rxnGeneMat=sparse(2,0);
+            evalc('m2 = replaceMets(m, ''x'', ''y'', ''identifiers'', true);');
+            yRow = strcmp(m2.mets,'y');
+            r2 = strcmp(m2.rxns,'R2');
+            testCase.verifyEqual(full(m2.S(yRow,r2)), -2);
+        end
+
+        function replaceMetsByNameKeepsBShapeAndRuns(testCase)
+            % A model with a two-column b (net-production bounds) must
+            % keep that shape after the metabolites-with-duplicate-name
+            % merge, and the final contractModel call must not error from
+            % a stale post-deletion metabolite index or a disabled
+            % distReverse.
+            m = struct();
+            m.id='t'; m.rxns={'R1';'R2'}; m.rxnNames=m.rxns;
+            m.mets={'ox1';'ox2';'w'}; m.metNames={'oxygen';'o2';'w'};
+            m.metComps=[1;1;1]; m.comps={'c'}; m.compNames={'c'};
+            m.S=sparse([-1 0; 0 -1; 1 1]); % R1: oxygen=>w   R2: o2=>w
+            m.lb=[0;0]; m.ub=[1000;1000]; m.rev=[0;0]; m.c=[0;0];
+            m.b=[zeros(3,1) ones(3,1)]; % two-column b
+            m.genes={}; m.grRules={'';''}; m.rxnGeneMat=sparse(2,0);
+            evalc('m2 = replaceMets(m, ''oxygen'', ''o2'');');
+            testCase.verifyEqual(size(m2.b,2), 2);
+            testCase.verifyEqual(size(m2.b,1), numel(m2.mets));
+            testCase.verifyEqual(numel(m2.mets), 2); % oxygen and o2 merged
+        end
+
+        function setExchangeBoundsFindsAllMultiExchangeMets(testCase)
+            % Every metabolite exchanged by more than one reaction must be
+            % reported, not just whichever one happens to line up between
+            % two differently-sized index ranges compared directly against
+            % each other.
+            m = struct();
+            m.id='t';
+            m.rxns={'r1';'r2';'r3';'r4';'r5';'r6';'r7'}; m.rxnNames=m.rxns;
+            m.mets={'met1';'met2';'met3';'met4';'met5'};
+            m.metNames={'MetOne';'MetTwo';'MetThree';'MetFour';'MetFive'};
+            m.metComps=[1;1;1;1;1]; m.comps={'c'}; m.compNames={'c'};
+            % r1:=>met5  r2:=>met1  r3:=>met2  r4:met5=>  r5:=>met3  r6:=>met4  r7:met3=>
+            m.S = sparse(5,7);
+            m.S(5,1)=1; m.S(1,2)=1; m.S(2,3)=1; m.S(5,4)=-1; m.S(3,5)=1; m.S(4,6)=1; m.S(3,7)=-1;
+            m.lb=-1000*ones(7,1); m.ub=1000*ones(7,1); m.rev=ones(7,1); m.c=zeros(7,1); m.b=zeros(5,1);
+            m.genes={}; m.grRules=repmat({''},7,1); m.rxnGeneMat=sparse(7,0);
+            txt = evalc('setExchangeBounds(m);');
+            testCase.verifySubstring(txt, 'MetThree');
+            testCase.verifySubstring(txt, 'MetFive');
+        end
+
         function setExchangeBoundsRuns(testCase)
             evalc('m2 = setExchangeBounds(testCase.model, {''ac_e'';''akg_e''}, -500, 500);');
             testCase.verifyClass(m2, 'struct');
+        end
+
+        function setParamUncOnModelWithoutAnnotationField(testCase)
+            % 'unc' falls back to default LB/UB (-1000/1000) when there is
+            % no annotation field at all, not just when annotation exists
+            % but lacks defaultLB/defaultUB.
+            m = testCase.model;
+            if isfield(m,'annotation')
+                m = rmfield(m,'annotation');
+            end
+            m2 = setParam(m, 'unc', m.rxns(1), 0);
+            idx = strcmp(m2.rxns, m.rxns{1});
+            testCase.verifyEqual(m2.lb(idx), -1000);
+            testCase.verifyEqual(m2.ub(idx), 1000);
         end
 
         function setParamObjective(testCase)
@@ -485,6 +706,49 @@ classdef tManipulation < RavenTestCase
             testCase.verifyEqual(numel(m2.mets), numel(testCase.model.mets));
         end
 
+        function sortReactionOrderSeedIsReproducible(testCase)
+            % The local search proposes swaps randomly; a given seed must
+            % make its result reproducible across runs.
+            m = testCase.model;
+            m.subSystems = repmat({{'ALL'}}, numel(m.rxns), 1);
+            m1 = sortModel(m, 'sortReversible', false, 'sortReactionOrder', true, 'seed', 5);
+            m2 = sortModel(m, 'sortReversible', false, 'sortReactionOrder', true, 'seed', 5);
+            testCase.verifyEqual(m1.rxns, m2.rxns);
+        end
+
+        function sortReactionOrderUsesSubsystemsOwnColumns(testCase)
+            % sortReactionOrder must score and reorder a subsystem's own
+            % reactions, not whichever columns happen to occupy the first
+            % nRxns positions of the whole model: with a chain A->B->C->D
+            % split across R2 (A=>B), R3 (B=>C) and R1 (C=>D) -- placed
+            % after two unrelated filler reactions so the subsystem is NOT
+            % at the start of model.rxns -- the only production-before-
+            % consumption order is R2, then R3, then R1.
+            m = struct();
+            m.id='t'; m.rxns={'FILLER1';'FILLER2';'R1';'R2';'R3'}; m.rxnNames=m.rxns;
+            m.mets={'fa';'fb';'fc';'fd';'A';'B';'C';'D'}; m.metNames=m.mets;
+            m.metComps=ones(8,1); m.comps={'c'}; m.compNames={'c'};
+            S=zeros(8,5);
+            S(1,1)=-1; S(2,1)=1;  % FILLER1: fa=>fb
+            S(3,2)=-1; S(4,2)=1;  % FILLER2: fc=>fd
+            S(7,3)=-1; S(8,3)=1;  % R1: C=>D
+            S(5,4)=-1; S(6,4)=1;  % R2: A=>B
+            S(6,5)=-1; S(7,5)=1;  % R3: B=>C
+            m.S=sparse(S);
+            m.lb=zeros(5,1); m.ub=ones(5,1)*1000; m.rev=zeros(5,1); m.c=zeros(5,1);
+            m.b=zeros(8,1);
+            m.genes={}; m.grRules=repmat({''},5,1); m.rxnGeneMat=sparse(5,0);
+            m.subSystems={{};{};{'CHAIN'};{'CHAIN'};{'CHAIN'}};
+
+            rng(1);
+            m2=sortModel(m,'sortReversible',false,'sortReactionOrder',true);
+            posR1=find(strcmp(m2.rxns,'R1'));
+            posR2=find(strcmp(m2.rxns,'R2'));
+            posR3=find(strcmp(m2.rxns,'R3'));
+            testCase.verifyLessThan(posR2, posR3);
+            testCase.verifyLessThan(posR3, posR1);
+        end
+
         function standardizeGrRulesReturnsRules(testCase)
             evalc('grRules = standardizeGrRules(testCase.model);');
             testCase.verifyNumElements(grRules, numel(testCase.model.rxns));
@@ -522,6 +786,20 @@ classdef tManipulation < RavenTestCase
             [grRules,~,indexes2check] = standardizeGrRules(m, true);
             testCase.verifyEmpty(indexes2check);
             testCase.verifyEqual(grRules{1}, '(G1 and G2) or G3');
+        end
+
+        function standardizeGrRulesKeepsPercentInWarning(testCase)
+            % A rxn id containing a literal "%" must survive intact in the
+            % "potentially problematic relationships" warning, not be
+            % truncated by sprintf/warning misreading it as a directive.
+            m.rxns = {'RXN_50%_TEST'};
+            m.grRules = {'(G1 or G2) and G3'};
+            m.genes = {'G1';'G2';'G3'};
+            m.rxnGeneMat = sparse([1 1 1]);
+            lastwarn('');
+            evalc('standardizeGrRules(m);');
+            msg = lastwarn();
+            testCase.verifySubstring(msg, 'RXN_50%_TEST');
         end
 
         function removeGenesMatchesWholeGeneIds(testCase)
@@ -568,6 +846,17 @@ classdef tManipulation < RavenTestCase
             testCase.verifyEqual(numel(e.pwys), numel(e.rxns));
             testCase.verifyTrue(all(e.spontaneous));
             testCase.verifyTrue(all(strcmp(e.pwys, 'pathway1')));
+        end
+
+        function expandModelCopiesRxnScores(testCase)
+            % Each isozyme copy created by splitting an OR rule must
+            % inherit the source reaction's rxnScores, keeping it aligned
+            % with rxns.
+            m = testCase.gprTestModel('g1 or g2', {'g1';'g2'}, [1 1]);
+            m.rxnScores = 2.5;
+            e = expandModel(m);
+            testCase.verifyEqual(numel(e.rxnScores), numel(e.rxns));
+            testCase.verifyTrue(all(e.rxnScores == 2.5));
         end
 
         function expandModelDistributesBothSides(testCase)

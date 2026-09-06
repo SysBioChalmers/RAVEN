@@ -164,7 +164,10 @@ rxnScores(essentialIndex)=[];
 %since it is the model structure that is returned.
 if any(pmIndexes)
     irrevModel.metNames=upper(irrevModel.metNames);
-    metsToAdd.mets=strcat({'FAKEFORPM'},num2str(pmIndexes));
+    % num2str on the whole column right-aligns every row to a common width,
+    % embedding padding spaces once the indices span more than one digit
+    % count; format each one independently.
+    metsToAdd.mets=arrayfun(@(x) sprintf('FAKEFORPM%d',x), pmIndexes, 'UniformOutput', false);
     metsToAdd.metNames=metsToAdd.mets;
     metsToAdd.compartments=irrevModel.comps{1};
     

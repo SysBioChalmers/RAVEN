@@ -29,7 +29,13 @@ p=parseRAVENargs(varargin, {'printModelIssues',false; 'printDetails',true});
 printModelIssues=p.printModelIssues;
 printDetails=p.printDetails;
 
-fprintf(['Network statistics for ' model.id ': ' model.name '\n']);
+%Escapes model text before it is spliced into an fprintf template: the
+%assembled string is used as a format string below, so a literal "%" in
+%e.g. a metabolite or compartment name would otherwise be misread as a
+%format directive and swallow the remainder of the line.
+esc=@(s) strrep(s,'%','%%');
+
+fprintf(['Network statistics for ' esc(model.id) ': ' esc(model.name) '\n']);
 
 %Get which reactions are present in each compartment
 rxnComps=sparse(numel(model.rxns),numel(model.comps));
@@ -51,14 +57,14 @@ if isfield(model,'genes')
     %Find the genes in each compartment
     for i=1:numel(model.comps)
         [~, I]=find(model.rxnGeneMat(rxnComps(:,i)==1,:));
-        fprintf(['\t' model.compNames{i} '\t' num2str(numel(unique(I))) '\n']);
+        fprintf(['\t' esc(model.compNames{i}) '\t' num2str(numel(unique(I))) '\n']);
     end
 end
 
 %Print information about reactions
 fprintf(['\nReactions*\t\t\t' num2str(numel(model.rxns)) '\n']);
 for i=1:numel(model.comps)
-    fprintf(['\t' model.compNames{i} '\t' num2str(sum(rxnComps(:,i))) '\n']);
+    fprintf(['\t' esc(model.compNames{i}) '\t' num2str(sum(rxnComps(:,i))) '\n']);
 end
 
 %Removes the effect of compartments and removes duplicate reactions
@@ -71,7 +77,7 @@ fprintf(['Unique reactions**\t' num2str(numel(unique(equ))) '\n']);
 %Print information about metabolites
 fprintf(['\nMetabolites\t\t\t' num2str(numel(model.mets)) '\n']);
 for i=1:numel(model.comps)
-    fprintf(['\t' model.compNames{i} '\t' num2str(sum(model.metComps==i)) '\n']);
+    fprintf(['\t' esc(model.compNames{i}) '\t' num2str(sum(model.metComps==i)) '\n']);
 end
 
 fprintf(['Unique metabolites\t' num2str(numel(unique(model.metNames))) '\n']);
@@ -81,7 +87,7 @@ fprintf('** Unique reactions are defined as being biochemically unique (no compa
 
 %Also print some potential problems if there are any
 if printModelIssues==true
-    fprintf(['\nShort model quality summary for ' model.id ': ' model.name '\n']);
+    fprintf(['\nShort model quality summary for ' esc(model.id) ': ' esc(model.name) '\n']);
     
     %Check that all the metabolites are being used
     involvedMat=model.S;
@@ -92,7 +98,7 @@ if printModelIssues==true
         errorText=['Non-used metabolites\t' num2str(numel(notPresent)) '\n'];
         if printDetails==true
             for i=1:numel(notPresent)
-                errorText=[errorText '\t(' model.mets{notPresent(i)} ') ' model.metNames{notPresent(i)} '\n'];
+                errorText=[errorText '\t(' esc(model.mets{notPresent(i)}) ') ' esc(model.metNames{notPresent(i)}) '\n'];
             end
             errorText=[errorText '\n'];
         end
@@ -106,7 +112,7 @@ if printModelIssues==true
         errorText=['Empty reactions\t' num2str(numel(notUsed)) '\n'];
         if printDetails==true
             for i=1:numel(notUsed)
-                errorText=[errorText '\t' model.rxns{notUsed(i)} '\n'];
+                errorText=[errorText '\t' esc(model.rxns{notUsed(i)}) '\n'];
             end
             errorText=[errorText '\n'];
         end
@@ -120,7 +126,7 @@ if printModelIssues==true
         errorText=['Dead-end reactions\t' num2str(numel(deletedReactions)) '\n'];
         if printDetails==true
             for i=1:numel(deletedReactions)
-                errorText=[errorText '\t' deletedReactions{i} '\n'];
+                errorText=[errorText '\t' esc(deletedReactions{i}) '\n'];
             end
             errorText=[errorText '\n'];
         end
@@ -135,7 +141,7 @@ if printModelIssues==true
         errorText=['Dead-end metabolites\t' num2str(numel(deletedMetabolites)) '\n'];
         if printDetails==true
             for i=1:numel(deletedMetabolites)
-                errorText=[errorText '\t(' model.mets{deletedMetabolites(i)} ') ' model.metNames{deletedMetabolites(i)} '\n'];
+                errorText=[errorText '\t(' esc(model.mets{deletedMetabolites(i)}) ') ' esc(model.metNames{deletedMetabolites(i)}) '\n'];
             end
             errorText=[errorText '\n'];
         end
@@ -151,7 +157,7 @@ if printModelIssues==true
         errorText=['Reactions which could not be elementally balanced\t' num2str(numel(notParsed)) '\n'];
         if printDetails==true
             for i=1:numel(notParsed)
-                errorText=[errorText '\t' model.rxns{notParsed(i)} '\n'];
+                errorText=[errorText '\t' esc(model.rxns{notParsed(i)}) '\n'];
             end
             errorText=[errorText '\n'];
         end
@@ -163,7 +169,7 @@ if printModelIssues==true
             names=strcat(balanceStructure.elements.names,{', '});
             for i=1:numel(notBalanced)
                 badOnes=sprintf('%s', names{abs(balanceStructure.leftComp(notBalanced(i),:)-balanceStructure.rightComp(notBalanced(i),:))>10^-7});
-                errorText=[errorText '\t' model.rxns{notBalanced(i)} '\t' badOnes(1:end-2) '\n'];
+                errorText=[errorText '\t' esc(model.rxns{notBalanced(i)}) '\t' esc(badOnes(1:end-2)) '\n'];
             end
             errorText=[errorText '\n'];
         end

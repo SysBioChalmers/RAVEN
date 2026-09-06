@@ -1,4 +1,4 @@
-function warmup = sampleWarmupPoints(model)
+function warmup = sampleWarmupPoints(model,varargin)
 % sampleWarmupPoints  FVA warmup vertices for ACHR sampling.
 %
 % Generates warmup points for sampleACHR by maximising and minimising each
@@ -10,6 +10,12 @@ function warmup = sampleWarmupPoints(model)
 % model : struct
 %     a RAVEN model structure.
 %
+% Name-Value Arguments
+% --------------------
+% runParallel : logical
+%     speed up calculations by parallel processing, as in getAllowedBounds,
+%     which solves the same per-reaction min/max LPs (default true).
+%
 % Returns
 % -------
 % warmup : double
@@ -18,30 +24,50 @@ function warmup = sampleWarmupPoints(model)
 %
 % See also
 % --------
-% sampleACHR, randomSampling
+% sampleACHR, randomSampling, getAllowedBounds
+
+p=parseRAVENargs(varargin, {'runParallel',true});
+runParallel=p.runParallel;
 
 nRxns = numel(model.rxns);
-pts = zeros(2*nRxns, nRxns);
-np = 0;
+nW = parallelWorkersRAVEN(runParallel);
+fixedRxn = (model.ub - model.lb) < 1e-9; % fixed reaction — no warmup direction
 
-tmp = model;
-for d = [1, -1]                        % maximise, then minimise each reaction
-    for i = 1:nRxns
-        if model.ub(i) - model.lb(i) < 1e-9
-            continue;                  % fixed reaction — no warmup direction
-        end
+%Maximise and minimise each reaction in turn. Each direction is its own
+%fixed-size (rxns x rxns) buffer (NaN where a reaction is fixed or
+%infeasible) so both parfor loops write to statically-indexed rows,
+%mirroring getAllowedBounds' own min/max-per-reaction parfor.
+ptsMax = NaN(nRxns, nRxns);
+ptsMin = NaN(nRxns, nRxns);
+
+PB = progressReport(2*nRxns,'Running sampleWarmupPoints');
+parfor (i = 1:nRxns, nW)
+    if ~fixedRxn(i)
+        tmp = model;
         tmp.c = zeros(nRxns, 1);
-        tmp.c(i) = d;                  % solveLP maximises c'*v
+        tmp.c(i) = 1;                  % solveLP maximises c'*v
         sol = solveLP(tmp);
-        if isempty(sol.x) || sol.stat <= 0
-            continue;
+        if ~isempty(sol.x) && sol.stat > 0
+            ptsMax(i,:) = sol.x';
         end
-        np = np + 1;
-        pts(np, :) = sol.x';
     end
+    count(PB)
+end
+parfor (i = 1:nRxns, nW)
+    if ~fixedRxn(i)
+        tmp = model;
+        tmp.c = zeros(nRxns, 1);
+        tmp.c(i) = -1;
+        sol = solveLP(tmp);
+        if ~isempty(sol.x) && sol.stat > 0
+            ptsMin(i,:) = sol.x';
+        end
+    end
+    count(PB)
 end
 
-warmup = pts(1:np, :);
+pts = [ptsMax; ptsMin];
+warmup = pts(~any(isnan(pts),2), :);
 if isempty(warmup)
     error('RAVEN:sampling', ...
         'sampleWarmupPoints: could not generate any warmup points; check model feasibility.');

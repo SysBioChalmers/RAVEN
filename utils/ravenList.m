@@ -31,5 +31,9 @@ if trim && numel(items) > 10
     items{10} = sprintf('...and %d more', numel(items)-9);
     items(11:end) = [];
 end
-msg = [header, newline, strjoin(strcat(char(9), items), newline)];
+% {char(9)} rather than char(9): strcat strips trailing whitespace from a
+% plain char argument, and a lone tab is entirely trailing whitespace, so
+% every item's indent was silently dropped. Wrapped in a cell, strcat
+% treats it as a cell-array input instead, which it does not trim.
+msg = [header, newline, strjoin(strcat({char(9)}, items), newline)];
 end

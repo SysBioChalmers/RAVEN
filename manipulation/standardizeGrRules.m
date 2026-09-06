@@ -51,6 +51,15 @@ genes      = model.genes;
 p=parseRAVENargs(varargin, {'embedded',false});
 embedded=p.embedded;
 
+%Gene id -> index lookup, built once rather than linearly scanning all of
+%model.genes (via strcmpi) for every gene token of every reaction, which
+%is quadratic in genome-scale models.
+if isempty(genes)
+    geneMap = containers.Map('KeyType','char','ValueType','double');
+else
+    geneMap = containers.Map(lower(genes),num2cell(1:numel(genes)));
+end
+
 if isfield(model,'grRules')
     originalGrRules=model.grRules; 
     originalGrRules=grRulesPreparation(originalGrRules);
@@ -63,10 +72,14 @@ if isfield(model,'grRules')
         indexes2check=vertcat(fpeIssues.index);
     end
     if ~isempty(indexes2check) && ~embedded
+        %Escaped: rxn id and grRule are arbitrary model text and may
+        %contain "%", which sprintf/warning would otherwise misread as a
+        %format directive and truncate the rest of the message.
+        esc=@(s) strrep(s,'%','%%');
         STR=['Potentially problematic ") AND (", ") AND" or "AND ("relat' ...
              'ionships found in\n\n'];
         for fpeI=1:numel(fpeIssues)
-            STR=[STR '  - grRule #' fpeIssues(fpeI).rxn ': ' fpeIssues(fpeI).grRule '\n']; %#ok<AGROW>
+            STR=[STR '  - grRule #' esc(fpeIssues(fpeI).rxn) ': ' esc(fpeIssues(fpeI).grRule) '\n']; %#ok<AGROW>
         end
         STR=[STR '\n This kind of relationships should only be present ' ...
              'in reactions catalysed by complexes of isoenzymes e.g.\n\n' ...
@@ -81,7 +94,9 @@ if isfield(model,'grRules')
              'logical operators, e.g.\n        "G1 OR G2" should be "G1 ' ...
              'or G2"\n\n  4) Unbalanced brackets, e.g.\n        "((G1 ' ...
              'and G2) or G3" should be "(G1 and G2) or G3"\n'];
-        warning(sprintf(STR))
+        %warning() re-parses its argument as a format string too, so the
+        %already-resolved text must be passed via '%s', not directly.
+        warning('%s', sprintf(STR))
     end
     
     for i=1:length(originalGrRules)
@@ -89,7 +104,7 @@ if isfield(model,'grRules')
         grRules{i,:}  = originalSTR;
         %Non-empty grRules are splitted in all their different isoenzymes
         genesSets   = getSimpleGeneSets(originalSTR);
-        rxnGeneMat  = modifyRxnGeneMat(genesSets,genes,rxnGeneMat,i);
+        rxnGeneMat  = modifyRxnGeneMat(genesSets,geneMap,rxnGeneMat,i);
         %standardize the non-conflicting grRules
         if ~ismember(i,indexes2check)
             newSTR = [];
@@ -139,7 +154,7 @@ end
 %Function that gets a cell array of simple genes sets (single genes or
 %enzyme complexes) associated with the i-th reaction and modifies the
 %correspondent row in the rxnGeneMat accordingly.
-function rxnGeneMat = modifyRxnGeneMat(genesSets,modelGenes,rxnGeneMat,i)
+function rxnGeneMat = modifyRxnGeneMat(genesSets,geneMap,rxnGeneMat,i)
 
 if ~isempty(genesSets)
     for j=1:length(genesSets)
@@ -150,9 +165,9 @@ if ~isempty(genesSets)
         genes = strsplit(STR,' ');
         for k=1:length(genes)
             if ~strcmpi(genes(k),' and ')
-                genePos = find(strcmpi(modelGenes,genes(k)));
-                if ~isempty(genePos)
-                    rxnGeneMat(i,genePos) = 1;
+                geneKey = lower(genes{k});
+                if isKey(geneMap,geneKey)
+                    rxnGeneMat(i,geneMap(geneKey)) = 1;
                     %else
                     %In this case the gene should be added to the
                     %genes field (and to all of its dependencies)

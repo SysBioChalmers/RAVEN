@@ -47,6 +47,10 @@ function [newModel, removedRxns]=removeBadRxns(model,varargin)
 %     constraints (default false).
 % printReport : logical
 %     true if a report should be printed (default false).
+% seed : double
+%     seed for the random number generator, so that which reaction is
+%     removed among several equally-valid candidates is reproducible
+%     across runs (default: current rng state is left untouched).
 %
 % Returns
 % -------
@@ -84,7 +88,10 @@ function [newModel, removedRxns]=removeBadRxns(model,varargin)
 %     [newModel, removedRxns] = removeBadRxns(model, rxnRules, ignoreMets, ...
 %         isNames, balanceElements, refModel, ignoreIntBounds, printReport);
 
-p=parseRAVENargs(varargin, {'rxnRules',1; 'ignoreMets',[]; 'isNames',false; 'balanceElements',{'C';'P';'S';'N';'O'}; 'refModel',[]; 'ignoreIntBounds',false; 'printReport',false});
+p=parseRAVENargs(varargin, {'rxnRules',1; 'ignoreMets',[]; 'isNames',false; 'balanceElements',{'C';'P';'S';'N';'O'}; 'refModel',[]; 'ignoreIntBounds',false; 'printReport',false; 'seed',[]});
+if ~isempty(p.seed)
+    rng(p.seed);
+end
 rxnRules=p.rxnRules;
 ignoreMets=p.ignoreMets;
 if ~isempty(ignoreMets) && ~islogical(ignoreMets) && ~isnumeric(ignoreMets)

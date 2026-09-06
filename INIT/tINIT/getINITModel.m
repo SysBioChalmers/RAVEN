@@ -72,6 +72,11 @@
 %     parameter structure for use by the INIT solver (default []).
 % paramsFT : struct
 %     parameter structure for the fitTasks step (default []).
+% seed : double
+%     seed for the random number generator used to break ties among
+%     genes with equally uninformative (-Inf) scores, so which gene is
+%     kept is reproducible across runs (default: current rng state is
+%     left untouched).
 %
 % Returns
 % -------
@@ -121,7 +126,10 @@
 
 legacyMethodNotice('getINITModel','ftINIT');
 
-p=parseRAVENargs(varargin, {'celltype',[]; 'hpaData',[]; 'arrayData',[]; 'metabolomicsData',[]; 'taskFile',[]; 'useScoresForTasks',[]; 'printReport',[]; 'taskStructure',[]; 'params',[]; 'paramsFT',[]});
+p=parseRAVENargs(varargin, {'celltype',[]; 'hpaData',[]; 'arrayData',[]; 'metabolomicsData',[]; 'taskFile',[]; 'useScoresForTasks',[]; 'printReport',[]; 'taskStructure',[]; 'params',[]; 'paramsFT',[]; 'seed',[]});
+if ~isempty(p.seed)
+    rng(p.seed);
+end
 celltype=p.celltype;
 hpaData=p.hpaData;
 arrayData=p.arrayData;
@@ -230,7 +238,10 @@ if ~isempty(arrayData) && isfield(arrayData,'singleCells')
 
         % Replace hpaData with singleCellData
         if printReport==true
-            warning('RAVEN:warning', '%s', 'Single cell data is not currently compatible with HPA data. \n         Replacing hpaData with single cell-based scoring.');
+            %warning()'s '%s' passes the message through literally, so its
+            %"\n" must be resolved to a real newline beforehand, not left
+            %to print as a literal backslash-n.
+            warning('RAVEN:warning', '%s', sprintf('Single cell data is not currently compatible with HPA data. \n         Replacing hpaData with single cell-based scoring.'));
         end
         hpaData.genes = arrayData.genes;
         hpaData.tissues = arrayData.tissues;

@@ -195,10 +195,15 @@ end
 % determine which metabolite is exchanged in each exchange reaction
 [metInd,rxnInd] = find(model_temp.S(exchMetInd,exchRxnInd) ~= 0);
 
-% check for any metabolites that are exchanged in more than one reaction
-[tbl,i,~] = unique(metInd,'first');
-repeatedInds = find(not(ismember(1:numel(tbl),i)));
-multiMetInd = exchMetInd(metInd(repeatedInds));
+% check for any metabolites that are exchanged in more than one reaction.
+% metInd holds one entry per (metabolite,reaction) pair, so a metabolite
+% involved in more than one exchange reaction is a repeated *value* in
+% metInd, not a position past numel(unique(metInd)) -- comparing those two
+% index spaces directly (as a previous version of this check did) compares
+% positions in the unique list against indices into metInd itself.
+[uniqueMetInd,~,ic] = unique(metInd);
+counts = accumarray(ic,1);
+multiMetInd = exchMetInd(uniqueMetInd(counts>1));
 if ~isempty(multiMetInd)
     fprintf('WARNING: The following metabolites are involved in more than one exchange reaction:\n');
     fprintf('\t%s\n',model.metNames{multiMetInd(1:min(numel(multiMetInd),10))});

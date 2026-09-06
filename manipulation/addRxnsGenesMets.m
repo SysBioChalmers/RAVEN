@@ -79,7 +79,9 @@ if isempty(rxns)
     error('All reactions are already in the model.');
 elseif ~isempty(notNewRxn)
     fprintf('The following reactions were already present in the model and will not be added:\n')
-    fprintf([strjoin(model.rxns(oldRxn(find(oldRxn))),'\n') '\n'])
+    %Reaction ids are arbitrary text and may contain "%"; print as
+    %literal data rather than as an fprintf format string.
+    fprintf('%s\n', strjoin(model.rxns(oldRxn(find(oldRxn))),newline))
 end
 
 [~, rxnIdx]=ismember(rxns,sourceModel.rxns); % Get rxnIDs
@@ -108,14 +110,18 @@ notNewMet=newMetCompsN(ismember(newMetCompsN,metCompsN));
 
 if ~isempty(notNewMet)
     fprintf('\nThe following metabolites were already present in the model and will not be added:\n')
-    fprintf([strjoin(transpose(notNewMet),'\n') '\n'])
+    %Metabolite names are arbitrary text and may contain "%"; print as
+    %literal data rather than as an fprintf format string.
+    fprintf('%s\n', strjoin(transpose(notNewMet),newline))
 end
 
 metIdx=metIdx(~ismember(sourcemetCompsN(metIdx),metCompsN));
 
 if ~isempty(metIdx)
     fprintf('\nThe following metabolites will be added to the model:\n')
-    fprintf([strjoin(transpose(sourcemetCompsN(metIdx)),'\n') '\n'])
+    %Metabolite names are arbitrary text and may contain "%"; print as
+    %literal data rather than as an fprintf format string.
+    fprintf('%s\n', strjoin(transpose(sourcemetCompsN(metIdx)),newline))
     
     if isfield(sourceModel,'mets')
         metsToAdd.mets=sourceModel.mets(metIdx);

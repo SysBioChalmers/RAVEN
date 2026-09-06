@@ -21,6 +21,14 @@ classdef tAnalysis < RavenTestCase
             testCase.verifyNumElements(I, numel(testCase.model.rxns));
         end
 
+        function haveFluxSeedIsReproducible(testCase)
+            % The order reactions are tested in is randomised; a given
+            % seed must make that order (and so results) reproducible.
+            I1 = haveFlux(testCase.model, 'seed', 42);
+            I2 = haveFlux(testCase.model, 'seed', 42);
+            testCase.verifyEqual(I1, I2);
+        end
+
         function getMinNrFluxesReturnsFlux(testCase)
             testCase.assumeMILPSolver();
             evalc('[x, I, exitFlag] = getMinNrFluxes(testCase.model, testCase.model.rxns);');
@@ -168,6 +176,17 @@ classdef tAnalysis < RavenTestCase
                 'RAVEN:warning');
         end
 
+        function getFluxZZeroVarianceSignMatchesGeneralCase(testCase)
+            % The zero-variance branch's sign must agree with the general
+            % branch: positive when flux increased from A to B, negative
+            % when it decreased.
+            solA = [1 1 1; 5 5 5];    % rxn1 constant at 1, rxn2 constant at 5
+            solB = [5 5 5; 1 1 1];    % rxn1 increased to 5, rxn2 decreased to 1
+            Z = getFluxZ(solA, solB);
+            testCase.verifyEqual(Z(1), 100);
+            testCase.verifyEqual(Z(2), -100);
+        end
+
         function getFluxZComputesScores(testCase)
             n = numel(testCase.model.rxns);
             Z = getFluxZ(rand(n, 20), rand(n, 20));
@@ -201,6 +220,20 @@ classdef tAnalysis < RavenTestCase
             pvals = rand(numel(testCase.model.genes), 1);
             rm = reporterMetabolites(testCase.model, testCase.model.genes, pvals);
             testCase.verifyClass(rm, 'struct');
+        end
+
+        function reporterMetabolitesKeepsPercentInMetNames(testCase)
+            % A metNames entry containing "%" must survive intact in the
+            % outputFile report, not be truncated by fprintf misreading it
+            % as a format directive.
+            m = testCase.model;
+            m.metNames{1} = 'metabolite 30% pure';
+            pvals = rand(numel(m.genes), 1);
+            outFile = [tempname '.txt'];
+            c = onCleanup(@() delete(outFile));
+            evalc('reporterMetabolites(m, m.genes, pvals, ''outputFile'', outFile);');
+            content = fileread(outFile);
+            testCase.verifySubstring(content, 'metabolite 30% pure');
         end
 
         function reporterMetabolitesIsDeterministic(testCase)

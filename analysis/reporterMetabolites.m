@@ -102,15 +102,20 @@ metZScores=nan(numel(model.mets),1);
 metNGenes=nan(numel(model.mets),1);
 meanZ=nan(numel(model.mets),1);
 stdZ=nan(numel(model.mets),1);
+%model.genes -> genes(filtered list) index, computed once rather than
+%re-scanning the whole "genes" list (via ismember) for every metabolite,
+%which is quadratic in a genome-scale model's mets x genes.
+[~,geneIdxInList]=ismember(model.genes,genes);
 for i=1:numel(model.mets)
     %Get the involved rxns
     I=model.S(i,:);
-    
+
     %Get the involved genes
     [~, J]=find(model.rxnGeneMat(I~=0,:));
-    
+
     %Find the genes in the gene list
-    K=find(ismember(genes,model.genes(J)));
+    K=unique(geneIdxInList(J));
+    K=K(K>0);
     
     %Calculate the aggregated Z-score for the metabolite
     if any(K)
@@ -172,11 +177,16 @@ end
 
 %This is for printing results to the screen. For printing a full list of
 %all scores, specify a output file
+%Escapes metabolite text before it is spliced into an fprintf template,
+%since a literal "%" in e.g. a metabolite name would otherwise be misread
+%as a format directive and swallow the remainder of the line.
+esc=@(s) strrep(s,'%','%%');
+
 if printResults==true
     for i=1:numel(repMets)
         fprintf(['TOP 20 REPORTER METABOLITES\nTEST TYPE: ' repMets(i).test '\nID\tNAME\tP-VALUE\n']);
         for j=1:min(20,numel(repMets(i).mets))
-            fprintf([repMets(i).mets{j} '\t' repMets(i).metNames{j} '\t' num2str(repMets(i).metPValues(j)) '\n']);
+            fprintf([esc(repMets(i).mets{j}) '\t' esc(repMets(i).metNames{j}) '\t' num2str(repMets(i).metPValues(j)) '\n']);
         end
         fprintf('\n');
     end
@@ -189,7 +199,7 @@ if any(outputFile)
         fprintf(fid,['REPORTER METABOLITES USING TEST TYPE: ' repMets(i).test '\n']);
         fprintf(fid,'ID\tNAME\tZ-SCORE\tP-VALUE\tNUMBER OF NEIGHBOURS\tAVERAGE Z-SCORE\tSTD Z-SCORE\n');
         for j=1:numel(repMets(i).mets)
-            fprintf(fid,[repMets(i).mets{j} '\t' repMets(i).metNames{j} '\t' num2str(repMets(i).metZScores(j)) '\t' num2str(repMets(i).metPValues(j)) '\t' num2str(repMets(i).metNGenes(j)) '\t' num2str(repMets(i).meanZ(j)) '\t' num2str(repMets(i).stdZ(j)) '\n']);
+            fprintf(fid,[esc(repMets(i).mets{j}) '\t' esc(repMets(i).metNames{j}) '\t' num2str(repMets(i).metZScores(j)) '\t' num2str(repMets(i).metPValues(j)) '\t' num2str(repMets(i).metNGenes(j)) '\t' num2str(repMets(i).meanZ(j)) '\t' num2str(repMets(i).stdZ(j)) '\n']);
         end
     end
     fclose(fid);

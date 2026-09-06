@@ -23,7 +23,19 @@ function transportRxns=getTransportRxns(model)
 
 transportRxns=false(numel(model.rxns),1);
 
+%An exchange reaction against an explicit boundary metabolite (as
+%closeModel creates) copies the real metabolite's own name onto its
+%boundary counterpart, so it has exactly the same "same name, different
+%compartment" shape as a genuine transport reaction. Exclude it, using
+%getExchangeRxns' own definition rather than re-deriving one here.
+[~,exchIdx]=getExchangeRxns(model,'all');
+isExch=false(numel(model.rxns),1);
+isExch(exchIdx)=true;
+
 for i=1:numel(model.rxns)
+    if isExch(i)
+        continue
+    end
     %Get the involved metabolites in each reaction
     mets=model.metNames(model.S(:,i)~=0);
     transportRxns(i)=numel(mets)~=numel(unique(mets));
