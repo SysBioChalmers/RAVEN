@@ -225,7 +225,7 @@ classdef tINIT < RavenTestCase
             mTemp.id = 'tmp';
             tmpRxnScores = testRxnScores([2;3;4;5;6;7;9;10]);
             evalc(['[~,addedRxnMat] = ftINITFillGapsForAllTasks(mTemp,mTempRef,' ...
-                '[],false,min(tmpRxnScores,-0.1),testModelTasks);']);
+                '[],false,min(tmpRxnScores,-0.1),testModelTasks,struct(),false);']);
             testCase.verifyTrue(all(strcmp(mTempRef.rxns(addedRxnMat), 'R7')));
         end
 
@@ -245,9 +245,41 @@ classdef tINIT < RavenTestCase
             mTemp.id = 'tmp';
             tmpRxnScores = testRxnScores([2;3;4;5;6;9;10]);
             evalc(['[~,addedRxnMat,failedTasks] = ftINITFillGapsForAllTasks(mTemp,' ...
-                'mTempRef,[],false,min(tmpRxnScores,-0.1),testModelTasks);']);
+                'mTempRef,[],false,min(tmpRxnScores,-0.1),testModelTasks,struct(),false);']);
             testCase.verifyTrue(failedTasks(1));
             testCase.verifyFalse(any(addedRxnMat(:)));
+        end
+
+        function ftINITFillGapsReportsTaskNeedingAnOrphanMet(testCase)
+            % e[s] takes part only in R7 and R8. With both gone from the
+            % reference model no reaction touches e[s] at all, so a task
+            % requiring net production of it cannot be filled from that
+            % reference. That requirement is carried in b, and simplifyModel
+            % must leave the metabolite in place: without its row the MILP
+            % solves a problem that no longer asks for e[s], and reports the
+            % task as satisfiable.
+            testCase.assumeMILPSolver();
+            testModel     = getTstModel();
+            testRxnScores = getTstModelRxnScores();
+
+            mTempRef = closeModel(testModel);
+            mTempRef = removeReactions(mTempRef, {'R1';'R7';'R8'});
+            % R5 is dropped from the model only so that the reference offers
+            % a candidate reaction to consider; adding it back does not make
+            % e[s] reachable.
+            mTemp    = removeReactions(mTempRef, {'R5'});
+            mTemp.id = 'tmp';
+            tmpRxnScores = min(testRxnScores([2;3;4;5;6;9;10]), -0.1);
+
+            tModel = setTaskBounds(mTemp);
+            tRef   = setTaskBounds(mTempRef);
+            sol = solveLP(tModel);
+            testCase.assertEmpty(sol.x, 'the task must start out infeasible');
+
+            evalc(['[addedRxns,~,exitFlag] = ftINITFillGaps(tModel,mTemp,tRef,' ...
+                'false,true,tmpRxnScores,struct(),false);']);
+            testCase.verifyEqual(exitFlag, -1);
+            testCase.verifyEmpty(addedRxns);
         end
 
         function ftINITMetabolomicsRuns(testCase)
@@ -411,6 +443,14 @@ end
 
 function testModelRxnScores = getTstModelRxnScores()
 testModelRxnScores = [-2;-2;-1;7;0.5;0.5;-1;-2;-3;3.5];
+end
+
+function model = setTaskBounds(model)
+% The b bounds that ftINITFillGapsForAllTasks derives from getTstModelTasks:
+% a[s] may be taken up freely, e[s] has to leave at exactly one unit.
+model.b = zeros(numel(model.mets), 2);
+model.b(strcmp(model.mets, 'as'), :) = [-inf 0];
+model.b(strcmp(model.mets, 'es'), :) = [1 1];
 end
 
 function testModelTasks = getTstModelTasks()

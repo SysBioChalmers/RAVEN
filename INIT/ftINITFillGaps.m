@@ -80,6 +80,15 @@ templateRxns = find(~ismember(fullModel.rxns, tModel.rxns)); %Check if this is s
 
 %Remove everything except for the added ones
 addedRxns = fullModel.rxns(templateRxns(J));
+if isempty(addedRxns)
+    %No reactions were selected, either because the MILP found no solution
+    %or because none were needed. Handing an empty set to addRxns below
+    %errors out, which would reach the caller as a thrown exception rather
+    %than as the exitFlag it keys on.
+    addedRxns = {};
+    newModel = origModel;
+    return;
+end
 rxnsToAdd.rxns = addedRxns;
 rxnsToAdd.equations = constructEquations(fullModel, addedRxns);
 rxnsToAdd.ub = fullModel.ub(templateRxns(J));
