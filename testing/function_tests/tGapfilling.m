@@ -233,6 +233,71 @@ classdef tGapfilling < RavenTestCase
             testCase.verifyGreaterThan(sol.f, 0);
         end
 
+        function gapFillMILPHandlesUnboundedUniversalReaction(testCase)
+            % A universal reaction with ub=Inf (RAVEN's own default when no
+            % upper-bound annotation is set) must not put an Inf
+            % coefficient into the coupling constraint matrix -- SCIP
+            % rejects that outright, and Inf*0 is NaN even where it
+            % wouldn't be rejected.
+            testCase.assumeMILPSolver();
+            gapModel = struct();
+            gapModel.id='gapModel'; gapModel.rxns={'R1';'ExB'}; gapModel.rxnNames=gapModel.rxns;
+            gapModel.mets={'a';'b'}; gapModel.metNames=gapModel.mets; gapModel.metComps=[1;1];
+            gapModel.comps={'c'}; gapModel.compNames={'c'};
+            gapModel.S=sparse([-1 0; 1 -1]); % R1: a=>b   ExB: b=>
+            gapModel.lb=[0;0]; gapModel.ub=[1000;1000]; gapModel.rev=[0;0];
+            gapModel.c=[1;0]; gapModel.b=zeros(2,1);
+            gapModel.genes={}; gapModel.grRules={'';''}; gapModel.rxnGeneMat=sparse(2,0);
+
+            modelDB = struct();
+            modelDB.id='DB'; modelDB.rxns={'ExA'}; modelDB.rxnNames=modelDB.rxns;
+            modelDB.mets={'a'}; modelDB.metNames=modelDB.mets; modelDB.metComps=1;
+            modelDB.comps={'c'}; modelDB.compNames={'c'};
+            modelDB.S=sparse(1,1); modelDB.S(1,1)=1;
+            modelDB.lb=0; modelDB.ub=Inf; modelDB.rev=0; modelDB.c=0; modelDB.b=0;
+            modelDB.genes={}; modelDB.grRules={''}; modelDB.rxnGeneMat=sparse(1,0);
+
+            evalc(['[addedRxns,~,newModel,exitFlag] = gapFillMILP(gapModel, modelDB, ' ...
+                '''verbose'', false);']);
+            testCase.verifyEqual(exitFlag, 1);
+            testCase.verifyEqual(addedRxns, {'ExA'});
+            sol = solveLP(newModel);
+            testCase.verifyGreaterThan(sol.f, 0);
+        end
+
+        function gapFillMILPKeepsRenamedUniversalReaction(testCase)
+            % A universal reaction whose id collides with an unrelated
+            % draft reaction gets renamed by mergeModels; that renamed
+            % reaction must still end up in addedRxns and in newModel, not
+            % be silently dropped by a lookup keyed on its original name.
+            testCase.assumeMILPSolver();
+            gapModel = struct();
+            gapModel.id='gapModel'; gapModel.rxns={'R1';'Rname'}; gapModel.rxnNames=gapModel.rxns;
+            gapModel.mets={'a';'b'}; gapModel.metNames=gapModel.mets; gapModel.metComps=[1;1];
+            gapModel.comps={'c'}; gapModel.compNames={'c'};
+            gapModel.S=sparse([-1 0; 1 -1]); % R1: a=>b   Rname (draft): b=>, irrelevant to growth
+            gapModel.lb=[0;0]; gapModel.ub=[1000;1000]; gapModel.rev=[0;0];
+            gapModel.c=[1;0]; gapModel.b=zeros(2,1);
+            gapModel.genes={}; gapModel.grRules={'';''}; gapModel.rxnGeneMat=sparse(2,0);
+
+            modelDB = struct();
+            % Same id "Rname" as the draft's, but a completely different
+            % reaction: this is the one actually needed to enable growth.
+            modelDB.id='DB'; modelDB.rxns={'Rname'}; modelDB.rxnNames=modelDB.rxns;
+            modelDB.mets={'a'}; modelDB.metNames=modelDB.mets; modelDB.metComps=1;
+            modelDB.comps={'c'}; modelDB.compNames={'c'};
+            modelDB.S=sparse(1,1); modelDB.S(1,1)=1; % =>a
+            modelDB.lb=0; modelDB.ub=1000; modelDB.rev=0; modelDB.c=0; modelDB.b=0;
+            modelDB.genes={}; modelDB.grRules={''}; modelDB.rxnGeneMat=sparse(1,0);
+
+            evalc(['[addedRxns,~,newModel,exitFlag] = gapFillMILP(gapModel, modelDB, ' ...
+                '''verbose'', false);']);
+            testCase.verifyEqual(exitFlag, 1);
+            testCase.verifyNotEmpty(addedRxns);
+            sol = solveLP(newModel);
+            testCase.verifyGreaterThan(sol.f, 0);
+        end
+
         function gapFillMILPReversesDirectionality(testCase)
             % gapFillMILP should reverse a reaction whose directionality is wrong.
             testCase.assumeMILPSolver();
