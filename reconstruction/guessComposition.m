@@ -78,22 +78,29 @@ while predicted==true
                     %Loop through the reactions and check if all other mets
                     %in them have known composition
                     eqn=model.S(:,I(k));
+                    %The metabolite's own stoichiometric coefficient in
+                    %this reaction, needed to recover its atom counts from
+                    %the balance below
+                    coeff=eqn(mets(j));
                     eqn(mets(j))=0;
                     if all(exitFlag(eqn~=0)==1)
                         %This means that all other mets had composition.
                         %Calculate the resulting composition for the
                         %unknown one
                         comp=useMat'*eqn;
-                        
+
                         %This can result in round off errors if there are
                         %stoichiometries with many decimals. Ignore values
                         %below 10^-12
                         comp(abs(comp)<10^-12)=0;
-                        
+
                         %Check if the composition consist of both negative
                         %and positive values. If so, throw an error
                         if all(comp<=0) || all(comp>=0)
-                            comp=abs(comp);
+                            %Normalize by the metabolite's own coefficient,
+                            %so e.g. a coefficient of 2 halves the atom
+                            %counts recovered from the balance
+                            comp=abs(comp)/abs(coeff);
                             if isempty(currentComp)
                                 currentComp=comp;
                             end
