@@ -23,6 +23,9 @@ solver (Gurobi or SCIP).
 - `t<Folder>.m` — one class per source folder; each test method exercises a
   function's main path, favouring structural invariants (counts, membership,
   round-trips, idempotence) over brittle golden values.
+- `tScoringEquivalence.m` — the exception to one-class-per-folder: it compares
+  `scoreModel` against `scoreComplexModel` to pin the settings under which one
+  reproduces the other, and the behaviours that differ regardless of settings.
 
 ## Skipped tests
 
