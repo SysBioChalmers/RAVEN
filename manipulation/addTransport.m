@@ -121,7 +121,7 @@ for i=1:numel(toComps)
 
     %Add the reactions
     model.S=[model.S newS];
-    if isfield(model.annotation,'defaultLB')
+    if isfield(model,'annotation') && isfield(model.annotation,'defaultLB')
         lb = model.annotation.defaultLB;
         ub = model.annotation.defaultUB;
     else

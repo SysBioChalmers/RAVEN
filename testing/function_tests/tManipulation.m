@@ -166,6 +166,18 @@ classdef tManipulation < RavenTestCase
             testCase.verifyGreaterThan(numel(m2.rxns), numel(testCase.model.rxns));
         end
 
+        function addTransportOnModelWithoutAnnotationField(testCase)
+            % The default LB/UB fallback must not assume model.annotation
+            % exists at all, only that it may lack defaultLB/defaultUB.
+            m = testCase.model;
+            if isfield(m,'annotation')
+                m = rmfield(m,'annotation');
+            end
+            evalc(['m2 = addTransport(m, ''c'', ''e'', ' ...
+                '{''6-phospho-D-glucono-1,5-lactone''}, false, false, ''tr_'');']);
+            testCase.verifyGreaterThan(numel(m2.rxns), numel(m.rxns));
+        end
+
         function addTransportAcceptsRowOrientedMetNames(testCase)
             % Regression test for SysBioChalmers/RAVEN#722: a metNames cell
             % array keeps whatever orientation the caller passed it in, and
@@ -621,6 +633,20 @@ classdef tManipulation < RavenTestCase
         function setExchangeBoundsRuns(testCase)
             evalc('m2 = setExchangeBounds(testCase.model, {''ac_e'';''akg_e''}, -500, 500);');
             testCase.verifyClass(m2, 'struct');
+        end
+
+        function setParamUncOnModelWithoutAnnotationField(testCase)
+            % 'unc' falls back to default LB/UB (-1000/1000) when there is
+            % no annotation field at all, not just when annotation exists
+            % but lacks defaultLB/defaultUB.
+            m = testCase.model;
+            if isfield(m,'annotation')
+                m = rmfield(m,'annotation');
+            end
+            m2 = setParam(m, 'unc', m.rxns(1), 0);
+            idx = strcmp(m2.rxns, m.rxns{1});
+            testCase.verifyEqual(m2.lb(idx), -1000);
+            testCase.verifyEqual(m2.ub(idx), 1000);
         end
 
         function setParamObjective(testCase)
