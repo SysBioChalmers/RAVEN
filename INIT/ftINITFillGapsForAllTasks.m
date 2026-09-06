@@ -38,8 +38,24 @@ function [outModel, addedRxns, failedTasks]=ftINITFillGapsForAllTasks(model,refM
 %   all tasks at once. This means that the order of the tasks could influence
 %   the result.
 %
-% Usage: [outModel, addedRxns]=fitTasks(model,refModel,inputFile,printOutput,...
-%           rxnScores,taskStructure,params)
+% Usage: [outModel, addedRxns, failedTasks]=ftINITFillGapsForAllTasks(model,...
+%           refModel,inputFile,printOutput,rxnScores,taskStructure,params,verbose)
+
+if nargin<4 || isempty(printOutput)
+    printOutput=true;
+end
+if nargin<5
+    rxnScores=[];
+end
+if nargin<6
+    taskStructure=[];
+end
+if nargin<7
+    params=[];
+end
+if nargin<8 || isempty(verbose)
+    verbose=false;
+end
 
 if isempty(rxnScores)
     rxnScores=ones(numel(refModel.rxns),1)*-1;

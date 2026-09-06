@@ -251,14 +251,45 @@ classdef tINIT < RavenTestCase
             tmpRxnScores = testRxnScores([2;3;4;5;6;7;9;10]);
             evalc(['[~,addedRxnMat] = ftINITFillGapsForAllTasks(mTemp,mTempRef,' ...
                 '[],false,min(tmpRxnScores,-0.1),testModelTasks,struct(),false);']);
-            testCase.verifyTrue(all(strcmp(mTempRef.rxns(addedRxnMat), 'R7')));
+            % An equality rather than all(strcmp(...)): an empty selection
+            % makes strcmp return an empty logical, which all() reports as
+            % true, so a run that added nothing would pass silently.
+            testCase.verifyEqual(mTempRef.rxns(any(addedRxnMat,2)), {'R7'});
         end
 
         function ftINITFillGapsForAllTasksReportsUnfillableTask(testCase)
-            % R7 is required for the task, so removing it from the reference
-            % model as well leaves the task unfillable. That must be reported,
-            % not reported as "Added 0 reaction(s)" like an already-working
-            % task.
+            % R7 is the only producer of e[s], so removing it from the
+            % reference model as well leaves the task unfillable. R8 is kept
+            % so that e[s] still takes part in a reaction, and R9 is withheld
+            % from the model so the reference has something to offer: the
+            % MILP is then the thing that has to report the task as
+            % unfillable rather than as "Added 0 reaction(s)".
+            testCase.assumeMILPSolver();
+            testModel      = getTstModel();
+            testModelTasks = getTstModelTasks();
+            testRxnScores  = getTstModelRxnScores();
+
+            mTempRef = closeModel(testModel);
+            mTempRef = removeReactions(mTempRef, {'R1';'R7'});
+            mTemp    = removeReactions(mTempRef, {'R9'});
+            mTemp.id = 'tmp';
+            tmpRxnScores = testRxnScores([2;3;4;5;6;8;9;10]);
+            lastwarn('');
+            evalc(['[~,addedRxnMat,failedTasks] = ftINITFillGapsForAllTasks(mTemp,' ...
+                'mTempRef,[],false,min(tmpRxnScores,-0.1),testModelTasks);']);
+            testCase.verifyTrue(failedTasks(1));
+            testCase.verifyFalse(any(addedRxnMat(:)));
+            % Every way of failing sets failedTasks, so the reason has to be
+            % checked too: without this the test would also pass if the
+            % gap-filling attempt threw before it reached the solver.
+            testCase.verifySubstring(lastwarn, 'no feasible solution exists');
+        end
+
+        function ftINITFillGapsForAllTasksHandlesEmptyReferenceSet(testCase)
+            % The reference model holds nothing the model does not already
+            % have, so no reaction can be added. An empty reaction list
+            % means "all reactions" to the MILP, which would otherwise
+            % report the model itself as a solution to an unfillable task.
             testCase.assumeMILPSolver();
             testModel      = getTstModel();
             testModelTasks = getTstModelTasks();
@@ -269,10 +300,12 @@ classdef tINIT < RavenTestCase
             mTemp    = mTempRef;
             mTemp.id = 'tmp';
             tmpRxnScores = testRxnScores([2;3;4;5;6;9;10]);
+            lastwarn('');
             evalc(['[~,addedRxnMat,failedTasks] = ftINITFillGapsForAllTasks(mTemp,' ...
                 'mTempRef,[],false,min(tmpRxnScores,-0.1),testModelTasks,struct(),false);']);
             testCase.verifyTrue(failedTasks(1));
             testCase.verifyFalse(any(addedRxnMat(:)));
+            testCase.verifySubstring(lastwarn, 'no feasible solution exists');
         end
 
         function ftINITFillGapsReportsTaskNeedingAnOrphanMet(testCase)
