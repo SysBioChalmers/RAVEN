@@ -3,8 +3,7 @@ classdef tBiomass < RavenTestCase
 %
 %   The textbook E. coli model has a single lumped biomass reaction rather
 %   than per-component pseudoreactions, so component-scaling functions are
-%   tested on their missing-pseudoreaction error path, and fitParameters
-%   (which needs quadprog) is guarded on the Optimization Toolbox.
+%   tested on their missing-pseudoreaction error path.
 
     methods (Test)
 
@@ -53,12 +52,18 @@ classdef tBiomass < RavenTestCase
                 'scaleBiomassPseudoreaction:unknownCharge');
         end
 
-        function fitParametersRunsWhenQuadprogAvailable(testCase)
-            testCase.assumeDependency(exist('quadprog','file')==2, ...
-                'Optimization Toolbox (quadprog)');
-            % Minimal single-parameter fit of an exchange flux.
-            biomassRxn = testCase.model.rxns{find(testCase.model.c == 1, 1)};
-            pos.position = 1; pos.value = 0;
+        function fitParametersRuns(testCase)
+            % Minimal single-parameter fit of an exchange flux. fitParameters
+            % uses fminsearch (base MATLAB), not quadprog, so no toolbox guard.
+            biomassRxnIdx = find(testCase.model.c == 1, 1);
+            biomassRxn = testCase.model.rxns{biomassRxnIdx};
+            % parameterPositions.position/isNegative are cell arrays, one cell
+            % per fitted parameter, of linear S-matrix indices (see
+            % fitParameters' docstring) -- fit the coefficient of the first
+            % reactant in the biomass reaction.
+            metIdx = find(testCase.model.S(:,biomassRxnIdx) < 0, 1);
+            pos.position = {sub2ind(size(testCase.model.S), metIdx, biomassRxnIdx)};
+            pos.isNegative = {true};
             evalc(['p = fitParameters(testCase.model, {biomassRxn}, 0.5, ' ...
                 '{biomassRxn}, 0.5, pos);']);
             testCase.verifyNotEmpty(p);

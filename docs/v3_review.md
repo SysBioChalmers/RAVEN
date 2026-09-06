@@ -108,7 +108,7 @@ reconstruction / strain-design audience.
 | 12 | **OptCouple** — joint knockout + insertion + medium growth-coupling design (§1.3) | (b) | M | med–high |
 | 13 | **Regulatory integration** — PROM / CoRegFlux (new application domain) (§1.4) | (b) | M each | med |
 | 14 | **Community modeling** — SteadyCom (new application domain) (§1.5) | (b) | M | med |
-| 15 | **ROOM / lMOMA** next to `qMOMA`; **E-Flux** next to ftINIT (§1.6) | (b)(c) | S each | low–med |
+| 15 | **E-Flux** next to ftINIT (§1.6) | (b)(c) | S | low–med |
 | 14 | **HPA omics parser consolidation** — extract shared file-read + header-validation into `omics/private/` helper *(§6.2 column fix already done; this is the remaining extract step)* (§5.5) | (d) | S | low |
 
 ---
@@ -209,9 +209,6 @@ impact med.** Pick this if the target users lean microbiome.
 
 ### 1.6 Cheap "while you're in there" additions
 
-- **ROOM / lMOMA** next to the existing `qMOMA` — qualitatively different (often better for
-  knockouts) flux predictions. lMOMA is an LP, ROOM a compact MILP. *In COBRA already*, so
-  standalone value is modest, but small. **Effort S each.**
 - **E-Flux** — continuous expression-scaled bounds for per-condition flux prediction on the
   *full* model, complementing ftINIT's *subnetwork-extraction* approach. **Effort S.**
 
@@ -258,10 +255,16 @@ Hygiene items to address instead:
 - **`analysis/runPhenotypePhasePlane.m`** — calls `close all force` (destroys unrelated
   figures) and swallows all errors in a bare `try/end`. Strip the destructive figure
   management.
-- **`analysis/findGeneDeletions.m`** + **`solver/qMOMA.m`** — `qMOMA` pulls in the
-  **Optimization Toolbox** (`quadprog`) and its own comment admits it "never converges good
-  enough". Consider a warning that `qMOMA` results are unreliable, or replace with an LP
-  approximation (`lMOMA`).
+- **`analysis/findGeneDeletions.m`** + **`solver/qMOMA.m`** *(done)* — `qMOMA` pulled in the
+  **Optimization Toolbox** (`quadprog`), its own comment admitted it "never converges good
+  enough", and it was RAVEN's last `quadprog` call, against v3's own toolbox-dependency policy.
+  Removed rather than patched: `qMOMA.m` is gone, and `findGeneDeletions`'s `analysisType`,
+  `refModel` and `oeFactor` arguments go with it, along with the `sgo`/`dgo` over-expression
+  test types (their own docstring: over-expression was only ever available via MOMA — there
+  is no FBA equivalent in this function). `findGeneDeletions` now only does FBA-based
+  single/double gene deletion (`sgd`/`dgd`), matching what its `via-dependency` ledger row
+  (`cobra.flux_analysis.single_gene_deletion`/`double_gene_deletion`) already covered — the
+  removal makes that parity claim exact instead of partial.
 
 ### 4.3 Redundant query / manipulation helpers *(done)*
 
