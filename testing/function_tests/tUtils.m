@@ -40,6 +40,15 @@ classdef tUtils < RavenTestCase
             testCase.verifySubstring(msg, 'G2');
         end
 
+        function ravenListIndentsItemsWithATab(testCase)
+            % strcat(char(9), items) strips the tab entirely, since strcat
+            % removes trailing whitespace from a plain char argument and a
+            % lone tab is entirely trailing whitespace.
+            msg = ravenList('Bad genes:', {'G1'});
+            lines = strsplit(msg, newline);
+            testCase.verifyEqual(lines{2}(1), char(9));
+        end
+
         function ravenListTrimsToTenByDefault(testCase)
             items = arrayfun(@(n) sprintf('G%d',n), 1:12, 'UniformOutput', false);
             msg = ravenList('Too many:', items);
