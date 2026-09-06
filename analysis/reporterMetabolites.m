@@ -102,15 +102,20 @@ metZScores=nan(numel(model.mets),1);
 metNGenes=nan(numel(model.mets),1);
 meanZ=nan(numel(model.mets),1);
 stdZ=nan(numel(model.mets),1);
+%model.genes -> genes(filtered list) index, computed once rather than
+%re-scanning the whole "genes" list (via ismember) for every metabolite,
+%which is quadratic in a genome-scale model's mets x genes.
+[~,geneIdxInList]=ismember(model.genes,genes);
 for i=1:numel(model.mets)
     %Get the involved rxns
     I=model.S(i,:);
-    
+
     %Get the involved genes
     [~, J]=find(model.rxnGeneMat(I~=0,:));
-    
+
     %Find the genes in the gene list
-    K=find(ismember(genes,model.genes(J)));
+    K=unique(geneIdxInList(J));
+    K=K(K>0);
     
     %Calculate the aggregated Z-score for the metabolite
     if any(K)

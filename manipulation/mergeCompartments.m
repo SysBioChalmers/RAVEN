@@ -69,11 +69,16 @@ end
 %Loop through each metabolite, and if it is not unconstrained then change
 %the S matrix to use the metabolite with the lowest index in model.comps
 %instead
-uNames=unique(model.metNames);
+%Group metabolite indices by name once, rather than re-scanning all of
+%model.metNames (via ismember) for every unique name, which is quadratic
+%in a genome-scale model's (unique names x mets) count.
+[uNames,~,nameGroup]=unique(model.metNames);
+sameNameIdx=accumarray(nameGroup,(1:numel(nameGroup))',[numel(uNames) 1],@(v) {v});
 for i=1:numel(uNames)
     %Find all metabolites with this name..
-    I=ismember(model.metNames,uNames(i));
-    
+    I=false(numel(model.metNames),1);
+    I(sameNameIdx{i})=true;
+
     %Find the first of those that is not unconstrained. This is the one
     %that the other "un-unconstrained" should be changed to.
     if keepUnconstrained==true
