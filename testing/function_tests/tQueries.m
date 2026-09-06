@@ -381,9 +381,35 @@ classdef tQueries < RavenTestCase
             testCase.verifyClass(out, 'char');
         end
 
+        function printFluxesKeepsPercentInRxnName(testCase)
+            % A rxnName containing a literal "%" must not be reinterpreted
+            % as a format directive, which would truncate everything after
+            % it instead of printing the flux line in full.
+            m = testCase.model;
+            m.rxnNames{1} = 'reaction with 50% yield';
+            flux = zeros(numel(m.rxns),1);
+            flux(1) = 1;
+            out = evalc('printFluxes(m, flux, false)');
+            testCase.verifySubstring(out, 'reaction with 50% yield');
+        end
+
         function printModelStatsRuns(testCase)
             out = evalc('printModelStats(testCase.model)');
             testCase.verifyClass(out, 'char');
+        end
+
+        function printModelStatsKeepsPercentInModelName(testCase)
+            % model.name/model.id/compNames/mets/rxns are spliced into
+            % fprintf templates; a literal "%" in any of them must not be
+            % reinterpreted as a format directive.
+            m = testCase.model;
+            m.name = 'test model with 50% coverage';
+            m.S(1,:) = 0; % make mets{1} unused so it hits the errorText path
+            m.metNames{1} = 'unused met 30% pure';
+            out = evalc(['printModelStats(m, ''printModelIssues'', true, ' ...
+                '''printDetails'', true);']);
+            testCase.verifySubstring(out, 'test model with 50% coverage');
+            testCase.verifySubstring(out, 'unused met 30% pure');
         end
 
     end

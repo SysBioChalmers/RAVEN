@@ -67,6 +67,14 @@ classdef tUtils < RavenTestCase
             testCase.verifySubstring(s, 'hello');
         end
 
+        function printOrangeKeepsPercentWhenPrinting(testCase)
+            % With nargout==0, printOrange prints via fprintf; a literal
+            % "%" in the input must not be reinterpreted as a format
+            % directive, which would truncate the rest of the text.
+            out = evalc('printOrange(''50% complete'');');
+            testCase.verifySubstring(out, '50% complete');
+        end
+
         function parallelWorkersRAVENFalseReturnsZero(testCase)
             testCase.verifyEqual(parallelWorkersRAVEN(false), 0);
         end

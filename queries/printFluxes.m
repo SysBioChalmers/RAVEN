@@ -192,7 +192,13 @@ for i=1:numel(model.rxns)
         printString=strrep(printString,'%element',element{i});
         printString=strrep(printString,'%unbalanced',unbalanced{i});
         printString=strrep(printString,'%lumped',lumped{i});
-        fprintf(fid,printString);
+        %Substituted model text (rxnID, eqn, rxnName, etc.) may itself
+        %contain "%", which fprintf would otherwise reinterpret as a new
+        %format directive; print as literal data instead, after manually
+        %expanding the template's own \t and \n escapes.
+        printString=strrep(printString,'\t',sprintf('\t'));
+        printString=strrep(printString,'\n',sprintf('\n'));
+        fprintf(fid,'%s',printString);
     end
 end
 
