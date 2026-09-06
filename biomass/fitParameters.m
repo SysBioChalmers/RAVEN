@@ -112,9 +112,8 @@ newModel=model;
 rss=0;
 resultingFluxes=[];
 for i=1:size(xValues,1)
-    %Fix for more xRxns!
     model.lb(xRxnsIndexes)=xValues(i,:);
-    model.ub(xRxnsIndexes)=xValues(i);
+    model.ub(xRxnsIndexes)=xValues(i,:);
     
     sol=solveLP(model);
     
