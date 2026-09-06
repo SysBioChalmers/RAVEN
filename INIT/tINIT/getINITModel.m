@@ -255,6 +255,7 @@ if printReport==true
     else
         fprintf(['***Generating model for: ' tissue '\n']);
     end
+    fprintf('-Using the legacy tINIT algorithm; ftINIT is the recommended method\n');
     if ~isempty(hpaData)
         fprintf('-Using HPA data\n');
     end

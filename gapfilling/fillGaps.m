@@ -90,6 +90,12 @@ function [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=fillGaps(m
 %     [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=...
 %         fillGaps(model,models,allowNetProduction,useModelConstraints,...
 %         supressWarnings,rxnScores,params);
+%
+% See Also
+% --------
+% ftINITFillGaps : the ftINIT-side counterpart, used when the reference
+%     model already contains the model's own reactions, so no per-task
+%     merge is needed.
 
 %If the user only supplied a single template model
 if ~iscell(models)

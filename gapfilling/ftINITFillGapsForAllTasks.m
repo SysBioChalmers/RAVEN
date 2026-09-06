@@ -41,6 +41,8 @@ function [outModel, addedRxns, failedTasks]=ftINITFillGapsForAllTasks(model,refM
 %   that suits ftINIT: the task constraints are written into the reference
 %   model as well, and ftINITFillGaps replaces fillGaps.
 %
+%   See also: fitTasks, which this function wraps.
+%
 % Usage: [outModel, addedRxns, failedTasks]=ftINITFillGapsForAllTasks(model,...
 %           refModel,inputFile,printOutput,rxnScores,taskStructure,params,verbose)
 
