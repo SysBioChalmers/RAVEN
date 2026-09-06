@@ -117,7 +117,13 @@
  --------
      [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=...
          fillGaps(model,models,allowNetProduction,useModelConstraints,...
-         supressWarnings,rxnScores,params);</pre></div>
+         supressWarnings,rxnScores,params);
+
+ See Also
+ --------
+ <a href="ftINITFillGaps.html" class="code" title="function [addedRxns, newModel, exitFlag]=ftINITFillGaps(tModel, origModel, tRefModel,allowNetProduction,supressWarnings,rxnScores,params,verbose)">ftINITFillGaps</a> : the ftINIT-side counterpart, used when the reference
+     model already contains the model's own reactions, so no per-task
+     merge is needed.</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -126,7 +132,7 @@ This function calls:
 <li><a href="gapFillFastLP.html" class="code" title="function [addedRxns, newModel, cannotConnect] = gapFillFastLP(model, universalModel, varargin)">gapFillFastLP</a>	gapFillFastLP  LP-based gap-filling (fastGapFill / swiftGapFill).</li><li><a href="gapFillMILP.html" class="code" title="function [addedRxns, reversedRxns, newModel, exitFlag] = gapFillMILP(model, universalModel, varargin)">gapFillMILP</a>	gapFillMILP  Objective-based gap-filling via a global growth-floor MILP.</li><li><a href="gapFillTopological.html" class="code" title="function result = gapFillTopological(model, universalModel, varargin)">gapFillTopological</a>	gapFillTopological  BFS metabolite-producibility pre-screening.</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="fitTasks.html" class="code" title="function [outModel, addedRxns]=fitTasks(model,refModel,inputFile,varargin)">fitTasks</a>	fitTasks  Fill gaps in a model so it can perform a list of tasks.</li><li><a href="gapReport.html" class="code" title="function [noFluxRxns, noFluxRxnsRelaxed, subGraphs, notProducedMets, minToConnect,neededForProductionMat, canProduceWithoutInput, canConsumeWithoutOutput,connectedFromTemplates, addedFromTemplates]=gapReport(model, varargin)">gapReport</a>	gapReport  Perform a gap analysis and summarize the results.</li></ul>
+<li><a href="fitTasks.html" class="code" title="function [outModel, addedRxns, failedTasks]=fitTasks(model,refModel,inputFile,varargin)">fitTasks</a>	fitTasks  Fill gaps in a model so it can perform a list of tasks.</li><li><a href="gapReport.html" class="code" title="function [noFluxRxns, noFluxRxnsRelaxed, subGraphs, notProducedMets, minToConnect,neededForProductionMat, canProduceWithoutInput, canConsumeWithoutOutput,connectedFromTemplates, addedFromTemplates]=gapReport(model, varargin)">gapReport</a>	gapReport  Perform a gap analysis and summarize the results.</li></ul>
 <!-- crossreference -->
 
 
@@ -224,208 +230,214 @@ This function is called by:
 0090 <span class="comment">%     [newConnected, cannotConnect, addedRxns, newModel, exitFlag]=...</span>
 0091 <span class="comment">%         fillGaps(model,models,allowNetProduction,useModelConstraints,...</span>
 0092 <span class="comment">%         supressWarnings,rxnScores,params);</span>
-0093 
-0094 <span class="comment">%If the user only supplied a single template model</span>
-0095 <span class="keyword">if</span> ~iscell(models)
-0096     models={models};
-0097 <span class="keyword">end</span>
-0098 
-0099 p=parseRAVENargs(varargin, {<span class="string">'allowNetProduction'</span>,false; <span class="keyword">...</span>
-0100     <span class="string">'useModelConstraints'</span>,false; <span class="keyword">...</span>
-0101     <span class="string">'supressWarnings'</span>,false; <span class="keyword">...</span>
-0102     <span class="string">'rxnScores'</span>,[]; <span class="keyword">...</span>
-0103     <span class="string">'params'</span>,[]; <span class="keyword">...</span>
-0104     <span class="string">'algorithm'</span>,<span class="string">'reference'</span>; <span class="keyword">...</span>
-0105     <span class="string">'epsilon'</span>,1e-4; <span class="keyword">...</span>
-0106     <span class="string">'minGrowth'</span>,[]; <span class="keyword">...</span>
-0107     <span class="string">'verbose'</span>,true});
-0108 allowNetProduction=p.allowNetProduction;
-0109 useModelConstraints=p.useModelConstraints;
-0110 supressWarnings=p.supressWarnings;
-0111 rxnScores=p.rxnScores;
-0112 params=p.params;
-0113 
-0114 <span class="comment">% ---- Dispatch to alternative gap-filling algorithms ----</span>
-0115 <span class="keyword">switch</span> lower(p.algorithm)
-0116     <span class="keyword">case</span> {<span class="string">'fastlp'</span>, <span class="string">'swiftlp'</span>}
-0117         <span class="keyword">if</span> numel(models) &lt; 1
-0118             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'fillGaps: fastLP/swiftLP requires at least one reference model.'</span>);
-0119         <span class="keyword">end</span>
-0120         variant = strrep(lower(p.algorithm), <span class="string">'lp'</span>, <span class="string">''</span>);
-0121         [addedRxns, newModel, cannotConnect] = <a href="gapFillFastLP.html" class="code" title="function [addedRxns, newModel, cannotConnect] = gapFillFastLP(model, universalModel, varargin)">gapFillFastLP</a>(model, models{1}, <span class="keyword">...</span>
-0122             <span class="string">'epsilon'</span>, p.epsilon, <span class="string">'verbose'</span>, p.verbose, <span class="string">'variant'</span>, variant);
-0123         newConnected = {};
-0124         exitFlag = 1;
-0125         <span class="keyword">return</span>;
-0126     <span class="keyword">case</span> <span class="string">'gapfillmilp'</span>
-0127         <span class="keyword">if</span> numel(models) &lt; 1
-0128             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'fillGaps: gapfillMILP requires at least one reference model.'</span>);
-0129         <span class="keyword">end</span>
-0130         [addedRxns, ~, newModel, exitFlag] = <a href="gapFillMILP.html" class="code" title="function [addedRxns, reversedRxns, newModel, exitFlag] = gapFillMILP(model, universalModel, varargin)">gapFillMILP</a>(model, models{1}, <span class="keyword">...</span>
-0131             <span class="string">'minGrowth'</span>, p.minGrowth, <span class="string">'verbose'</span>, p.verbose, <span class="string">'params'</span>, params);
-0132         newConnected = {};
-0133         cannotConnect = {};
-0134         <span class="keyword">return</span>;
-0135     <span class="keyword">case</span> <span class="string">'topological'</span>
-0136         <span class="keyword">if</span> numel(models) &lt; 1
-0137             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'fillGaps: topological requires at least one reference model.'</span>);
-0138         <span class="keyword">end</span>
-0139         result = <a href="gapFillTopological.html" class="code" title="function result = gapFillTopological(model, universalModel, varargin)">gapFillTopological</a>(model, models{1}, <span class="string">'verbose'</span>, p.verbose);
-0140         addedRxns    = {};
-0141         newModel     = model;
-0142         cannotConnect = result.blockedMets;
-0143         newConnected = {};
-0144         exitFlag = 1;
-0145         <span class="keyword">return</span>;
-0146 <span class="keyword">end</span>
-0147 <span class="comment">% Falls through to the 'reference' algorithm for all other values.</span>
-0148 
-0149 <span class="keyword">if</span> isempty(rxnScores)
-0150     rxnScores=cell(numel(models),1);
-0151     <span class="keyword">for</span> i=1:numel(models)
-0152         rxnScores{i}=ones(numel(models{i}.rxns),1)*-1;
-0153     <span class="keyword">end</span>
-0154 <span class="keyword">end</span>
-0155 <span class="keyword">if</span> isempty(params)
-0156     params=struct();
-0157 <span class="keyword">end</span>
-0158 
-0159 <span class="keyword">if</span> ~iscell(rxnScores)
-0160     rxnScores={rxnScores};
-0161 <span class="keyword">end</span>
-0162 
-0163 models=models(:);
-0164 rxnScores=rxnScores(:);
-0165 
-0166 <span class="comment">%Check if the original model has an unconstrained field. If so, give a</span>
-0167 <span class="comment">%warning</span>
-0168 <span class="keyword">if</span> supressWarnings==false
-0169     <span class="keyword">if</span> isfield(model,<span class="string">'unconstrained'</span>)
-0170         EM=<span class="string">'This algorithm is meant to function on a model with exchange reactions for uptake and excretion of metabolites. The current model still has the &quot;unconstrained&quot; field'</span>;
-0171         warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'%s'</span>, EM);
-0172     <span class="keyword">else</span>
-0173         <span class="keyword">if</span> isempty(getExchangeRxns(model,<span class="string">'both'</span>))
-0174             fprintf(<span class="string">'NOTE: This algorithm is meant to function on a model with exchange reactions for uptake and excretion of metabolites. The current model does not seem to contain any such reactions.\n'</span>);
-0175         <span class="keyword">end</span>
-0176     <span class="keyword">end</span>
-0177 <span class="keyword">end</span>
-0178 
-0179 <span class="comment">%Simplify the template models to remove constrained rxns. At the same time,</span>
-0180 <span class="comment">%check that the id of the template models is not the same as the model. That</span>
-0181 <span class="comment">%would cause an error further down</span>
-0182 <span class="keyword">for</span> i=1:numel(models)
-0183     models{i}.rxnScores=rxnScores{i};
-0184     models{i}=simplifyModel(models{i},false,false,true);
-0185     <span class="keyword">if</span> strcmpi(models{i}.id,model.id)
-0186         EM=<span class="string">'The reference model(s) cannot have the same id as the model'</span>;
-0187         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0188     <span class="keyword">end</span>
-0189 <span class="keyword">end</span>
-0190 
-0191 <span class="comment">%This is a rather ugly solution to the issue that it is a bit tricky to keep</span>
-0192 <span class="comment">%track of which scores belong to which reactions. This requires that</span>
-0193 <span class="comment">%removeReactions and mergeModels are modified to check for the new field.</span>
-0194 model.rxnScores=zeros(numel(model.rxns),1);
-0195 
-0196 <span class="comment">%First merge all models into one big one</span>
-0197 allModels=mergeModels([{model};models],<span class="string">'metNames'</span>,true);
-0198 
-0199 <span class="comment">%Add that net production is ok</span>
-0200 <span class="keyword">if</span> allowNetProduction==true
-0201     <span class="comment">%A second column in model.b means that the b field is lower and upper</span>
-0202     <span class="comment">%bound on the RHS.</span>
-0203     model.b=[model.b(:,1) inf(numel(model.mets),1)];
-0204     allModels.b=[allModels.b(:,1) inf(numel(allModels.mets),1)];
-0205 <span class="keyword">end</span>
-0206 
-0207 <span class="keyword">if</span> useModelConstraints==true
-0208     newConnected={};
-0209     cannotConnect={};
-0210     
-0211     <span class="comment">%Check that the input model is not solveable without any input</span>
-0212     sol=solveLP(model);
-0213     <span class="keyword">if</span> ~isempty(sol.f)
-0214         addedRxns={};
-0215         newModel=model;
-0216         exitFlag=1;
-0217         <span class="keyword">return</span>;
-0218     <span class="keyword">end</span>
-0219     
-0220     <span class="comment">%Then check that the merged model is solveable</span>
-0221     sol=solveLP(allModels);
-0222     <span class="keyword">if</span> isempty(sol.f)
-0223         EM=<span class="string">'There are no reactions in the template model(s) that can make the model constraints satisfied'</span>;
-0224         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0225     <span class="keyword">end</span>
-0226     
-0227     <span class="comment">%Remove dead ends for speed reasons. This has to be done here and</span>
-0228     <span class="comment">%duplicate below because there is otherwise a risk that a reaction</span>
-0229     <span class="comment">%which is constrained to something relevant is removed</span>
-0230     allModels=simplifyModel(allModels,false,false,false,true,false,false,false,[],true);
-0231     allModels.c(:)=0;
-0232 <span class="keyword">else</span>
-0233     <span class="comment">%Remove dead ends for speed reasons</span>
-0234     allModels=simplifyModel(allModels,false,false,false,true,false,false,false,[],true);
-0235     allModels.c(:)=0;
-0236     
-0237     <span class="comment">%If model constraints should not be used, then determine which reactions</span>
-0238     <span class="comment">%to force to have flux</span>
-0239     
-0240     <span class="comment">%Get the reactions that can carry flux in the original model</span>
-0241     originalFlux=haveFlux(model,1);
+0093 <span class="comment">%</span>
+0094 <span class="comment">% See Also</span>
+0095 <span class="comment">% --------</span>
+0096 <span class="comment">% ftINITFillGaps : the ftINIT-side counterpart, used when the reference</span>
+0097 <span class="comment">%     model already contains the model's own reactions, so no per-task</span>
+0098 <span class="comment">%     merge is needed.</span>
+0099 
+0100 <span class="comment">%If the user only supplied a single template model</span>
+0101 <span class="keyword">if</span> ~iscell(models)
+0102     models={models};
+0103 <span class="keyword">end</span>
+0104 
+0105 p=parseRAVENargs(varargin, {<span class="string">'allowNetProduction'</span>,false; <span class="keyword">...</span>
+0106     <span class="string">'useModelConstraints'</span>,false; <span class="keyword">...</span>
+0107     <span class="string">'supressWarnings'</span>,false; <span class="keyword">...</span>
+0108     <span class="string">'rxnScores'</span>,[]; <span class="keyword">...</span>
+0109     <span class="string">'params'</span>,[]; <span class="keyword">...</span>
+0110     <span class="string">'algorithm'</span>,<span class="string">'reference'</span>; <span class="keyword">...</span>
+0111     <span class="string">'epsilon'</span>,1e-4; <span class="keyword">...</span>
+0112     <span class="string">'minGrowth'</span>,[]; <span class="keyword">...</span>
+0113     <span class="string">'verbose'</span>,true});
+0114 allowNetProduction=p.allowNetProduction;
+0115 useModelConstraints=p.useModelConstraints;
+0116 supressWarnings=p.supressWarnings;
+0117 rxnScores=p.rxnScores;
+0118 params=p.params;
+0119 
+0120 <span class="comment">% ---- Dispatch to alternative gap-filling algorithms ----</span>
+0121 <span class="keyword">switch</span> lower(p.algorithm)
+0122     <span class="keyword">case</span> {<span class="string">'fastlp'</span>, <span class="string">'swiftlp'</span>}
+0123         <span class="keyword">if</span> numel(models) &lt; 1
+0124             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'fillGaps: fastLP/swiftLP requires at least one reference model.'</span>);
+0125         <span class="keyword">end</span>
+0126         variant = strrep(lower(p.algorithm), <span class="string">'lp'</span>, <span class="string">''</span>);
+0127         [addedRxns, newModel, cannotConnect] = <a href="gapFillFastLP.html" class="code" title="function [addedRxns, newModel, cannotConnect] = gapFillFastLP(model, universalModel, varargin)">gapFillFastLP</a>(model, models{1}, <span class="keyword">...</span>
+0128             <span class="string">'epsilon'</span>, p.epsilon, <span class="string">'verbose'</span>, p.verbose, <span class="string">'variant'</span>, variant);
+0129         newConnected = {};
+0130         exitFlag = 1;
+0131         <span class="keyword">return</span>;
+0132     <span class="keyword">case</span> <span class="string">'gapfillmilp'</span>
+0133         <span class="keyword">if</span> numel(models) &lt; 1
+0134             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'fillGaps: gapfillMILP requires at least one reference model.'</span>);
+0135         <span class="keyword">end</span>
+0136         [addedRxns, ~, newModel, exitFlag] = <a href="gapFillMILP.html" class="code" title="function [addedRxns, reversedRxns, newModel, exitFlag] = gapFillMILP(model, universalModel, varargin)">gapFillMILP</a>(model, models{1}, <span class="keyword">...</span>
+0137             <span class="string">'minGrowth'</span>, p.minGrowth, <span class="string">'verbose'</span>, p.verbose, <span class="string">'params'</span>, params);
+0138         newConnected = {};
+0139         cannotConnect = {};
+0140         <span class="keyword">return</span>;
+0141     <span class="keyword">case</span> <span class="string">'topological'</span>
+0142         <span class="keyword">if</span> numel(models) &lt; 1
+0143             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'fillGaps: topological requires at least one reference model.'</span>);
+0144         <span class="keyword">end</span>
+0145         result = <a href="gapFillTopological.html" class="code" title="function result = gapFillTopological(model, universalModel, varargin)">gapFillTopological</a>(model, models{1}, <span class="string">'verbose'</span>, p.verbose);
+0146         addedRxns    = {};
+0147         newModel     = model;
+0148         cannotConnect = result.blockedMets;
+0149         newConnected = {};
+0150         exitFlag = 1;
+0151         <span class="keyword">return</span>;
+0152 <span class="keyword">end</span>
+0153 <span class="comment">% Falls through to the 'reference' algorithm for all other values.</span>
+0154 
+0155 <span class="keyword">if</span> isempty(rxnScores)
+0156     rxnScores=cell(numel(models),1);
+0157     <span class="keyword">for</span> i=1:numel(models)
+0158         rxnScores{i}=ones(numel(models{i}.rxns),1)*-1;
+0159     <span class="keyword">end</span>
+0160 <span class="keyword">end</span>
+0161 <span class="keyword">if</span> isempty(params)
+0162     params=struct();
+0163 <span class="keyword">end</span>
+0164 
+0165 <span class="keyword">if</span> ~iscell(rxnScores)
+0166     rxnScores={rxnScores};
+0167 <span class="keyword">end</span>
+0168 
+0169 models=models(:);
+0170 rxnScores=rxnScores(:);
+0171 
+0172 <span class="comment">%Check if the original model has an unconstrained field. If so, give a</span>
+0173 <span class="comment">%warning</span>
+0174 <span class="keyword">if</span> supressWarnings==false
+0175     <span class="keyword">if</span> isfield(model,<span class="string">'unconstrained'</span>)
+0176         EM=<span class="string">'This algorithm is meant to function on a model with exchange reactions for uptake and excretion of metabolites. The current model still has the &quot;unconstrained&quot; field'</span>;
+0177         warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'%s'</span>, EM);
+0178     <span class="keyword">else</span>
+0179         <span class="keyword">if</span> isempty(getExchangeRxns(model,<span class="string">'both'</span>))
+0180             fprintf(<span class="string">'NOTE: This algorithm is meant to function on a model with exchange reactions for uptake and excretion of metabolites. The current model does not seem to contain any such reactions.\n'</span>);
+0181         <span class="keyword">end</span>
+0182     <span class="keyword">end</span>
+0183 <span class="keyword">end</span>
+0184 
+0185 <span class="comment">%Simplify the template models to remove constrained rxns. At the same time,</span>
+0186 <span class="comment">%check that the id of the template models is not the same as the model. That</span>
+0187 <span class="comment">%would cause an error further down</span>
+0188 <span class="keyword">for</span> i=1:numel(models)
+0189     models{i}.rxnScores=rxnScores{i};
+0190     models{i}=simplifyModel(models{i},false,false,true);
+0191     <span class="keyword">if</span> strcmpi(models{i}.id,model.id)
+0192         EM=<span class="string">'The reference model(s) cannot have the same id as the model'</span>;
+0193         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0194     <span class="keyword">end</span>
+0195 <span class="keyword">end</span>
+0196 
+0197 <span class="comment">%This is a rather ugly solution to the issue that it is a bit tricky to keep</span>
+0198 <span class="comment">%track of which scores belong to which reactions. This requires that</span>
+0199 <span class="comment">%removeReactions and mergeModels are modified to check for the new field.</span>
+0200 model.rxnScores=zeros(numel(model.rxns),1);
+0201 
+0202 <span class="comment">%First merge all models into one big one</span>
+0203 allModels=mergeModels([{model};models],<span class="string">'metNames'</span>,true);
+0204 
+0205 <span class="comment">%Add that net production is ok</span>
+0206 <span class="keyword">if</span> allowNetProduction==true
+0207     <span class="comment">%A second column in model.b means that the b field is lower and upper</span>
+0208     <span class="comment">%bound on the RHS.</span>
+0209     model.b=[model.b(:,1) inf(numel(model.mets),1)];
+0210     allModels.b=[allModels.b(:,1) inf(numel(allModels.mets),1)];
+0211 <span class="keyword">end</span>
+0212 
+0213 <span class="keyword">if</span> useModelConstraints==true
+0214     newConnected={};
+0215     cannotConnect={};
+0216     
+0217     <span class="comment">%Check that the input model is not solveable without any input</span>
+0218     sol=solveLP(model);
+0219     <span class="keyword">if</span> ~isempty(sol.f)
+0220         addedRxns={};
+0221         newModel=model;
+0222         exitFlag=1;
+0223         <span class="keyword">return</span>;
+0224     <span class="keyword">end</span>
+0225     
+0226     <span class="comment">%Then check that the merged model is solveable</span>
+0227     sol=solveLP(allModels);
+0228     <span class="keyword">if</span> isempty(sol.f)
+0229         EM=<span class="string">'There are no reactions in the template model(s) that can make the model constraints satisfied'</span>;
+0230         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0231     <span class="keyword">end</span>
+0232     
+0233     <span class="comment">%Remove dead ends for speed reasons. This has to be done here and</span>
+0234     <span class="comment">%duplicate below because there is otherwise a risk that a reaction</span>
+0235     <span class="comment">%which is constrained to something relevant is removed</span>
+0236     allModels=simplifyModel(allModels,false,false,false,true,false,false,false,[],true);
+0237     allModels.c(:)=0;
+0238 <span class="keyword">else</span>
+0239     <span class="comment">%Remove dead ends for speed reasons</span>
+0240     allModels=simplifyModel(allModels,false,false,false,true,false,false,false,[],true);
+0241     allModels.c(:)=0;
 0242     
-0243     <span class="comment">%For the ones that cannot carry flux, see if they can do so in the</span>
-0244     <span class="comment">%merged model. Reactions from model keep their id unchanged in</span>
-0245     <span class="comment">%allModels (mergeModels renames colliding ids in the other input</span>
-0246     <span class="comment">%models, never in model itself), so intersecting with allModels.rxns</span>
-0247     <span class="comment">%both identifies them and drops any that simplifyModel has since</span>
-0248     <span class="comment">%removed as dead ends. The previous strcmp(allModels.rxnFrom,model.id)</span>
-0249     <span class="comment">%failed whenever model already carried a rxnFrom field of its own, as</span>
-0250     <span class="comment">%getModelFromHomology output does, tagging each reaction with its</span>
-0251     <span class="comment">%template rather than model.id, so mergeModels leaves it untouched and</span>
-0252     <span class="comment">%it never matches model.id here.</span>
-0253     toCheck=intersect(model.rxns(~originalFlux),allModels.rxns);
-0254     
-0255     <span class="comment">%Get the ones that still cannot carry flux. Guard against an empty</span>
-0256     <span class="comment">%toCheck, since haveFlux interprets an empty reaction list as &quot;all</span>
-0257     <span class="comment">%reactions&quot; rather than &quot;none&quot;</span>
-0258     <span class="keyword">if</span> isempty(toCheck)
-0259         K=toCheck;
-0260     <span class="keyword">else</span>
-0261         I=haveFlux(allModels,1,toCheck);
-0262         <span class="comment">%Get the reactions that cannot carry flux in the original model, but can</span>
-0263         <span class="comment">%in the merged one</span>
-0264         K=toCheck(I);
-0265     <span class="keyword">end</span>
-0266     
-0267     <span class="comment">%This is a temporary thing to only look at the non-reversible rxns.</span>
-0268     <span class="comment">%This is because all reversible rxns can have a flux in the</span>
-0269     <span class="comment">%irreversible model format that is used by getMinNrFluxes</span>
-0270     [~, I]=ismember(K,model.rxns);
-0271     K(model.rev(I)~=0)=[];
+0243     <span class="comment">%If model constraints should not be used, then determine which reactions</span>
+0244     <span class="comment">%to force to have flux</span>
+0245     
+0246     <span class="comment">%Get the reactions that can carry flux in the original model</span>
+0247     originalFlux=haveFlux(model,1);
+0248     
+0249     <span class="comment">%For the ones that cannot carry flux, see if they can do so in the</span>
+0250     <span class="comment">%merged model. Reactions from model keep their id unchanged in</span>
+0251     <span class="comment">%allModels (mergeModels renames colliding ids in the other input</span>
+0252     <span class="comment">%models, never in model itself), so intersecting with allModels.rxns</span>
+0253     <span class="comment">%both identifies them and drops any that simplifyModel has since</span>
+0254     <span class="comment">%removed as dead ends. The previous strcmp(allModels.rxnFrom,model.id)</span>
+0255     <span class="comment">%failed whenever model already carried a rxnFrom field of its own, as</span>
+0256     <span class="comment">%getModelFromHomology output does, tagging each reaction with its</span>
+0257     <span class="comment">%template rather than model.id, so mergeModels leaves it untouched and</span>
+0258     <span class="comment">%it never matches model.id here.</span>
+0259     toCheck=intersect(model.rxns(~originalFlux),allModels.rxns);
+0260     
+0261     <span class="comment">%Get the ones that still cannot carry flux. Guard against an empty</span>
+0262     <span class="comment">%toCheck, since haveFlux interprets an empty reaction list as &quot;all</span>
+0263     <span class="comment">%reactions&quot; rather than &quot;none&quot;</span>
+0264     <span class="keyword">if</span> isempty(toCheck)
+0265         K=toCheck;
+0266     <span class="keyword">else</span>
+0267         I=haveFlux(allModels,1,toCheck);
+0268         <span class="comment">%Get the reactions that cannot carry flux in the original model, but can</span>
+0269         <span class="comment">%in the merged one</span>
+0270         K=toCheck(I);
+0271     <span class="keyword">end</span>
 0272     
-0273     <span class="comment">%Constrain all reactions in the original model to have a flux</span>
-0274     allModels.lb(ismember(allModels.rxns,K))=0.1;
-0275     
-0276     newConnected=K;
-0277     cannotConnect=setdiff(model.rxns(~originalFlux),newConnected);
-0278 <span class="keyword">end</span>
-0279 
-0280 <span class="comment">%Then minimize for the number of fluxes used. The fixed rxns (model's own)</span>
-0281 <span class="comment">%do not need to participate; see the comment above on why this is</span>
-0282 <span class="comment">%identified by rxn ID rather than allModels.rxnFrom.</span>
-0283 templateRxns=find(~ismember(allModels.rxns,model.rxns));
-0284 [~, J, exitFlag]=getMinNrFluxes(allModels,templateRxns,params,allModels.rxnScores(templateRxns));
+0273     <span class="comment">%This is a temporary thing to only look at the non-reversible rxns.</span>
+0274     <span class="comment">%This is because all reversible rxns can have a flux in the</span>
+0275     <span class="comment">%irreversible model format that is used by getMinNrFluxes</span>
+0276     [~, I]=ismember(K,model.rxns);
+0277     K(model.rev(I)~=0)=[];
+0278     
+0279     <span class="comment">%Constrain all reactions in the original model to have a flux</span>
+0280     allModels.lb(ismember(allModels.rxns,K))=0.1;
+0281     
+0282     newConnected=K;
+0283     cannotConnect=setdiff(model.rxns(~originalFlux),newConnected);
+0284 <span class="keyword">end</span>
 0285 
-0286 <span class="comment">%Remove everything except for the added ones</span>
-0287 I=true(numel(allModels.rxns),1);
-0288 I(templateRxns(J))=false;
-0289 addedModel=removeReactions(allModels,I,true,true,true);
-0290 
-0291 newModel=mergeModels({model;addedModel},<span class="string">'metNames'</span>,true);
-0292 addedRxns=setdiff(newModel.rxns,model.rxns);
-0293 newModel=rmfield(newModel,<span class="string">'rxnScores'</span>);
-0294 <span class="keyword">end</span></pre></div>
+0286 <span class="comment">%Then minimize for the number of fluxes used. The fixed rxns (model's own)</span>
+0287 <span class="comment">%do not need to participate; see the comment above on why this is</span>
+0288 <span class="comment">%identified by rxn ID rather than allModels.rxnFrom.</span>
+0289 templateRxns=find(~ismember(allModels.rxns,model.rxns));
+0290 [~, J, exitFlag]=getMinNrFluxes(allModels,templateRxns,params,allModels.rxnScores(templateRxns));
+0291 
+0292 <span class="comment">%Remove everything except for the added ones</span>
+0293 I=true(numel(allModels.rxns),1);
+0294 I(templateRxns(J))=false;
+0295 addedModel=removeReactions(allModels,I,true,true,true);
+0296 
+0297 newModel=mergeModels({model;addedModel},<span class="string">'metNames'</span>,true);
+0298 addedRxns=setdiff(newModel.rxns,model.rxns);
+0299 newModel=rmfield(newModel,<span class="string">'rxnScores'</span>);
+0300 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
