@@ -58,7 +58,7 @@ end
 %merging as they are probable exchange reactions.
 if deleteRxnsWithOneMet==true
     reservedRxns=model.rxns(sum(model.S~=0)==1);
-    if ~isempty(reservedRxns) && isfield(model,'unconstrained')
+    if ~isempty(reservedRxns) && ~isfield(model,'unconstrained')
         %If there is no unconstrained field these reactions are probably
         %exchange reactions and shall be kept. If not then print a warning
         EM='There are reactions with only one metabolite. Cannot determine whether they are exchange reactions since there is no unconstrained field';
