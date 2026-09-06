@@ -40,7 +40,7 @@ function model=copyToComps(model,toComps,varargin)
 % -----
 % New reactions and metabolites will be named as "id_toComps(i)".
 
-p=parseRAVENargs(varargin, {'rxns',[],[]; 'deleteOriginal',false,@emptyOrLogicalScalar; 'compNames',[],[]; 'compOutside','',[]});
+p=parseRAVENargs(varargin, {'rxns',[]; 'deleteOriginal',false; 'compNames',[]; 'compOutside',''});
 rxns=p.rxns;
 if isempty(rxns)
     rxns=model.rxns;

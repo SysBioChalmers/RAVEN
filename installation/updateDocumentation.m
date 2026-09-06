@@ -1,7 +1,12 @@
 function updateDocumentation()
 % updateDocumentation
-%	Updates HTML documentation files for all RAVEN functions. It should
-%	only be used when preparing `develop` branch for a new RAVEN release
+%	Regenerates the HTML documentation in RAVEN's doc directory from the
+%	function help texts. The doc directory is deleted and rebuilt, so
+%	anything hand-edited there is lost.
+%
+%	The Documentation workflow runs this on every push to a release branch
+%	and commits the result, so doc stays in step with the sources without
+%	anyone running it by hand. Run it locally only to preview.
 %
 %	Usage: updateDocumentation()
 
@@ -30,7 +35,9 @@ if exist(fullfile(ravenDir,'reconstruction','kegg','keggModel.mat'), 'file') == 
 end
 
 %Remove existing "doc" directory from RAVEN
-rmdir(fullfile(ravenDir,'doc'),'s');
+if isfolder(fullfile(ravenDir,'doc'))
+    rmdir(fullfile(ravenDir,'doc'),'s');
+end
 
 %Make relative path
 relStart = numel(ravenDir)+2;

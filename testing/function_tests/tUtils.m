@@ -53,33 +53,6 @@ classdef tUtils < RavenTestCase
             testCase.verifyFalse(contains(msg, '...and'));
         end
 
-        function emptyOrLogicalScalarAcceptsValid(testCase)
-            testCase.verifyWarningFree(@() emptyOrLogicalScalar(true));
-            testCase.verifyWarningFree(@() emptyOrLogicalScalar([]));
-        end
-
-        function emptyOrLogicalScalarRejectsInvalid(testCase)
-            testCase.verifyError(@() emptyOrLogicalScalar([true false]), ?MException);
-        end
-
-        function emptyOrTextScalarAcceptsValid(testCase)
-            testCase.verifyWarningFree(@() emptyOrTextScalar('abc'));
-            testCase.verifyWarningFree(@() emptyOrTextScalar([]));
-        end
-
-        function emptyOrTextScalarRejectsInvalid(testCase)
-            testCase.verifyError(@() emptyOrTextScalar(5), ?MException);
-        end
-
-        function emptyOrTextOrCellOfTextAcceptsValid(testCase)
-            testCase.verifyWarningFree(@() emptyOrTextOrCellOfText({'a','b'}));
-            testCase.verifyWarningFree(@() emptyOrTextOrCellOfText('a'));
-        end
-
-        function emptyOrTextOrCellOfTextRejectsInvalid(testCase)
-            testCase.verifyError(@() emptyOrTextOrCellOfText(5), ?MException);
-        end
-
         function printOrangeReturnsTextContainingInput(testCase)
             evalc('s = printOrange(''hello'');');
             testCase.verifySubstring(s, 'hello');

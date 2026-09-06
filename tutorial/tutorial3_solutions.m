@@ -1,7 +1,9 @@
 % tutorial3_solutions
-%   This script contains the solutions for Tutorial 3, see Tutorial 3 in
-%   "RAVEN tutorials.docx" for more details. All the parameters are set in
-%   this script, rather than modifying the Excel model file.
+%   This script contains the solutions for Tutorial 3, see Tutorial 3 on
+%   the RAVEN wiki for more details:
+%   https://github.com/SysBioChalmers/RAVEN/wiki/Tutorials
+%   All the parameters are set in this script, rather than modifying the
+%   Excel model file.
 
 %Import the model
 model=readYAMLmodel('smallYeast.yml');
@@ -67,7 +69,8 @@ fprintf(['Glycerol production is ' num2str(maxGlycerol) ' after deletion of ' or
 %(YNL241C)
 model2=setParam(model,'eq',{'ZWF'},0);
 sol2=solveLP(model2);
-followChanged(model,sol2.x,sol.x, 10, 10^-2, 0,{'NADPH' 'NADH' 'NAD' 'NADP'});
+compareFluxes(model,sol.x,sol2.x,'cutoff',10^-2, ...
+    'metaboliteList',{'NADPH' 'NADH' 'NAD' 'NADP'});
 
 %Step 5
 %Set the exchange rates to the recorded batch values

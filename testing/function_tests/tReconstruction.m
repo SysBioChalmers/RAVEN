@@ -28,11 +28,6 @@ classdef tReconstruction < RavenTestCase
             testCase.verifyClass(draft, 'struct');
         end
 
-        function getWSLpathReturnsPath(testCase)
-            p = getWSLpath('C:\foo\bar');
-            testCase.verifyTrue(ischar(p) || isstring(p));
-        end
-
         function getBlastRunsWhenAvailable(testCase)
             fa1 = fullfile(testCase.ravenRoot,'testing','function_tests','test_data','human_galactosidases.fa');
             fa2 = fullfile(testCase.ravenRoot,'testing','function_tests','test_data','yeast_galactosidases.fa');

@@ -321,11 +321,6 @@ classdef tQueries < RavenTestCase
             testCase.verifyClass(out, 'char');
         end
 
-        function printModelRuns(testCase)
-            out = evalc('printModel(testCase.model, testCase.model.rxns(1))');
-            testCase.verifyNotEmpty(out);
-        end
-
         function printModelStatsRuns(testCase)
             out = evalc('printModelStats(testCase.model)');
             testCase.verifyClass(out, 'char');

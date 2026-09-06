@@ -8,7 +8,8 @@
 %   A GEM for the filamentous fungus Penicillium chrysogenum is used in
 %   this tutorial. The model is provided as the SBML file
 %   "iAL1006 v1.00.xml".
-%   See Tutorial 1 in "RAVEN tutorials.docx" for more details.
+%   See Tutorial 1 on the RAVEN wiki for more details:
+%   https://github.com/SysBioChalmers/RAVEN/wiki/Tutorials
 
 %Import the model from SBML. This function performs a number of checks
 %regarding the model structure (such as for incorrectly written equations
@@ -105,17 +106,18 @@ solETH=solveLP(modelETH,1);
 printFluxes(modelETH, solETH.x, true, 10^-7);
 
 %Investigate how metabolism changes between the two carbon sources.
-%followChanged takes two flux distributions and lets the user select which
-%reactions should be printed. Here the reactions are shown that differ with
-%more than 50%, has a flux higher than 0.5 mmol/gDW/h and an absolute
-%difference higher than 0.5 mmol/gDW/h.
-followChanged(modelETH,sol.x,solETH.x, 50, 0.5, 0.5);
+%compareFluxes takes two flux distributions and reports every reaction whose
+%flux changed, largest change first, labelling those that were turned on,
+%turned off or reversed direction. Here only changes above 0.5 mmol/gDW/h
+%are considered.
+res=compareFluxes(modelETH,sol.x,solETH.x,'cutoff',0.5);
 
-%There are 65 such reactions. By studying them one can start to get an idea
-%about where the key changes occur. Visualization can help a lot in this
-%regard. One can investigate how ATP metabolism changes by running the
-%following command:
-followChanged(modelETH,sol.x,solETH.x, 30, 0.4, 0.4,{'ATP'});
+%The printed table is capped at 20 rows, but res.changed holds every changed
+%reaction and res.turnedOn/turnedOff/flipped list those that switched state.
+%By studying them one can start to get an idea about where the key changes
+%occur. Visualization can help a lot in this regard. One can restrict the
+%comparison to ATP metabolism by naming the metabolites of interest:
+compareFluxes(modelETH,sol.x,solETH.x,'cutoff',0.4,'metaboliteList',{'ATP'});
 
 %See that on glucose ATP is generated in glycolysis but on ethanol it seems
 %to have to do with acetate and so on. This allows the user to look further
