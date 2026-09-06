@@ -97,6 +97,7 @@ supressWarnings=false;
 nAdded=0;
 for i=1:numel(taskStructure)
     if ~taskStructure(i).shouldFail
+        taskLabel=['"[' taskStructure(i).id '] ' taskStructure(i).description '"'];
         %Set the inputs
         if ~isempty(taskStructure(i).inputs)
             [I, J]=ismember(upper(taskStructure(i).inputs),modelMets);
@@ -134,41 +135,14 @@ for i=1:numel(taskStructure)
                 EM=['The constraints on some input(s) in "[' taskStructure(i).id '] ' taskStructure(i).description '" are defined more than one time'];
                 error('RAVEN:badInput', '%s', EM);
             end
-            %If all metabolites should be added
-            if any(K)
-                %Check if ALLMETS is the first metabolite. Otherwise print
-                %a warning since it will write over any other constraints
-                %that are set
-                if K(1)==0
-                    EM=['ALLMETS is used as an input in "[' taskStructure(i).id '] ' taskStructure(i).description '" but it it not the first metabolite in the list. Constraints defined for the metabolites before it will be over-written'];
-                    warning('RAVEN:warning', '%s', EM);
-                end
-                %Use the first match of ALLMETS. There should only be one,
-                %but still..
-                tModel.b(:,1)=taskStructure(i).UBin(find(K,1))*-1;
+            %Check if ALLMETS is the first metabolite. Otherwise print a
+            %warning since it will write over any other constraints that
+            %are set
+            if any(K) && K(1)==0
+                EM=['ALLMETS is used as an input in "[' taskStructure(i).id '] ' taskStructure(i).description '" but it it not the first metabolite in the list. Constraints defined for the metabolites before it will be over-written'];
+                warning('RAVEN:warning', '%s', EM);
             end
-            %If metabolites in a specific compartment should be used
-            if any(L)
-                L=find(L);
-                for j=1:numel(L)
-                    %The compartment defined
-                    compartment=upper(taskStructure(i).inputs{L(j)}(11:end-1));
-                    %Check if it exists in the model
-                    C=find(ismember(upper(model.comps),compartment));
-                    if any(C)
-                        %Match to metabolites
-                        tModel.b(model.metComps==C,1)=taskStructure(i).UBin(L(j))*-1;
-                    else
-                        EM=['The compartment defined for ALLMETSIN in "[' taskStructure(i).id '] ' taskStructure(i).description '" does not exist'];
-                        error('RAVEN:badInput', '%s', EM);
-                    end
-                end
-            end
-            %Then add the normal constraints
-            if any(J(I))
-                tModel.b(J(I),1)=taskStructure(i).UBin(I)*-1;
-                tModel.b(J(I),2)=taskStructure(i).LBin(I)*-1;
-            end
+            tModel=applyTaskInputBounds(tModel,I,J,K,L,taskStructure(i),taskLabel);
         end
         %Set the outputs
         if ~isempty(taskStructure(i).outputs)
@@ -207,52 +181,14 @@ for i=1:numel(taskStructure)
                 EM=['The constraints on some output(s) in "[' taskStructure(i).id '] ' taskStructure(i).description '" are defined more than one time'];
                 error('RAVEN:badInput', '%s', EM);
             end
-            %If all metabolites should be added
-            if any(K)
-                %Check if ALLMETS is the first metabolite. Otherwise print
-                %a warning since it will write over any other constraints
-                %that are set
-                if K(1)==0
-                    EM=['ALLMETS is used as an output in "[' taskStructure(i).id '] ' taskStructure(i).description '" but it it not the first metabolite in the list. Constraints defined for the metabolites before it will be over-written'];
-                    warning('RAVEN:warning', '%s', EM);
-                end
-                %Use the first match of ALLMETS. There should only be one,
-                %but still..
-                tModel.b(:,2)=taskStructure(i).UBout(find(K,1));
+            %Check if ALLMETS is the first metabolite. Otherwise print a
+            %warning since it will write over any other constraints that
+            %are set
+            if any(K) && K(1)==0
+                EM=['ALLMETS is used as an output in "[' taskStructure(i).id '] ' taskStructure(i).description '" but it it not the first metabolite in the list. Constraints defined for the metabolites before it will be over-written'];
+                warning('RAVEN:warning', '%s', EM);
             end
-            %If metabolites in a specific compartment should be used
-            if any(L)
-                L=find(L);
-                for j=1:numel(L)
-                    %The compartment defined
-                    compartment=upper(taskStructure(i).outputs{L(j)}(11:end-1));
-                    %Check if it exists in the model
-                    C=find(ismember(upper(model.comps),compartment));
-                    if any(C)
-                        %Match to metabolites
-                        tModel.b(model.metComps==C,2)=taskStructure(i).UBout(L(j));
-                    else
-                        EM=['The compartment defined for ALLMETSIN in "[' taskStructure(i).id '] ' taskStructure(i).description '" does not exist'];
-                        error('RAVEN:badInput', '%s', EM);
-                    end
-                end
-            end
-            %Then add the normal constraints
-            if any(J(I))
-                %Verify that IN and OUT bounds are consistent. Cannot require
-                %that a metabolite is simultaneously input AND output at some
-                %nonzero flux.
-                J = J(I);
-                I = find(I);  % otherwise indexing becomes confusing
-                nonzero_LBin = tModel.b(J,2) < 0;
-                nonzero_LBout = taskStructure(i).LBout(I) > 0;
-                if any(nonzero_LBin & nonzero_LBout)
-                    EM=['The IN LB and OUT LB in "[' taskStructure(i).id '] ' taskStructure(i).description '" cannot be nonzero for the same metabolite'];
-                    error('RAVEN:badInput', '%s', EM);
-                end
-                tModel.b(J(nonzero_LBout),1)=taskStructure(i).LBout(I(nonzero_LBout));
-                tModel.b(J,2)=taskStructure(i).UBout(I);
-            end
+            tModel=applyTaskOutputBounds(tModel,I,J,K,L,taskStructure(i),taskLabel);
         end
         
         %Add new rxns
@@ -336,4 +272,81 @@ for i=1:numel(taskStructure)
 end
 model.b(:,2) = [];  % resume field b
 outModel=model;
+end
+
+function m=applyTaskInputBounds(m,I,J,K,L,task,taskLabel)
+%Write a task's input constraints into the b field of one model. I and J
+%are the ismember result of the task's input metabolites against that
+%model's metabolite names; K and L flag ALLMETS and ALLMETSIN entries.
+
+%If all metabolites should be added. Use the first match of ALLMETS, there
+%should only be one, but still..
+if any(K)
+    m.b(:,1)=task.UBin(find(K,1))*-1;
+end
+%If metabolites in a specific compartment should be used
+if any(L)
+    L=find(L);
+    for j=1:numel(L)
+        %The compartment defined
+        compartment=upper(task.inputs{L(j)}(11:end-1));
+        %Check if it exists in the model
+        C=find(ismember(upper(m.comps),compartment));
+        if any(C)
+            %Match to metabolites
+            m.b(m.metComps==C,1)=task.UBin(L(j))*-1;
+        else
+            EM=['The compartment defined for ALLMETSIN in ' taskLabel ' does not exist'];
+            error('RAVEN:badInput', '%s', EM);
+        end
+    end
+end
+%Then add the normal constraints
+if any(J(I))
+    m.b(J(I),1)=task.UBin(I)*-1;
+    m.b(J(I),2)=task.LBin(I)*-1;
+end
+end
+
+function m=applyTaskOutputBounds(m,I,J,K,L,task,taskLabel)
+%Write a task's output constraints into the b field of one model, as
+%applyTaskInputBounds does for the inputs.
+
+%If all metabolites should be added. Use the first match of ALLMETS, there
+%should only be one, but still..
+if any(K)
+    m.b(:,2)=task.UBout(find(K,1));
+end
+%If metabolites in a specific compartment should be used
+if any(L)
+    L=find(L);
+    for j=1:numel(L)
+        %The compartment defined
+        compartment=upper(task.outputs{L(j)}(11:end-1));
+        %Check if it exists in the model
+        C=find(ismember(upper(m.comps),compartment));
+        if any(C)
+            %Match to metabolites
+            m.b(m.metComps==C,2)=task.UBout(L(j));
+        else
+            EM=['The compartment defined for ALLMETSIN in ' taskLabel ' does not exist'];
+            error('RAVEN:badInput', '%s', EM);
+        end
+    end
+end
+%Then add the normal constraints
+if any(J(I))
+    %Verify that IN and OUT bounds are consistent. Cannot require that a
+    %metabolite is simultaneously input AND output at some nonzero flux.
+    J = J(I);
+    I = find(I);  % otherwise indexing becomes confusing
+    nonzero_LBin = m.b(J,2) < 0;
+    nonzero_LBout = task.LBout(I) > 0;
+    if any(nonzero_LBin & nonzero_LBout)
+        EM=['The IN LB and OUT LB in ' taskLabel ' cannot be nonzero for the same metabolite'];
+        error('RAVEN:badInput', '%s', EM);
+    end
+    m.b(J(nonzero_LBout),1)=task.LBout(I(nonzero_LBout));
+    m.b(J,2)=task.UBout(I);
+end
 end
