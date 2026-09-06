@@ -159,6 +159,31 @@ classdef tManipulation < RavenTestCase
             testCase.verifyGreaterThanOrEqual(numel(m2.rxns), numel(testCase.model.rxns));
         end
 
+        function closeModelDetectsScaledAndMultiMetSinks(testCase)
+            % closeModel's boundary-reaction rule is "metabolites on only
+            % one side" (matching getExchangeRxns), not "coefficients
+            % summing to 1 in absolute value": a scaled single-metabolite
+            % sink and a multi-metabolite one must both be detected and
+            % closed, while a genuine two-sided reaction is left alone.
+            m = tManipulation.twoMetModel();  % R1: a => b, a genuine reaction
+            r.rxns = {'R2';'R3'};
+            r.equations = {'2 a =>'; '0.5 a + 0.5 b =>'};
+            evalc('m = addRxns(m, r, 1, [], false);');
+            nMetsBefore = numel(m.mets);
+            m2 = closeModel(m);
+
+            % Exactly R2 and R3 are exchange-like, so exactly two boundary
+            % metabolites are added, one per closed reaction.
+            testCase.verifyEqual(numel(m2.mets) - nMetsBefore, 2);
+            testCase.verifyEqual(numel(m2.metNames), numel(m2.mets));
+            testCase.verifyEqual(numel(m2.metComps), numel(m2.mets));
+
+            idx = getIndexes(m2, {'R1';'R2';'R3'}, 'rxns');
+            boundaryComp = numel(m2.comps);
+            touchesBoundary = full(any(m2.S(m2.metComps==boundaryComp, idx) ~= 0, 1));
+            testCase.verifyEqual(touchesBoundary, [false true true]);
+        end
+
         function contractModelNoMoreRxns(testCase)
             evalc('m2 = contractModel(testCase.model);');
             testCase.verifyLessThanOrEqual(numel(m2.rxns), numel(testCase.model.rxns));
