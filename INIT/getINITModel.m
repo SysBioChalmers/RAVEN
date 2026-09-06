@@ -69,6 +69,11 @@
 %     parameter structure for use by the INIT solver (default []).
 % paramsFT : struct
 %     parameter structure for the fitTasks step (default []).
+% seed : double
+%     seed for the random number generator used to break ties among
+%     genes with equally uninformative (-Inf) scores, so which gene is
+%     kept is reproducible across runs (default: current rng state is
+%     left untouched).
 %
 % Returns
 % -------
@@ -112,7 +117,10 @@
 % present. Use importModel(file,false) to import a model with exchange
 % metabolites remaining.
 
-p=parseRAVENargs(varargin, {'celltype',[]; 'hpaData',[]; 'arrayData',[]; 'metabolomicsData',[]; 'taskFile',[]; 'useScoresForTasks',[]; 'printReport',[]; 'taskStructure',[]; 'params',[]; 'paramsFT',[]});
+p=parseRAVENargs(varargin, {'celltype',[]; 'hpaData',[]; 'arrayData',[]; 'metabolomicsData',[]; 'taskFile',[]; 'useScoresForTasks',[]; 'printReport',[]; 'taskStructure',[]; 'params',[]; 'paramsFT',[]; 'seed',[]});
+if ~isempty(p.seed)
+    rng(p.seed);
+end
 celltype=p.celltype;
 hpaData=p.hpaData;
 arrayData=p.arrayData;

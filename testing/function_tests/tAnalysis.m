@@ -21,6 +21,14 @@ classdef tAnalysis < RavenTestCase
             testCase.verifyNumElements(I, numel(testCase.model.rxns));
         end
 
+        function haveFluxSeedIsReproducible(testCase)
+            % The order reactions are tested in is randomised; a given
+            % seed must make that order (and so results) reproducible.
+            I1 = haveFlux(testCase.model, 'seed', 42);
+            I2 = haveFlux(testCase.model, 'seed', 42);
+            testCase.verifyEqual(I1, I2);
+        end
+
         function getMinNrFluxesReturnsFlux(testCase)
             testCase.assumeMILPSolver();
             evalc('[x, I, exitFlag] = getMinNrFluxes(testCase.model, testCase.model.rxns);');

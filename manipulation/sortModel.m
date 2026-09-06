@@ -23,6 +23,10 @@ function model=sortModel(model,varargin)
 %     overrides the sortReversible option and reactions are sorted so that
 %     the production direction matches the consumption direction (default
 %     false).
+% seed : double
+%     seed for the random number generator used by the sortReactionOrder
+%     local search, so its result is reproducible across runs (default:
+%     current rng state is left untouched).
 %
 % Returns
 % -------
@@ -33,7 +37,10 @@ function model=sortModel(model,varargin)
 % --------
 %     model = sortModel(model, sortReversible, sortMetName, sortReactionOrder);
 
-p=parseRAVENargs(varargin, {'sortReversible',true; 'sortMetName',false; 'sortReactionOrder',false});
+p=parseRAVENargs(varargin, {'sortReversible',true; 'sortMetName',false; 'sortReactionOrder',false; 'seed',[]});
+if ~isempty(p.seed)
+    rng(p.seed);
+end
 sortReversible=p.sortReversible;
 sortMetName=p.sortMetName;
 sortReactionOrder=p.sortReactionOrder;

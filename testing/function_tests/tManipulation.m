@@ -514,6 +514,15 @@ classdef tManipulation < RavenTestCase
             testCase.verifyClass(m2, 'struct');
         end
 
+        function removeBadRxnsSeedIsReproducible(testCase)
+            % Which reaction is removed among several equally-valid
+            % candidates is randomised; a given seed must make the choice
+            % (and thus the result) reproducible across runs.
+            evalc(['[~, r1] = removeBadRxns(testCase.model, ''rxnRules'', 3, ''seed'', 42);' ...
+                '[~, r2] = removeBadRxns(testCase.model, ''rxnRules'', 3, ''seed'', 42);']);
+            testCase.verifyEqual(r1, r2);
+        end
+
         function removeGenesRemovesGene(testCase)
             m2 = removeGenes(testCase.model, 'b1817', true, true, false);
             testCase.verifyFalse(ismember('b1817', m2.genes));
@@ -669,6 +678,16 @@ classdef tManipulation < RavenTestCase
             m2 = sortModel(testCase.model);
             testCase.verifyEqual(numel(m2.rxns), numel(testCase.model.rxns));
             testCase.verifyEqual(numel(m2.mets), numel(testCase.model.mets));
+        end
+
+        function sortReactionOrderSeedIsReproducible(testCase)
+            % The local search proposes swaps randomly; a given seed must
+            % make its result reproducible across runs.
+            m = testCase.model;
+            m.subSystems = repmat({{'ALL'}}, numel(m.rxns), 1);
+            m1 = sortModel(m, 'sortReversible', false, 'sortReactionOrder', true, 'seed', 5);
+            m2 = sortModel(m, 'sortReversible', false, 'sortReactionOrder', true, 'seed', 5);
+            testCase.verifyEqual(m1.rxns, m2.rxns);
         end
 
         function sortReactionOrderUsesSubsystemsOwnColumns(testCase)
