@@ -149,7 +149,9 @@ if allowNewGenes & isfield(rxnsToAdd,'grRules')
     end
     if ~isempty(genesToAdd.genes)
         fprintf('\nNew genes added to the model:\n')
-        fprintf([strjoin(genesToAdd.genes,'\n') '\n'])
+        %A new gene id is arbitrary text and may contain "%"; print as
+        %literal data rather than as an fprintf format string.
+        fprintf('%s\n', strjoin(genesToAdd.genes,newline))
         newModel=addGenesRaven(model,genesToAdd);
     else
         newModel=model;

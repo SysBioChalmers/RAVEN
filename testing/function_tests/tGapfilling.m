@@ -80,6 +80,16 @@ classdef tGapfilling < RavenTestCase
             testCase.verifyClass(noFluxRxns, 'cell');
         end
 
+        function gapReportKeepsPercentInModelName(testCase)
+            % A model.name containing "%" must survive intact in the
+            % report header, not be truncated by fprintf misreading it as
+            % a format directive.
+            m = testCase.model;
+            m.name = 'ecoli 50% subset';
+            out = evalc('gapReport(m);');
+            testCase.verifySubstring(out, 'ecoli 50% subset');
+        end
+
         function fitTasksProducesModel(testCase)
             testCase.assumeMILPSolver();
             refModel = testCase.taskTestModel(); refModel.id = 'DB';

@@ -82,8 +82,9 @@ end
 rxnsWithMet = find(model.S(metIdx,:));
 if verbose==true
     fprintf('\n\nThe following reactions contain the to-be-replaced metabolite as reactant:\n')
-    fprintf(strjoin(model.rxns(rxnsWithMet),'\n'))
-    fprintf('\n')
+    %Reaction ids are arbitrary text and may contain "%"; print as
+    %literal data rather than as an fprintf format string.
+    fprintf('%s\n', strjoin(model.rxns(rxnsWithMet),newline))
 end
 
 model.metNames(metIdx) = model.metNames(repIdx(1));

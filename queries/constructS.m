@@ -167,14 +167,21 @@ badRxns(x)=true;
 
 if any(~metsPresent)
     if isempty(rxns)
-        error(['Could not find the following metabolites in the metabolite list: ',...
-        strjoin(unique(metsToS(~metsPresent)),', ')],'')
+        EM=['Could not find the following metabolites in the metabolite list: ',...
+            strjoin(unique(metsToS(~metsPresent)),', ')];
+        error('RAVEN:badInput','%s',EM)
     else
+        %Escaped: metabolite/reaction names are arbitrary model text and
+        %may contain "%", which the sprintf below (needed to interpret
+        %the template's own "\n") would otherwise misread as a format
+        %directive and truncate the rest of the message.
+        esc=@(c) strrep(c,'%','%%');
         missingMet = find(~metsPresent);
-        missingMet = strcat(metsToS(missingMet),' (reaction:',rxns(rxnsToS(missingMet)),')\n');
+        missingMet = strcat(esc(metsToS(missingMet)),' (reaction:',esc(rxns(rxnsToS(missingMet))),')\n');
         missingMet = strjoin(missingMet,'');
-        error(['Could not find the following metabolites (reaction indicated) in the metabolite list: \n' ...
-            missingMet '%s'],'');
+        EM=sprintf(['Could not find the following metabolites (reaction indicated) in the metabolite list: \n' ...
+            missingMet]);
+        error('RAVEN:badInput','%s',EM)
     end
 end
 %sparse() adds up repeated (metabolite,reaction) entries, which is what a

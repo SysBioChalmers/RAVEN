@@ -207,6 +207,20 @@ classdef tAnalysis < RavenTestCase
             testCase.verifyClass(rm, 'struct');
         end
 
+        function reporterMetabolitesKeepsPercentInMetNames(testCase)
+            % A metNames entry containing "%" must survive intact in the
+            % outputFile report, not be truncated by fprintf misreading it
+            % as a format directive.
+            m = testCase.model;
+            m.metNames{1} = 'metabolite 30% pure';
+            pvals = rand(numel(m.genes), 1);
+            outFile = [tempname '.txt'];
+            c = onCleanup(@() delete(outFile));
+            evalc('reporterMetabolites(m, m.genes, pvals, ''outputFile'', outFile);');
+            content = fileread(outFile);
+            testCase.verifySubstring(content, 'metabolite 30% pure');
+        end
+
         function reporterMetabolitesIsDeterministic(testCase)
             % Closed-form background correction (RM1) must produce identical
             % Z-scores on repeated calls with identical inputs.

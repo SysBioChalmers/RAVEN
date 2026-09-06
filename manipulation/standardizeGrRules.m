@@ -63,10 +63,14 @@ if isfield(model,'grRules')
         indexes2check=vertcat(fpeIssues.index);
     end
     if ~isempty(indexes2check) && ~embedded
+        %Escaped: rxn id and grRule are arbitrary model text and may
+        %contain "%", which sprintf/warning would otherwise misread as a
+        %format directive and truncate the rest of the message.
+        esc=@(s) strrep(s,'%','%%');
         STR=['Potentially problematic ") AND (", ") AND" or "AND ("relat' ...
              'ionships found in\n\n'];
         for fpeI=1:numel(fpeIssues)
-            STR=[STR '  - grRule #' fpeIssues(fpeI).rxn ': ' fpeIssues(fpeI).grRule '\n']; %#ok<AGROW>
+            STR=[STR '  - grRule #' esc(fpeIssues(fpeI).rxn) ': ' esc(fpeIssues(fpeI).grRule) '\n']; %#ok<AGROW>
         end
         STR=[STR '\n This kind of relationships should only be present ' ...
              'in reactions catalysed by complexes of isoenzymes e.g.\n\n' ...
@@ -81,7 +85,9 @@ if isfield(model,'grRules')
              'logical operators, e.g.\n        "G1 OR G2" should be "G1 ' ...
              'or G2"\n\n  4) Unbalanced brackets, e.g.\n        "((G1 ' ...
              'and G2) or G3" should be "(G1 and G2) or G3"\n'];
-        warning(sprintf(STR))
+        %warning() re-parses its argument as a format string too, so the
+        %already-resolved text must be passed via '%s', not directly.
+        warning('%s', sprintf(STR))
     end
     
     for i=1:length(originalGrRules)

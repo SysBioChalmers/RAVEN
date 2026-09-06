@@ -52,6 +52,16 @@ classdef tManipulation < RavenTestCase
             testCase.verifyTrue(all(ismember({'band1','orfeo2'}, m2.genes)));
         end
 
+        function addRxnsPrintsNewGeneIdWithPercent(testCase)
+            % A new gene id containing "%" must not be truncated when
+            % printed to the "New genes added" notice.
+            r.rxns = 'newRxn1';
+            r.equations = '2-Oxoglutarate => TEST';
+            r.grRules = 'NEWGENE_50%_test';
+            out = evalc('addRxns(testCase.model, r, 2, ''c'', true, true);');
+            testCase.verifySubstring(out, 'NEWGENE_50%_test');
+        end
+
         function addRxnsAddsRxn(testCase)
             r.rxns = 'newRxn1';
             r.equations = '2-Oxoglutarate => TEST';
@@ -133,6 +143,21 @@ classdef tManipulation < RavenTestCase
             evalc('src = importModel(sbmlFile, [], true);');
             evalc('m2 = addRxnsGenesMets(testCase.model, src, ''r1'', true);');
             testCase.verifyTrue(ismember('r1', m2.rxns));
+        end
+
+        function addRxnsGenesMetsKeepsPercentInAlreadyPresentNotice(testCase)
+            % A rxn id containing "%" that is already present in the
+            % target model must survive intact in the notice, not be
+            % truncated by fprintf misreading it as a format directive.
+            model = testCase.model;
+            model.rxns{1} = 'RXN_50%_present';
+            sourceModel = model;
+            r.rxns = 'newRxn1';
+            r.equations = [model.mets{1} ' => ' model.mets{2}];
+            evalc('sourceModel = addRxns(sourceModel, r, 1, ''c'', true);');
+            out = evalc(['addRxnsGenesMets(model, sourceModel, ' ...
+                '{''RXN_50%_present'',''newRxn1''});']);
+            testCase.verifySubstring(out, 'RXN_50%_present');
         end
 
         function addTransportAddsRxn(testCase)
@@ -511,6 +536,21 @@ classdef tManipulation < RavenTestCase
             testCase.verifyLessThan(numel(m2.mets), numel(testCase.model.mets));
         end
 
+        function replaceMetsVerboseKeepsPercentInRxnId(testCase)
+            % A reaction id containing "%" that is reported by 'verbose'
+            % must survive intact, not be truncated by fprintf misreading
+            % it as a format directive.
+            m = struct();
+            m.id='t'; m.rxns={'R_50%_test';'R2'}; m.rxnNames=m.rxns;
+            m.mets={'x';'y';'z'}; m.metNames=m.mets; m.metComps=[1;1;1];
+            m.comps={'c'}; m.compNames={'c'};
+            m.S=sparse([-1 0; 0 -1; 1 1]); % R_50%_test: x=>z   R2: y=>z
+            m.lb=[0;0]; m.ub=[1000;1000]; m.rev=[0;0]; m.c=[0;0]; m.b=zeros(3,1);
+            m.genes={}; m.grRules={'';''}; m.rxnGeneMat=sparse(2,0);
+            out = evalc('replaceMets(m, ''x'', ''y'', ''verbose'', true);');
+            testCase.verifySubstring(out, 'R_50%_test');
+        end
+
         function replaceMetsByIdAddsRatherThanOverwrites(testCase)
             % A reaction where the replacement metabolite is already itself
             % a participant must keep that contribution: x+y=> must become
@@ -668,6 +708,20 @@ classdef tManipulation < RavenTestCase
             [grRules,~,indexes2check] = standardizeGrRules(m, true);
             testCase.verifyEmpty(indexes2check);
             testCase.verifyEqual(grRules{1}, '(G1 and G2) or G3');
+        end
+
+        function standardizeGrRulesKeepsPercentInWarning(testCase)
+            % A rxn id containing a literal "%" must survive intact in the
+            % "potentially problematic relationships" warning, not be
+            % truncated by sprintf/warning misreading it as a directive.
+            m.rxns = {'RXN_50%_TEST'};
+            m.grRules = {'(G1 or G2) and G3'};
+            m.genes = {'G1';'G2';'G3'};
+            m.rxnGeneMat = sparse([1 1 1]);
+            lastwarn('');
+            evalc('standardizeGrRules(m);');
+            msg = lastwarn();
+            testCase.verifySubstring(msg, 'RXN_50%_TEST');
         end
 
         function removeGenesMatchesWholeGeneIds(testCase)

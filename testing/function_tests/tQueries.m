@@ -115,6 +115,32 @@ classdef tQueries < RavenTestCase
             testCase.verifyTrue(badRxns(1));
         end
 
+        function constructSMissingMetKeepsPercentInErrorNoRxns(testCase)
+            % A missing metabolite name containing "%" must survive intact
+            % in the error message, not be truncated by sprintf misreading
+            % it as a format directive.
+            testCase.verifyError(@() constructS({'a + met_with_%_sign => b'}, ...
+                'mets', {'a';'b'}), 'RAVEN:badInput');
+            try
+                constructS({'a + met_with_%_sign => b'}, 'mets', {'a';'b'});
+            catch e
+                testCase.verifySubstring(e.message, 'met_with_%_sign');
+            end
+        end
+
+        function constructSMissingMetKeepsPercentInErrorWithRxns(testCase)
+            % Same, but via the reaction-annotated branch (rxns supplied),
+            % which also splices in the reaction id.
+            try
+                constructS({'a + met_with_%_sign => b'}, 'mets', {'a';'b'}, ...
+                    'rxns', {'rxn_%_id'});
+                testCase.verifyFail('Expected an error to be thrown.');
+            catch e
+                testCase.verifySubstring(e.message, 'met_with_%_sign');
+                testCase.verifySubstring(e.message, 'rxn_%_id');
+            end
+        end
+
         function getAllRxnsFromGenesType(testCase)
             % Use a reaction that has a gene association.
             withGpr = testCase.model.rxns(find(~cellfun(@isempty, ...
