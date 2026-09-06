@@ -241,8 +241,16 @@ else
     originalFlux=haveFlux(model,1);
     
     %For the ones that cannot carry flux, see if they can do so in the
-    %merged model
-    toCheck=intersect(allModels.rxns(strcmp(allModels.rxnFrom,model.id)),model.rxns(~originalFlux));
+    %merged model. Reactions from model keep their id unchanged in
+    %allModels (mergeModels renames colliding ids in the other input
+    %models, never in model itself), so intersecting with allModels.rxns
+    %both identifies them and drops any that simplifyModel has since
+    %removed as dead ends. The previous strcmp(allModels.rxnFrom,model.id)
+    %failed whenever model already carried a rxnFrom field of its own, as
+    %getModelFromHomology output does, tagging each reaction with its
+    %template rather than model.id, so mergeModels leaves it untouched and
+    %it never matches model.id here.
+    toCheck=intersect(model.rxns(~originalFlux),allModels.rxns);
     
     %Get the ones that still cannot carry flux. Guard against an empty
     %toCheck, since haveFlux interprets an empty reaction list as "all
@@ -269,9 +277,10 @@ else
     cannotConnect=setdiff(model.rxns(~originalFlux),newConnected);
 end
 
-%Then minimize for the number of fluxes used. The fixed rxns do not need
-%to participate
-templateRxns=find(~strcmp(allModels.rxnFrom,model.id));
+%Then minimize for the number of fluxes used. The fixed rxns (model's own)
+%do not need to participate; see the comment above on why this is
+%identified by rxn ID rather than allModels.rxnFrom.
+templateRxns=find(~ismember(allModels.rxns,model.rxns));
 [~, J, exitFlag]=getMinNrFluxes(allModels,templateRxns,params,allModels.rxnScores(templateRxns));
 
 %Remove everything except for the added ones
