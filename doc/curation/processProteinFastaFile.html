@@ -1,0 +1,237 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of processProteinFastaFile</title>
+  <meta name="keywords" content="processProteinFastaFile">
+  <meta name="description" content="processProteinFastaFile  Rename protein FASTA headers using a gene mapping table.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">curation</a> &gt; processProteinFastaFile.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for curation&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>processProteinFastaFile
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>processProteinFastaFile  Rename protein FASTA headers using a gene mapping table.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function processedFaaFile = processProteinFastaFile(faaFile, geneTable, headerCol, varargin) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> processProteinFastaFile  Rename protein FASTA headers using a gene mapping table.
+
+ Reads a protein FASTA file (as downloaded by downloadGenomeData) and
+ replaces each sequence header with the value from the specified geneTable
+ column, matched via the GenBank_protein accession present in the original
+ FASTA header.  Sequences whose accession is not found in geneTable are
+ kept with their original header unchanged.
+
+ Parameters
+ ----------
+ faaFile : char
+     Path to the protein FASTA file (.faa) to process.
+ geneTable : char | table
+     Either a path to a tab-delimited .tsv file produced by getGeneData,
+     or a MATLAB table variable.  Must contain at least the columns
+     'GenBank_protein' and the column named by headerCol.
+ headerCol : char
+     Name of the geneTable column whose values will replace each FASTA
+     header (e.g. 'locus_tag', 'gene_name', 'GenBank_protein').
+
+ Name-Value Arguments
+ --------------------
+ outputDir : char
+     Directory where the processed FASTA file is saved.  The output file
+     name is the original base name with '_processed' appended before the
+     extension (default: current working directory).
+
+ Returns
+ -------
+ processedFaaFile : char
+     Full path to the written processed FASTA file.
+
+ Examples
+ --------
+     % Rename headers using locus_tag
+     [~, faa]  = downloadGenomeData('GCF_000002595.2');
+     geneTable = getGeneData('GCF_000002595.2', 'chlamy.tsv');
+     outFile   = processProteinFastaFile(faa, geneTable, 'locus_tag');
+
+     % Load both inputs from saved files, use gene_name as header
+     outFile = processProteinFastaFile('GCF_000002595.2_protein.faa', 'chlamy.tsv', 'gene_name');
+
+     % Save the processed file to a specific directory
+     outFile = processProteinFastaFile(faa, 'chlamy.tsv', 'locus_tag', 'results/');
+
+ Notes
+ -----
+ GenBank_protein must contain accessions matching the first token of each
+ FASTA header (after '&gt;').  For prokaryotes this is the protein_id
+ (e.g. WP_012345678.1); for eukaryotes it is the GenBank accession stored
+ in the GFF3 annotation by getGeneData.</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function processedFaaFile = processProteinFastaFile(faaFile, geneTable, headerCol, varargin)</a>
+0002 <span class="comment">% processProteinFastaFile  Rename protein FASTA headers using a gene mapping table.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Reads a protein FASTA file (as downloaded by downloadGenomeData) and</span>
+0005 <span class="comment">% replaces each sequence header with the value from the specified geneTable</span>
+0006 <span class="comment">% column, matched via the GenBank_protein accession present in the original</span>
+0007 <span class="comment">% FASTA header.  Sequences whose accession is not found in geneTable are</span>
+0008 <span class="comment">% kept with their original header unchanged.</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% Parameters</span>
+0011 <span class="comment">% ----------</span>
+0012 <span class="comment">% faaFile : char</span>
+0013 <span class="comment">%     Path to the protein FASTA file (.faa) to process.</span>
+0014 <span class="comment">% geneTable : char | table</span>
+0015 <span class="comment">%     Either a path to a tab-delimited .tsv file produced by getGeneData,</span>
+0016 <span class="comment">%     or a MATLAB table variable.  Must contain at least the columns</span>
+0017 <span class="comment">%     'GenBank_protein' and the column named by headerCol.</span>
+0018 <span class="comment">% headerCol : char</span>
+0019 <span class="comment">%     Name of the geneTable column whose values will replace each FASTA</span>
+0020 <span class="comment">%     header (e.g. 'locus_tag', 'gene_name', 'GenBank_protein').</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">% Name-Value Arguments</span>
+0023 <span class="comment">% --------------------</span>
+0024 <span class="comment">% outputDir : char</span>
+0025 <span class="comment">%     Directory where the processed FASTA file is saved.  The output file</span>
+0026 <span class="comment">%     name is the original base name with '_processed' appended before the</span>
+0027 <span class="comment">%     extension (default: current working directory).</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">% Returns</span>
+0030 <span class="comment">% -------</span>
+0031 <span class="comment">% processedFaaFile : char</span>
+0032 <span class="comment">%     Full path to the written processed FASTA file.</span>
+0033 <span class="comment">%</span>
+0034 <span class="comment">% Examples</span>
+0035 <span class="comment">% --------</span>
+0036 <span class="comment">%     % Rename headers using locus_tag</span>
+0037 <span class="comment">%     [~, faa]  = downloadGenomeData('GCF_000002595.2');</span>
+0038 <span class="comment">%     geneTable = getGeneData('GCF_000002595.2', 'chlamy.tsv');</span>
+0039 <span class="comment">%     outFile   = processProteinFastaFile(faa, geneTable, 'locus_tag');</span>
+0040 <span class="comment">%</span>
+0041 <span class="comment">%     % Load both inputs from saved files, use gene_name as header</span>
+0042 <span class="comment">%     outFile = processProteinFastaFile('GCF_000002595.2_protein.faa', 'chlamy.tsv', 'gene_name');</span>
+0043 <span class="comment">%</span>
+0044 <span class="comment">%     % Save the processed file to a specific directory</span>
+0045 <span class="comment">%     outFile = processProteinFastaFile(faa, 'chlamy.tsv', 'locus_tag', 'results/');</span>
+0046 <span class="comment">%</span>
+0047 <span class="comment">% Notes</span>
+0048 <span class="comment">% -----</span>
+0049 <span class="comment">% GenBank_protein must contain accessions matching the first token of each</span>
+0050 <span class="comment">% FASTA header (after '&gt;').  For prokaryotes this is the protein_id</span>
+0051 <span class="comment">% (e.g. WP_012345678.1); for eukaryotes it is the GenBank accession stored</span>
+0052 <span class="comment">% in the GFF3 annotation by getGeneData.</span>
+0053     
+0054     <span class="keyword">if</span> nargin &lt; 1 || isempty(faaFile)
+0055         error(<span class="string">'processProteinFastaFile:missingInput'</span>, <span class="keyword">...</span>
+0056             <span class="string">'faaFile is required. Provide a path to a protein FASTA (.faa) file.'</span>);
+0057     <span class="keyword">end</span>
+0058     faaFile = char(faaFile);
+0059     <span class="keyword">if</span> ~isfile(faaFile)
+0060         error(<span class="string">'processProteinFastaFile:fileNotFound'</span>, <span class="keyword">...</span>
+0061             <span class="string">'FASTA file not found: ''%s''.'</span>, faaFile);
+0062     <span class="keyword">end</span>
+0063 
+0064     <span class="keyword">if</span> nargin &lt; 2 || isempty(geneTable)
+0065         error(<span class="string">'processProteinFastaFile:missingInput'</span>, <span class="keyword">...</span>
+0066             <span class="string">'geneTable is required. Provide a table variable or a path to a .tsv file.'</span>);
+0067     <span class="keyword">end</span>
+0068 
+0069     <span class="keyword">if</span> nargin &lt; 3 || isempty(headerCol)
+0070         error(<span class="string">'processProteinFastaFile:missingInput'</span>, <span class="keyword">...</span>
+0071             <span class="string">'headerCol is required. Specify the geneTable column to use as the new FASTA header (e.g. ''locus_tag'').'</span>);
+0072     <span class="keyword">end</span>
+0073     headerCol = char(headerCol);
+0074 
+0075     p = parseRAVENargs(varargin, {<span class="string">'outputDir'</span>, pwd});
+0076     outputDir = char(p.outputDir);
+0077 
+0078     <span class="comment">% Load gene table</span>
+0079     <span class="keyword">if</span> ischar(geneTable) || isstring(geneTable)
+0080         tsvPath = char(geneTable);
+0081         <span class="keyword">if</span> ~isfile(tsvPath)
+0082             error(<span class="string">'processProteinFastaFile:fileNotFound'</span>, <span class="keyword">...</span>
+0083                 <span class="string">'Gene table file not found: ''%s''.'</span>, tsvPath);
+0084         <span class="keyword">end</span>
+0085         geneTable = readtable(tsvPath, <span class="string">'FileType'</span>, <span class="string">'text'</span>, <span class="string">'Delimiter'</span>, <span class="string">'\t'</span>, <span class="string">'TextType'</span>, <span class="string">'char'</span>);
+0086     <span class="keyword">end</span>
+0087 
+0088     <span class="keyword">if</span> ~istable(geneTable)
+0089         error(<span class="string">'processProteinFastaFile:badInput'</span>, <span class="keyword">...</span>
+0090             <span class="string">'geneTable must be a MATLAB table or a path to a .tsv file.'</span>);
+0091     <span class="keyword">end</span>
+0092 
+0093     <span class="keyword">for</span> col = {<span class="string">'GenBank_protein'</span>, headerCol}
+0094         <span class="keyword">if</span> ~ismember(col{1}, geneTable.Properties.VariableNames)
+0095             error(<span class="string">'processProteinFastaFile:missingColumn'</span>, <span class="keyword">...</span>
+0096                 <span class="string">'geneTable is missing required column: ''%s''.'</span>, col{1});
+0097         <span class="keyword">end</span>
+0098     <span class="keyword">end</span>
+0099 
+0100     <span class="comment">% Build protein-accession → header-value lookup map</span>
+0101     proteinIDs = geneTable.GenBank_protein;
+0102     <span class="keyword">if</span> ~iscell(proteinIDs), proteinIDs = cellstr(proteinIDs); <span class="keyword">end</span>
+0103 
+0104     headerValues = geneTable.(headerCol);
+0105     <span class="keyword">if</span> ~iscell(headerValues), headerValues = cellstr(headerValues); <span class="keyword">end</span>
+0106 
+0107     <span class="comment">% Keep only rows with a non-empty protein accession</span>
+0108     validMask  = ~cellfun(@isempty, proteinIDs);
+0109     proteinMap = containers.Map(proteinIDs(validMask), num2cell(find(validMask)));
+0110 
+0111 
+0112     <span class="comment">% Prepare output path</span>
+0113     <span class="keyword">if</span> ~exist(outputDir, <span class="string">'dir'</span>)
+0114         mkdir(outputDir);
+0115     <span class="keyword">end</span>
+0116     [~, baseName, ext] = fileparts(faaFile);
+0117     processedFaaFile   = fullfile(outputDir, [baseName <span class="string">'_processed'</span> ext]);
+0118 
+0119 
+0120     <span class="comment">% Read the FASTA, rename headers, write the result</span>
+0121     fastaStruct = readFasta(faaFile);
+0122     nMatched    = 0;
+0123     <span class="keyword">for</span> i = 1:numel(fastaStruct)
+0124         <span class="comment">% The protein accession is the first whitespace-delimited token of</span>
+0125         <span class="comment">% the header (readFasta strips the leading '&gt;')</span>
+0126         tokens     = strsplit(fastaStruct(i).Header);
+0127         proteinAcc = tokens{1};
+0128         <span class="keyword">if</span> isKey(proteinMap, proteinAcc)
+0129             fastaStruct(i).Header = headerValues{proteinMap(proteinAcc)};
+0130             nMatched = nMatched + 1;
+0131         <span class="keyword">end</span>
+0132         <span class="comment">% Sequences with no match keep their original header</span>
+0133     <span class="keyword">end</span>
+0134     writeFasta(processedFaaFile, fastaStruct);
+0135 
+0136     fprintf(<span class="string">'Processed FASTA written to: %s\n'</span>, processedFaaFile);
+0137     fprintf(<span class="string">'  Total sequences  : %d\n'</span>, numel(fastaStruct));
+0138     fprintf(<span class="string">'  Renamed          : %d\n'</span>, nMatched);
+0139     fprintf(<span class="string">'  Kept (no match)  : %d\n'</span>, numel(fastaStruct) - nMatched);
+0140 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

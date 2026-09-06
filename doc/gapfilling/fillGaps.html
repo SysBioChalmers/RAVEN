@@ -80,7 +80,7 @@
  algorithm : char
      gap-filling algorithm to use (default 'reference'):
 
-     - 'reference'   : existing MILP-based connectivity maximisation
+     - 'reference'   : MILP-based connectivity maximisation
      - 'fastLP'      : L1-norm LP relaxation via FASTCORE (gapFillFastLP)
      - 'swiftLP'     : SWIFTCORE single-LP variant (gapFillFastLP)
      - 'gapfillMILP' : growth-floor MILP with directionality repair
@@ -186,7 +186,7 @@ This function is called by:
 0052 <span class="comment">% algorithm : char</span>
 0053 <span class="comment">%     gap-filling algorithm to use (default 'reference'):</span>
 0054 <span class="comment">%</span>
-0055 <span class="comment">%     - 'reference'   : existing MILP-based connectivity maximisation</span>
+0055 <span class="comment">%     - 'reference'   : MILP-based connectivity maximisation</span>
 0056 <span class="comment">%     - 'fastLP'      : L1-norm LP relaxation via FASTCORE (gapFillFastLP)</span>
 0057 <span class="comment">%     - 'swiftLP'     : SWIFTCORE single-LP variant (gapFillFastLP)</span>
 0058 <span class="comment">%     - 'gapfillMILP' : growth-floor MILP with directionality repair</span>
@@ -278,7 +278,7 @@ This function is called by:
 0144         exitFlag = 1;
 0145         <span class="keyword">return</span>;
 0146 <span class="keyword">end</span>
-0147 <span class="comment">% Falls through to the 'reference' algorithm (existing code) for all other values.</span>
+0147 <span class="comment">% Falls through to the 'reference' algorithm for all other values.</span>
 0148 
 0149 <span class="keyword">if</span> isempty(rxnScores)
 0150     rxnScores=cell(numel(models),1);
@@ -375,49 +375,57 @@ This function is called by:
 0241     originalFlux=haveFlux(model,1);
 0242     
 0243     <span class="comment">%For the ones that cannot carry flux, see if they can do so in the</span>
-0244     <span class="comment">%merged model</span>
-0245     toCheck=intersect(allModels.rxns(strcmp(allModels.rxnFrom,model.id)),model.rxns(~originalFlux));
-0246     
-0247     <span class="comment">%Get the ones that still cannot carry flux. Guard against an empty</span>
-0248     <span class="comment">%toCheck, since haveFlux interprets an empty reaction list as &quot;all</span>
-0249     <span class="comment">%reactions&quot; rather than &quot;none&quot;</span>
-0250     <span class="keyword">if</span> isempty(toCheck)
-0251         K=toCheck;
-0252     <span class="keyword">else</span>
-0253         I=haveFlux(allModels,1,toCheck);
-0254         <span class="comment">%Get the reactions that cannot carry flux in the original model, but can</span>
-0255         <span class="comment">%in the merged one</span>
-0256         K=toCheck(I);
-0257     <span class="keyword">end</span>
-0258     
-0259     <span class="comment">%This is a temporary thing to only look at the non-reversible rxns.</span>
-0260     <span class="comment">%This is because all reversible rxns can have a flux in the</span>
-0261     <span class="comment">%irreversible model format that is used by getMinNrFluxes</span>
-0262     [~, I]=ismember(K,model.rxns);
-0263     K(model.rev(I)~=0)=[];
-0264     
-0265     <span class="comment">%Constrain all reactions in the original model to have a flux</span>
-0266     allModels.lb(ismember(allModels.rxns,K))=0.1;
-0267     
-0268     <span class="comment">%Return stuff</span>
-0269     newConnected=K;
-0270     cannotConnect=setdiff(model.rxns(~originalFlux),newConnected);
-0271 <span class="keyword">end</span>
-0272 
-0273 <span class="comment">%Then minimize for the number of fluxes used. The fixed rxns do not need</span>
-0274 <span class="comment">%to participate</span>
-0275 templateRxns=find(~strcmp(allModels.rxnFrom,model.id));
-0276 [~, J, exitFlag]=getMinNrFluxes(allModels,templateRxns,params,allModels.rxnScores(templateRxns));
-0277 
-0278 <span class="comment">%Remove everything except for the added ones</span>
-0279 I=true(numel(allModels.rxns),1);
-0280 I(templateRxns(J))=false;
-0281 addedModel=removeReactions(allModels,I,true,true,true);
-0282 
-0283 newModel=mergeModels({model;addedModel},<span class="string">'metNames'</span>,true);
-0284 addedRxns=setdiff(newModel.rxns,model.rxns);
-0285 newModel=rmfield(newModel,<span class="string">'rxnScores'</span>);
-0286 <span class="keyword">end</span></pre></div>
+0244     <span class="comment">%merged model. Reactions from model keep their id unchanged in</span>
+0245     <span class="comment">%allModels (mergeModels renames colliding ids in the other input</span>
+0246     <span class="comment">%models, never in model itself), so intersecting with allModels.rxns</span>
+0247     <span class="comment">%both identifies them and drops any that simplifyModel has since</span>
+0248     <span class="comment">%removed as dead ends. The previous strcmp(allModels.rxnFrom,model.id)</span>
+0249     <span class="comment">%failed whenever model already carried a rxnFrom field of its own, as</span>
+0250     <span class="comment">%getModelFromHomology output does, tagging each reaction with its</span>
+0251     <span class="comment">%template rather than model.id, so mergeModels leaves it untouched and</span>
+0252     <span class="comment">%it never matches model.id here.</span>
+0253     toCheck=intersect(model.rxns(~originalFlux),allModels.rxns);
+0254     
+0255     <span class="comment">%Get the ones that still cannot carry flux. Guard against an empty</span>
+0256     <span class="comment">%toCheck, since haveFlux interprets an empty reaction list as &quot;all</span>
+0257     <span class="comment">%reactions&quot; rather than &quot;none&quot;</span>
+0258     <span class="keyword">if</span> isempty(toCheck)
+0259         K=toCheck;
+0260     <span class="keyword">else</span>
+0261         I=haveFlux(allModels,1,toCheck);
+0262         <span class="comment">%Get the reactions that cannot carry flux in the original model, but can</span>
+0263         <span class="comment">%in the merged one</span>
+0264         K=toCheck(I);
+0265     <span class="keyword">end</span>
+0266     
+0267     <span class="comment">%This is a temporary thing to only look at the non-reversible rxns.</span>
+0268     <span class="comment">%This is because all reversible rxns can have a flux in the</span>
+0269     <span class="comment">%irreversible model format that is used by getMinNrFluxes</span>
+0270     [~, I]=ismember(K,model.rxns);
+0271     K(model.rev(I)~=0)=[];
+0272     
+0273     <span class="comment">%Constrain all reactions in the original model to have a flux</span>
+0274     allModels.lb(ismember(allModels.rxns,K))=0.1;
+0275     
+0276     newConnected=K;
+0277     cannotConnect=setdiff(model.rxns(~originalFlux),newConnected);
+0278 <span class="keyword">end</span>
+0279 
+0280 <span class="comment">%Then minimize for the number of fluxes used. The fixed rxns (model's own)</span>
+0281 <span class="comment">%do not need to participate; see the comment above on why this is</span>
+0282 <span class="comment">%identified by rxn ID rather than allModels.rxnFrom.</span>
+0283 templateRxns=find(~ismember(allModels.rxns,model.rxns));
+0284 [~, J, exitFlag]=getMinNrFluxes(allModels,templateRxns,params,allModels.rxnScores(templateRxns));
+0285 
+0286 <span class="comment">%Remove everything except for the added ones</span>
+0287 I=true(numel(allModels.rxns),1);
+0288 I(templateRxns(J))=false;
+0289 addedModel=removeReactions(allModels,I,true,true,true);
+0290 
+0291 newModel=mergeModels({model;addedModel},<span class="string">'metNames'</span>,true);
+0292 addedRxns=setdiff(newModel.rxns,model.rxns);
+0293 newModel=rmfield(newModel,<span class="string">'rxnScores'</span>);
+0294 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

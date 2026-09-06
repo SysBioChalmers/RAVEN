@@ -48,9 +48,10 @@
  scores : double
      vector of weights for the reactions. Negative scores should not have
      flux. Positive scores are not possible in this implementation, and
-     they are changed to max(scores(scores&lt;0)). Must have the same
-     dimension as toMinimize (find(toMinimize) if it is a logical vector)
-     (default -1 for all reactions).
+     they are changed to max(scores(scores&lt;0)), or to 0 if scores has no
+     negative entry at all. Must have the same dimension as toMinimize
+     (find(toMinimize) if it is a logical vector) (default -1 for all
+     reactions).
 
  Returns
  -------
@@ -64,7 +65,6 @@
 
      - 1 : optimal solution found
      - -1 : no feasible solution found
-     - -2 : optimization time out
 
  Examples
  --------
@@ -110,23 +110,23 @@ This function is called by:
 0020 <span class="comment">% scores : double</span>
 0021 <span class="comment">%     vector of weights for the reactions. Negative scores should not have</span>
 0022 <span class="comment">%     flux. Positive scores are not possible in this implementation, and</span>
-0023 <span class="comment">%     they are changed to max(scores(scores&lt;0)). Must have the same</span>
-0024 <span class="comment">%     dimension as toMinimize (find(toMinimize) if it is a logical vector)</span>
-0025 <span class="comment">%     (default -1 for all reactions).</span>
-0026 <span class="comment">%</span>
-0027 <span class="comment">% Returns</span>
-0028 <span class="comment">% -------</span>
-0029 <span class="comment">% x : double</span>
-0030 <span class="comment">%     the corresponding fluxes for the full model.</span>
-0031 <span class="comment">% I : double</span>
-0032 <span class="comment">%     the indexes of the reactions in toMinimize that were used in the</span>
-0033 <span class="comment">%     solution.</span>
-0034 <span class="comment">% exitFlag : double</span>
-0035 <span class="comment">%     exit status:</span>
-0036 <span class="comment">%</span>
-0037 <span class="comment">%     - 1 : optimal solution found</span>
-0038 <span class="comment">%     - -1 : no feasible solution found</span>
-0039 <span class="comment">%     - -2 : optimization time out</span>
+0023 <span class="comment">%     they are changed to max(scores(scores&lt;0)), or to 0 if scores has no</span>
+0024 <span class="comment">%     negative entry at all. Must have the same dimension as toMinimize</span>
+0025 <span class="comment">%     (find(toMinimize) if it is a logical vector) (default -1 for all</span>
+0026 <span class="comment">%     reactions).</span>
+0027 <span class="comment">%</span>
+0028 <span class="comment">% Returns</span>
+0029 <span class="comment">% -------</span>
+0030 <span class="comment">% x : double</span>
+0031 <span class="comment">%     the corresponding fluxes for the full model.</span>
+0032 <span class="comment">% I : double</span>
+0033 <span class="comment">%     the indexes of the reactions in toMinimize that were used in the</span>
+0034 <span class="comment">%     solution.</span>
+0035 <span class="comment">% exitFlag : double</span>
+0036 <span class="comment">%     exit status:</span>
+0037 <span class="comment">%</span>
+0038 <span class="comment">%     - 1 : optimal solution found</span>
+0039 <span class="comment">%     - -1 : no feasible solution found</span>
 0040 <span class="comment">%</span>
 0041 <span class="comment">% Examples</span>
 0042 <span class="comment">% --------</span>
@@ -166,116 +166,119 @@ This function is called by:
 0076     <span class="keyword">end</span>
 0077     
 0078     <span class="comment">%Change positive scores to have a small negative weight. This is a</span>
-0079     <span class="comment">%temporary solution.</span>
-0080     scores(scores&gt;=0)=max(scores(scores&lt;0));
-0081     
-0082     <span class="comment">%It says that the default is -1, but that is to fit with other code</span>
-0083     scores=scores*-1;
-0084 <span class="keyword">end</span>
-0085 
-0086 <span class="comment">%Check if the model is in irreversible format</span>
-0087 <span class="keyword">if</span> any(model.rev)
-0088     <span class="comment">%Convert the model to irreversible format</span>
-0089     irrevModel=convertToIrrev(model);
-0090     
-0091     <span class="comment">%Find the indexes for the reactions in toMinimize</span>
-0092     [indexes, I]=ismember(strrep(irrevModel.rxns,<span class="string">'_REV'</span>,<span class="string">''</span>),toMinimize);
-0093 <span class="keyword">else</span>
-0094     irrevModel=model;
-0095     
-0096     <span class="comment">%Find the indexes for the reactions in toMinimize</span>
-0097     [indexes, I]=ismember(irrevModel.rxns,toMinimize);
-0098 <span class="keyword">end</span>
-0099 
-0100 indexes=find(indexes);
-0101 <span class="comment">%Adjust scores to fit with reversible</span>
-0102 scores=scores(I(indexes));
-0103 
-0104 <span class="comment">%Add binary constraints in the following manner: -  Add one unique</span>
-0105 <span class="comment">%&quot;metabolite&quot; for each integer reaction as a substrate.</span>
-0106 <span class="comment">%   These metabolites can have net production</span>
-0107 <span class="comment">%-  Add reactions for the production of each of those metabolites. The</span>
-0108 <span class="comment">%   amount produced in one reaction unit must be larger than the largest</span>
-0109 <span class="comment">%   possible flux in the model (but not too large to avoid bad scaling)</span>
-0110 
-0111 <span class="comment">%Calculate a solution to the problem without any constraints. This is to</span>
-0112 <span class="comment">%get an estimate about the magnitude of fluxes in the model and to get a</span>
-0113 <span class="comment">%feasible start solution.</span>
-0114 sol=solveLP(irrevModel,1);
-0115 
-0116 <span class="comment">%Return an empty solution if the non-constrained problem could not be solved</span>
-0117 <span class="keyword">if</span> isempty(sol.x)
-0118     x=[];
-0119     I=[];
-0120     exitFlag=-1;
-0121     <span class="keyword">return</span>;
-0122 <span class="keyword">end</span>
-0123 
-0124 <span class="comment">%Take the maximal times 5 to have a safe margin. If it is smaller than 1000,</span>
-0125 <span class="comment">%then use 1000 instead.</span>
-0126 maxFlux=max(max(sol.x)*5,1000);
-0127 
-0128 intArray=speye(numel(irrevModel.rxns))*-1;
-0129 intArray=intArray(indexes,:);
-0130 prob.a=[irrevModel.S;intArray];
-0131 a=[sparse(numel(irrevModel.mets),numel(indexes));speye(numel(indexes))*maxFlux];
-0132 prob.a=[prob.a a];
-0133 prob.ints.sub=numel(irrevModel.rxns)+1:numel(irrevModel.rxns)+numel(indexes);
-0134 
-0135 prob.c=[zeros(numel(irrevModel.rxns),1);scores(:);zeros(size(prob.a,1),1)]; <span class="comment">%Minimize the number of fluxes</span>
-0136 prob.A=[prob.a -speye(size(prob.a,1))];
-0137 prob.blc=[irrevModel.b(:,1);zeros(numel(indexes),1)];
-0138 <span class="keyword">if</span> size(irrevModel.b,2)==2
-0139     prob.buc=[irrevModel.b(:,2);inf(numel(indexes),1)];
-0140 <span class="keyword">else</span>
-0141     prob.buc=[irrevModel.b(:,1);inf(numel(indexes),1)];
-0142 <span class="keyword">end</span>
-0143 prob.blx=[irrevModel.lb;zeros(numel(indexes),1)];
-0144 prob.bux=[irrevModel.ub;ones(numel(indexes),1)];
-0145 prob.lb = [prob.blx; prob.blc];
-0146 prob.ub = [prob.bux; prob.buc];
-0147 prob.osense=1;
-0148 prob.csense=repmat(<span class="string">'E'</span>, 1, size(prob.a,1),1);
-0149 prob.b=zeros(size(prob.a,1), 1);
-0150 
-0151 <span class="comment">%Use the output from the linear solution as starting point. Only the values</span>
-0152 <span class="comment">%for the integer variables will be used, but all are supplied.</span>
-0153 prob.sol.int.xx=zeros(numel(prob.c),1);
-0154 prob.sol.int.xx(prob.ints.sub(sol.x(indexes)&gt;10^-12))=1;
-0155 prob.x0=[];
-0156 prob.vartype=repmat(<span class="string">'C'</span>, size(prob.A,2), 1);
-0157 prob.vartype(prob.ints.sub) = <span class="string">'I'</span>; <span class="comment">% with .lb = 0 and .ub = 1, they are binary</span>
-0158 <span class="comment">% integers (glpk in octave only allows &quot;continuous&quot; or &quot;&quot;, not &quot;binary&quot;)</span>
-0159 prob=rmfield(prob,{<span class="string">'blx'</span>,<span class="string">'bux'</span>,<span class="string">'blc'</span>,<span class="string">'buc'</span>});
-0160 
-0161 <span class="comment">% Optimize the problem</span>
-0162 res = optimizeProb(prob,params,false);
-0163 isFeasible=checkSolution(res);
-0164 
-0165 <span class="keyword">if</span> ~isFeasible
-0166     x=[];
-0167     I=[];
-0168     exitFlag=-1;
-0169     <span class="keyword">return</span>;
-0170 <span class="keyword">end</span>
-0171 
-0172 xx=res.full(1:numel(irrevModel.rxns));
-0173 I=res.full(numel(xx)+1:end);
-0174 
-0175 <span class="comment">%Check if Mosek aborted because it reached the time limit</span>
-0176 <span class="comment">%TODO: modify for cobra/gurobi</span>
-0177 <span class="comment">% if strcmp(&quot;MSK_RES_TRM_MAX_TIME&quot;,res.rcode)</span>
-0178 <span class="comment">%     exitFlag=-2;</span>
-0179 <span class="comment">% end</span>
+0079     <span class="comment">%temporary solution. If no score is negative there is nothing to clamp</span>
+0080     <span class="comment">%to (max([]) errors here rather than filling in a value, since the</span>
+0081     <span class="comment">%right-hand side is a computed empty array, not the literal [] MATLAB</span>
+0082     <span class="comment">%treats as a delete), so clamp to 0 instead: every reaction is then</span>
+0083     <span class="comment">%equally (un)weighted.</span>
+0084     negScores=scores&lt;0;
+0085     <span class="keyword">if</span> any(negScores)
+0086         scores(~negScores)=max(scores(negScores));
+0087     <span class="keyword">else</span>
+0088         scores(~negScores)=0;
+0089     <span class="keyword">end</span>
+0090 
+0091     <span class="comment">%It says that the default is -1, but that is to fit with other code</span>
+0092     scores=scores*-1;
+0093 <span class="keyword">end</span>
+0094 
+0095 <span class="comment">%Check if the model is in irreversible format</span>
+0096 <span class="keyword">if</span> any(model.rev)
+0097     <span class="comment">%Convert the model to irreversible format</span>
+0098     irrevModel=convertToIrrev(model);
+0099     
+0100     <span class="comment">%Find the indexes for the reactions in toMinimize</span>
+0101     [indexes, I]=ismember(strrep(irrevModel.rxns,<span class="string">'_REV'</span>,<span class="string">''</span>),toMinimize);
+0102 <span class="keyword">else</span>
+0103     irrevModel=model;
+0104     
+0105     <span class="comment">%Find the indexes for the reactions in toMinimize</span>
+0106     [indexes, I]=ismember(irrevModel.rxns,toMinimize);
+0107 <span class="keyword">end</span>
+0108 
+0109 indexes=find(indexes);
+0110 <span class="comment">%Adjust scores to fit with reversible</span>
+0111 scores=scores(I(indexes));
+0112 
+0113 <span class="comment">%Add binary constraints in the following manner: -  Add one unique</span>
+0114 <span class="comment">%&quot;metabolite&quot; for each integer reaction as a substrate.</span>
+0115 <span class="comment">%   These metabolites can have net production</span>
+0116 <span class="comment">%-  Add reactions for the production of each of those metabolites. The</span>
+0117 <span class="comment">%   amount produced in one reaction unit must be larger than the largest</span>
+0118 <span class="comment">%   possible flux in the model (but not too large to avoid bad scaling)</span>
+0119 
+0120 <span class="comment">%Calculate a solution to the problem without any constraints. This is to</span>
+0121 <span class="comment">%get an estimate about the magnitude of fluxes in the model and to get a</span>
+0122 <span class="comment">%feasible start solution.</span>
+0123 sol=solveLP(irrevModel,1);
+0124 
+0125 <span class="comment">%Return an empty solution if the non-constrained problem could not be solved</span>
+0126 <span class="keyword">if</span> isempty(sol.x)
+0127     x=[];
+0128     I=[];
+0129     exitFlag=-1;
+0130     <span class="keyword">return</span>;
+0131 <span class="keyword">end</span>
+0132 
+0133 <span class="comment">%Take the maximal times 5 to have a safe margin. If it is smaller than 1000,</span>
+0134 <span class="comment">%then use 1000 instead.</span>
+0135 maxFlux=max(max(sol.x)*5,1000);
+0136 
+0137 intArray=speye(numel(irrevModel.rxns))*-1;
+0138 intArray=intArray(indexes,:);
+0139 prob.a=[irrevModel.S;intArray];
+0140 a=[sparse(numel(irrevModel.mets),numel(indexes));speye(numel(indexes))*maxFlux];
+0141 prob.a=[prob.a a];
+0142 prob.ints.sub=numel(irrevModel.rxns)+1:numel(irrevModel.rxns)+numel(indexes);
+0143 
+0144 prob.c=[zeros(numel(irrevModel.rxns),1);scores(:);zeros(size(prob.a,1),1)]; <span class="comment">%Minimize the number of fluxes</span>
+0145 prob.A=[prob.a -speye(size(prob.a,1))];
+0146 prob.blc=[irrevModel.b(:,1);zeros(numel(indexes),1)];
+0147 <span class="keyword">if</span> size(irrevModel.b,2)==2
+0148     prob.buc=[irrevModel.b(:,2);inf(numel(indexes),1)];
+0149 <span class="keyword">else</span>
+0150     prob.buc=[irrevModel.b(:,1);inf(numel(indexes),1)];
+0151 <span class="keyword">end</span>
+0152 prob.blx=[irrevModel.lb;zeros(numel(indexes),1)];
+0153 prob.bux=[irrevModel.ub;ones(numel(indexes),1)];
+0154 prob.lb = [prob.blx; prob.blc];
+0155 prob.ub = [prob.bux; prob.buc];
+0156 prob.osense=1;
+0157 prob.csense=repmat(<span class="string">'E'</span>, 1, size(prob.a,1),1);
+0158 prob.b=zeros(size(prob.a,1), 1);
+0159 
+0160 <span class="comment">%Use the output from the linear solution as starting point. Only the values</span>
+0161 <span class="comment">%for the integer variables will be used, but all are supplied.</span>
+0162 prob.sol.int.xx=zeros(numel(prob.c),1);
+0163 prob.sol.int.xx(prob.ints.sub(sol.x(indexes)&gt;10^-12))=1;
+0164 prob.x0=[];
+0165 prob.vartype=repmat(<span class="string">'C'</span>, size(prob.A,2), 1);
+0166 prob.vartype(prob.ints.sub) = <span class="string">'I'</span>; <span class="comment">% with .lb = 0 and .ub = 1, they are binary</span>
+0167 <span class="comment">% integers (glpk in octave only allows &quot;continuous&quot; or &quot;&quot;, not &quot;binary&quot;)</span>
+0168 prob=rmfield(prob,{<span class="string">'blx'</span>,<span class="string">'bux'</span>,<span class="string">'blc'</span>,<span class="string">'buc'</span>});
+0169 
+0170 <span class="comment">% Optimize the problem</span>
+0171 res = optimizeProb(prob,params,false);
+0172 isFeasible=checkSolution(res);
+0173 
+0174 <span class="keyword">if</span> ~isFeasible
+0175     x=[];
+0176     I=[];
+0177     exitFlag=-1;
+0178     <span class="keyword">return</span>;
+0179 <span class="keyword">end</span>
 0180 
-0181 <span class="comment">%Map back to original model from irrevModel</span>
-0182 x=xx(1:numel(model.rxns));
-0183 <span class="keyword">if</span> numel(irrevModel.rxns)&gt;numel(model.rxns)
-0184     x(model.rev~=0)=x(model.rev~=0)-xx(numel(model.rxns)+1:end);
-0185 <span class="keyword">end</span>
-0186 
-0187 I=ismember(toMinimize,strrep(irrevModel.rxns(indexes(I&gt;10^-12)),<span class="string">'_REV'</span>,<span class="string">''</span>));
-0188 <span class="keyword">end</span></pre></div>
+0181 xx=res.full(1:numel(irrevModel.rxns));
+0182 I=res.full(numel(xx)+1:end);
+0183 
+0184 <span class="comment">%Map back to original model from irrevModel</span>
+0185 x=xx(1:numel(model.rxns));
+0186 <span class="keyword">if</span> numel(irrevModel.rxns)&gt;numel(model.rxns)
+0187     x(model.rev~=0)=x(model.rev~=0)-xx(numel(model.rxns)+1:end);
+0188 <span class="keyword">end</span>
+0189 
+0190 I=ismember(toMinimize,strrep(irrevModel.rxns(indexes(I&gt;10^-12)),<span class="string">'_REV'</span>,<span class="string">''</span>));
+0191 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

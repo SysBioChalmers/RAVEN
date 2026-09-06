@@ -15,7 +15,7 @@
 <div><a href="../../index.html">Home</a> &gt;  <a href="#">testing</a> &gt; <a href="index.html">function_tests</a> &gt; tSyntax.m</div>
 
 <!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
-<td align="right"><a href="index.html">Index for testing\function_tests&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+<td align="right"><a href="index.html">Index for testing/function_tests&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
 
 <h1>tSyntax
 </h1>
@@ -49,51 +49,49 @@ This function is called by:
 0003 <span class="comment">%</span>
 0004 <span class="comment">%   A MATLAB file with unbalanced block keywords still sits in the repository</span>
 0005 <span class="comment">%   looking perfectly ordinary: the error only surfaces when something calls</span>
-0006 <span class="comment">%   it. getKEGGModelForOrganism.m carried an orphan `end` for over a month</span>
-0007 <span class="comment">%   (introduced by #636, found by #669) during which the whole KEGG homology</span>
-0008 <span class="comment">%   path was dead, because its only test was an unconditional assumeFail and</span>
-0009 <span class="comment">%   nothing else parsed the file.</span>
-0010 <span class="comment">%</span>
-0011 <span class="comment">%   This test is the cheap backstop: it needs no data, no solver and no</span>
-0012 <span class="comment">%   network, and it runs over the entire source tree in seconds.</span>
-0013 
-0014     methods (Test)
-0015         <a name="_sub0" href="#_subfunctions" class="code">function allSourceFilesParse(testCase)</a>
-0016             files = dir(fullfile(testCase.ravenRoot,<span class="string">'**'</span>,<span class="string">'*.m'</span>));
-0017             paths = fullfile({files.folder}, {files.name});
-0018 
-0019             <span class="comment">% software/ is vendored third-party code (GLPKmex, libSBML). It is</span>
-0020             <span class="comment">% not ours to fix, so a syntax complaint there is not a RAVEN bug.</span>
-0021             paths = paths(~contains(paths, [filesep <span class="string">'software'</span> filesep]));
+0006 <span class="comment">%   it, so a file behind an unconditional skip (e.g. assumeFail) can carry a</span>
+0007 <span class="comment">%   broken parse indefinitely without any test catching it.</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">%   This test is the cheap backstop: it needs no data, no solver and no</span>
+0010 <span class="comment">%   network, and it runs over the entire source tree in seconds.</span>
+0011 
+0012     methods (Test)
+0013         <a name="_sub0" href="#_subfunctions" class="code">function allSourceFilesParse(testCase)</a>
+0014             files = dir(fullfile(testCase.ravenRoot,<span class="string">'**'</span>,<span class="string">'*.m'</span>));
+0015             paths = fullfile({files.folder}, {files.name});
+0016 
+0017             <span class="comment">% software/ is vendored third-party code (GLPKmex, libSBML). It is</span>
+0018             <span class="comment">% not ours to fix, so a syntax complaint there is not a RAVEN bug.</span>
+0019             paths = paths(~contains(paths, [filesep <span class="string">'software'</span> filesep]));
+0020 
+0021             testCase.assertNotEmpty(paths, <span class="string">'Found no .m files to check.'</span>);
 0022 
-0023             testCase.assertNotEmpty(paths, <span class="string">'Found no .m files to check.'</span>);
-0024 
-0025             msgs = checkcode(paths{:}, <span class="string">'-id'</span>);
-0026             <span class="keyword">if</span> ~iscell(msgs)
-0027                 msgs = {msgs};   <span class="comment">% checkcode returns a bare struct for one file</span>
-0028             <span class="keyword">end</span>
-0029 
-0030             offenders = {};
-0031             <span class="keyword">for</span> i = 1:numel(paths)
-0032                 <span class="keyword">if</span> isempty(msgs{i})
-0033                     <span class="keyword">continue</span>
-0034                 <span class="keyword">end</span>
-0035                 <span class="comment">% SYNER is checkcode's parse-error identifier. Only syntax is</span>
-0036                 <span class="comment">% checked here; style warnings are deliberately ignored so the</span>
-0037                 <span class="comment">% test stays a hard gate rather than a lint backlog.</span>
-0038                 bad = strcmp({msgs{i}.id}, <span class="string">'SYNER'</span>);
-0039                 <span class="keyword">for</span> k = find(bad)
-0040                     offenders{end+1} = sprintf(<span class="string">'%s (line %d): %s'</span>, <span class="keyword">...</span>
-0041                         strrep(paths{i}, testCase.ravenRoot, <span class="string">''</span>), <span class="keyword">...</span>
-0042                         msgs{i}(k).line, msgs{i}(k).message); <span class="comment">%#ok&lt;AGROW&gt;</span>
-0043                 <span class="keyword">end</span>
-0044             <span class="keyword">end</span>
-0045 
-0046             testCase.verifyEmpty(offenders, <span class="keyword">...</span>
-0047                 sprintf(<span class="string">'Files with parse errors:\n%s'</span>, strjoin(offenders, newline)));
-0048         <span class="keyword">end</span>
-0049     <span class="keyword">end</span>
-0050 <span class="keyword">end</span></pre></div>
+0023             msgs = checkcode(paths{:}, <span class="string">'-id'</span>);
+0024             <span class="keyword">if</span> ~iscell(msgs)
+0025                 msgs = {msgs};   <span class="comment">% checkcode returns a bare struct for one file</span>
+0026             <span class="keyword">end</span>
+0027 
+0028             offenders = {};
+0029             <span class="keyword">for</span> i = 1:numel(paths)
+0030                 <span class="keyword">if</span> isempty(msgs{i})
+0031                     <span class="keyword">continue</span>
+0032                 <span class="keyword">end</span>
+0033                 <span class="comment">% SYNER is checkcode's parse-error identifier. Only syntax is</span>
+0034                 <span class="comment">% checked here; style warnings are deliberately ignored so the</span>
+0035                 <span class="comment">% test stays a hard gate rather than a lint backlog.</span>
+0036                 bad = strcmp({msgs{i}.id}, <span class="string">'SYNER'</span>);
+0037                 <span class="keyword">for</span> k = find(bad)
+0038                     offenders{end+1} = sprintf(<span class="string">'%s (line %d): %s'</span>, <span class="keyword">...</span>
+0039                         strrep(paths{i}, testCase.ravenRoot, <span class="string">''</span>), <span class="keyword">...</span>
+0040                         msgs{i}(k).line, msgs{i}(k).message); <span class="comment">%#ok&lt;AGROW&gt;</span>
+0041                 <span class="keyword">end</span>
+0042             <span class="keyword">end</span>
+0043 
+0044             testCase.verifyEmpty(offenders, <span class="keyword">...</span>
+0045                 sprintf(<span class="string">'Files with parse errors:\n%s'</span>, strjoin(offenders, newline)));
+0046         <span class="keyword">end</span>
+0047     <span class="keyword">end</span>
+0048 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

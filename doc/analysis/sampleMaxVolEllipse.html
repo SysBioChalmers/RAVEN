@@ -159,123 +159,122 @@ This function is called by:
 0061 b = b(:);
 0062 <span class="comment">% bnrm is the norm of the ORIGINAL b (before the row-normalisation below sets</span>
 0063 <span class="comment">% b &lt;- ones). This matches COBRA's chrrSampler reference; do not &quot;correct&quot; it to</span>
-0064 <span class="comment">% sqrt(m), or convergence scaling diverges from the reference (and from the</span>
-0065 <span class="comment">% validated Python max_volume_ellipsoid this file mirrors).</span>
-0066 bnrm = norm(b);
-0067 minmu = 1e-8;
-0068 tau0  = 0.75;
-0069 
-0070 <span class="keyword">if</span> nargin &lt; 3 || isempty(x0)
-0071     x0 = <a href="sampleChebyshevCenter.html" class="code" title="function x0 = sampleChebyshevCenter(A, b)">sampleChebyshevCenter</a>(A, b);
-0072 <span class="keyword">end</span>
-0073 x0 = x0(:);
-0074 
-0075 bmAx0 = b - A*x0;
-0076 <span class="keyword">if</span> any(bmAx0 &lt;= 0)
-0077     error(<span class="string">'RAVEN:sampling'</span>, <span class="string">'sampleMaxVolEllipse: x0 is not strictly interior (A*x0 &lt; b).'</span>);
-0078 <span class="keyword">end</span>
-0079 
-0080 <span class="comment">% Row-normalise so the constraint RHS is all ones; solve in shifted coords.</span>
-0081 A = A ./ bmAx0;
-0082 b = ones(m, 1);
-0083 
-0084 x = zeros(n, 1);
-0085 y = ones(m, 1);
-0086 bmAx = b;
-0087 z = zeros(m, 1);
-0088 astep = 0;
-0089 Adx = zeros(n, 1);
-0090 converged = false;
-0091 E2 = eye(n);
-0092 
-0093 <span class="keyword">for</span> it = 1:maxiter
-0094     <span class="keyword">if</span> it &gt; 1
-0095         bmAx = bmAx - astep*Adx;
-0096     <span class="keyword">end</span>
-0097 
-0098     AtYA = A' * (A .* y);          <span class="comment">% A' * diag(y) * A   (n-by-n)</span>
-0099     E2 = inv(AtYA);                <span class="comment">%#ok&lt;MINV&gt; explicit inverse mirrors the reference</span>
-0100     Q  = A * E2 * A';              <span class="comment">% m-by-m</span>
-0101     h  = sqrt(max(diag(Q), 0));
-0102 
-0103     <span class="keyword">if</span> it == 1
-0104         t = min(bmAx ./ h);
-0105         y = y / t^2;
-0106         h = t * h;
-0107         z = max(1e-1, bmAx - h);
-0108         Q = t^2 * Q;
-0109     <span class="keyword">end</span>
-0110 
-0111     yz = y .* z;
-0112     yh = y .* h;
-0113     gap = sum(yz) / m;
-0114     rmu = max(min(0.5, gap)*gap, minmu);
-0115 
-0116     R1 = -A' * yh;                 <span class="comment">% dual residual      (n-by-1)</span>
-0117     R2 = bmAx - h - z;             <span class="comment">% primal/slack       (m-by-1)</span>
-0118     R3 = rmu - yz;                 <span class="comment">% complementarity    (m-by-1)</span>
-0119     res = max([max(abs(R1)), max(abs(R2)), max(abs(R3))]);
-0120 
-0121     <span class="keyword">if</span> res &lt; tol*(1 + bnrm) &amp;&amp; rmu &lt;= minmu
-0122         x = x + x0;
-0123         converged = true;
-0124         <span class="keyword">break</span>;
-0125     <span class="keyword">end</span>
-0126 
-0127     YQ   = y .* Q;                 <span class="comment">% diag(y) * Q</span>
-0128     YQQY = YQ .* YQ';              <span class="comment">% Hadamard product</span>
-0129     y2h  = 2 * yh;
-0130     G    = YQQY + diag(max(reg, y2h .* z));
-0131     YA   = y .* A;                 <span class="comment">% diag(y) * A</span>
-0132     T    = G \ ((h + z) .* YA);    <span class="comment">% m-by-n</span>
-0133     ATP  = (y2h .* T - YA)';       <span class="comment">% n-by-m</span>
-0134     R3Dy = R3 ./ y;
-0135     R23  = R2 - R3Dy;
-0136     ATP_A = ATP*A + reg*eye(n);
-0137     dx   = ATP_A \ (R1 + ATP*R23);
-0138     Adx  = A * dx;
-0139     dyDy = G \ (y2h .* (Adx - R23));
-0140     dy   = y .* dyDy;
-0141     dz   = R3Dy - z .* dyDy;
-0142 
-0143     ax = -1 / min([-Adx ./ bmAx; -0.5]);
-0144     ay = -1 / min([ dyDy;        -0.5]);
-0145     az = -1 / min([ dz ./ z;     -0.5]);
-0146     tau = max(tau0, 1 - res);
-0147     astep = tau * min([1, ax, ay, az]);
-0148 
-0149     x = x + astep*dx;
-0150     y = y + astep*dy;
-0151     z = z + astep*dz;
-0152 <span class="keyword">end</span>
-0153 
-0154 <span class="keyword">if</span> ~converged
-0155     x = x + x0;
-0156 <span class="keyword">end</span>
-0157 
-0158 E = <a href="#_sub1" class="code" title="subfunction E = nearestSPDchol(M)">nearestSPDchol</a>(E2);
-0159 <span class="keyword">end</span>
+0064 <span class="comment">% sqrt(m), or convergence scaling diverges from the reference.</span>
+0065 bnrm = norm(b);
+0066 minmu = 1e-8;
+0067 tau0  = 0.75;
+0068 
+0069 <span class="keyword">if</span> nargin &lt; 3 || isempty(x0)
+0070     x0 = <a href="sampleChebyshevCenter.html" class="code" title="function x0 = sampleChebyshevCenter(A, b)">sampleChebyshevCenter</a>(A, b);
+0071 <span class="keyword">end</span>
+0072 x0 = x0(:);
+0073 
+0074 bmAx0 = b - A*x0;
+0075 <span class="keyword">if</span> any(bmAx0 &lt;= 0)
+0076     error(<span class="string">'RAVEN:sampling'</span>, <span class="string">'sampleMaxVolEllipse: x0 is not strictly interior (A*x0 &lt; b).'</span>);
+0077 <span class="keyword">end</span>
+0078 
+0079 <span class="comment">% Row-normalise so the constraint RHS is all ones; solve in shifted coords.</span>
+0080 A = A ./ bmAx0;
+0081 b = ones(m, 1);
+0082 
+0083 x = zeros(n, 1);
+0084 y = ones(m, 1);
+0085 bmAx = b;
+0086 z = zeros(m, 1);
+0087 astep = 0;
+0088 Adx = zeros(n, 1);
+0089 converged = false;
+0090 E2 = eye(n);
+0091 
+0092 <span class="keyword">for</span> it = 1:maxiter
+0093     <span class="keyword">if</span> it &gt; 1
+0094         bmAx = bmAx - astep*Adx;
+0095     <span class="keyword">end</span>
+0096 
+0097     AtYA = A' * (A .* y);          <span class="comment">% A' * diag(y) * A   (n-by-n)</span>
+0098     E2 = inv(AtYA);                <span class="comment">%#ok&lt;MINV&gt; explicit inverse mirrors the reference</span>
+0099     Q  = A * E2 * A';              <span class="comment">% m-by-m</span>
+0100     h  = sqrt(max(diag(Q), 0));
+0101 
+0102     <span class="keyword">if</span> it == 1
+0103         t = min(bmAx ./ h);
+0104         y = y / t^2;
+0105         h = t * h;
+0106         z = max(1e-1, bmAx - h);
+0107         Q = t^2 * Q;
+0108     <span class="keyword">end</span>
+0109 
+0110     yz = y .* z;
+0111     yh = y .* h;
+0112     gap = sum(yz) / m;
+0113     rmu = max(min(0.5, gap)*gap, minmu);
+0114 
+0115     R1 = -A' * yh;                 <span class="comment">% dual residual      (n-by-1)</span>
+0116     R2 = bmAx - h - z;             <span class="comment">% primal/slack       (m-by-1)</span>
+0117     R3 = rmu - yz;                 <span class="comment">% complementarity    (m-by-1)</span>
+0118     res = max([max(abs(R1)), max(abs(R2)), max(abs(R3))]);
+0119 
+0120     <span class="keyword">if</span> res &lt; tol*(1 + bnrm) &amp;&amp; rmu &lt;= minmu
+0121         x = x + x0;
+0122         converged = true;
+0123         <span class="keyword">break</span>;
+0124     <span class="keyword">end</span>
+0125 
+0126     YQ   = y .* Q;                 <span class="comment">% diag(y) * Q</span>
+0127     YQQY = YQ .* YQ';              <span class="comment">% Hadamard product</span>
+0128     y2h  = 2 * yh;
+0129     G    = YQQY + diag(max(reg, y2h .* z));
+0130     YA   = y .* A;                 <span class="comment">% diag(y) * A</span>
+0131     T    = G \ ((h + z) .* YA);    <span class="comment">% m-by-n</span>
+0132     ATP  = (y2h .* T - YA)';       <span class="comment">% n-by-m</span>
+0133     R3Dy = R3 ./ y;
+0134     R23  = R2 - R3Dy;
+0135     ATP_A = ATP*A + reg*eye(n);
+0136     dx   = ATP_A \ (R1 + ATP*R23);
+0137     Adx  = A * dx;
+0138     dyDy = G \ (y2h .* (Adx - R23));
+0139     dy   = y .* dyDy;
+0140     dz   = R3Dy - z .* dyDy;
+0141 
+0142     ax = -1 / min([-Adx ./ bmAx; -0.5]);
+0143     ay = -1 / min([ dyDy;        -0.5]);
+0144     az = -1 / min([ dz ./ z;     -0.5]);
+0145     tau = max(tau0, 1 - res);
+0146     astep = tau * min([1, ax, ay, az]);
+0147 
+0148     x = x + astep*dx;
+0149     y = y + astep*dy;
+0150     z = z + astep*dz;
+0151 <span class="keyword">end</span>
+0152 
+0153 <span class="keyword">if</span> ~converged
+0154     x = x + x0;
+0155 <span class="keyword">end</span>
+0156 
+0157 E = <a href="#_sub1" class="code" title="subfunction E = nearestSPDchol(M)">nearestSPDchol</a>(E2);
+0158 <span class="keyword">end</span>
+0159 
 0160 
-0161 
-0162 <a name="_sub1" href="#_subfunctions" class="code">function E = nearestSPDchol(M)</a>
-0163 <span class="comment">% Lower-triangular Cholesky factor of the nearest SPD matrix to M, so E*E' = M.</span>
-0164 M = (M + M') / 2;
-0165 [E, p] = chol(M, <span class="string">'lower'</span>);
-0166 <span class="keyword">if</span> p == 0
-0167     <span class="keyword">return</span>;
-0168 <span class="keyword">end</span>
-0169 ev = eig(M);
-0170 jitter = max(-min(ev), 0) + 1e-12;
-0171 nn = size(M, 1);
-0172 <span class="keyword">for</span> k = 1:30
-0173     [E, p] = chol(M + jitter*eye(nn), <span class="string">'lower'</span>);
-0174     <span class="keyword">if</span> p == 0
-0175         <span class="keyword">return</span>;
-0176     <span class="keyword">end</span>
-0177     jitter = jitter * 10;
-0178 <span class="keyword">end</span>
-0179 E = chol(M + jitter*eye(nn), <span class="string">'lower'</span>);
-0180 <span class="keyword">end</span></pre></div>
+0161 <a name="_sub1" href="#_subfunctions" class="code">function E = nearestSPDchol(M)</a>
+0162 <span class="comment">% Lower-triangular Cholesky factor of the nearest SPD matrix to M, so E*E' = M.</span>
+0163 M = (M + M') / 2;
+0164 [E, p] = chol(M, <span class="string">'lower'</span>);
+0165 <span class="keyword">if</span> p == 0
+0166     <span class="keyword">return</span>;
+0167 <span class="keyword">end</span>
+0168 ev = eig(M);
+0169 jitter = max(-min(ev), 0) + 1e-12;
+0170 nn = size(M, 1);
+0171 <span class="keyword">for</span> k = 1:30
+0172     [E, p] = chol(M + jitter*eye(nn), <span class="string">'lower'</span>);
+0173     <span class="keyword">if</span> p == 0
+0174         <span class="keyword">return</span>;
+0175     <span class="keyword">end</span>
+0176     jitter = jitter * 10;
+0177 <span class="keyword">end</span>
+0178 E = chol(M + jitter*eye(nn), <span class="string">'lower'</span>);
+0179 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

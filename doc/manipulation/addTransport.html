@@ -150,132 +150,138 @@ This function is called by:
 0065 <span class="keyword">else</span>
 0066     metNames=convertCharArray(p.metNames);
 0067 <span class="keyword">end</span>
-0068 
-0069 <span class="comment">%Check that the names are unique</span>
-0070 <span class="keyword">if</span> numel(unique(metNames))~=numel(metNames)
-0071     error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, <span class="string">'Not all metabolite names are unique'</span>);
-0072 <span class="keyword">end</span>
+0068 <span class="comment">%Normalise to a column vector regardless of the orientation the caller</span>
+0069 <span class="comment">%passed metNames in (e.g. a literal {'a','b','c'} is a row): everything</span>
+0070 <span class="comment">%derived from it below is concatenated against model fields, which are</span>
+0071 <span class="comment">%always columns.</span>
+0072 metNames=metNames(:);
 0073 
-0074 <span class="comment">%Get the indexes of the mets in fromComp</span>
-0075 I=find(model.metComps==fromID);
-0076 [J, K]=ismember(metNames,model.metNames(I));
-0077 <span class="keyword">if</span> ~all(J)
-0078     EM=<span class="string">'Not all metabolites in metNames exist in fromComp'</span>;
-0079     error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0080 <span class="keyword">end</span>
-0081 fromMets=I(K); <span class="comment">%These are the ids of the metabolites to transport. The order corresponds to metNames</span>
-0082 addedRxns={};
-0083 <span class="comment">%Loop through and add for each compartment in toComps</span>
-0084 <span class="keyword">for</span> i=1:numel(toComps)
-0085     fromMetsInComp=fromMets; <span class="comment">%If onlyToExisting==true then not all mets are transported to each compartment</span>
-0086     <span class="comment">%Get the indexes of the mets in the compartment</span>
-0087     I=find(model.metComps==toIDs(i));
-0088     [J, K]=ismember(metNames,model.metNames(I));
-0089     <span class="keyword">if</span> onlyToExisting==true || all(J)
-0090         toMets=I(K(J)); <span class="comment">%Only look at the existing ones</span>
-0091         fromMetsInComp=fromMetsInComp(J);
-0092         namesInComp=metNames(J); <span class="comment">%Matches fromMetsInComp/toMets below</span>
-0093     <span class="keyword">else</span>
-0094         <span class="comment">%This is if not all metabolites exist in the target compartment,</span>
-0095         <span class="comment">%and they should be added</span>
-0096         metsToAdd.metNames=metNames(J==0);
-0097         metsToAdd.compartments=toComps{i};
-0098         model=<a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,varargin)">addMets</a>(model,metsToAdd);
-0099 
-0100         <span class="comment">%Redo the mapping when all mets are there. A bit lazy, but it is</span>
-0101         <span class="comment">%fast anyways</span>
-0102         I=find(model.metComps==toIDs(i));
-0103         [~, K]=ismember(metNames,model.metNames(I));
-0104         toMets=I(K); <span class="comment">%All are guaranteed to be found now</span>
-0105         namesInComp=metNames; <span class="comment">%All requested metabolites now exist</span>
-0106     <span class="keyword">end</span>
-0107     
-0108     <span class="comment">%Construct the S matrix</span>
-0109     nRxns=numel(fromMetsInComp);
-0110     newS=zeros(numel(model.mets),nRxns);
-0111     newS(sub2ind(size(newS),fromMetsInComp(:),(1:nRxns)'))=-1;
-0112     newS(sub2ind(size(newS),toMets(:),(1:nRxns)'))=1;
-0113     
-0114     <span class="comment">%Add the reactions</span>
-0115     model.S=[model.S sparse(newS)];
-0116     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'defaultLB'</span>)
-0117         lb = model.annotation.defaultLB;
-0118         ub = model.annotation.defaultUB;
-0119     <span class="keyword">else</span>
-0120         lb = -inf;
-0121         ub = inf;
-0122     <span class="keyword">end</span>
-0123     <span class="keyword">if</span> isRev==true
-0124         model.lb=[model.lb;ones(nRxns,1)*lb];
-0125         model.rev=[model.rev;ones(nRxns,1)];
-0126     <span class="keyword">else</span>
-0127         model.lb=[model.lb;zeros(nRxns,1)];
-0128         model.rev=[model.rev;zeros(nRxns,1)];
-0129     <span class="keyword">end</span>
-0130     model.ub=[model.ub;ones(nRxns,1)*ub];
-0131     model.c=[model.c;zeros(nRxns,1)];
-0132     
-0133     <span class="comment">%Add annotation</span>
-0134     filler=cell(nRxns,1);
-0135     filler(:)={<span class="string">''</span>};
-0136     addedRxnsID=<a href="generateNewIds.html" class="code" title="function newIds=generateNewIds(model,type,prefix,varargin)">generateNewIds</a>(model,<span class="string">'rxns'</span>,prefix,nRxns);
-0137     addedRxnsName=strcat(namesInComp, {<span class="string">' transport, '</span>}, model.compNames(fromID), <span class="string">'-'</span>, model.compNames(toIDs(i)));
-0138     model.rxns=[model.rxns;addedRxnsID];
-0139     model.rxnNames=[model.rxnNames;addedRxnsName];
-0140     
-0141     <span class="keyword">if</span> isfield(model,<span class="string">'eccodes'</span>)
-0142         model.eccodes=[model.eccodes;filler];
-0143     <span class="keyword">end</span>
-0144     <span class="keyword">if</span> isfield(model,<span class="string">'subSystems'</span>)
-0145         isNested = any(cellfun(@(x) iscell(x), model.subSystems));
-0146         ssFiller = filler;
-0147         <span class="keyword">if</span> isRev==1
-0148             ssFiller(:) = {[<span class="string">'Transport between '</span> fromComp <span class="string">' and '</span> toComps{i}]};
-0149         <span class="keyword">else</span>
-0150             ssFiller(:) = {[<span class="string">'Transport from '</span> fromComp <span class="string">' to '</span> toComps{i}]};
-0151         <span class="keyword">end</span>
-0152         <span class="keyword">if</span> isNested
-0153             ssFiller = cellfun(@(x) {x}, ssFiller, <span class="string">'uni'</span>, 0);
-0154         <span class="keyword">end</span>
-0155         model.subSystems=[model.subSystems;ssFiller];
-0156     <span class="keyword">end</span>
-0157     <span class="keyword">if</span> isfield(model,<span class="string">'grRules'</span>)
-0158         model.grRules=[model.grRules;filler];
-0159     <span class="keyword">end</span>
-0160     <span class="keyword">if</span> isfield(model,<span class="string">'rxnFrom'</span>)
-0161         model.rxnFrom=[model.rxnFrom;filler];
+0074 <span class="comment">%Check that the names are unique</span>
+0075 <span class="keyword">if</span> numel(unique(metNames))~=numel(metNames)
+0076     error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, <span class="string">'Not all metabolite names are unique'</span>);
+0077 <span class="keyword">end</span>
+0078 
+0079 <span class="comment">%Get the indexes of the mets in fromComp</span>
+0080 I=find(model.metComps==fromID);
+0081 [J, K]=ismember(metNames,model.metNames(I));
+0082 <span class="keyword">if</span> ~all(J)
+0083     EM=<span class="string">'Not all metabolites in metNames exist in fromComp'</span>;
+0084     error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0085 <span class="keyword">end</span>
+0086 fromMets=I(K); <span class="comment">%These are the ids of the metabolites to transport. The order corresponds to metNames</span>
+0087 addedRxns={};
+0088 <span class="comment">%Loop through and add for each compartment in toComps</span>
+0089 <span class="keyword">for</span> i=1:numel(toComps)
+0090     fromMetsInComp=fromMets; <span class="comment">%If onlyToExisting==true then not all mets are transported to each compartment</span>
+0091     <span class="comment">%Get the indexes of the mets in the compartment</span>
+0092     I=find(model.metComps==toIDs(i));
+0093     [J, K]=ismember(metNames,model.metNames(I));
+0094     <span class="keyword">if</span> onlyToExisting==true || all(J)
+0095         toMets=I(K(J)); <span class="comment">%Only look at the existing ones</span>
+0096         fromMetsInComp=fromMetsInComp(J);
+0097         namesInComp=metNames(J); <span class="comment">%Matches fromMetsInComp/toMets below</span>
+0098     <span class="keyword">else</span>
+0099         <span class="comment">%This is if not all metabolites exist in the target compartment,</span>
+0100         <span class="comment">%and they should be added</span>
+0101         metsToAdd.metNames=metNames(J==0);
+0102         metsToAdd.compartments=toComps{i};
+0103         model=<a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,varargin)">addMets</a>(model,metsToAdd);
+0104 
+0105         <span class="comment">%Redo the mapping when all mets are there. A bit lazy, but it is</span>
+0106         <span class="comment">%fast anyways</span>
+0107         I=find(model.metComps==toIDs(i));
+0108         [~, K]=ismember(metNames,model.metNames(I));
+0109         toMets=I(K); <span class="comment">%All are guaranteed to be found now</span>
+0110         namesInComp=metNames; <span class="comment">%All requested metabolites now exist</span>
+0111     <span class="keyword">end</span>
+0112     
+0113     <span class="comment">%Construct the S matrix</span>
+0114     nRxns=numel(fromMetsInComp);
+0115     newS=zeros(numel(model.mets),nRxns);
+0116     newS(sub2ind(size(newS),fromMetsInComp(:),(1:nRxns)'))=-1;
+0117     newS(sub2ind(size(newS),toMets(:),(1:nRxns)'))=1;
+0118     
+0119     <span class="comment">%Add the reactions</span>
+0120     model.S=[model.S sparse(newS)];
+0121     <span class="keyword">if</span> isfield(model.annotation,<span class="string">'defaultLB'</span>)
+0122         lb = model.annotation.defaultLB;
+0123         ub = model.annotation.defaultUB;
+0124     <span class="keyword">else</span>
+0125         lb = -inf;
+0126         ub = inf;
+0127     <span class="keyword">end</span>
+0128     <span class="keyword">if</span> isRev==true
+0129         model.lb=[model.lb;ones(nRxns,1)*lb];
+0130         model.rev=[model.rev;ones(nRxns,1)];
+0131     <span class="keyword">else</span>
+0132         model.lb=[model.lb;zeros(nRxns,1)];
+0133         model.rev=[model.rev;zeros(nRxns,1)];
+0134     <span class="keyword">end</span>
+0135     model.ub=[model.ub;ones(nRxns,1)*ub];
+0136     model.c=[model.c;zeros(nRxns,1)];
+0137     
+0138     <span class="comment">%Add annotation</span>
+0139     filler=cell(nRxns,1);
+0140     filler(:)={<span class="string">''</span>};
+0141     addedRxnsID=<a href="generateNewIds.html" class="code" title="function newIds=generateNewIds(model,type,prefix,varargin)">generateNewIds</a>(model,<span class="string">'rxns'</span>,prefix,nRxns);
+0142     addedRxnsName=strcat(namesInComp, {<span class="string">' transport, '</span>}, model.compNames(fromID), <span class="string">'-'</span>, model.compNames(toIDs(i)));
+0143     addedRxnsName=addedRxnsName(:); <span class="comment">%Defensive: keep column orientation regardless of namesInComp's</span>
+0144     model.rxns=[model.rxns;addedRxnsID];
+0145     model.rxnNames=[model.rxnNames;addedRxnsName];
+0146     
+0147     <span class="keyword">if</span> isfield(model,<span class="string">'eccodes'</span>)
+0148         model.eccodes=[model.eccodes;filler];
+0149     <span class="keyword">end</span>
+0150     <span class="keyword">if</span> isfield(model,<span class="string">'subSystems'</span>)
+0151         isNested = any(cellfun(@(x) iscell(x), model.subSystems));
+0152         ssFiller = filler;
+0153         <span class="keyword">if</span> isRev==1
+0154             ssFiller(:) = {[<span class="string">'Transport between '</span> fromComp <span class="string">' and '</span> toComps{i}]};
+0155         <span class="keyword">else</span>
+0156             ssFiller(:) = {[<span class="string">'Transport from '</span> fromComp <span class="string">' to '</span> toComps{i}]};
+0157         <span class="keyword">end</span>
+0158         <span class="keyword">if</span> isNested
+0159             ssFiller = cellfun(@(x) {x}, ssFiller, <span class="string">'uni'</span>, 0);
+0160         <span class="keyword">end</span>
+0161         model.subSystems=[model.subSystems;ssFiller];
 0162     <span class="keyword">end</span>
-0163     <span class="keyword">if</span> isfield(model,<span class="string">'rxnMiriams'</span>)
-0164         model.rxnMiriams=[model.rxnMiriams;cell(nRxns,1)];
+0163     <span class="keyword">if</span> isfield(model,<span class="string">'grRules'</span>)
+0164         model.grRules=[model.grRules;filler];
 0165     <span class="keyword">end</span>
-0166     <span class="keyword">if</span> isfield(model,<span class="string">'rxnComps'</span>)
-0167         model.rxnComps=[model.rxnComps;ones(nRxns,1)];
-0168         fprintf(<span class="string">'NOTE: The added transport reactions will be added to the first compartment\n'</span>);
-0169     <span class="keyword">end</span>
-0170     <span class="keyword">if</span> isfield(model,<span class="string">'rxnGeneMat'</span>)
-0171         model.rxnGeneMat=[model.rxnGeneMat;sparse(nRxns,numel(model.genes))];
-0172     <span class="keyword">end</span>
-0173     <span class="keyword">if</span> isfield(model,<span class="string">'rxnNotes'</span>)
-0174         model.rxnNotes=[model.rxnNotes;filler];
+0166     <span class="keyword">if</span> isfield(model,<span class="string">'rxnFrom'</span>)
+0167         model.rxnFrom=[model.rxnFrom;filler];
+0168     <span class="keyword">end</span>
+0169     <span class="keyword">if</span> isfield(model,<span class="string">'rxnMiriams'</span>)
+0170         model.rxnMiriams=[model.rxnMiriams;cell(nRxns,1)];
+0171     <span class="keyword">end</span>
+0172     <span class="keyword">if</span> isfield(model,<span class="string">'rxnComps'</span>)
+0173         model.rxnComps=[model.rxnComps;ones(nRxns,1)];
+0174         fprintf(<span class="string">'NOTE: The added transport reactions will be added to the first compartment\n'</span>);
 0175     <span class="keyword">end</span>
-0176     <span class="keyword">if</span> isfield(model,<span class="string">'rxnReferences'</span>)
-0177         model.rxnReferences=[model.rxnReferences;filler];
+0176     <span class="keyword">if</span> isfield(model,<span class="string">'rxnGeneMat'</span>)
+0177         model.rxnGeneMat=[model.rxnGeneMat;sparse(nRxns,numel(model.genes))];
 0178     <span class="keyword">end</span>
-0179     <span class="keyword">if</span> isfield(model,<span class="string">'rxnConfidenceScores'</span>)
-0180         model.rxnConfidenceScores=[model.rxnConfidenceScores;NaN(nRxns,1)];
+0179     <span class="keyword">if</span> isfield(model,<span class="string">'rxnNotes'</span>)
+0180         model.rxnNotes=[model.rxnNotes;filler];
 0181     <span class="keyword">end</span>
-0182     <span class="keyword">if</span> isfield(model,<span class="string">'rxnDeltaG'</span>)
-0183         model.rxnDeltaG=[model.rxnDeltaG;NaN(nRxns,1)];
+0182     <span class="keyword">if</span> isfield(model,<span class="string">'rxnReferences'</span>)
+0183         model.rxnReferences=[model.rxnReferences;filler];
 0184     <span class="keyword">end</span>
-0185     <span class="keyword">if</span> isfield(model,<span class="string">'pwys'</span>)
-0186         model.pwys=[model.pwys;filler];
+0185     <span class="keyword">if</span> isfield(model,<span class="string">'rxnConfidenceScores'</span>)
+0186         model.rxnConfidenceScores=[model.rxnConfidenceScores;NaN(nRxns,1)];
 0187     <span class="keyword">end</span>
-0188     <span class="keyword">if</span> isfield(model,<span class="string">'spontaneous'</span>)
-0189         model.spontaneous=[model.spontaneous;false(nRxns,1)];
+0188     <span class="keyword">if</span> isfield(model,<span class="string">'rxnDeltaG'</span>)
+0189         model.rxnDeltaG=[model.rxnDeltaG;NaN(nRxns,1)];
 0190     <span class="keyword">end</span>
-0191     addedRxns = [addedRxns; addedRxnsID];
-0192 <span class="keyword">end</span>
-0193 <span class="keyword">end</span></pre></div>
+0191     <span class="keyword">if</span> isfield(model,<span class="string">'pwys'</span>)
+0192         model.pwys=[model.pwys;filler];
+0193     <span class="keyword">end</span>
+0194     <span class="keyword">if</span> isfield(model,<span class="string">'spontaneous'</span>)
+0195         model.spontaneous=[model.spontaneous;false(nRxns,1)];
+0196     <span class="keyword">end</span>
+0197     addedRxns = [addedRxns; addedRxnsID];
+0198 <span class="keyword">end</span>
+0199 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

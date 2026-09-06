@@ -28,10 +28,18 @@
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> findRAVENroot
-   Finds the root of the RAVEN directory, first by  by searching for the path to
+   Finds the root of the RAVEN directory by searching for the path to
    RAVEN.png. Can also record the current directory, in case a function will
    use the ravenPath to navigate to a precise folder, and it should return to
-   the previous directory afterwards. See e.g. optimizeProb calling glpk.</pre></div>
+   the previous directory afterwards. See e.g. optimizeProb calling glpk.
+
+   The resolved path is cached for the rest of the MATLAB session: this is
+   called on every solver invocation, and re-reading the RAVEN.ravenPath
+   preference from disk every time is both wasteful and, under the sustained
+   call volume of a full test run, an intermittent source of failures from
+   MATLAB's own preference-file I/O. Run `clear findRAVENroot` after
+   changing that preference (checkInstallation does this already) to pick
+   up the change without restarting MATLAB.</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -48,41 +56,57 @@ This function is called by:
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [ravenPath, prevDir] = findRAVENroot()</a>
 0002 <span class="comment">% findRAVENroot</span>
-0003 <span class="comment">%   Finds the root of the RAVEN directory, first by  by searching for the path to</span>
+0003 <span class="comment">%   Finds the root of the RAVEN directory by searching for the path to</span>
 0004 <span class="comment">%   RAVEN.png. Can also record the current directory, in case a function will</span>
 0005 <span class="comment">%   use the ravenPath to navigate to a precise folder, and it should return to</span>
 0006 <span class="comment">%   the previous directory afterwards. See e.g. optimizeProb calling glpk.</span>
-0007 
-0008 ST=dbstack(<span class="string">'-completenames'</span>);
-0009 prevDir = pwd();
-0010 <span class="comment">% A stored preference is only trusted if it still points at a real RAVEN</span>
-0011 <span class="comment">% install; otherwise fall through to walking up from the currently</span>
-0012 <span class="comment">% executing copy of this file. Without this check, a stale preference</span>
-0013 <span class="comment">% left over from a different RAVEN checkout on the same machine silently</span>
-0014 <span class="comment">% resolves to that other copy's data, not the one actually running.</span>
-0015 ravenPath = <span class="string">''</span>;
-0016 <span class="keyword">if</span> ispref(<span class="string">'RAVEN'</span>,<span class="string">'ravenPath'</span>)
-0017     prefPath = getpref(<span class="string">'RAVEN'</span>,<span class="string">'ravenPath'</span>);
-0018     <span class="keyword">if</span> isfile(fullfile(prefPath,<span class="string">'RAVEN.png'</span>))
-0019         ravenPath = prefPath;
-0020     <span class="keyword">end</span>
+0007 <span class="comment">%</span>
+0008 <span class="comment">%   The resolved path is cached for the rest of the MATLAB session: this is</span>
+0009 <span class="comment">%   called on every solver invocation, and re-reading the RAVEN.ravenPath</span>
+0010 <span class="comment">%   preference from disk every time is both wasteful and, under the sustained</span>
+0011 <span class="comment">%   call volume of a full test run, an intermittent source of failures from</span>
+0012 <span class="comment">%   MATLAB's own preference-file I/O. Run `clear findRAVENroot` after</span>
+0013 <span class="comment">%   changing that preference (checkInstallation does this already) to pick</span>
+0014 <span class="comment">%   up the change without restarting MATLAB.</span>
+0015 
+0016 <span class="keyword">persistent</span> cachedPath
+0017 prevDir = pwd();
+0018 <span class="keyword">if</span> ~isempty(cachedPath)
+0019     ravenPath = cachedPath;
+0020     <span class="keyword">return</span>;
 0021 <span class="keyword">end</span>
-0022 <span class="keyword">if</span> isempty(ravenPath)
-0023     ravenPath = ST(strcmp({ST.name},<span class="string">'findRAVENroot'</span>)).file;
-0024     rootFound = 0;
-0025     <span class="keyword">while</span> rootFound == 0
-0026         isRoot = isfile(fullfile(ravenPath,<span class="string">'RAVEN.png'</span>));
-0027         <span class="keyword">if</span> isRoot
-0028             rootFound = 1;
-0029         <span class="keyword">else</span>
-0030             ravenPathOld = ravenPath;
-0031             ravenPath = fileparts(ravenPath);
-0032             <span class="keyword">if</span> strcmp(ravenPathOld,ravenPath)
-0033                 error(<span class="string">'Cannot find the RAVEN root directory. Make sure you have not removed the RAVEN.png file from your RAVEN installation.'</span>)
-0034             <span class="keyword">end</span>
-0035         <span class="keyword">end</span>
-0036     <span class="keyword">end</span>
-0037 <span class="keyword">end</span></pre></div>
+0022 
+0023 <span class="comment">% A stored preference is only trusted if it still points at a real RAVEN</span>
+0024 <span class="comment">% install; otherwise fall through to walking up from the currently</span>
+0025 <span class="comment">% executing copy of this file. Without this check, a stale preference</span>
+0026 <span class="comment">% left over from a different RAVEN checkout on the same machine silently</span>
+0027 <span class="comment">% resolves to that other copy's data, not the one actually running.</span>
+0028 ravenPath = <span class="string">''</span>;
+0029 <span class="keyword">if</span> ispref(<span class="string">'RAVEN'</span>,<span class="string">'ravenPath'</span>)
+0030     prefPath = getpref(<span class="string">'RAVEN'</span>,<span class="string">'ravenPath'</span>);
+0031     <span class="keyword">if</span> isfile(fullfile(prefPath,<span class="string">'RAVEN.png'</span>))
+0032         ravenPath = prefPath;
+0033     <span class="keyword">end</span>
+0034 <span class="keyword">end</span>
+0035 <span class="keyword">if</span> isempty(ravenPath)
+0036     ST=dbstack(<span class="string">'-completenames'</span>);
+0037     ravenPath = ST(strcmp({ST.name},<span class="string">'findRAVENroot'</span>)).file;
+0038     rootFound = 0;
+0039     <span class="keyword">while</span> rootFound == 0
+0040         isRoot = isfile(fullfile(ravenPath,<span class="string">'RAVEN.png'</span>));
+0041         <span class="keyword">if</span> isRoot
+0042             rootFound = 1;
+0043         <span class="keyword">else</span>
+0044             ravenPathOld = ravenPath;
+0045             ravenPath = fileparts(ravenPath);
+0046             <span class="keyword">if</span> strcmp(ravenPathOld,ravenPath)
+0047                 error(<span class="string">'Cannot find the RAVEN root directory. Make sure you have not removed the RAVEN.png file from your RAVEN installation.'</span>)
+0048             <span class="keyword">end</span>
+0049         <span class="keyword">end</span>
+0050     <span class="keyword">end</span>
+0051 <span class="keyword">end</span>
+0052 cachedPath = ravenPath;
+0053 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

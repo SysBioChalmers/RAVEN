@@ -102,10 +102,10 @@
  all unbalanced reactions from your model. This function tries to remove as
  few problematic reactions as possible so that the model cannot
  produce/consume anything from nothing. This is done by repeatedly calling
- makeSomething/consumeSomething, checking if any of the involved reactions
- are elementally unbalanced, removing one of them, and then iterating until
- no metabolites can be produced/consumed. makeSomething is called before
- consumeSomething.
+ findLeakMetabolite, checking if any of the involved reactions are
+ elementally unbalanced, removing one of them, and then iterating until no
+ metabolites can be produced/consumed. The 'produce' direction is run
+ before the 'consume' one.
 
  Examples
  --------
@@ -201,10 +201,10 @@ This function is called by:
 0074 <span class="comment">% all unbalanced reactions from your model. This function tries to remove as</span>
 0075 <span class="comment">% few problematic reactions as possible so that the model cannot</span>
 0076 <span class="comment">% produce/consume anything from nothing. This is done by repeatedly calling</span>
-0077 <span class="comment">% makeSomething/consumeSomething, checking if any of the involved reactions</span>
-0078 <span class="comment">% are elementally unbalanced, removing one of them, and then iterating until</span>
-0079 <span class="comment">% no metabolites can be produced/consumed. makeSomething is called before</span>
-0080 <span class="comment">% consumeSomething.</span>
+0077 <span class="comment">% findLeakMetabolite, checking if any of the involved reactions are</span>
+0078 <span class="comment">% elementally unbalanced, removing one of them, and then iterating until no</span>
+0079 <span class="comment">% metabolites can be produced/consumed. The 'produce' direction is run</span>
+0080 <span class="comment">% before the 'consume' one.</span>
 0081 <span class="comment">%</span>
 0082 <span class="comment">% Examples</span>
 0083 <span class="comment">% --------</span>
@@ -266,107 +266,111 @@ This function is called by:
 0139 <span class="keyword">end</span>
 0140 bal=ismember(balanceStructure.elements.abbrevs,balanceElements);
 0141 
-0142 <span class="comment">%Main loop. First run for makeSomething, second for consumeSomething</span>
+0142 <span class="comment">%Main loop. First run for production, second for consumption</span>
 0143 warned=false(2,1); <span class="comment">%This is to prevent the same warning being printed multiple times if rxnRules==3</span>
 0144 <span class="keyword">for</span> i=1:2
 0145     <span class="keyword">while</span> 1
 0146         <span class="comment">%Make some metabolite using as few reactions as possible</span>
 0147         <span class="keyword">if</span> i==1
-0148             [solution, metabolite]=makeSomething(model,ignoreMets,isNames,false,true,[],ignoreIntBounds);
-0149             <span class="keyword">if</span> ~isempty(solution)
-0150                 <span class="keyword">if</span> printReport
-0151                     fprintf([<span class="string">'Can make: '</span> model.metNames{metabolite(1)} <span class="string">'\n'</span>]);
-0152                 <span class="keyword">end</span>
-0153             <span class="keyword">else</span>
-0154                 <span class="comment">%If no solution could be found, then finish</span>
-0155                 <span class="keyword">break</span>;
-0156             <span class="keyword">end</span>
-0157         <span class="keyword">else</span>
-0158             [solution, metabolite]=consumeSomething(model,ignoreMets,isNames,false,[],ignoreIntBounds);
-0159             <span class="keyword">if</span> ~isempty(solution)
-0160                 <span class="keyword">if</span> printReport
-0161                     fprintf([<span class="string">'Can consume: '</span> model.metNames{metabolite(1)} <span class="string">'\n'</span>]);
-0162                 <span class="keyword">end</span>
-0163             <span class="keyword">else</span>
-0164                 <span class="comment">%If no solution could be found, then finish</span>
-0165                 <span class="keyword">break</span>;
-0166             <span class="keyword">end</span>
-0167         <span class="keyword">end</span>
-0168         
-0169         <span class="comment">%Find all reactions that are unbalanced and still carry flux</span>
-0170         I=find(abs(solution)&gt;10^-8 &amp; balanceStructure.balanceStatus&gt;=0 &amp; ~all(balanceStructure.leftComp(:,bal)==balanceStructure.rightComp(:,bal),2));
-0171         
-0172         <span class="comment">%If there are unbalanced rxns then delete one of them and iterate</span>
-0173         <span class="keyword">if</span> any(I)
-0174             rxnToRemove=I(randperm(numel(I),1));
-0175         <span class="keyword">else</span>
-0176             <span class="comment">%If there are no unbalanced rxns in the solution</span>
-0177             <span class="keyword">if</span> rxnRules==1
-0178                 <span class="keyword">if</span> i==1
-0179                     EM=[<span class="string">'No unbalanced reactions were found in the solution, but the model can still make &quot;'</span> model.metNames{metabolite} <span class="string">'&quot;. Aborting search. Consider setting rxnRules to 2 or 3 for a more exhaustive search'</span>];
-0180                     warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'%s'</span>, EM);
-0181                 <span class="keyword">else</span>
-0182                     EM=[<span class="string">'No unbalanced reactions were found in the solution, but the model can still consume &quot;'</span> model.metNames{metabolite} <span class="string">'&quot;. Aborting search. Consider setting rxnRules to 2 or 3 for a more exhaustive search'</span>];
-0183                     warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'%s'</span>, EM);
-0184                 <span class="keyword">end</span>
-0185                 <span class="keyword">break</span>;
-0186             <span class="keyword">else</span>
-0187                 <span class="comment">%Find reactions which are not checked for mass balancing,</span>
-0188                 <span class="comment">%but that still carry flux</span>
-0189                 I=find(abs(solution)&gt;10^-8 &amp; balanceStructure.balanceStatus&lt;0);
-0190                 
-0191                 <span class="comment">%If there are any such reactions, remove one of them and</span>
-0192                 <span class="comment">%iterate</span>
-0193                 <span class="keyword">if</span> any(I)
-0194                     rxnToRemove=I(randperm(numel(I),1));
-0195                 <span class="keyword">else</span>
-0196                     <span class="keyword">if</span> rxnRules==2
-0197                         <span class="comment">%This happens when all reactions used are balanced</span>
-0198                         <span class="comment">%according to the metabolite formulas. This cannot</span>
-0199                         <span class="comment">%be, and indicates that one or more of the formulas</span>
-0200                         <span class="comment">%are wrong. Print a warning and delete any reaction</span>
-0201                         <span class="comment">%with flux</span>
-0202                         <span class="keyword">if</span> i==1
-0203                             EM=[<span class="string">'No unbalanced or unparsable reactions were found in the solution, but the model can still make &quot;'</span> model.metNames{metabolite} <span class="string">'&quot;. Aborting search. Consider setting rxnRules to 3 for a more exhaustive search'</span>];
-0204                             warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'%s'</span>, EM);
-0205                         <span class="keyword">else</span>
-0206                             EM=[<span class="string">'No unbalanced or unparsable reactions were found in the solution, but the model can still consume &quot;'</span> model.metNames{metabolite} <span class="string">'&quot;. Aborting search. Consider setting rxnRules to 3 for a more exhaustive search'</span>];
-0207                             warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'%s'</span>, EM);
-0208                         <span class="keyword">end</span>
-0209                         <span class="keyword">break</span>;
-0210                     <span class="keyword">else</span>
-0211                         <span class="keyword">if</span> i==1
-0212                             <span class="keyword">if</span> warned(1)==false
-0213                                 EM=[<span class="string">'No unbalanced or unparsable reactions were found in the solution, but the model can still make &quot;'</span> model.metNames{metabolite} <span class="string">'&quot;. This indicates some error in the metabolite formulas. Removing random reactions in the solution'</span>];
-0214                                 warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'%s'</span>, EM);
-0215                                 warned(1)=true;
-0216                             <span class="keyword">end</span>
-0217                         <span class="keyword">else</span>
-0218                             <span class="keyword">if</span> warned(2)==false
-0219                                 EM=[<span class="string">'No unbalanced or unparsable reactions were found in the solution, but the model can still consume &quot;'</span> model.metNames{metabolite} <span class="string">'&quot;. This indicates some error in the metabolite formulas. Removing random reactions in the solution'</span>];
-0220                                 warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'%s'</span>, EM);
-0221                                 warned(2)=true;
-0222                             <span class="keyword">end</span>
-0223                         <span class="keyword">end</span>
-0224                         I=find(abs(solution)&gt;10^-8);
-0225                         rxnToRemove=I(randperm(numel(I),1));
-0226                     <span class="keyword">end</span>
-0227                 <span class="keyword">end</span>
-0228             <span class="keyword">end</span>
-0229         <span class="keyword">end</span>
-0230         removedRxns=[removedRxns;model.rxns(rxnToRemove)];
-0231         <span class="keyword">if</span> printReport
-0232             fprintf([<span class="string">'\tRemoved: '</span>  model.rxns{rxnToRemove} <span class="string">'\n'</span>]);
+0148             [solution, metabolite]=findLeakMetabolite(model,<span class="string">'produce'</span>, <span class="keyword">...</span>
+0149                 <span class="string">'ignoreMets'</span>,ignoreMets,<span class="string">'isNames'</span>,isNames,<span class="string">'minNrFluxes'</span>,false, <span class="keyword">...</span>
+0150                 <span class="string">'allowExcretion'</span>,true,<span class="string">'ignoreIntBounds'</span>,ignoreIntBounds);
+0151             <span class="keyword">if</span> ~isempty(solution)
+0152                 <span class="keyword">if</span> printReport
+0153                     fprintf([<span class="string">'Can make: '</span> model.metNames{metabolite(1)} <span class="string">'\n'</span>]);
+0154                 <span class="keyword">end</span>
+0155             <span class="keyword">else</span>
+0156                 <span class="comment">%If no solution could be found, then finish</span>
+0157                 <span class="keyword">break</span>;
+0158             <span class="keyword">end</span>
+0159         <span class="keyword">else</span>
+0160             [solution, metabolite]=findLeakMetabolite(model,<span class="string">'consume'</span>, <span class="keyword">...</span>
+0161                 <span class="string">'ignoreMets'</span>,ignoreMets,<span class="string">'isNames'</span>,isNames,<span class="string">'minNrFluxes'</span>,false, <span class="keyword">...</span>
+0162                 <span class="string">'ignoreIntBounds'</span>,ignoreIntBounds);
+0163             <span class="keyword">if</span> ~isempty(solution)
+0164                 <span class="keyword">if</span> printReport
+0165                     fprintf([<span class="string">'Can consume: '</span> model.metNames{metabolite(1)} <span class="string">'\n'</span>]);
+0166                 <span class="keyword">end</span>
+0167             <span class="keyword">else</span>
+0168                 <span class="comment">%If no solution could be found, then finish</span>
+0169                 <span class="keyword">break</span>;
+0170             <span class="keyword">end</span>
+0171         <span class="keyword">end</span>
+0172         
+0173         <span class="comment">%Find all reactions that are unbalanced and still carry flux</span>
+0174         I=find(abs(solution)&gt;10^-8 &amp; balanceStructure.balanceStatus&gt;=0 &amp; ~all(balanceStructure.leftComp(:,bal)==balanceStructure.rightComp(:,bal),2));
+0175         
+0176         <span class="comment">%If there are unbalanced rxns then delete one of them and iterate</span>
+0177         <span class="keyword">if</span> any(I)
+0178             rxnToRemove=I(randperm(numel(I),1));
+0179         <span class="keyword">else</span>
+0180             <span class="comment">%If there are no unbalanced rxns in the solution</span>
+0181             <span class="keyword">if</span> rxnRules==1
+0182                 <span class="keyword">if</span> i==1
+0183                     EM=[<span class="string">'No unbalanced reactions were found in the solution, but the model can still make &quot;'</span> model.metNames{metabolite} <span class="string">'&quot;. Aborting search. Consider setting rxnRules to 2 or 3 for a more exhaustive search'</span>];
+0184                     warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'%s'</span>, EM);
+0185                 <span class="keyword">else</span>
+0186                     EM=[<span class="string">'No unbalanced reactions were found in the solution, but the model can still consume &quot;'</span> model.metNames{metabolite} <span class="string">'&quot;. Aborting search. Consider setting rxnRules to 2 or 3 for a more exhaustive search'</span>];
+0187                     warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'%s'</span>, EM);
+0188                 <span class="keyword">end</span>
+0189                 <span class="keyword">break</span>;
+0190             <span class="keyword">else</span>
+0191                 <span class="comment">%Find reactions which are not checked for mass balancing,</span>
+0192                 <span class="comment">%but that still carry flux</span>
+0193                 I=find(abs(solution)&gt;10^-8 &amp; balanceStructure.balanceStatus&lt;0);
+0194                 
+0195                 <span class="comment">%If there are any such reactions, remove one of them and</span>
+0196                 <span class="comment">%iterate</span>
+0197                 <span class="keyword">if</span> any(I)
+0198                     rxnToRemove=I(randperm(numel(I),1));
+0199                 <span class="keyword">else</span>
+0200                     <span class="keyword">if</span> rxnRules==2
+0201                         <span class="comment">%This happens when all reactions used are balanced</span>
+0202                         <span class="comment">%according to the metabolite formulas. This cannot</span>
+0203                         <span class="comment">%be, and indicates that one or more of the formulas</span>
+0204                         <span class="comment">%are wrong. Print a warning and delete any reaction</span>
+0205                         <span class="comment">%with flux</span>
+0206                         <span class="keyword">if</span> i==1
+0207                             EM=[<span class="string">'No unbalanced or unparsable reactions were found in the solution, but the model can still make &quot;'</span> model.metNames{metabolite} <span class="string">'&quot;. Aborting search. Consider setting rxnRules to 3 for a more exhaustive search'</span>];
+0208                             warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'%s'</span>, EM);
+0209                         <span class="keyword">else</span>
+0210                             EM=[<span class="string">'No unbalanced or unparsable reactions were found in the solution, but the model can still consume &quot;'</span> model.metNames{metabolite} <span class="string">'&quot;. Aborting search. Consider setting rxnRules to 3 for a more exhaustive search'</span>];
+0211                             warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'%s'</span>, EM);
+0212                         <span class="keyword">end</span>
+0213                         <span class="keyword">break</span>;
+0214                     <span class="keyword">else</span>
+0215                         <span class="keyword">if</span> i==1
+0216                             <span class="keyword">if</span> warned(1)==false
+0217                                 EM=[<span class="string">'No unbalanced or unparsable reactions were found in the solution, but the model can still make &quot;'</span> model.metNames{metabolite} <span class="string">'&quot;. This indicates some error in the metabolite formulas. Removing random reactions in the solution'</span>];
+0218                                 warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'%s'</span>, EM);
+0219                                 warned(1)=true;
+0220                             <span class="keyword">end</span>
+0221                         <span class="keyword">else</span>
+0222                             <span class="keyword">if</span> warned(2)==false
+0223                                 EM=[<span class="string">'No unbalanced or unparsable reactions were found in the solution, but the model can still consume &quot;'</span> model.metNames{metabolite} <span class="string">'&quot;. This indicates some error in the metabolite formulas. Removing random reactions in the solution'</span>];
+0224                                 warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'%s'</span>, EM);
+0225                                 warned(2)=true;
+0226                             <span class="keyword">end</span>
+0227                         <span class="keyword">end</span>
+0228                         I=find(abs(solution)&gt;10^-8);
+0229                         rxnToRemove=I(randperm(numel(I),1));
+0230                     <span class="keyword">end</span>
+0231                 <span class="keyword">end</span>
+0232             <span class="keyword">end</span>
 0233         <span class="keyword">end</span>
-0234         model=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,varargin)">removeReactions</a>(model,rxnToRemove);
-0235         balanceStructure.balanceStatus(rxnToRemove)=[];
-0236         balanceStructure.leftComp(rxnToRemove,:)=[];
-0237         balanceStructure.rightComp(rxnToRemove,:)=[];
-0238     <span class="keyword">end</span>
-0239 <span class="keyword">end</span>
-0240 
-0241 newModel=model;
-0242 <span class="keyword">end</span></pre></div>
+0234         removedRxns=[removedRxns;model.rxns(rxnToRemove)];
+0235         <span class="keyword">if</span> printReport
+0236             fprintf([<span class="string">'\tRemoved: '</span>  model.rxns{rxnToRemove} <span class="string">'\n'</span>]);
+0237         <span class="keyword">end</span>
+0238         model=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,varargin)">removeReactions</a>(model,rxnToRemove);
+0239         balanceStructure.balanceStatus(rxnToRemove)=[];
+0240         balanceStructure.leftComp(rxnToRemove,:)=[];
+0241         balanceStructure.rightComp(rxnToRemove,:)=[];
+0242     <span class="keyword">end</span>
+0243 <span class="keyword">end</span>
+0244 
+0245 newModel=model;
+0246 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

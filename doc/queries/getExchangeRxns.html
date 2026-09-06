@@ -148,53 +148,63 @@ This function is called by:
 0054 p=parseRAVENargs(varargin, {<span class="string">'reactionType'</span>,<span class="string">'all'</span>});
 0055 reactionType=char(p.reactionType);
 0056 
-0057 <span class="comment">% Find exchange reactions</span>
-0058 <span class="keyword">if</span> isfield(model, <span class="string">'unconstrained'</span>)
-0059     [~, I]=find(model.S(model.unconstrained~=0,:)&gt;0);
-0060     hasNoProd(I)=true;
-0061     [~, I]=find(model.S(model.unconstrained~=0,:)&lt;0);
-0062     hasNoSubs(I)=true;
-0063 <span class="keyword">else</span>
-0064     hasNoProd = transpose(find(sum(model.S&gt;0)==0));
-0065     hasNoSubs = transpose(find(sum(model.S&lt;0)==0));
-0066 <span class="keyword">end</span>
-0067 allExch   = [hasNoProd; hasNoSubs];
-0068 
-0069 <span class="keyword">switch</span> reactionType
-0070     <span class="keyword">case</span> {<span class="string">'both'</span>,<span class="string">'all'</span>} <span class="comment">% For legacy reasons, 'both' is also allowed</span>
-0071         exchangeRxnsIndexes = allExch;
-0072     <span class="keyword">case</span> <span class="string">'in'</span>
-0073         exchangeRxnsIndexes = hasNoSubs;
-0074     <span class="keyword">case</span> <span class="string">'out'</span>
-0075         exchangeRxnsIndexes = hasNoProd;
-0076     <span class="keyword">case</span> <span class="string">'blocked'</span>
-0077         exchangeRxnsIndexes = allExch(model.lb(allExch) == 0 &amp; model.ub(allExch) == 0);
-0078     <span class="keyword">case</span> <span class="string">'reverse'</span>
-0079         exchangeRxnsIndexes = allExch(model.lb(allExch) &lt; 0 &amp; model.ub(allExch) &gt; 0);
-0080     <span class="keyword">case</span> <span class="string">'uptake'</span>
-0081         
-0082         exchangeRxnsIndexes = allExch([(model.lb(hasNoProd) &lt; 0 &amp; model.ub(hasNoProd) &lt;= 0); <span class="keyword">...</span>
-0083                               (model.lb(hasNoSubs) &gt;= 0 &amp; model.ub(hasNoSubs) &gt; 0)]);
-0084     <span class="keyword">case</span> <span class="string">'excrete'</span>
-0085         exchangeRxnsIndexes = allExch([(model.lb(hasNoProd) &gt;= 0 &amp; model.ub(hasNoProd) &gt; 0); <span class="keyword">...</span>
-0086                               (model.lb(hasNoSubs) &lt; 0 &amp; model.ub(hasNoSubs) &lt;= 0)]);
-0087     <span class="keyword">otherwise</span>
-0088         error(<span class="string">'Invalid reactionType specified'</span>)
-0089 <span class="keyword">end</span>
-0090 exchangeRxnsIndexes = sort(exchangeRxnsIndexes);
-0091 exchangeRxns = model.rxns(exchangeRxnsIndexes);
-0092 
-0093 <span class="keyword">if</span> nargout &gt; 2
-0094     nExch=numel(exchangeRxnsIndexes);
-0095     exchangedMets=zeros(nExch,1);
-0096     <span class="keyword">for</span> ei=1:nExch
-0097         k=find(model.S(:,exchangeRxnsIndexes(ei)),1);
-0098         <span class="keyword">if</span> ~isempty(k)
-0099             exchangedMets(ei)=k;
-0100         <span class="keyword">end</span>
-0101     <span class="keyword">end</span>
-0102 <span class="keyword">end</span>
-0103 <span class="keyword">end</span></pre></div>
+0057 <span class="comment">% Find exchange reactions. Both branches must produce a column of reaction</span>
+0058 <span class="comment">% indexes: every use below (concatenation, bound lookups, model.rxns</span>
+0059 <span class="comment">% indexing) reads them as indexes, not as a mask over the reactions.</span>
+0060 <span class="keyword">if</span> isfield(model, <span class="string">'unconstrained'</span>) &amp;&amp; any(model.unconstrained~=0)
+0061     <span class="comment">% With boundary metabolites present, an exchange reaction is one that</span>
+0062     <span class="comment">% involves a boundary metabolite. Producing the boundary metabolite is</span>
+0063     <span class="comment">% what leaves the reaction without a product once the boundary</span>
+0064     <span class="comment">% metabolite is removed, which is the definition the branch below uses.</span>
+0065     boundaryMets = model.unconstrained~=0;
+0066     [~, I]=find(model.S(boundaryMets,:)&gt;0);
+0067     hasNoProd = unique(I(:));
+0068     [~, I]=find(model.S(boundaryMets,:)&lt;0);
+0069     hasNoSubs = unique(I(:));
+0070 <span class="keyword">else</span>
+0071     hasNoProd = transpose(find(sum(model.S&gt;0)==0));
+0072     hasNoSubs = transpose(find(sum(model.S&lt;0)==0));
+0073 <span class="keyword">end</span>
+0074 allExch   = [hasNoProd; hasNoSubs];
+0075 
+0076 <span class="keyword">switch</span> reactionType
+0077     <span class="keyword">case</span> {<span class="string">'both'</span>,<span class="string">'all'</span>} <span class="comment">% For legacy reasons, 'both' is also allowed</span>
+0078         exchangeRxnsIndexes = allExch;
+0079     <span class="keyword">case</span> <span class="string">'in'</span>
+0080         exchangeRxnsIndexes = hasNoSubs;
+0081     <span class="keyword">case</span> <span class="string">'out'</span>
+0082         exchangeRxnsIndexes = hasNoProd;
+0083     <span class="keyword">case</span> <span class="string">'blocked'</span>
+0084         exchangeRxnsIndexes = allExch(model.lb(allExch) == 0 &amp; model.ub(allExch) == 0);
+0085     <span class="keyword">case</span> <span class="string">'reverse'</span>
+0086         exchangeRxnsIndexes = allExch(model.lb(allExch) &lt; 0 &amp; model.ub(allExch) &gt; 0);
+0087     <span class="keyword">case</span> <span class="string">'uptake'</span>
+0088         
+0089         exchangeRxnsIndexes = allExch([(model.lb(hasNoProd) &lt; 0 &amp; model.ub(hasNoProd) &lt;= 0); <span class="keyword">...</span>
+0090                               (model.lb(hasNoSubs) &gt;= 0 &amp; model.ub(hasNoSubs) &gt; 0)]);
+0091     <span class="keyword">case</span> <span class="string">'excrete'</span>
+0092         exchangeRxnsIndexes = allExch([(model.lb(hasNoProd) &gt;= 0 &amp; model.ub(hasNoProd) &gt; 0); <span class="keyword">...</span>
+0093                               (model.lb(hasNoSubs) &lt; 0 &amp; model.ub(hasNoSubs) &lt;= 0)]);
+0094     <span class="keyword">otherwise</span>
+0095         error(<span class="string">'Invalid reactionType specified'</span>)
+0096 <span class="keyword">end</span>
+0097 <span class="comment">% unique rather than sort: a reaction that involves two boundary metabolites,</span>
+0098 <span class="comment">% and an empty reaction (no substrates and no products), each appear in both</span>
+0099 <span class="comment">% halves of allExch and would otherwise be reported twice.</span>
+0100 exchangeRxnsIndexes = unique(exchangeRxnsIndexes);
+0101 exchangeRxns = model.rxns(exchangeRxnsIndexes);
+0102 
+0103 <span class="keyword">if</span> nargout &gt; 2
+0104     nExch=numel(exchangeRxnsIndexes);
+0105     exchangedMets=zeros(nExch,1);
+0106     <span class="keyword">for</span> ei=1:nExch
+0107         k=find(model.S(:,exchangeRxnsIndexes(ei)),1);
+0108         <span class="keyword">if</span> ~isempty(k)
+0109             exchangedMets(ei)=k;
+0110         <span class="keyword">end</span>
+0111     <span class="keyword">end</span>
+0112 <span class="keyword">end</span>
+0113 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

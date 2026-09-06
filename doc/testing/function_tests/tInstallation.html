@@ -15,7 +15,7 @@
 <div><a href="../../index.html">Home</a> &gt;  <a href="#">testing</a> &gt; <a href="index.html">function_tests</a> &gt; tInstallation.m</div>
 
 <!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
-<td align="right"><a href="index.html">Index for testing\function_tests&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+<td align="right"><a href="index.html">Index for testing/function_tests&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
 
 <h1>tInstallation
 </h1>
@@ -41,7 +41,7 @@ This function is called by:
 
 <h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <ul style="list-style-image:url(../../matlabicon.gif)">
-<li><a href="#_sub1" class="code">function findRAVENrootReturnsInstallFolder(testCase)</a></li><li><a href="#_sub2" class="code">function checkInstallationReturnsVersion(testCase)</a></li><li><a href="#_sub3" class="code">function checkFunctionUniquenessRuns(testCase)</a></li><li><a href="#_sub4" class="code">function addRavenToUserPathExists(testCase)</a></li><li><a href="#_sub5" class="code">function removeRavenFromPathExists(testCase)</a></li><li><a href="#_sub6" class="code">function updateDocumentationExists(testCase)</a></li></ul>
+<li><a href="#_sub1" class="code">function findRAVENrootReturnsInstallFolder(testCase)</a></li><li><a href="#_sub2" class="code">function findRAVENrootSurvivesClearAndRepeatCalls(testCase)</a></li><li><a href="#_sub3" class="code">function checkInstallationReturnsVersion(testCase)</a></li><li><a href="#_sub4" class="code">function checkFunctionUniquenessRuns(testCase)</a></li><li><a href="#_sub5" class="code">function addRavenToUserPathExists(testCase)</a></li><li><a href="#_sub6" class="code">function removeRavenFromPathExists(testCase)</a></li><li><a href="#_sub7" class="code">function updateDocumentationExists(testCase)</a></li></ul>
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <div class="fragment"><pre>0001 classdef <a href="tInstallation.html" class="code" title="">tInstallation</a> &lt; <a href="RavenTestCase.html" class="code" title="">RavenTestCase</a>
@@ -60,30 +60,45 @@ This function is called by:
 0014             testCase.verifyTrue(exist(fullfile(p,<span class="string">'installation'</span>,<span class="string">'findRAVENroot.m'</span>),<span class="string">'file'</span>)==2);
 0015         <span class="keyword">end</span>
 0016 
-0017         <a name="_sub1" href="#_subfunctions" class="code">function checkInstallationReturnsVersion(testCase)</a>
-0018             [~, currVer] = evalc(<span class="string">'checkInstallation(false, false)'</span>);
-0019             testCase.verifyNotEmpty(currVer);
-0020         <span class="keyword">end</span>
-0021 
-0022         <a name="_sub2" href="#_subfunctions" class="code">function checkFunctionUniquenessRuns(testCase)</a>
-0023             [~, status] = evalc(<span class="string">'checkFunctionUniqueness()'</span>);
-0024             testCase.verifyTrue(islogical(status) || isnumeric(status));
-0025         <span class="keyword">end</span>
-0026 
-0027         <a name="_sub3" href="#_subfunctions" class="code">function addRavenToUserPathExists(testCase)</a>
-0028             testCase.verifyEqual(exist(<span class="string">'addRavenToUserPath'</span>,<span class="string">'file'</span>), 2);
-0029         <span class="keyword">end</span>
-0030 
-0031         <a name="_sub4" href="#_subfunctions" class="code">function removeRavenFromPathExists(testCase)</a>
-0032             testCase.verifyEqual(exist(<span class="string">'removeRavenFromPath'</span>,<span class="string">'file'</span>), 2);
-0033         <span class="keyword">end</span>
-0034 
-0035         <a name="_sub5" href="#_subfunctions" class="code">function updateDocumentationExists(testCase)</a>
-0036             testCase.verifyEqual(exist(<span class="string">'updateDocumentation'</span>,<span class="string">'file'</span>), 2);
-0037         <span class="keyword">end</span>
-0038 
-0039     <span class="keyword">end</span>
-0040 <span class="keyword">end</span></pre></div>
+0017         <a name="_sub1" href="#_subfunctions" class="code">function findRAVENrootSurvivesClearAndRepeatCalls(testCase)</a>
+0018             <span class="comment">% The resolved path is cached for the session (findRAVENroot is</span>
+0019             <span class="comment">% called on every solver invocation, so re-reading the</span>
+0020             <span class="comment">% preference from disk every time is wasteful). Repeated calls</span>
+0021             <span class="comment">% must keep returning the same root, and it must still resolve</span>
+0022             <span class="comment">% correctly after being cleared, which is what checkInstallation</span>
+0023             <span class="comment">% does when the RAVEN.ravenPath preference changes.</span>
+0024             p1 = findRAVENroot();
+0025             p2 = findRAVENroot();
+0026             testCase.verifyEqual(p2, p1);
+0027             clear(<span class="string">'findRAVENroot'</span>);
+0028             p3 = findRAVENroot();
+0029             testCase.verifyEqual(p3, p1);
+0030         <span class="keyword">end</span>
+0031 
+0032         <a name="_sub2" href="#_subfunctions" class="code">function checkInstallationReturnsVersion(testCase)</a>
+0033             [~, currVer] = evalc(<span class="string">'checkInstallation(false, false)'</span>);
+0034             testCase.verifyNotEmpty(currVer);
+0035         <span class="keyword">end</span>
+0036 
+0037         <a name="_sub3" href="#_subfunctions" class="code">function checkFunctionUniquenessRuns(testCase)</a>
+0038             [~, status] = evalc(<span class="string">'checkFunctionUniqueness()'</span>);
+0039             testCase.verifyTrue(islogical(status) || isnumeric(status));
+0040         <span class="keyword">end</span>
+0041 
+0042         <a name="_sub4" href="#_subfunctions" class="code">function addRavenToUserPathExists(testCase)</a>
+0043             testCase.verifyEqual(exist(<span class="string">'addRavenToUserPath'</span>,<span class="string">'file'</span>), 2);
+0044         <span class="keyword">end</span>
+0045 
+0046         <a name="_sub5" href="#_subfunctions" class="code">function removeRavenFromPathExists(testCase)</a>
+0047             testCase.verifyEqual(exist(<span class="string">'removeRavenFromPath'</span>,<span class="string">'file'</span>), 2);
+0048         <span class="keyword">end</span>
+0049 
+0050         <a name="_sub6" href="#_subfunctions" class="code">function updateDocumentationExists(testCase)</a>
+0051             testCase.verifyEqual(exist(<span class="string">'updateDocumentation'</span>,<span class="string">'file'</span>), 2);
+0052         <span class="keyword">end</span>
+0053 
+0054     <span class="keyword">end</span>
+0055 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

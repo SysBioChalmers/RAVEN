@@ -676,184 +676,201 @@ This function is called by:
 0530     <span class="keyword">end</span>
 0531 <span class="keyword">end</span>
 0532 
-0533 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'rxnConfidenceScores'</span>)
-0534     <span class="keyword">if</span> numel(rxnsToAdd.rxnConfidenceScores)~=nRxns
-0535         EM=<span class="string">'rxnsToAdd.rxnConfidenceScores must have the same number of elements as rxnsToAdd.rxns'</span>;
+0533 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'spontaneous'</span>)
+0534     <span class="keyword">if</span> numel(rxnsToAdd.spontaneous)~=nRxns
+0535         EM=<span class="string">'rxnsToAdd.spontaneous must have the same number of elements as rxnsToAdd.rxns'</span>;
 0536         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
 0537     <span class="keyword">end</span>
 0538     <span class="comment">%Fill with standard if it does not exist</span>
-0539     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'rxnConfidenceScores'</span>)
-0540         newModel.rxnConfidenceScores=NaN(nOldRxns,1);
+0539     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'spontaneous'</span>)
+0540         newModel.spontaneous=false(nOldRxns,1);
 0541     <span class="keyword">end</span>
-0542     newModel.rxnConfidenceScores=[newModel.rxnConfidenceScores;rxnsToAdd.rxnConfidenceScores(:)];
+0542     newModel.spontaneous=[newModel.spontaneous;logical(rxnsToAdd.spontaneous(:))];
 0543 <span class="keyword">else</span>
 0544     <span class="comment">%Fill with standard if it does not exist</span>
-0545     <span class="keyword">if</span> isfield(newModel,<span class="string">'rxnConfidenceScores'</span>)
-0546         newModel.rxnConfidenceScores=[newModel.rxnConfidenceScores;NaN(nRxns,1)];
+0545     <span class="keyword">if</span> isfield(newModel,<span class="string">'spontaneous'</span>)
+0546         newModel.spontaneous=[newModel.spontaneous;false(nRxns,1)];
 0547     <span class="keyword">end</span>
 0548 <span class="keyword">end</span>
 0549 
-0550 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'rxnDeltaG'</span>)
-0551     <span class="keyword">if</span> numel(rxnsToAdd.rxnDeltaG)~=nRxns
-0552         EM=<span class="string">'rxnsToAdd.rxnDeltaG must have the same number of elements as rxnsToAdd.rxns'</span>;
+0550 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'rxnConfidenceScores'</span>)
+0551     <span class="keyword">if</span> numel(rxnsToAdd.rxnConfidenceScores)~=nRxns
+0552         EM=<span class="string">'rxnsToAdd.rxnConfidenceScores must have the same number of elements as rxnsToAdd.rxns'</span>;
 0553         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
 0554     <span class="keyword">end</span>
 0555     <span class="comment">%Fill with standard if it does not exist</span>
-0556     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'rxnDeltaG'</span>)
-0557         newModel.rxnDeltaG=NaN(nOldRxns,1);
+0556     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'rxnConfidenceScores'</span>)
+0557         newModel.rxnConfidenceScores=NaN(nOldRxns,1);
 0558     <span class="keyword">end</span>
-0559     newModel.rxnDeltaG=[newModel.rxnDeltaG;rxnsToAdd.rxnDeltaG(:)];
+0559     newModel.rxnConfidenceScores=[newModel.rxnConfidenceScores;rxnsToAdd.rxnConfidenceScores(:)];
 0560 <span class="keyword">else</span>
 0561     <span class="comment">%Fill with standard if it does not exist</span>
-0562     <span class="keyword">if</span> isfield(newModel,<span class="string">'rxnDeltaG'</span>)
-0563         newModel.rxnDeltaG=[newModel.rxnDeltaG;NaN(nRxns,1)];
+0562     <span class="keyword">if</span> isfield(newModel,<span class="string">'rxnConfidenceScores'</span>)
+0563         newModel.rxnConfidenceScores=[newModel.rxnConfidenceScores;NaN(nRxns,1)];
 0564     <span class="keyword">end</span>
 0565 <span class="keyword">end</span>
 0566 
-0567 
-0568 <span class="comment">%***Start parsing the equations and adding the info to the S matrix The</span>
-0569 <span class="comment">%mets are matched to model.mets</span>
-0570 <span class="keyword">if</span> eqnType==1
-0571     [I, J]=ismember(mets,model.mets);
-0572     <span class="keyword">if</span> ~all(I)
-0573         <span class="keyword">if</span> allowNewMets==true || ischar(allowNewMets)
-0574             <span class="comment">%Add the new mets</span>
-0575             metsToAdd.mets=mets(~I);
-0576             metsToAdd.metNames=metsToAdd.mets;
-0577             metsToAdd.compartments=compartment;
-0578             <span class="keyword">if</span> ischar(allowNewMets)
-0579                 newModel=<a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,varargin)">addMets</a>(newModel,metsToAdd,true,allowNewMets);
-0580             <span class="keyword">else</span>
-0581                 newModel=<a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,varargin)">addMets</a>(newModel,metsToAdd,true);
-0582             <span class="keyword">end</span>
-0583         <span class="keyword">else</span>
-0584             EM=<span class="string">'One or more equations contain metabolites that are not in model.mets. Set allowNewMets to true to allow this function to add metabolites or use addMets to add them before calling this function. Are you sure that eqnType=1?'</span>;
-0585             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0586         <span class="keyword">end</span>
-0587     <span class="keyword">end</span>
-0588     <span class="comment">%Calculate the indexes of the metabolites and add the info</span>
-0589     metIndexes=J;
-0590     metIndexes(~I)=numel(newModel.mets)-sum(~I)+1:numel(newModel.mets);
-0591 <span class="keyword">end</span>
-0592 
-0593 <span class="comment">%Do some stuff that is the same for eqnType=2 and eqnType=3</span>
-0594 <span class="keyword">if</span> eqnType==2 || eqnType==3
-0595     <span class="comment">%For later..</span>
-0596     t2=strcat(model.metNames,<span class="string">'***'</span>,model.comps(model.metComps));
-0597 <span class="keyword">end</span>
-0598 
-0599 <span class="comment">%The mets are matched to model.metNames and assigned to &quot;compartment&quot;</span>
-0600 <span class="keyword">if</span> eqnType==2
-0601     <span class="comment">%%Check that the metabolite names are not present in the same</span>
-0602     <span class="comment">%%compartment.</span>
-0603     <span class="comment">%Not the neatest way maybe..</span>
-0604     t1=strcat(mets,<span class="string">'***'</span>,compartment);
-0605     [I, J]=ismember(t1,t2);
-0606     
-0607     <span class="keyword">if</span> ~all(I)
-0608         <span class="keyword">if</span> allowNewMets==true || ischar(allowNewMets)
-0609             <span class="comment">%Add the new mets</span>
-0610             metsToAdd.metNames=mets(~I);
-0611             metsToAdd.compartments=compartment;
-0612             <span class="keyword">if</span> ischar(allowNewMets)
-0613                 newModel=<a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,varargin)">addMets</a>(newModel,metsToAdd,true,allowNewMets);
-0614             <span class="keyword">else</span>
-0615                 newModel=<a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,varargin)">addMets</a>(newModel,metsToAdd,true);
-0616             <span class="keyword">end</span>
-0617         <span class="keyword">else</span>
-0618             EM=<span class="string">'One or more equations contain metabolites that are not in model.mets. Set allowNewMets to true to allow this function to add metabolites or use addMets to add them before calling this function'</span>;
-0619             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0620         <span class="keyword">end</span>
-0621     <span class="keyword">end</span>
-0622     
-0623     <span class="comment">%Calculate the indexes of the metabolites</span>
-0624     metIndexes=J;
-0625     metIndexes(~I)=numel(newModel.mets)-sum(~I)+1:numel(newModel.mets);
-0626 <span class="keyword">end</span>
-0627 
-0628 <span class="comment">%The equations are on the form metNames[compName]</span>
-0629 <span class="keyword">if</span> eqnType==3
-0630     <span class="comment">%Parse the metabolite names</span>
-0631     metNames=cell(numel(mets),1);
-0632     compartments=metNames;
-0633     <span class="keyword">for</span> i=1:numel(mets)
-0634         starts=max(strfind(mets{i},<span class="string">'['</span>));
-0635         ends=max(strfind(mets{i},<span class="string">']'</span>));
-0636         
-0637         <span class="comment">%Check that the formatting is correct</span>
-0638         <span class="keyword">if</span> isempty(starts) || isempty(ends) || ends&lt;numel(mets{i})
-0639             EM=[<span class="string">'The metabolite '</span> mets{i} <span class="string">' is not correctly formatted for eqnType=3'</span>];
-0640             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0641         <span class="keyword">end</span>
-0642         
-0643         <span class="comment">%Check that the compartment is correct</span>
-0644         compartments{i}=mets{i}(starts+1:ends-1);
-0645         I=ismember(compartments(i),newModel.comps);
-0646         <span class="keyword">if</span> ~I
-0647             EM=[<span class="string">'The metabolite '</span> mets{i} <span class="string">' has a compartment that is not in model.comps'</span>];
-0648             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0649         <span class="keyword">end</span>
-0650         metNames{i}=mets{i}(1:starts-1);
-0651     <span class="keyword">end</span>
-0652     
-0653     <span class="comment">%Check if the metabolite exists already</span>
-0654     t1=strcat(metNames,<span class="string">'***'</span>,compartments);
-0655     [I, J]=ismember(t1,t2);
-0656     
-0657     <span class="keyword">if</span> ~all(I)
-0658         <span class="keyword">if</span> allowNewMets==true | ischar(allowNewMets)
-0659             <span class="comment">%Add the new mets</span>
-0660             metsToAdd.metNames=metNames(~I);
-0661             metsToAdd.compartments=compartments(~I);
-0662             <span class="keyword">if</span> ischar(allowNewMets)
-0663                 newModel=<a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,varargin)">addMets</a>(newModel,metsToAdd,true,allowNewMets);
-0664             <span class="keyword">else</span>
-0665                 newModel=<a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,varargin)">addMets</a>(newModel,metsToAdd,true);
-0666             <span class="keyword">end</span>
-0667         <span class="keyword">else</span>
-0668             EM=<span class="string">'One or more equations contain metabolites that are not in model.metNames. Set allowNewMets to true to allow this function to add metabolites or use addMets to add them before calling this function'</span>;
-0669             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0670         <span class="keyword">end</span>
-0671     <span class="keyword">end</span>
-0672     
-0673     <span class="comment">%Calculate the indexes of the metabolites</span>
-0674     metIndexes=J;
-0675     metIndexes(~I)=numel(newModel.mets)-sum(~I)+1:numel(newModel.mets);
-0676 <span class="keyword">end</span>
-0677 
-0678 <span class="comment">%Add the info to the stoichiometric matrix</span>
-0679 newModel.S=[newModel.S sparse(size(newModel.S,1),nRxns)];
-0680 
-0681 <span class="keyword">for</span> i=1:nRxns
-0682     newModel.S(metIndexes,nOldRxns+i)=S(:,i);
-0683     <span class="comment">%Parse the grRules and check whether all genes in grRules appear in</span>
-0684     <span class="comment">%genes</span>
-0685     <span class="keyword">if</span> isfield(newModel,<span class="string">'grRules'</span>)
-0686         rule=newModel.grRules{nOldRxns+i};
-0687         rule=strrep(rule,<span class="string">'('</span>,<span class="string">''</span>);
-0688         rule=strrep(rule,<span class="string">')'</span>,<span class="string">''</span>);
-0689         rule=strrep(rule,<span class="string">' or '</span>,<span class="string">' '</span>);
-0690         rule=strrep(rule,<span class="string">' and '</span>,<span class="string">' '</span>);
-0691         genes=regexp(rule,<span class="string">' '</span>,<span class="string">'split'</span>);
-0692         [I, J]=ismember(genes,newModel.genes);
-0693         <span class="keyword">if</span> ~all(I) &amp;&amp; any(rule)
-0694             EM=[<span class="string">'Not all genes for reaction '</span> rxnsToAdd.rxns{i} <span class="string">' were found in model.genes. If needed, add genes with addGenesRaven before calling this function, or set the ''allowNewGenes'' flag to true'</span>];
-0695             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0696         <span class="keyword">end</span>
-0697     <span class="keyword">end</span>
-0698 <span class="keyword">end</span>
-0699 
-0700 <span class="comment">%Make temporary minimal model structure with only new rxns, to parse to</span>
-0701 <span class="comment">%standardizeGrRules</span>
-0702 newRxnsModel.genes=newModel.genes;
-0703 newRxnsModel.grRules=newModel.grRules(length(model.rxns)+1:end);
-0704 newRxnsModel.rxns=newModel.rxns(length(model.rxns)+1:end);
-0705 
-0706 <span class="comment">%Fix grRules and reconstruct rxnGeneMat</span>
-0707 [grRules,rxnGeneMat] = <a href="standardizeGrRules.html" class="code" title="function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,varargin)">standardizeGrRules</a>(newRxnsModel,true);
-0708 newModel.rxnGeneMat = [newModel.rxnGeneMat; rxnGeneMat];
-0709 newModel.grRules = [newModel.grRules(1:nOldRxns); grRules];
-0710 <span class="keyword">end</span></pre></div>
+0567 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'rxnDeltaG'</span>)
+0568     <span class="keyword">if</span> numel(rxnsToAdd.rxnDeltaG)~=nRxns
+0569         EM=<span class="string">'rxnsToAdd.rxnDeltaG must have the same number of elements as rxnsToAdd.rxns'</span>;
+0570         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0571     <span class="keyword">end</span>
+0572     <span class="comment">%Fill with standard if it does not exist</span>
+0573     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'rxnDeltaG'</span>)
+0574         newModel.rxnDeltaG=NaN(nOldRxns,1);
+0575     <span class="keyword">end</span>
+0576     newModel.rxnDeltaG=[newModel.rxnDeltaG;rxnsToAdd.rxnDeltaG(:)];
+0577 <span class="keyword">else</span>
+0578     <span class="comment">%Fill with standard if it does not exist</span>
+0579     <span class="keyword">if</span> isfield(newModel,<span class="string">'rxnDeltaG'</span>)
+0580         newModel.rxnDeltaG=[newModel.rxnDeltaG;NaN(nRxns,1)];
+0581     <span class="keyword">end</span>
+0582 <span class="keyword">end</span>
+0583 
+0584 
+0585 <span class="comment">%***Start parsing the equations and adding the info to the S matrix The</span>
+0586 <span class="comment">%mets are matched to model.mets</span>
+0587 <span class="keyword">if</span> eqnType==1
+0588     [I, J]=ismember(mets,model.mets);
+0589     <span class="keyword">if</span> ~all(I)
+0590         <span class="keyword">if</span> allowNewMets==true || ischar(allowNewMets)
+0591             <span class="comment">%Add the new mets</span>
+0592             metsToAdd.mets=mets(~I);
+0593             metsToAdd.metNames=metsToAdd.mets;
+0594             metsToAdd.compartments=compartment;
+0595             <span class="keyword">if</span> ischar(allowNewMets)
+0596                 newModel=<a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,varargin)">addMets</a>(newModel,metsToAdd,true,allowNewMets);
+0597             <span class="keyword">else</span>
+0598                 newModel=<a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,varargin)">addMets</a>(newModel,metsToAdd,true);
+0599             <span class="keyword">end</span>
+0600         <span class="keyword">else</span>
+0601             EM=<span class="string">'One or more equations contain metabolites that are not in model.mets. Set allowNewMets to true to allow this function to add metabolites or use addMets to add them before calling this function. Are you sure that eqnType=1?'</span>;
+0602             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0603         <span class="keyword">end</span>
+0604     <span class="keyword">end</span>
+0605     <span class="comment">%Calculate the indexes of the metabolites and add the info</span>
+0606     metIndexes=J;
+0607     metIndexes(~I)=numel(newModel.mets)-sum(~I)+1:numel(newModel.mets);
+0608 <span class="keyword">end</span>
+0609 
+0610 <span class="comment">%Do some stuff that is the same for eqnType=2 and eqnType=3</span>
+0611 <span class="keyword">if</span> eqnType==2 || eqnType==3
+0612     <span class="comment">%For later..</span>
+0613     t2=strcat(model.metNames,<span class="string">'***'</span>,model.comps(model.metComps));
+0614 <span class="keyword">end</span>
+0615 
+0616 <span class="comment">%The mets are matched to model.metNames and assigned to &quot;compartment&quot;</span>
+0617 <span class="keyword">if</span> eqnType==2
+0618     <span class="comment">%%Check that the metabolite names are not present in the same</span>
+0619     <span class="comment">%%compartment.</span>
+0620     <span class="comment">%Not the neatest way maybe..</span>
+0621     t1=strcat(mets,<span class="string">'***'</span>,compartment);
+0622     [I, J]=ismember(t1,t2);
+0623     
+0624     <span class="keyword">if</span> ~all(I)
+0625         <span class="keyword">if</span> allowNewMets==true || ischar(allowNewMets)
+0626             <span class="comment">%Add the new mets</span>
+0627             metsToAdd.metNames=mets(~I);
+0628             metsToAdd.compartments=compartment;
+0629             <span class="keyword">if</span> ischar(allowNewMets)
+0630                 newModel=<a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,varargin)">addMets</a>(newModel,metsToAdd,true,allowNewMets);
+0631             <span class="keyword">else</span>
+0632                 newModel=<a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,varargin)">addMets</a>(newModel,metsToAdd,true);
+0633             <span class="keyword">end</span>
+0634         <span class="keyword">else</span>
+0635             EM=<span class="string">'One or more equations contain metabolites that are not in model.mets. Set allowNewMets to true to allow this function to add metabolites or use addMets to add them before calling this function'</span>;
+0636             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0637         <span class="keyword">end</span>
+0638     <span class="keyword">end</span>
+0639     
+0640     <span class="comment">%Calculate the indexes of the metabolites</span>
+0641     metIndexes=J;
+0642     metIndexes(~I)=numel(newModel.mets)-sum(~I)+1:numel(newModel.mets);
+0643 <span class="keyword">end</span>
+0644 
+0645 <span class="comment">%The equations are on the form metNames[compName]</span>
+0646 <span class="keyword">if</span> eqnType==3
+0647     <span class="comment">%Parse the metabolite names</span>
+0648     metNames=cell(numel(mets),1);
+0649     compartments=metNames;
+0650     <span class="keyword">for</span> i=1:numel(mets)
+0651         starts=max(strfind(mets{i},<span class="string">'['</span>));
+0652         ends=max(strfind(mets{i},<span class="string">']'</span>));
+0653         
+0654         <span class="comment">%Check that the formatting is correct</span>
+0655         <span class="keyword">if</span> isempty(starts) || isempty(ends) || ends&lt;numel(mets{i})
+0656             EM=[<span class="string">'The metabolite '</span> mets{i} <span class="string">' is not correctly formatted for eqnType=3'</span>];
+0657             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0658         <span class="keyword">end</span>
+0659         
+0660         <span class="comment">%Check that the compartment is correct</span>
+0661         compartments{i}=mets{i}(starts+1:ends-1);
+0662         I=ismember(compartments(i),newModel.comps);
+0663         <span class="keyword">if</span> ~I
+0664             EM=[<span class="string">'The metabolite '</span> mets{i} <span class="string">' has a compartment that is not in model.comps'</span>];
+0665             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0666         <span class="keyword">end</span>
+0667         metNames{i}=mets{i}(1:starts-1);
+0668     <span class="keyword">end</span>
+0669     
+0670     <span class="comment">%Check if the metabolite exists already</span>
+0671     t1=strcat(metNames,<span class="string">'***'</span>,compartments);
+0672     [I, J]=ismember(t1,t2);
+0673     
+0674     <span class="keyword">if</span> ~all(I)
+0675         <span class="keyword">if</span> allowNewMets==true | ischar(allowNewMets)
+0676             <span class="comment">%Add the new mets</span>
+0677             metsToAdd.metNames=metNames(~I);
+0678             metsToAdd.compartments=compartments(~I);
+0679             <span class="keyword">if</span> ischar(allowNewMets)
+0680                 newModel=<a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,varargin)">addMets</a>(newModel,metsToAdd,true,allowNewMets);
+0681             <span class="keyword">else</span>
+0682                 newModel=<a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,varargin)">addMets</a>(newModel,metsToAdd,true);
+0683             <span class="keyword">end</span>
+0684         <span class="keyword">else</span>
+0685             EM=<span class="string">'One or more equations contain metabolites that are not in model.metNames. Set allowNewMets to true to allow this function to add metabolites or use addMets to add them before calling this function'</span>;
+0686             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0687         <span class="keyword">end</span>
+0688     <span class="keyword">end</span>
+0689     
+0690     <span class="comment">%Calculate the indexes of the metabolites</span>
+0691     metIndexes=J;
+0692     metIndexes(~I)=numel(newModel.mets)-sum(~I)+1:numel(newModel.mets);
+0693 <span class="keyword">end</span>
+0694 
+0695 <span class="comment">%Add the info to the stoichiometric matrix</span>
+0696 newModel.S=[newModel.S sparse(size(newModel.S,1),nRxns)];
+0697 
+0698 <span class="keyword">for</span> i=1:nRxns
+0699     newModel.S(metIndexes,nOldRxns+i)=S(:,i);
+0700     <span class="comment">%Parse the grRules and check whether all genes in grRules appear in</span>
+0701     <span class="comment">%genes</span>
+0702     <span class="keyword">if</span> isfield(newModel,<span class="string">'grRules'</span>)
+0703         rule=newModel.grRules{nOldRxns+i};
+0704         rule=strrep(rule,<span class="string">'('</span>,<span class="string">''</span>);
+0705         rule=strrep(rule,<span class="string">')'</span>,<span class="string">''</span>);
+0706         rule=strrep(rule,<span class="string">' or '</span>,<span class="string">' '</span>);
+0707         rule=strrep(rule,<span class="string">' and '</span>,<span class="string">' '</span>);
+0708         genes=regexp(rule,<span class="string">' '</span>,<span class="string">'split'</span>);
+0709         [I, J]=ismember(genes,newModel.genes);
+0710         <span class="keyword">if</span> ~all(I) &amp;&amp; any(rule)
+0711             EM=[<span class="string">'Not all genes for reaction '</span> rxnsToAdd.rxns{i} <span class="string">' were found in model.genes. If needed, add genes with addGenesRaven before calling this function, or set the ''allowNewGenes'' flag to true'</span>];
+0712             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0713         <span class="keyword">end</span>
+0714     <span class="keyword">end</span>
+0715 <span class="keyword">end</span>
+0716 
+0717 <span class="comment">%Make temporary minimal model structure with only new rxns, to parse to</span>
+0718 <span class="comment">%standardizeGrRules</span>
+0719 newRxnsModel.genes=newModel.genes;
+0720 newRxnsModel.grRules=newModel.grRules(length(model.rxns)+1:end);
+0721 newRxnsModel.rxns=newModel.rxns(length(model.rxns)+1:end);
+0722 
+0723 <span class="comment">%Fix grRules and reconstruct rxnGeneMat</span>
+0724 [grRules,rxnGeneMat] = <a href="standardizeGrRules.html" class="code" title="function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,varargin)">standardizeGrRules</a>(newRxnsModel,true);
+0725 newModel.rxnGeneMat = [newModel.rxnGeneMat; rxnGeneMat];
+0726 newModel.grRules = [newModel.grRules(1:nOldRxns); grRules];
+0727 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

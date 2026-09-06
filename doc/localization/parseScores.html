@@ -46,10 +46,12 @@
      compartment), 'compartments' (a COMPARTMENTS jensenlab.org channel TSV), or
      'uniprot' (a UniProtKB TSV export with a &quot;Subcellular location [CC]&quot; column).
  compartmentMap : containers.Map
-     maps predictor/database compartment labels to your model's compartment ids and
-     merges synonyms (max). For 'uniprot' it is also the vocabulary of location terms
-     to search for and defaults to defaultCompartmentMap; for the others it is optional
-     (labels not in the map are dropped when one is given).
+     renames the predictor's / database's compartment labels to your model's
+     compartment ids. Keys are the labels as the predictor writes them, lower
+     case; values are the compartment ids you want in the GSS. See
+     Compartment mapping below. Optional for every predictor except 'uniprot',
+     where it also supplies the location vocabulary and defaults to
+     defaultCompartmentMap.
  idColumn : char or double
      column (name or 1-based index) holding the gene id for 'mulocdeep' / 'uniprot'.
      Default: the first column. For yeast-GEM, use the UniProt ordered-locus column.
@@ -59,11 +61,58 @@
  Returns
  -------
  GSS : struct
-     a gene scoring structure (genes, compartments, scores) for predictLocalization.
+     a gene scoring structure for predictLocalization, with fields:
+
+     - genes : cell, one entry per gene.
+     - compartments : cell, one entry per compartment column.
+     - scores : double, numel(genes)-by-numel(compartments), normalized so
+       the best score per gene is 1.0.
+
+ Compartment mapping
+ -------------------
+ Predictors emit their own compartment vocabulary (&quot;Endoplasmic reticulum&quot;,
+ &quot;Golgi apparatus&quot;, ...), which rarely matches a model's compartment ids.
+ compartmentMap is a containers.Map that translates them, and it is the only
+ place that translation happens - the returned GSS already uses your ids.
+ defaultCompartmentMap returns a worked example, tuned for yeast/fungal
+ models; use it as-is, or as the template for your own. Three rules:
+
+ - **A label not in the map is dropped**, together with its whole score
+   column. This is how you exclude compartments your model does not have
+   (defaultCompartmentMap has no 'plastid' key, so plastid scores never reach
+   a fungal model). Passing no map at all keeps every label untouched.
+ - **Several labels may share one compartment id**, which merges their
+   columns. The merged score for a gene is the *maximum* over the merged
+   labels, not their sum, so a gene predicted 0.7 cytoplasm and 0.4 cytosol
+   scores 0.7 for 'c'. Use this for synonyms and for deliberately collapsing
+   distinct compartments your model does not separate (defaultCompartmentMap
+   sends both 'vacuole' and 'lysosome' to 'v'). Column order follows the first
+   appearance of each id.
+ - **One label cannot be split across two compartment ids**: a containers.Map
+   holds one value per key, and the GSS is what predictLocalization scores
+   against, so a split has to be an explicit statement about the returned
+   scores rather than a mapping rule. Duplicate the column afterwards, e.g. to
+   let a gene predicted &quot;golgi&quot; compete for both 'g' and 'v':
+
+       GSS = parseScores(file, 'compartmentMap', map);
+       g = strcmp(GSS.compartments, 'g');
+       GSS.compartments{end+1} = 'v';
+       GSS.scores(:,end+1) = GSS.scores(:,g);
+
+   The two columns are then independent: predictLocalization assigns each gene
+   to exactly one compartment, so it picks whichever of 'g'/'v' keeps the
+   network better connected. Halve the copied column instead of duplicating it
+   if the evidence should count for less in the second compartment.
+
+ For 'uniprot' the keys do double duty: they are also the terms searched for
+ in the &quot;Subcellular location [CC]&quot; free text, matched whole-word and case
+ insensitively, so they must be UniProt's own noun forms. A term that is not a
+ key is never looked for.
 
  Examples
  --------
      GSS = parseScores(file, 'predictor', 'deeploc');
+     GSS = parseScores(file, 'predictor', 'deeploc', 'compartmentMap', defaultCompartmentMap);
      GSS = parseScores(file, 'predictor', 'uniprot', 'idColumn', 'Gene Names (ordered locus)');
 
  See also
@@ -105,252 +154,301 @@ This function is called by:
 0018 <span class="comment">%     compartment), 'compartments' (a COMPARTMENTS jensenlab.org channel TSV), or</span>
 0019 <span class="comment">%     'uniprot' (a UniProtKB TSV export with a &quot;Subcellular location [CC]&quot; column).</span>
 0020 <span class="comment">% compartmentMap : containers.Map</span>
-0021 <span class="comment">%     maps predictor/database compartment labels to your model's compartment ids and</span>
-0022 <span class="comment">%     merges synonyms (max). For 'uniprot' it is also the vocabulary of location terms</span>
-0023 <span class="comment">%     to search for and defaults to defaultCompartmentMap; for the others it is optional</span>
-0024 <span class="comment">%     (labels not in the map are dropped when one is given).</span>
-0025 <span class="comment">% idColumn : char or double</span>
-0026 <span class="comment">%     column (name or 1-based index) holding the gene id for 'mulocdeep' / 'uniprot'.</span>
-0027 <span class="comment">%     Default: the first column. For yeast-GEM, use the UniProt ordered-locus column.</span>
-0028 <span class="comment">% minConfidence : double</span>
-0029 <span class="comment">%     for 'compartments', drop annotations with confidence below this (default 0).</span>
-0030 <span class="comment">%</span>
-0031 <span class="comment">% Returns</span>
-0032 <span class="comment">% -------</span>
-0033 <span class="comment">% GSS : struct</span>
-0034 <span class="comment">%     a gene scoring structure (genes, compartments, scores) for predictLocalization.</span>
-0035 <span class="comment">%</span>
-0036 <span class="comment">% Examples</span>
-0037 <span class="comment">% --------</span>
-0038 <span class="comment">%     GSS = parseScores(file, 'predictor', 'deeploc');</span>
-0039 <span class="comment">%     GSS = parseScores(file, 'predictor', 'uniprot', 'idColumn', 'Gene Names (ordered locus)');</span>
-0040 <span class="comment">%</span>
-0041 <span class="comment">% See also</span>
-0042 <span class="comment">% --------</span>
-0043 <span class="comment">% predictLocalization, getUniProtScores, defaultCompartmentMap</span>
-0044 
-0045 p = parseRAVENargs(varargin, {<span class="string">'predictor'</span>,[]; <span class="string">'compartmentMap'</span>,[]; <span class="keyword">...</span>
-0046                               <span class="string">'idColumn'</span>,[]; <span class="string">'minConfidence'</span>,0});
-0047 predictor = p.predictor;
-0048 <span class="keyword">if</span> isempty(predictor); predictor = <span class="string">'deeploc'</span>; <span class="keyword">else</span>; predictor = char(predictor); <span class="keyword">end</span>
-0049 compartmentMap = p.compartmentMap;
-0050 
-0051 <span class="keyword">if</span> ~isfile(inputFile)
-0052     error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'Could not open file %s'</span>, char(string(inputFile)));
-0053 <span class="keyword">end</span>
-0054 
-0055 <span class="keyword">switch</span> lower(predictor)
-0056     <span class="keyword">case</span> <span class="string">'cello'</span>
-0057         GSS = <a href="#_sub1" class="code" title="subfunction GSS = i_parseCello(inputFile)">i_parseCello</a>(inputFile);
-0058     <span class="keyword">case</span> <span class="string">'deeploc'</span>
-0059         GSS = <a href="#_sub2" class="code" title="subfunction GSS = i_parseDeepLoc(inputFile)">i_parseDeepLoc</a>(inputFile);
-0060     <span class="keyword">case</span> <span class="string">'mulocdeep'</span>
-0061         GSS = <a href="#_sub3" class="code" title="subfunction GSS = i_parseWide(inputFile, idColumn)">i_parseWide</a>(inputFile, p.idColumn);
-0062     <span class="keyword">case</span> <span class="string">'compartments'</span>
-0063         GSS = <a href="#_sub4" class="code" title="subfunction GSS = i_parseCompartments(inputFile, minConfidence)">i_parseCompartments</a>(inputFile, p.minConfidence);
-0064     <span class="keyword">case</span> <span class="string">'uniprot'</span>
-0065         <span class="keyword">if</span> isempty(compartmentMap); compartmentMap = <a href="defaultCompartmentMap.html" class="code" title="function map = defaultCompartmentMap()">defaultCompartmentMap</a>(); <span class="keyword">end</span>
-0066         GSS = <a href="#_sub5" class="code" title="subfunction GSS = i_parseUniProt(inputFile, idColumn, map)">i_parseUniProt</a>(inputFile, p.idColumn, compartmentMap);
-0067         compartmentMap = [];   <span class="comment">% already applied during parsing</span>
-0068     <span class="keyword">case</span> <span class="string">'wolf'</span>
-0069         error(<span class="string">'RAVEN:badInput'</span>, [<span class="string">'WoLF PSORT support has been removed. Use a modern '</span> <span class="keyword">...</span>
-0070             <span class="string">'predictor (''deeploc'', ''mulocdeep''), the ''compartments'' database, or '</span> <span class="keyword">...</span>
-0071             <span class="string">'''uniprot'' (see getUniProtScores).'</span>]);
-0072     <span class="keyword">otherwise</span>
-0073         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'Unknown predictor &quot;%s&quot;'</span>, predictor);
-0074 <span class="keyword">end</span>
-0075 
-0076 <span class="comment">% Remove duplicate genes</span>
-0077 [~, J, K] = unique(GSS.genes);
-0078 <span class="keyword">if</span> numel(J) ~= numel(K)
-0079     warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'There are duplicate genes in the input file'</span>);
-0080     GSS.genes = GSS.genes(J);
-0081     GSS.scores = GSS.scores(J,:);
-0082 <span class="keyword">end</span>
-0083 
-0084 <span class="comment">% Optional renaming of compartments to model ids (already done for 'uniprot')</span>
-0085 <span class="keyword">if</span> ~isempty(compartmentMap)
-0086     GSS = <a href="#_sub8" class="code" title="subfunction GSS = i_applyCompartmentMap(GSS, map)">i_applyCompartmentMap</a>(GSS, compartmentMap);
-0087 <span class="keyword">end</span>
-0088 
-0089 <span class="keyword">if</span> isempty(GSS.genes) || isempty(GSS.compartments)
-0090     warning(<span class="string">'RAVEN:warning'</span>, [<span class="string">'parseScores produced an empty gene scoring structure '</span> <span class="keyword">...</span>
-0091         <span class="string">'(no genes or no compartments matched). Check the input file and, if used, that '</span> <span class="keyword">...</span>
-0092         <span class="string">'compartmentMap labels match the predictor/database compartment names.'</span>]);
-0093 <span class="keyword">end</span>
-0094 
-0095 <span class="comment">% Normalize so the best score per gene is 1.0 (genes with no positive evidence untouched)</span>
-0096 m = max(GSS.scores, [], 2);
-0097 m(m &lt;= 0) = 1;
-0098 GSS.scores = bsxfun(@times, GSS.scores, 1./m);
-0099 <span class="keyword">end</span>
-0100 
-0101 <span class="comment">% ------------------------------------------------------------------------- parsers</span>
-0102 
-0103 <a name="_sub1" href="#_subfunctions" class="code">function GSS = i_parseCello(inputFile)</a>
-0104 fid = fopen(inputFile, <span class="string">'r'</span>);
-0105 tline = fgetl(fid);
-0106 tline = regexprep(tline, <span class="string">'^.+#Combined:\t'</span>, <span class="string">''</span>);
-0107 tline = regexprep(tline, <span class="string">'\t#Most-likely-Location.+'</span>, <span class="string">''</span>);
-0108 GSS.compartments = transpose(regexp(tline, <span class="string">'\t'</span>, <span class="string">'split'</span>));
-0109 GSS.genes = {}; GSS.scores = [];
-0110 row = 0;
-0111 <span class="keyword">while</span> true
-0112     tline = fgetl(fid);
-0113     <span class="keyword">if</span> ~ischar(tline); <span class="keyword">break</span>; <span class="keyword">end</span>
-0114     tline = regexprep(tline, <span class="string">'^.+:\t'</span>, <span class="string">''</span>);
-0115     tline = regexprep(tline, <span class="string">' .+'</span>, <span class="string">''</span>);
-0116     tline = regexp(tline, <span class="string">'\t'</span>, <span class="string">'split'</span>);
-0117     <span class="keyword">if</span> numel(tline) &lt; numel(GSS.compartments)
-0118         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'Malformed CELLO row %d (fewer fields than compartments)'</span>, row+1);
-0119     <span class="keyword">end</span>
-0120     row = row + 1;
-0121     GSS.scores(row,:) = str2double(tline(1:numel(GSS.compartments)));
-0122     GSS.genes{row,1} = tline{1,end};
+0021 <span class="comment">%     renames the predictor's / database's compartment labels to your model's</span>
+0022 <span class="comment">%     compartment ids. Keys are the labels as the predictor writes them, lower</span>
+0023 <span class="comment">%     case; values are the compartment ids you want in the GSS. See</span>
+0024 <span class="comment">%     Compartment mapping below. Optional for every predictor except 'uniprot',</span>
+0025 <span class="comment">%     where it also supplies the location vocabulary and defaults to</span>
+0026 <span class="comment">%     defaultCompartmentMap.</span>
+0027 <span class="comment">% idColumn : char or double</span>
+0028 <span class="comment">%     column (name or 1-based index) holding the gene id for 'mulocdeep' / 'uniprot'.</span>
+0029 <span class="comment">%     Default: the first column. For yeast-GEM, use the UniProt ordered-locus column.</span>
+0030 <span class="comment">% minConfidence : double</span>
+0031 <span class="comment">%     for 'compartments', drop annotations with confidence below this (default 0).</span>
+0032 <span class="comment">%</span>
+0033 <span class="comment">% Returns</span>
+0034 <span class="comment">% -------</span>
+0035 <span class="comment">% GSS : struct</span>
+0036 <span class="comment">%     a gene scoring structure for predictLocalization, with fields:</span>
+0037 <span class="comment">%</span>
+0038 <span class="comment">%     - genes : cell, one entry per gene.</span>
+0039 <span class="comment">%     - compartments : cell, one entry per compartment column.</span>
+0040 <span class="comment">%     - scores : double, numel(genes)-by-numel(compartments), normalized so</span>
+0041 <span class="comment">%       the best score per gene is 1.0.</span>
+0042 <span class="comment">%</span>
+0043 <span class="comment">% Compartment mapping</span>
+0044 <span class="comment">% -------------------</span>
+0045 <span class="comment">% Predictors emit their own compartment vocabulary (&quot;Endoplasmic reticulum&quot;,</span>
+0046 <span class="comment">% &quot;Golgi apparatus&quot;, ...), which rarely matches a model's compartment ids.</span>
+0047 <span class="comment">% compartmentMap is a containers.Map that translates them, and it is the only</span>
+0048 <span class="comment">% place that translation happens - the returned GSS already uses your ids.</span>
+0049 <span class="comment">% defaultCompartmentMap returns a worked example, tuned for yeast/fungal</span>
+0050 <span class="comment">% models; use it as-is, or as the template for your own. Three rules:</span>
+0051 <span class="comment">%</span>
+0052 <span class="comment">% - **A label not in the map is dropped**, together with its whole score</span>
+0053 <span class="comment">%   column. This is how you exclude compartments your model does not have</span>
+0054 <span class="comment">%   (defaultCompartmentMap has no 'plastid' key, so plastid scores never reach</span>
+0055 <span class="comment">%   a fungal model). Passing no map at all keeps every label untouched.</span>
+0056 <span class="comment">% - **Several labels may share one compartment id**, which merges their</span>
+0057 <span class="comment">%   columns. The merged score for a gene is the *maximum* over the merged</span>
+0058 <span class="comment">%   labels, not their sum, so a gene predicted 0.7 cytoplasm and 0.4 cytosol</span>
+0059 <span class="comment">%   scores 0.7 for 'c'. Use this for synonyms and for deliberately collapsing</span>
+0060 <span class="comment">%   distinct compartments your model does not separate (defaultCompartmentMap</span>
+0061 <span class="comment">%   sends both 'vacuole' and 'lysosome' to 'v'). Column order follows the first</span>
+0062 <span class="comment">%   appearance of each id.</span>
+0063 <span class="comment">% - **One label cannot be split across two compartment ids**: a containers.Map</span>
+0064 <span class="comment">%   holds one value per key, and the GSS is what predictLocalization scores</span>
+0065 <span class="comment">%   against, so a split has to be an explicit statement about the returned</span>
+0066 <span class="comment">%   scores rather than a mapping rule. Duplicate the column afterwards, e.g. to</span>
+0067 <span class="comment">%   let a gene predicted &quot;golgi&quot; compete for both 'g' and 'v':</span>
+0068 <span class="comment">%</span>
+0069 <span class="comment">%       GSS = parseScores(file, 'compartmentMap', map);</span>
+0070 <span class="comment">%       g = strcmp(GSS.compartments, 'g');</span>
+0071 <span class="comment">%       GSS.compartments{end+1} = 'v';</span>
+0072 <span class="comment">%       GSS.scores(:,end+1) = GSS.scores(:,g);</span>
+0073 <span class="comment">%</span>
+0074 <span class="comment">%   The two columns are then independent: predictLocalization assigns each gene</span>
+0075 <span class="comment">%   to exactly one compartment, so it picks whichever of 'g'/'v' keeps the</span>
+0076 <span class="comment">%   network better connected. Halve the copied column instead of duplicating it</span>
+0077 <span class="comment">%   if the evidence should count for less in the second compartment.</span>
+0078 <span class="comment">%</span>
+0079 <span class="comment">% For 'uniprot' the keys do double duty: they are also the terms searched for</span>
+0080 <span class="comment">% in the &quot;Subcellular location [CC]&quot; free text, matched whole-word and case</span>
+0081 <span class="comment">% insensitively, so they must be UniProt's own noun forms. A term that is not a</span>
+0082 <span class="comment">% key is never looked for.</span>
+0083 <span class="comment">%</span>
+0084 <span class="comment">% Examples</span>
+0085 <span class="comment">% --------</span>
+0086 <span class="comment">%     GSS = parseScores(file, 'predictor', 'deeploc');</span>
+0087 <span class="comment">%     GSS = parseScores(file, 'predictor', 'deeploc', 'compartmentMap', defaultCompartmentMap);</span>
+0088 <span class="comment">%     GSS = parseScores(file, 'predictor', 'uniprot', 'idColumn', 'Gene Names (ordered locus)');</span>
+0089 <span class="comment">%</span>
+0090 <span class="comment">% See also</span>
+0091 <span class="comment">% --------</span>
+0092 <span class="comment">% predictLocalization, getUniProtScores, defaultCompartmentMap</span>
+0093 
+0094 p = parseRAVENargs(varargin, {<span class="string">'predictor'</span>,[]; <span class="string">'compartmentMap'</span>,[]; <span class="keyword">...</span>
+0095                               <span class="string">'idColumn'</span>,[]; <span class="string">'minConfidence'</span>,0});
+0096 predictor = p.predictor;
+0097 <span class="keyword">if</span> isempty(predictor); predictor = <span class="string">'deeploc'</span>; <span class="keyword">else</span>; predictor = char(predictor); <span class="keyword">end</span>
+0098 compartmentMap = p.compartmentMap;
+0099 
+0100 <span class="keyword">if</span> ~isfile(inputFile)
+0101     error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'Could not open file %s'</span>, char(string(inputFile)));
+0102 <span class="keyword">end</span>
+0103 
+0104 <span class="keyword">switch</span> lower(predictor)
+0105     <span class="keyword">case</span> <span class="string">'cello'</span>
+0106         GSS = <a href="#_sub1" class="code" title="subfunction GSS = i_parseCello(inputFile)">i_parseCello</a>(inputFile);
+0107     <span class="keyword">case</span> <span class="string">'deeploc'</span>
+0108         GSS = <a href="#_sub2" class="code" title="subfunction GSS = i_parseDeepLoc(inputFile)">i_parseDeepLoc</a>(inputFile);
+0109     <span class="keyword">case</span> <span class="string">'mulocdeep'</span>
+0110         GSS = <a href="#_sub3" class="code" title="subfunction GSS = i_parseWide(inputFile, idColumn)">i_parseWide</a>(inputFile, p.idColumn);
+0111     <span class="keyword">case</span> <span class="string">'compartments'</span>
+0112         GSS = <a href="#_sub4" class="code" title="subfunction GSS = i_parseCompartments(inputFile, minConfidence)">i_parseCompartments</a>(inputFile, p.minConfidence);
+0113     <span class="keyword">case</span> <span class="string">'uniprot'</span>
+0114         <span class="keyword">if</span> isempty(compartmentMap); compartmentMap = <a href="defaultCompartmentMap.html" class="code" title="function map = defaultCompartmentMap()">defaultCompartmentMap</a>(); <span class="keyword">end</span>
+0115         GSS = <a href="#_sub5" class="code" title="subfunction GSS = i_parseUniProt(inputFile, idColumn, map)">i_parseUniProt</a>(inputFile, p.idColumn, compartmentMap);
+0116         compartmentMap = [];   <span class="comment">% already applied during parsing</span>
+0117     <span class="keyword">case</span> <span class="string">'wolf'</span>
+0118         error(<span class="string">'RAVEN:badInput'</span>, [<span class="string">'WoLF PSORT support has been removed. Use a modern '</span> <span class="keyword">...</span>
+0119             <span class="string">'predictor (''deeploc'', ''mulocdeep''), the ''compartments'' database, or '</span> <span class="keyword">...</span>
+0120             <span class="string">'''uniprot'' (see getUniProtScores).'</span>]);
+0121     <span class="keyword">otherwise</span>
+0122         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'Unknown predictor &quot;%s&quot;'</span>, predictor);
 0123 <span class="keyword">end</span>
-0124 fclose(fid);
-0125 <span class="keyword">end</span>
-0126 
-0127 <a name="_sub2" href="#_subfunctions" class="code">function GSS = i_parseDeepLoc(inputFile)</a>
-0128 fid = fopen(inputFile, <span class="string">'r'</span>);
-0129 tline = fgetl(fid);
-0130 comps = regexp(tline, <span class="string">','</span>, <span class="string">'split'</span>);
-0131 GSS.compartments = transpose(comps(4:end));   <span class="comment">% cols 1-3 are Protein_ID/Localizations/Signals</span>
-0132 GSS.genes = {}; GSS.scores = [];
-0133 row = 0;
-0134 <span class="keyword">while</span> true
-0135     tline = fgetl(fid);
-0136     <span class="keyword">if</span> ~ischar(tline); <span class="keyword">break</span>; <span class="keyword">end</span>
-0137     parts = regexp(tline, <span class="string">','</span>, <span class="string">'split'</span>);
-0138     row = row + 1;
-0139     GSS.scores(row,:) = str2double(parts(4:end));
-0140     GSS.genes{row,1} = parts{1,1};
-0141 <span class="keyword">end</span>
-0142 fclose(fid);
-0143 <span class="keyword">end</span>
-0144 
-0145 <a name="_sub3" href="#_subfunctions" class="code">function GSS = i_parseWide(inputFile, idColumn)</a>
-0146 <span class="comment">% MULocDeep / generic wide table: gene id column + one numeric column per compartment.</span>
-0147 T = readtable(inputFile, <span class="string">'FileType'</span>, <span class="string">'text'</span>, <span class="string">'VariableNamingRule'</span>, <span class="string">'preserve'</span>);
-0148 idx = <a href="#_sub6" class="code" title="subfunction idx = i_idColumnIndex(T, idColumn)">i_idColumnIndex</a>(T, idColumn);
-0149 GSS.genes = cellstr(string(T{:,idx}));
-0150 rest = setdiff(1:width(T), idx, <span class="string">'stable'</span>);
-0151 GSS.compartments = transpose(T.Properties.VariableNames(rest));
-0152 GSS.scores = <a href="#_sub7" class="code" title="subfunction M = i_numericMatrix(T, cols)">i_numericMatrix</a>(T, rest);
-0153 <span class="keyword">end</span>
-0154 
-0155 <a name="_sub4" href="#_subfunctions" class="code">function GSS = i_parseCompartments(inputFile, minConfidence)</a>
-0156 <span class="comment">% COMPARTMENTS channel TSV (no header): col1 gene, col4 GO term name, last col confidence.</span>
-0157 T = readtable(inputFile, <span class="string">'FileType'</span>, <span class="string">'text'</span>, <span class="string">'Delimiter'</span>, <span class="string">'\t'</span>, <span class="string">'ReadVariableNames'</span>, false);
-0158 <span class="keyword">if</span> width(T) &lt; 5
-0159     error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'Expected a COMPARTMENTS full TSV (&gt;=5 columns)'</span>);
-0160 <span class="keyword">end</span>
-0161 genes = string(T{:,1});
-0162 comps = string(T{:,4});
-0163 score = T{:,end};
-0164 <span class="keyword">if</span> ~isnumeric(score); score = str2double(string(score)); <span class="keyword">end</span>
-0165 keep = ~isnan(score) &amp; score &gt;= minConfidence;
-0166 genes = genes(keep); comps = comps(keep); score = score(keep);
-0167 
-0168 ug = unique(genes, <span class="string">'stable'</span>);
-0169 uc = unique(comps, <span class="string">'stable'</span>);
-0170 M = zeros(numel(ug), numel(uc));
-0171 [~, gi] = ismember(genes, ug);
-0172 [~, ci] = ismember(comps, uc);
-0173 <span class="keyword">for</span> k = 1:numel(genes)
-0174     <span class="keyword">if</span> M(gi(k), ci(k)) &lt; score(k); M(gi(k), ci(k)) = score(k); <span class="keyword">end</span>
-0175 <span class="keyword">end</span>
-0176 GSS.genes = cellstr(ug);
-0177 GSS.compartments = cellstr(uc);
-0178 GSS.scores = M;
-0179 <span class="keyword">end</span>
-0180 
-0181 <a name="_sub5" href="#_subfunctions" class="code">function GSS = i_parseUniProt(inputFile, idColumn, map)</a>
-0182 <span class="comment">% UniProtKB TSV export: scan the &quot;Subcellular location [CC]&quot; text for known terms.</span>
-0183 T = readtable(inputFile, <span class="string">'FileType'</span>, <span class="string">'text'</span>, <span class="string">'Delimiter'</span>, <span class="string">'\t'</span>, <span class="string">'VariableNamingRule'</span>, <span class="string">'preserve'</span>);
-0184 vn = string(T.Properties.VariableNames);
-0185 locIdx = find(contains(lower(vn), <span class="string">'subcellular'</span>), 1);
-0186 <span class="keyword">if</span> isempty(locIdx)
-0187     error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'No &quot;Subcellular location&quot; column in the UniProt file'</span>);
-0188 <span class="keyword">end</span>
-0189 idIdx = <a href="#_sub6" class="code" title="subfunction idx = i_idColumnIndex(T, idColumn)">i_idColumnIndex</a>(T, idColumn);
-0190 ids = string(T{:,idIdx});
-0191 loc = string(T{:,locIdx});
-0192 
-0193 labels = lower(string(keys(map)));
-0194 codesForLabels = string(values(map));
-0195 codeList = unique(codesForLabels, <span class="string">'stable'</span>);
-0196 <span class="comment">% Whole-word patterns so a short label (e.g. 'cytoplasm') does not match inside a longer,</span>
-0197 <span class="comment">% distinct location term (e.g. 'Cytoplasmic vesicle'). Labels must be the UniProt noun forms.</span>
-0198 patterns = &quot;\&lt;&quot; + arrayfun(@(s) string(regexptranslate(<span class="string">'escape'</span>, char(s))), labels) + &quot;\&gt;&quot;;
-0199 
-0200 M = zeros(numel(ids), numel(codeList));
-0201 hasHit = false(numel(ids), 1);
-0202 <span class="keyword">for</span> i = 1:numel(ids)
-0203     txt = lower(loc(i));
-0204     txt = regexprep(txt, <span class="string">'\{[^}]*\}'</span>, <span class="string">' '</span>);         <span class="comment">% drop {ECO:...} evidence</span>
-0205     <span class="comment">% Split into per-isoform blocks and drop the Note=... free text WITHIN each block, so a</span>
-0206     <span class="comment">% later isoform's locations survive and Note prose is never read as a location.</span>
-0207     blocks = regexp(char(txt), <span class="string">'\[isoform[^\]]*\]:'</span>, <span class="string">'split'</span>);
-0208     <span class="keyword">for</span> b = 1:numel(blocks)
-0209         seg = regexprep(blocks{b}, <span class="string">'note=.*'</span>, <span class="string">' '</span>);
-0210         <span class="keyword">for</span> j = 1:numel(labels)
-0211             <span class="keyword">if</span> ~isempty(regexp(seg, patterns(j), <span class="string">'once'</span>))
-0212                 c = find(codeList == codesForLabels(j), 1);
-0213                 M(i, c) = 1; hasHit(i) = true;
-0214             <span class="keyword">end</span>
-0215         <span class="keyword">end</span>
-0216     <span class="keyword">end</span>
-0217 <span class="keyword">end</span>
-0218 keep = hasHit &amp; strlength(strtrim(ids)) &gt; 0;
-0219 GSS.genes = cellstr(ids(keep));
-0220 GSS.compartments = cellstr(codeList);
-0221 GSS.scores = M(keep, :);
-0222 <span class="keyword">end</span>
-0223 
-0224 <span class="comment">% ------------------------------------------------------------------------- helpers</span>
-0225 
-0226 <a name="_sub6" href="#_subfunctions" class="code">function idx = i_idColumnIndex(T, idColumn)</a>
-0227 <span class="keyword">if</span> isempty(idColumn)
-0228     idx = 1;
-0229 <span class="keyword">elseif</span> isnumeric(idColumn)
-0230     idx = idColumn;
-0231 <span class="keyword">else</span>
-0232     idx = find(strcmp(T.Properties.VariableNames, char(idColumn)), 1);
-0233     <span class="keyword">if</span> isempty(idx)
-0234         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'idColumn &quot;%s&quot; not found'</span>, char(idColumn));
-0235     <span class="keyword">end</span>
-0236 <span class="keyword">end</span>
+0124 
+0125 <span class="comment">% Remove duplicate genes</span>
+0126 [~, J, K] = unique(GSS.genes);
+0127 <span class="keyword">if</span> numel(J) ~= numel(K)
+0128     warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'There are duplicate genes in the input file'</span>);
+0129     GSS.genes = GSS.genes(J);
+0130     GSS.scores = GSS.scores(J,:);
+0131 <span class="keyword">end</span>
+0132 
+0133 <span class="comment">% Optional renaming of compartments to model ids (already done for 'uniprot')</span>
+0134 <span class="keyword">if</span> ~isempty(compartmentMap)
+0135     GSS = <a href="#_sub8" class="code" title="subfunction GSS = i_applyCompartmentMap(GSS, map)">i_applyCompartmentMap</a>(GSS, compartmentMap);
+0136 <span class="keyword">end</span>
+0137 
+0138 <span class="keyword">if</span> isempty(GSS.genes) || isempty(GSS.compartments)
+0139     warning(<span class="string">'RAVEN:warning'</span>, [<span class="string">'parseScores produced an empty gene scoring structure '</span> <span class="keyword">...</span>
+0140         <span class="string">'(no genes or no compartments matched). Check the input file and, if used, that '</span> <span class="keyword">...</span>
+0141         <span class="string">'compartmentMap labels match the predictor/database compartment names.'</span>]);
+0142 <span class="keyword">end</span>
+0143 
+0144 <span class="comment">% Normalize so the best score per gene is 1.0 (genes with no positive evidence untouched)</span>
+0145 m = max(GSS.scores, [], 2);
+0146 m(m &lt;= 0) = 1;
+0147 GSS.scores = bsxfun(@times, GSS.scores, 1./m);
+0148 <span class="keyword">end</span>
+0149 
+0150 <span class="comment">% ------------------------------------------------------------------------- parsers</span>
+0151 
+0152 <a name="_sub1" href="#_subfunctions" class="code">function GSS = i_parseCello(inputFile)</a>
+0153 fid = fopen(inputFile, <span class="string">'r'</span>);
+0154 tline = fgetl(fid);
+0155 tline = regexprep(tline, <span class="string">'^.+#Combined:\t'</span>, <span class="string">''</span>);
+0156 tline = regexprep(tline, <span class="string">'\t#Most-likely-Location.+'</span>, <span class="string">''</span>);
+0157 GSS.compartments = transpose(regexp(tline, <span class="string">'\t'</span>, <span class="string">'split'</span>));
+0158 GSS.genes = {}; GSS.scores = [];
+0159 row = 0;
+0160 <span class="keyword">while</span> true
+0161     tline = fgetl(fid);
+0162     <span class="keyword">if</span> ~ischar(tline); <span class="keyword">break</span>; <span class="keyword">end</span>
+0163     tline = regexprep(tline, <span class="string">'^.+:\t'</span>, <span class="string">''</span>);
+0164     tline = regexprep(tline, <span class="string">' .+'</span>, <span class="string">''</span>);
+0165     tline = regexp(tline, <span class="string">'\t'</span>, <span class="string">'split'</span>);
+0166     <span class="keyword">if</span> numel(tline) &lt; numel(GSS.compartments)
+0167         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'Malformed CELLO row %d (fewer fields than compartments)'</span>, row+1);
+0168     <span class="keyword">end</span>
+0169     row = row + 1;
+0170     GSS.scores(row,:) = str2double(tline(1:numel(GSS.compartments)));
+0171     GSS.genes{row,1} = tline{1,end};
+0172 <span class="keyword">end</span>
+0173 fclose(fid);
+0174 <span class="keyword">end</span>
+0175 
+0176 <a name="_sub2" href="#_subfunctions" class="code">function GSS = i_parseDeepLoc(inputFile)</a>
+0177 fid = fopen(inputFile, <span class="string">'r'</span>);
+0178 tline = fgetl(fid);
+0179 comps = regexp(tline, <span class="string">','</span>, <span class="string">'split'</span>);
+0180 GSS.compartments = transpose(comps(4:end));   <span class="comment">% cols 1-3 are Protein_ID/Localizations/Signals</span>
+0181 GSS.genes = {}; GSS.scores = [];
+0182 row = 0;
+0183 <span class="keyword">while</span> true
+0184     tline = fgetl(fid);
+0185     <span class="keyword">if</span> ~ischar(tline); <span class="keyword">break</span>; <span class="keyword">end</span>
+0186     parts = regexp(tline, <span class="string">','</span>, <span class="string">'split'</span>);
+0187     row = row + 1;
+0188     GSS.scores(row,:) = str2double(parts(4:end));
+0189     GSS.genes{row,1} = parts{1,1};
+0190 <span class="keyword">end</span>
+0191 fclose(fid);
+0192 <span class="keyword">end</span>
+0193 
+0194 <a name="_sub3" href="#_subfunctions" class="code">function GSS = i_parseWide(inputFile, idColumn)</a>
+0195 <span class="comment">% MULocDeep / generic wide table: gene id column + one numeric column per compartment.</span>
+0196 T = readtable(inputFile, <span class="string">'FileType'</span>, <span class="string">'text'</span>, <span class="string">'VariableNamingRule'</span>, <span class="string">'preserve'</span>);
+0197 idx = <a href="#_sub6" class="code" title="subfunction idx = i_idColumnIndex(T, idColumn)">i_idColumnIndex</a>(T, idColumn);
+0198 GSS.genes = cellstr(string(T{:,idx}));
+0199 rest = setdiff(1:width(T), idx, <span class="string">'stable'</span>);
+0200 GSS.compartments = transpose(T.Properties.VariableNames(rest));
+0201 GSS.scores = <a href="#_sub7" class="code" title="subfunction M = i_numericMatrix(T, cols)">i_numericMatrix</a>(T, rest);
+0202 <span class="keyword">end</span>
+0203 
+0204 <a name="_sub4" href="#_subfunctions" class="code">function GSS = i_parseCompartments(inputFile, minConfidence)</a>
+0205 <span class="comment">% COMPARTMENTS channel TSV (no header): col1 gene, col4 GO term name, last col confidence.</span>
+0206 T = readtable(inputFile, <span class="string">'FileType'</span>, <span class="string">'text'</span>, <span class="string">'Delimiter'</span>, <span class="string">'\t'</span>, <span class="string">'ReadVariableNames'</span>, false);
+0207 <span class="keyword">if</span> width(T) &lt; 5
+0208     error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'Expected a COMPARTMENTS full TSV (&gt;=5 columns)'</span>);
+0209 <span class="keyword">end</span>
+0210 genes = string(T{:,1});
+0211 comps = string(T{:,4});
+0212 score = T{:,end};
+0213 <span class="keyword">if</span> ~isnumeric(score); score = str2double(string(score)); <span class="keyword">end</span>
+0214 keep = ~isnan(score) &amp; score &gt;= minConfidence;
+0215 genes = genes(keep); comps = comps(keep); score = score(keep);
+0216 
+0217 ug = unique(genes, <span class="string">'stable'</span>);
+0218 uc = unique(comps, <span class="string">'stable'</span>);
+0219 M = zeros(numel(ug), numel(uc));
+0220 [~, gi] = ismember(genes, ug);
+0221 [~, ci] = ismember(comps, uc);
+0222 <span class="keyword">for</span> k = 1:numel(genes)
+0223     <span class="keyword">if</span> M(gi(k), ci(k)) &lt; score(k); M(gi(k), ci(k)) = score(k); <span class="keyword">end</span>
+0224 <span class="keyword">end</span>
+0225 GSS.genes = cellstr(ug);
+0226 GSS.compartments = cellstr(uc);
+0227 GSS.scores = M;
+0228 <span class="keyword">end</span>
+0229 
+0230 <a name="_sub5" href="#_subfunctions" class="code">function GSS = i_parseUniProt(inputFile, idColumn, map)</a>
+0231 <span class="comment">% UniProtKB TSV export: scan the &quot;Subcellular location [CC]&quot; text for known terms.</span>
+0232 T = readtable(inputFile, <span class="string">'FileType'</span>, <span class="string">'text'</span>, <span class="string">'Delimiter'</span>, <span class="string">'\t'</span>, <span class="string">'VariableNamingRule'</span>, <span class="string">'preserve'</span>);
+0233 vn = string(T.Properties.VariableNames);
+0234 locIdx = find(contains(lower(vn), <span class="string">'subcellular'</span>), 1);
+0235 <span class="keyword">if</span> isempty(locIdx)
+0236     error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'No &quot;Subcellular location&quot; column in the UniProt file'</span>);
 0237 <span class="keyword">end</span>
-0238 
-0239 <a name="_sub7" href="#_subfunctions" class="code">function M = i_numericMatrix(T, cols)</a>
-0240 M = zeros(height(T), numel(cols));
-0241 <span class="keyword">for</span> k = 1:numel(cols)
-0242     col = T{:, cols(k)};
-0243     <span class="keyword">if</span> ~isnumeric(col); col = str2double(string(col)); <span class="keyword">end</span>
-0244     M(:, k) = col;
-0245 <span class="keyword">end</span>
-0246 <span class="keyword">end</span>
-0247 
-0248 <a name="_sub8" href="#_subfunctions" class="code">function GSS = i_applyCompartmentMap(GSS, map)</a>
-0249 labels = lower(string(keys(map)));
-0250 codes = string(values(map));
-0251 old = lower(string(GSS.compartments));
-0252 mapped = strings(numel(old), 1);
-0253 keepCol = false(numel(old), 1);
-0254 <span class="keyword">for</span> i = 1:numel(old)
-0255     j = find(labels == old(i), 1);
-0256     <span class="keyword">if</span> ~isempty(j); mapped(i) = codes(j); keepCol(i) = true; <span class="keyword">end</span>
-0257 <span class="keyword">end</span>
-0258 usedCodes = unique(mapped(keepCol), <span class="string">'stable'</span>);
-0259 M = zeros(numel(GSS.genes), numel(usedCodes));
-0260 <span class="keyword">for</span> c = 1:numel(usedCodes)
-0261     cols = keepCol &amp; mapped == usedCodes(c);
-0262     M(:, c) = max(GSS.scores(:, cols), [], 2);
-0263 <span class="keyword">end</span>
-0264 GSS.compartments = cellstr(usedCodes);
-0265 GSS.scores = M;
-0266 <span class="keyword">end</span></pre></div>
+0238 idIdx = <a href="#_sub6" class="code" title="subfunction idx = i_idColumnIndex(T, idColumn)">i_idColumnIndex</a>(T, idColumn);
+0239 ids = string(T{:,idIdx});
+0240 loc = string(T{:,locIdx});
+0241 
+0242 labels = lower(string(keys(map)));
+0243 codesForLabels = string(values(map));
+0244 codeList = unique(codesForLabels, <span class="string">'stable'</span>);
+0245 <span class="comment">% Whole-word patterns so a short label (e.g. 'cytoplasm') does not match inside a longer,</span>
+0246 <span class="comment">% distinct location term (e.g. 'Cytoplasmic vesicle'). Labels must be the UniProt noun forms.</span>
+0247 patterns = &quot;\&lt;&quot; + arrayfun(@(s) string(regexptranslate(<span class="string">'escape'</span>, char(s))), labels) + &quot;\&gt;&quot;;
+0248 
+0249 M = zeros(numel(ids), numel(codeList));
+0250 hasHit = false(numel(ids), 1);
+0251 <span class="keyword">for</span> i = 1:numel(ids)
+0252     txt = lower(loc(i));
+0253     txt = regexprep(txt, <span class="string">'\{[^}]*\}'</span>, <span class="string">' '</span>);         <span class="comment">% drop {ECO:...} evidence</span>
+0254     <span class="comment">% Split into per-isoform blocks and drop the Note=... free text WITHIN each block, so a</span>
+0255     <span class="comment">% later isoform's locations survive and Note prose is never read as a location.</span>
+0256     blocks = regexp(char(txt), <span class="string">'\[isoform[^\]]*\]:'</span>, <span class="string">'split'</span>);
+0257     <span class="keyword">for</span> b = 1:numel(blocks)
+0258         seg = regexprep(blocks{b}, <span class="string">'note=.*'</span>, <span class="string">' '</span>);
+0259         <span class="keyword">for</span> j = 1:numel(labels)
+0260             <span class="keyword">if</span> ~isempty(regexp(seg, patterns(j), <span class="string">'once'</span>))
+0261                 c = find(codeList == codesForLabels(j), 1);
+0262                 M(i, c) = 1; hasHit(i) = true;
+0263             <span class="keyword">end</span>
+0264         <span class="keyword">end</span>
+0265     <span class="keyword">end</span>
+0266 <span class="keyword">end</span>
+0267 keep = hasHit &amp; strlength(strtrim(ids)) &gt; 0;
+0268 GSS.genes = cellstr(ids(keep));
+0269 GSS.compartments = cellstr(codeList);
+0270 GSS.scores = M(keep, :);
+0271 <span class="keyword">end</span>
+0272 
+0273 <span class="comment">% ------------------------------------------------------------------------- helpers</span>
+0274 
+0275 <a name="_sub6" href="#_subfunctions" class="code">function idx = i_idColumnIndex(T, idColumn)</a>
+0276 <span class="keyword">if</span> isempty(idColumn)
+0277     idx = 1;
+0278 <span class="keyword">elseif</span> isnumeric(idColumn)
+0279     idx = idColumn;
+0280 <span class="keyword">else</span>
+0281     idx = find(strcmp(T.Properties.VariableNames, char(idColumn)), 1);
+0282     <span class="keyword">if</span> isempty(idx)
+0283         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'idColumn &quot;%s&quot; not found'</span>, char(idColumn));
+0284     <span class="keyword">end</span>
+0285 <span class="keyword">end</span>
+0286 <span class="keyword">end</span>
+0287 
+0288 <a name="_sub7" href="#_subfunctions" class="code">function M = i_numericMatrix(T, cols)</a>
+0289 M = zeros(height(T), numel(cols));
+0290 <span class="keyword">for</span> k = 1:numel(cols)
+0291     col = T{:, cols(k)};
+0292     <span class="keyword">if</span> ~isnumeric(col); col = str2double(string(col)); <span class="keyword">end</span>
+0293     M(:, k) = col;
+0294 <span class="keyword">end</span>
+0295 <span class="keyword">end</span>
+0296 
+0297 <a name="_sub8" href="#_subfunctions" class="code">function GSS = i_applyCompartmentMap(GSS, map)</a>
+0298 labels = lower(string(keys(map)));
+0299 codes = string(values(map));
+0300 old = lower(string(GSS.compartments));
+0301 mapped = strings(numel(old), 1);
+0302 keepCol = false(numel(old), 1);
+0303 <span class="keyword">for</span> i = 1:numel(old)
+0304     j = find(labels == old(i), 1);
+0305     <span class="keyword">if</span> ~isempty(j); mapped(i) = codes(j); keepCol(i) = true; <span class="keyword">end</span>
+0306 <span class="keyword">end</span>
+0307 usedCodes = unique(mapped(keepCol), <span class="string">'stable'</span>);
+0308 M = zeros(numel(GSS.genes), numel(usedCodes));
+0309 <span class="keyword">for</span> c = 1:numel(usedCodes)
+0310     cols = keepCol &amp; mapped == usedCodes(c);
+0311     M(:, c) = max(GSS.scores(:, cols), [], 2);
+0312 <span class="keyword">end</span>
+0313 GSS.compartments = cellstr(usedCodes);
+0314 GSS.scores = M;
+0315 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

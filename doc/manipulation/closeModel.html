@@ -87,45 +87,105 @@ This function is called by:
 0027 closedModel.unconstrained=zeros(numel(closedModel.mets),1);
 0028 
 0029 <span class="keyword">for</span> i=1:numel(closedModel.rxns)
-0030     <span class="keyword">if</span> sum(abs(closedModel.S(:,i)))==1
-0031         closedModel.mets{numel(closedModel.mets)+1}=strcat(closedModel.mets{find(closedModel.S(:,i))},<span class="string">'_b'</span>);
-0032         <span class="keyword">if</span> isfield(closedModel,<span class="string">'metNames'</span>)
-0033             closedModel.metNames{numel(closedModel.metNames)+1}=closedModel.metNames{find(closedModel.S(:,i))};
-0034         <span class="keyword">end</span>
-0035         closedModel.metComps(numel(closedModel.metComps)+1)=numel(closedModel.comps);
-0036         <span class="keyword">if</span> isfield(closedModel,<span class="string">'inchis'</span>)
-0037             closedModel.inchis{numel(closedModel.inchis)+1}=closedModel.inchis{find(closedModel.S(:,i))};
-0038         <span class="keyword">end</span>
-0039         <span class="keyword">if</span> isfield(closedModel,<span class="string">'metSmiles'</span>)
-0040             closedModel.metSmiles{numel(closedModel.metSmiles)+1}=closedModel.metSmiles{find(closedModel.S(:,i))};
-0041         <span class="keyword">end</span>
-0042         <span class="keyword">if</span> isfield(closedModel,<span class="string">'metFormulas'</span>)
-0043             closedModel.metFormulas{numel(closedModel.metFormulas)+1}=closedModel.metFormulas{find(closedModel.S(:,i))};
-0044         <span class="keyword">end</span>
-0045         <span class="keyword">if</span> isfield(closedModel,<span class="string">'metMiriams'</span>)
-0046             closedModel.metMiriams{numel(closedModel.metMiriams)+1}=closedModel.metMiriams{find(closedModel.S(:,i))};
-0047         <span class="keyword">end</span>
-0048         <span class="keyword">if</span> isfield(closedModel,<span class="string">'metFrom'</span>)
-0049             closedModel.metFrom{numel(closedModel.metFrom)+1}=<span class="string">''</span>;
-0050         <span class="keyword">end</span>
-0051         <span class="keyword">if</span> isfield(closedModel,<span class="string">'metCharges'</span>)
-0052             closedModel.metCharges(numel(closedModel.metCharges)+1)=closedModel.metCharges(find(closedModel.S(:,i)));
-0053         <span class="keyword">end</span>
-0054         <span class="keyword">if</span> isfield(closedModel,<span class="string">'metDeltaG'</span>)
-0055             closedModel.metDeltaG(numel(closedModel.metDeltaG)+1)=closedModel.metDeltaG(find(closedModel.S(:,i)));
-0056         <span class="keyword">end</span>
-0057         closedModel.unconstrained(numel(closedModel.unconstrained)+1)=1;
-0058         closedModel.b(numel(closedModel.b)+1)=0;
-0059         closedModel.S=[closedModel.S;sparse(1,size(closedModel.S,2))];
-0060         <span class="keyword">if</span> sum(closedModel.S(:,i))==1
-0061             closedModel.S(numel(closedModel.mets),i)=-1;
-0062         <span class="keyword">else</span>
-0063             closedModel.S(numel(closedModel.mets),i)=1;
-0064         <span class="keyword">end</span>
-0065     <span class="keyword">end</span>
-0066 <span class="keyword">end</span>
-0067 
-0068 <span class="keyword">end</span></pre></div>
+0030     col=closedModel.S(:,i);
+0031     <span class="comment">%A boundary/exchange/sink/demand reaction has metabolites on only one</span>
+0032     <span class="comment">%side, same definition as getExchangeRxns: no substrates or no</span>
+0033     <span class="comment">%products. The previous coefficient-magnitude rule (all nonzero</span>
+0034     <span class="comment">%coefficients summing to 1 in absolute value) missed a scaled</span>
+0035     <span class="comment">%single-metabolite sink such as &quot;2 A =&gt;&quot; (sum 2) outright, and only</span>
+0036     <span class="comment">%matched a multi-metabolite one-sided reaction such as</span>
+0037     <span class="comment">%&quot;0.5 A + 0.5 B =&gt;&quot; by coincidence, when its magnitudes summed to</span>
+0038     <span class="comment">%exactly 1 --- and even then mishandled it below, since find() on such</span>
+0039     <span class="comment">%a reaction returns more than one index and only the first metabolite</span>
+0040     <span class="comment">%was ever used to build the boundary metabolite, silently dropping the</span>
+0041     <span class="comment">%rest.</span>
+0042     <span class="keyword">if</span> any(col&gt;0) &amp;&amp; any(col&lt;0)
+0043         <span class="keyword">continue</span>
+0044     <span class="keyword">end</span>
+0045     metIdx=find(col);
+0046     <span class="keyword">if</span> isempty(metIdx)
+0047         <span class="keyword">continue</span>
+0048     <span class="keyword">end</span>
+0049     <span class="comment">%A single metabolite names and inherits properties from that</span>
+0050     <span class="comment">%metabolite, as before. Several metabolites on the one populated side</span>
+0051     <span class="comment">%have no single metabolite to name the boundary after or copy</span>
+0052     <span class="comment">%properties from, so it is named after the reaction instead and left</span>
+0053     <span class="comment">%without those properties.</span>
+0054     oneMet=isscalar(metIdx);
+0055     <span class="keyword">if</span> oneMet
+0056         newMetId=strcat(closedModel.mets{metIdx},<span class="string">'_b'</span>);
+0057     <span class="keyword">else</span>
+0058         newMetId=strcat(closedModel.rxns{i},<span class="string">'_b'</span>);
+0059     <span class="keyword">end</span>
+0060     closedModel.mets{numel(closedModel.mets)+1}=newMetId;
+0061     <span class="keyword">if</span> isfield(closedModel,<span class="string">'metNames'</span>)
+0062         <span class="keyword">if</span> oneMet
+0063             closedModel.metNames{numel(closedModel.metNames)+1}=closedModel.metNames{metIdx};
+0064         <span class="keyword">else</span>
+0065             closedModel.metNames{numel(closedModel.metNames)+1}=newMetId;
+0066         <span class="keyword">end</span>
+0067     <span class="keyword">end</span>
+0068     closedModel.metComps(numel(closedModel.metComps)+1)=numel(closedModel.comps);
+0069     <span class="keyword">if</span> isfield(closedModel,<span class="string">'inchis'</span>)
+0070         <span class="keyword">if</span> oneMet
+0071             closedModel.inchis{numel(closedModel.inchis)+1}=closedModel.inchis{metIdx};
+0072         <span class="keyword">else</span>
+0073             closedModel.inchis{numel(closedModel.inchis)+1}=<span class="string">''</span>;
+0074         <span class="keyword">end</span>
+0075     <span class="keyword">end</span>
+0076     <span class="keyword">if</span> isfield(closedModel,<span class="string">'metSmiles'</span>)
+0077         <span class="keyword">if</span> oneMet
+0078             closedModel.metSmiles{numel(closedModel.metSmiles)+1}=closedModel.metSmiles{metIdx};
+0079         <span class="keyword">else</span>
+0080             closedModel.metSmiles{numel(closedModel.metSmiles)+1}=<span class="string">''</span>;
+0081         <span class="keyword">end</span>
+0082     <span class="keyword">end</span>
+0083     <span class="keyword">if</span> isfield(closedModel,<span class="string">'metFormulas'</span>)
+0084         <span class="keyword">if</span> oneMet
+0085             closedModel.metFormulas{numel(closedModel.metFormulas)+1}=closedModel.metFormulas{metIdx};
+0086         <span class="keyword">else</span>
+0087             closedModel.metFormulas{numel(closedModel.metFormulas)+1}=<span class="string">''</span>;
+0088         <span class="keyword">end</span>
+0089     <span class="keyword">end</span>
+0090     <span class="keyword">if</span> isfield(closedModel,<span class="string">'metMiriams'</span>)
+0091         <span class="keyword">if</span> oneMet
+0092             closedModel.metMiriams{numel(closedModel.metMiriams)+1}=closedModel.metMiriams{metIdx};
+0093         <span class="keyword">else</span>
+0094             closedModel.metMiriams{numel(closedModel.metMiriams)+1}=[];
+0095         <span class="keyword">end</span>
+0096     <span class="keyword">end</span>
+0097     <span class="keyword">if</span> isfield(closedModel,<span class="string">'metFrom'</span>)
+0098         closedModel.metFrom{numel(closedModel.metFrom)+1}=<span class="string">''</span>;
+0099     <span class="keyword">end</span>
+0100     <span class="keyword">if</span> isfield(closedModel,<span class="string">'metCharges'</span>)
+0101         <span class="keyword">if</span> oneMet
+0102             closedModel.metCharges(numel(closedModel.metCharges)+1)=closedModel.metCharges(metIdx);
+0103         <span class="keyword">else</span>
+0104             closedModel.metCharges(numel(closedModel.metCharges)+1)=0;
+0105         <span class="keyword">end</span>
+0106     <span class="keyword">end</span>
+0107     <span class="keyword">if</span> isfield(closedModel,<span class="string">'metDeltaG'</span>)
+0108         <span class="keyword">if</span> oneMet
+0109             closedModel.metDeltaG(numel(closedModel.metDeltaG)+1)=closedModel.metDeltaG(metIdx);
+0110         <span class="keyword">else</span>
+0111             closedModel.metDeltaG(numel(closedModel.metDeltaG)+1)=NaN;
+0112         <span class="keyword">end</span>
+0113     <span class="keyword">end</span>
+0114     closedModel.unconstrained(numel(closedModel.unconstrained)+1)=1;
+0115     closedModel.b(numel(closedModel.b)+1)=0;
+0116     closedModel.S=[closedModel.S;sparse(1,size(closedModel.S,2))];
+0117     <span class="comment">%Any nonzero value blocks the reaction once its slack is pinned to 0 by</span>
+0118     <span class="comment">%model.b above, regardless of magnitude; the sign is chosen only so the</span>
+0119     <span class="comment">%boundary row reads the same way a human would expect (produced by vs.</span>
+0120     <span class="comment">%consumed by the reaction).</span>
+0121     <span class="keyword">if</span> sum(col)&gt;0
+0122         closedModel.S(numel(closedModel.mets),i)=-1;
+0123     <span class="keyword">else</span>
+0124         closedModel.S(numel(closedModel.mets),i)=1;
+0125     <span class="keyword">end</span>
+0126 <span class="keyword">end</span>
+0127 
+0128 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

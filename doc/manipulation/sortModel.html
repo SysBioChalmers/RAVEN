@@ -4,7 +4,7 @@
 <head>
   <title>Description of sortModel</title>
   <meta name="keywords" content="sortModel">
-  <meta name="description" content="sortModel  Sort a model based on metabolite names and compartments.">
+  <meta name="description" content="sortModel  Standardize a model's internal ordering: by default orients">
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
   <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
   <meta name="robots" content="index, follow">
@@ -21,13 +21,16 @@
 </h1>
 
 <h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>sortModel  Sort a model based on metabolite names and compartments.</strong></div>
+<div class="box"><strong>sortModel  Standardize a model's internal ordering: by default orients</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="box"><strong>function model=sortModel(model,varargin) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre class="comment"> sortModel  Sort a model based on metabolite names and compartments.
+<div class="fragment"><pre class="comment"> sortModel  Standardize a model's internal ordering: by default orients
+ reversible reactions consistently; can also reorder metabolites within
+ reaction equations and/or reactions within each subsystem, depending on
+ which options are enabled.
 
  Parameters
  ----------
@@ -72,70 +75,70 @@ This function is called by:
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function model=sortModel(model,varargin)</a>
-0002 <span class="comment">% sortModel  Sort a model based on metabolite names and compartments.</span>
-0003 <span class="comment">%</span>
-0004 <span class="comment">% Parameters</span>
-0005 <span class="comment">% ----------</span>
-0006 <span class="comment">% model : struct</span>
-0007 <span class="comment">%     a model structure.</span>
-0008 <span class="comment">%</span>
-0009 <span class="comment">% Name-Value Arguments</span>
-0010 <span class="comment">% --------------------</span>
-0011 <span class="comment">% sortReversible : logical</span>
-0012 <span class="comment">%     sorts the reversible reactions so that the metabolite that is first</span>
-0013 <span class="comment">%     in lexicographical order is a reactant (default true).</span>
-0014 <span class="comment">% sortMetName : logical</span>
-0015 <span class="comment">%     sort the metabolite names in the equation, also uses compartment</span>
-0016 <span class="comment">%     abbreviation (default false).</span>
-0017 <span class="comment">% sortReactionOrder : logical</span>
-0018 <span class="comment">%     sorts the reaction order within each subsystem so that reactions</span>
-0019 <span class="comment">%     consuming some metabolite come after reactions producing it. This</span>
-0020 <span class="comment">%     overrides the sortReversible option and reactions are sorted so that</span>
-0021 <span class="comment">%     the production direction matches the consumption direction (default</span>
-0022 <span class="comment">%     false).</span>
-0023 <span class="comment">%</span>
-0024 <span class="comment">% Returns</span>
-0025 <span class="comment">% -------</span>
-0026 <span class="comment">% model : struct</span>
-0027 <span class="comment">%     an updated model structure.</span>
-0028 <span class="comment">%</span>
-0029 <span class="comment">% Examples</span>
-0030 <span class="comment">% --------</span>
-0031 <span class="comment">%     model = sortModel(model, sortReversible, sortMetName, sortReactionOrder);</span>
-0032 
-0033 p=parseRAVENargs(varargin, {<span class="string">'sortReversible'</span>,true; <span class="string">'sortMetName'</span>,false; <span class="string">'sortReactionOrder'</span>,false});
-0034 sortReversible=p.sortReversible;
-0035 sortMetName=p.sortMetName;
-0036 sortReactionOrder=p.sortReactionOrder;
-0037 
-0038 <span class="keyword">if</span> sortMetName==true
-0039     <span class="comment">%Assuming that metComps are the indexes. Should be changed at one point</span>
-0040     [~, metIndexes]=sort(strcat(model.metNames,<span class="string">'['</span>,model.comps(model.metComps),<span class="string">']'</span>));
-0041     model=<a href="permuteModel.html" class="code" title="function newModel=permuteModel(model, indexes, type)">permuteModel</a>(model,metIndexes,<span class="string">'mets'</span>);
-0042 <span class="keyword">end</span>
-0043 
-0044 <span class="keyword">if</span> sortReversible==true &amp;&amp; sortReactionOrder==false
-0045     <span class="comment">%Get all reversible reactions</span>
-0046     revIndexes=find(model.rev);
-0047     
-0048     <span class="comment">%Loop through them</span>
-0049     <span class="keyword">for</span> i=1:numel(revIndexes)
-0050         <span class="comment">%Create a cell array with all the metabolite names</span>
-0051         mets=find(model.S(:,revIndexes(i)));
-0052         metNames=strcat(model.metNames(mets),model.comps(model.metComps(mets)));
-0053         
-0054         <span class="keyword">if</span> iscellstr(metNames)
-0055             [~, indexes]=sort(metNames);
-0056             
-0057             <span class="keyword">if</span> model.S(mets(indexes(1)),revIndexes(i))&gt;0
-0058                 model.S(:,revIndexes(i))=model.S(:,revIndexes(i))*-1;
-0059             <span class="keyword">end</span>
-0060         <span class="keyword">end</span>
-0061     <span class="keyword">end</span>
-0062 <span class="keyword">end</span>
-0063 
-0064 <span class="keyword">if</span> sortReactionOrder==true
-0065     <span class="comment">%Check if the model has sub-systems, otherwise throw an error</span>
+0002 <span class="comment">% sortModel  Standardize a model's internal ordering: by default orients</span>
+0003 <span class="comment">% reversible reactions consistently; can also reorder metabolites within</span>
+0004 <span class="comment">% reaction equations and/or reactions within each subsystem, depending on</span>
+0005 <span class="comment">% which options are enabled.</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% Parameters</span>
+0008 <span class="comment">% ----------</span>
+0009 <span class="comment">% model : struct</span>
+0010 <span class="comment">%     a model structure.</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">% Name-Value Arguments</span>
+0013 <span class="comment">% --------------------</span>
+0014 <span class="comment">% sortReversible : logical</span>
+0015 <span class="comment">%     sorts the reversible reactions so that the metabolite that is first</span>
+0016 <span class="comment">%     in lexicographical order is a reactant (default true).</span>
+0017 <span class="comment">% sortMetName : logical</span>
+0018 <span class="comment">%     sort the metabolite names in the equation, also uses compartment</span>
+0019 <span class="comment">%     abbreviation (default false).</span>
+0020 <span class="comment">% sortReactionOrder : logical</span>
+0021 <span class="comment">%     sorts the reaction order within each subsystem so that reactions</span>
+0022 <span class="comment">%     consuming some metabolite come after reactions producing it. This</span>
+0023 <span class="comment">%     overrides the sortReversible option and reactions are sorted so that</span>
+0024 <span class="comment">%     the production direction matches the consumption direction (default</span>
+0025 <span class="comment">%     false).</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">% Returns</span>
+0028 <span class="comment">% -------</span>
+0029 <span class="comment">% model : struct</span>
+0030 <span class="comment">%     an updated model structure.</span>
+0031 <span class="comment">%</span>
+0032 <span class="comment">% Examples</span>
+0033 <span class="comment">% --------</span>
+0034 <span class="comment">%     model = sortModel(model, sortReversible, sortMetName, sortReactionOrder);</span>
+0035 
+0036 p=parseRAVENargs(varargin, {<span class="string">'sortReversible'</span>,true; <span class="string">'sortMetName'</span>,false; <span class="string">'sortReactionOrder'</span>,false});
+0037 sortReversible=p.sortReversible;
+0038 sortMetName=p.sortMetName;
+0039 sortReactionOrder=p.sortReactionOrder;
+0040 
+0041 <span class="keyword">if</span> sortMetName==true
+0042     <span class="comment">%Assuming that metComps are the indexes.</span>
+0043     [~, metIndexes]=sort(strcat(model.metNames,<span class="string">'['</span>,model.comps(model.metComps),<span class="string">']'</span>));
+0044     model=<a href="permuteModel.html" class="code" title="function newModel=permuteModel(model, indexes, type)">permuteModel</a>(model,metIndexes,<span class="string">'mets'</span>);
+0045 <span class="keyword">end</span>
+0046 
+0047 <span class="keyword">if</span> sortReversible==true &amp;&amp; sortReactionOrder==false
+0048     revIndexes=find(model.rev);
+0049 
+0050     <span class="keyword">for</span> i=1:numel(revIndexes)
+0051         <span class="comment">%Create a cell array with all the metabolite names</span>
+0052         mets=find(model.S(:,revIndexes(i)));
+0053         metNames=strcat(model.metNames(mets),model.comps(model.metComps(mets)));
+0054         
+0055         <span class="keyword">if</span> iscellstr(metNames)
+0056             [~, indexes]=sort(metNames);
+0057             
+0058             <span class="keyword">if</span> model.S(mets(indexes(1)),revIndexes(i))&gt;0
+0059                 model.S(:,revIndexes(i))=model.S(:,revIndexes(i))*-1;
+0060             <span class="keyword">end</span>
+0061         <span class="keyword">end</span>
+0062     <span class="keyword">end</span>
+0063 <span class="keyword">end</span>
+0064 
+0065 <span class="keyword">if</span> sortReactionOrder==true
 0066     <span class="keyword">if</span> ~isfield(model,<span class="string">'subSystems'</span>)
 0067         EM=<span class="string">'The model must contain a subSystems field in order to sort reaction order'</span>;
 0068         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
@@ -173,14 +176,14 @@ This function is called by:
 0100         <span class="comment">%original model and -1 means the opposite direction.</span>
 0101         oldRev=ones(numel(revRxns),1);
 0102         
-0103         <span class="comment">%The problem could probably be solved analytically but a simple</span>
-0104         <span class="comment">%random method is implemented here instead. Two reactions are</span>
-0105         <span class="comment">%chosen randomly and their positions are switched. A score is</span>
-0106         <span class="comment">%calculated based on the number of metabolites that are produced</span>
-0107         <span class="comment">%before they are consumed. If the perturbed model has a better or</span>
-0108         <span class="comment">%equal score than the original the reaction order is switched. If</span>
-0109         <span class="comment">%no increase in score has been seen after 1000*rxnsInSubsystem then</span>
-0110         <span class="comment">%the optimization is terminated</span>
+0103         <span class="comment">%The problem could be solved analytically, but a simple random</span>
+0104         <span class="comment">%method is used instead. Two reactions are chosen randomly and</span>
+0105         <span class="comment">%their positions are switched. A score is calculated based on the</span>
+0106         <span class="comment">%number of metabolites that are produced before they are consumed.</span>
+0107         <span class="comment">%If the perturbed model has a better or equal score than the</span>
+0108         <span class="comment">%original the reaction order is switched. If no increase in score</span>
+0109         <span class="comment">%has been seen after 1000*rxnsInSubsystem then the optimization is</span>
+0110         <span class="comment">%terminated</span>
 0111         
 0112         rxnOrder=1:nRxns;
 0113         oldScore=-inf;
@@ -197,70 +200,69 @@ This function is called by:
 0124             
 0125             <span class="keyword">if</span> firstIter==false
 0126                 y=randperm(nRxns,2);
-0127                 
-0128                 <span class="comment">%Switch the order</span>
-0129                 newRxnOrder(y(1))=rxnOrder(y(2));
-0130                 newRxnOrder(y(2))=rxnOrder(y(1));
-0131                 
-0132                 <span class="comment">%With a 50% chance, also switch the reversibility of one of</span>
-0133                 <span class="comment">%the reactions</span>
-0134                 <span class="keyword">if</span> rand()&gt;0.5 &amp;&amp; numel(rev)&gt;1
-0135                     n=randperm(numel(rev),1);
-0136                     rev(n)=rev(n)*-1;
-0137                 <span class="keyword">end</span>
-0138             <span class="keyword">end</span>
-0139             firstIter=false;
-0140             
-0141             tempS=model.S;
-0142             
-0143             <span class="comment">%Switch the directionalities</span>
-0144             <span class="keyword">for</span> j=1:numel(rev)
-0145                 <span class="keyword">if</span> rev(j)==-1
-0146                     tempS(:,revRxns(j))=tempS(:,revRxns(j)).*-1;
-0147                 <span class="keyword">end</span>
-0148             <span class="keyword">end</span>
-0149             
-0150             <span class="comment">%Get the metabolites that are involved and when they are</span>
-0151             <span class="comment">%produced/consumed</span>
-0152             s=tempS(:,newRxnOrder);
-0153             
-0154             <span class="comment">%Remove mets that are not used in both directions</span>
-0155             s=s(any(s,2),:);
-0156             
-0157             <span class="comment">%Add so that all mets are produced and consumed in the end</span>
-0158             s=[s ones(size(s,1),1) ones(size(s,1),1)*-1];
-0159             
-0160             <span class="comment">%For each metabolite, find the reaction where it is first</span>
-0161             <span class="comment">%produced and the reaction where it is first consumed</span>
-0162             s1=s&gt;0;
-0163             r1=arrayfun(@(x) find(s1(x,:),1,<span class="string">'first'</span>),1:size(s1,1));
-0164             s2=s&lt;0;
-0165             r2=arrayfun(@(x) find(s2(x,:),1,<span class="string">'first'</span>),1:size(s2,1));
-0166             
-0167             score=sum(r1&lt;r2);
-0168             
-0169             <span class="keyword">if</span> score&gt;=oldScore
-0170                 <span class="keyword">if</span> score&gt;oldScore
-0171                     counter=0;
-0172                 <span class="keyword">end</span>
-0173                 oldScore=score;
-0174                 oldRev=rev;
-0175                 rxnOrder=newRxnOrder;
-0176             <span class="keyword">end</span>
-0177         <span class="keyword">end</span>
-0178         
-0179         <span class="comment">%Update the model for this subsystem</span>
-0180         <span class="keyword">for</span> j=1:numel(oldRev)
-0181             <span class="keyword">if</span> oldRev(j)==-1
-0182                 model.S(:,revRxns(j))=model.S(:,revRxns(j)).*-1;
-0183             <span class="keyword">end</span>
-0184         <span class="keyword">end</span>
-0185         order=1:numel(model.rxns);
-0186         order(rxns)=rxns(rxnOrder);
-0187         model=<a href="permuteModel.html" class="code" title="function newModel=permuteModel(model, indexes, type)">permuteModel</a>(model, order, <span class="string">'rxns'</span>);
-0188     <span class="keyword">end</span>
-0189 <span class="keyword">end</span>
-0190 <span class="keyword">end</span></pre></div>
+0127 
+0128                 newRxnOrder(y(1))=rxnOrder(y(2));
+0129                 newRxnOrder(y(2))=rxnOrder(y(1));
+0130                 
+0131                 <span class="comment">%With a 50% chance, also switch the reversibility of one of</span>
+0132                 <span class="comment">%the reactions</span>
+0133                 <span class="keyword">if</span> rand()&gt;0.5 &amp;&amp; numel(rev)&gt;1
+0134                     n=randperm(numel(rev),1);
+0135                     rev(n)=rev(n)*-1;
+0136                 <span class="keyword">end</span>
+0137             <span class="keyword">end</span>
+0138             firstIter=false;
+0139             
+0140             tempS=model.S;
+0141             
+0142             <span class="comment">%Switch the directionalities</span>
+0143             <span class="keyword">for</span> j=1:numel(rev)
+0144                 <span class="keyword">if</span> rev(j)==-1
+0145                     tempS(:,revRxns(j))=tempS(:,revRxns(j)).*-1;
+0146                 <span class="keyword">end</span>
+0147             <span class="keyword">end</span>
+0148             
+0149             <span class="comment">%Get the metabolites that are involved and when they are</span>
+0150             <span class="comment">%produced/consumed</span>
+0151             s=tempS(:,newRxnOrder);
+0152             
+0153             <span class="comment">%Remove mets that are not used in both directions</span>
+0154             s=s(any(s,2),:);
+0155             
+0156             <span class="comment">%Add so that all mets are produced and consumed in the end</span>
+0157             s=[s ones(size(s,1),1) ones(size(s,1),1)*-1];
+0158             
+0159             <span class="comment">%For each metabolite, find the reaction where it is first</span>
+0160             <span class="comment">%produced and the reaction where it is first consumed</span>
+0161             s1=s&gt;0;
+0162             r1=arrayfun(@(x) find(s1(x,:),1,<span class="string">'first'</span>),1:size(s1,1));
+0163             s2=s&lt;0;
+0164             r2=arrayfun(@(x) find(s2(x,:),1,<span class="string">'first'</span>),1:size(s2,1));
+0165             
+0166             score=sum(r1&lt;r2);
+0167             
+0168             <span class="keyword">if</span> score&gt;=oldScore
+0169                 <span class="keyword">if</span> score&gt;oldScore
+0170                     counter=0;
+0171                 <span class="keyword">end</span>
+0172                 oldScore=score;
+0173                 oldRev=rev;
+0174                 rxnOrder=newRxnOrder;
+0175             <span class="keyword">end</span>
+0176         <span class="keyword">end</span>
+0177         
+0178         <span class="comment">%Update the model for this subsystem</span>
+0179         <span class="keyword">for</span> j=1:numel(oldRev)
+0180             <span class="keyword">if</span> oldRev(j)==-1
+0181                 model.S(:,revRxns(j))=model.S(:,revRxns(j)).*-1;
+0182             <span class="keyword">end</span>
+0183         <span class="keyword">end</span>
+0184         order=1:numel(model.rxns);
+0185         order(rxns)=rxns(rxnOrder);
+0186         model=<a href="permuteModel.html" class="code" title="function newModel=permuteModel(model, indexes, type)">permuteModel</a>(model, order, <span class="string">'rxns'</span>);
+0187     <span class="keyword">end</span>
+0188 <span class="keyword">end</span>
+0189 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
