@@ -49,6 +49,26 @@ classdef tManipulation < RavenTestCase
             testCase.verifyTrue(ismember('newRxn1', m2.rxns));
         end
 
+        function addRxnsKeepsSpontaneousAligned(testCase)
+            % A model that already tracks spontaneous must keep it aligned
+            % with rxns after adding reactions that don't specify it, and
+            % accept an explicit spontaneous value for the new ones too.
+            m = testCase.model;
+            m.spontaneous = false(numel(m.rxns), 1);
+            r.rxns = 'newRxn1';
+            r.equations = '2-Oxoglutarate => TEST';
+            evalc('m2 = addRxns(m, r, 2, ''c'', true);');
+            testCase.verifyEqual(numel(m2.spontaneous), numel(m2.rxns));
+            testCase.verifyFalse(m2.spontaneous(end));
+
+            r2.rxns = 'newRxn2';
+            r2.equations = '2-Oxoglutarate => TEST2';
+            r2.spontaneous = true;
+            evalc('m3 = addRxns(m, r2, 2, ''c'', true);');
+            testCase.verifyEqual(numel(m3.spontaneous), numel(m3.rxns));
+            testCase.verifyTrue(m3.spontaneous(end));
+        end
+
         function addRxnsStringEqnTypeIdAlias(testCase)
             % 'id' is the string alias for eqnType=1 (match by model.mets).
             r.rxns = {'idAliasRxn'};
@@ -176,6 +196,20 @@ classdef tManipulation < RavenTestCase
             m.genes = {'g1'}; m.grRules = {'g1'}; m.rxnGeneMat = sparse(1,1,1);
             m2 = convertToIrrev(m);
             testCase.verifyEqual(m2.grRules{strcmp(m2.rxns,'R1_REV')}, 'g1');
+        end
+
+        function convertToIrrevReverseCopyInheritsSpontaneousAndPwys(testCase)
+            % The _REV copy must carry the same spontaneous/pwys annotation
+            % as the forward reaction, keeping both fields aligned with rxns.
+            m = tManipulation.twoMetModel();
+            m.rev = 1; m.lb = -500; m.ub = 1000;
+            m.spontaneous = true;
+            m.pwys = {'pathway1'};
+            m2 = convertToIrrev(m);
+            testCase.verifyEqual(numel(m2.spontaneous), numel(m2.rxns));
+            testCase.verifyEqual(numel(m2.pwys), numel(m2.rxns));
+            testCase.verifyTrue(m2.spontaneous(strcmp(m2.rxns,'R1_REV')));
+            testCase.verifyEqual(m2.pwys{strcmp(m2.rxns,'R1_REV')}, 'pathway1');
         end
 
         function findDuplicateRxnsIgnoreDirection(testCase)
@@ -467,6 +501,20 @@ classdef tManipulation < RavenTestCase
             m = testCase.gprTestModel('g1 and (g2 or g3)', {'g1';'g2';'g3'}, [1 1 1]);
             e = expandModel(m);
             testCase.verifyEqual(sort(e.grRules), {'g1 and g2';'g1 and g3'});
+        end
+
+        function expandModelCopiesSpontaneousAndPwys(testCase)
+            % Each isozyme copy created by splitting an OR rule must inherit
+            % the source reaction's spontaneous/pwys annotation, keeping both
+            % fields aligned with rxns.
+            m = testCase.gprTestModel('g1 or g2', {'g1';'g2'}, [1 1]);
+            m.spontaneous = true;
+            m.pwys = {'pathway1'};
+            e = expandModel(m);
+            testCase.verifyEqual(numel(e.spontaneous), numel(e.rxns));
+            testCase.verifyEqual(numel(e.pwys), numel(e.rxns));
+            testCase.verifyTrue(all(e.spontaneous));
+            testCase.verifyTrue(all(strcmp(e.pwys, 'pathway1')));
         end
 
         function expandModelDistributesBothSides(testCase)
