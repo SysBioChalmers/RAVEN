@@ -434,6 +434,64 @@ classdef tManipulation < RavenTestCase
             testCase.verifyLessThan(numel(m2.mets), numel(testCase.model.mets));
         end
 
+        function replaceMetsByIdAddsRatherThanOverwrites(testCase)
+            % A reaction where the replacement metabolite is already itself
+            % a participant must keep that contribution: x+y=> must become
+            % 2y=>, not just y=>, once x is replaced by y.
+            m = struct();
+            m.id='t'; m.rxns={'R1';'R2'}; m.rxnNames=m.rxns;
+            m.mets={'x';'y';'z'}; m.metNames=m.mets; m.metComps=[1;1;1];
+            m.comps={'c'}; m.compNames={'c'};
+            m.S=sparse([0 -1; 0 -1; -1 0]); % R1: z=>   R2: x+y=>
+            m.lb=[0;0]; m.ub=[1000;1000]; m.rev=[0;0]; m.c=[0;0]; m.b=zeros(3,1);
+            m.genes={}; m.grRules={'';''}; m.rxnGeneMat=sparse(2,0);
+            evalc('m2 = replaceMets(m, ''x'', ''y'', ''identifiers'', true);');
+            yRow = strcmp(m2.mets,'y');
+            r2 = strcmp(m2.rxns,'R2');
+            testCase.verifyEqual(full(m2.S(yRow,r2)), -2);
+        end
+
+        function replaceMetsByNameKeepsBShapeAndRuns(testCase)
+            % A model with a two-column b (net-production bounds) must
+            % keep that shape after the metabolites-with-duplicate-name
+            % merge, and the final contractModel call must not error from
+            % a stale post-deletion metabolite index or a disabled
+            % distReverse.
+            m = struct();
+            m.id='t'; m.rxns={'R1';'R2'}; m.rxnNames=m.rxns;
+            m.mets={'ox1';'ox2';'w'}; m.metNames={'oxygen';'o2';'w'};
+            m.metComps=[1;1;1]; m.comps={'c'}; m.compNames={'c'};
+            m.S=sparse([-1 0; 0 -1; 1 1]); % R1: oxygen=>w   R2: o2=>w
+            m.lb=[0;0]; m.ub=[1000;1000]; m.rev=[0;0]; m.c=[0;0];
+            m.b=[zeros(3,1) ones(3,1)]; % two-column b
+            m.genes={}; m.grRules={'';''}; m.rxnGeneMat=sparse(2,0);
+            evalc('m2 = replaceMets(m, ''oxygen'', ''o2'');');
+            testCase.verifyEqual(size(m2.b,2), 2);
+            testCase.verifyEqual(size(m2.b,1), numel(m2.mets));
+            testCase.verifyEqual(numel(m2.mets), 2); % oxygen and o2 merged
+        end
+
+        function setExchangeBoundsFindsAllMultiExchangeMets(testCase)
+            % Every metabolite exchanged by more than one reaction must be
+            % reported, not just whichever one happens to line up between
+            % two differently-sized index ranges compared directly against
+            % each other.
+            m = struct();
+            m.id='t';
+            m.rxns={'r1';'r2';'r3';'r4';'r5';'r6';'r7'}; m.rxnNames=m.rxns;
+            m.mets={'met1';'met2';'met3';'met4';'met5'};
+            m.metNames={'MetOne';'MetTwo';'MetThree';'MetFour';'MetFive'};
+            m.metComps=[1;1;1;1;1]; m.comps={'c'}; m.compNames={'c'};
+            % r1:=>met5  r2:=>met1  r3:=>met2  r4:met5=>  r5:=>met3  r6:=>met4  r7:met3=>
+            m.S = sparse(5,7);
+            m.S(5,1)=1; m.S(1,2)=1; m.S(2,3)=1; m.S(5,4)=-1; m.S(3,5)=1; m.S(4,6)=1; m.S(3,7)=-1;
+            m.lb=-1000*ones(7,1); m.ub=1000*ones(7,1); m.rev=ones(7,1); m.c=zeros(7,1); m.b=zeros(5,1);
+            m.genes={}; m.grRules=repmat({''},7,1); m.rxnGeneMat=sparse(7,0);
+            txt = evalc('setExchangeBounds(m);');
+            testCase.verifySubstring(txt, 'MetThree');
+            testCase.verifySubstring(txt, 'MetFive');
+        end
+
         function setExchangeBoundsRuns(testCase)
             evalc('m2 = setExchangeBounds(testCase.model, {''ac_e'';''akg_e''}, -500, 500);');
             testCase.verifyClass(m2, 'struct');

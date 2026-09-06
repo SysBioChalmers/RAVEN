@@ -65,6 +65,9 @@ end
 if isempty(repIdx)
     error('The replacement metabolite cannot be found in the model.');
 end
+% Captured by id, not position: idxDelete below removes rows, which would
+% otherwise shift repIdx out from under the metabolite it is meant to name
+repMetIds = model.mets(repIdx);
 
 % Change name and information from metabolite to replacement metabolite
 if identifiers
@@ -106,7 +109,10 @@ end
 idxDelete=[];
 if identifiers
     originalStoch = model.S(metIdx,rxnsWithMet);
-    model.S(repIdx,rxnsWithMet) = originalStoch;
+    % Add rather than overwrite: a reaction where the replacement
+    % metabolite is already itself a participant must keep that
+    % contribution, not have it clobbered by the replaced metabolite's
+    model.S(repIdx,rxnsWithMet) = model.S(repIdx,rxnsWithMet) + originalStoch;
     model.S(metIdx,rxnsWithMet) = 0;
     idxDelete = metIdx;
 else
@@ -137,7 +143,7 @@ if ~isempty(idxDelete)
     model.mets(idxDelete) = [];
     model.metNames(idxDelete) = [];
     model.metComps(idxDelete) = [];
-    model.b(idxDelete) = [];
+    model.b(idxDelete,:) = [];
     if isfield(model,'metFormulas')
         model.metFormulas(idxDelete) = [];
     end
@@ -165,5 +171,11 @@ if ~isempty(idxDelete)
 end
 
 % This could now have created duplicate reactions. Contract model.
-model=contractModel(model,[],repIdx);
+% repIdx may point past the end, or at the wrong row, once idxDelete has
+% shifted things above; re-resolve the replacement metabolite by id.
+% distReverse is passed by name rather than positionally as [], which
+% parseRAVENargs would take literally instead of falling back to its
+% documented default of true.
+repIdx = find(ismember(model.mets, repMetIds));
+model=contractModel(model,'mets',repIdx);
 end
