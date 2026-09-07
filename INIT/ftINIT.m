@@ -156,7 +156,7 @@ else
 end
 
 % Get rxn scores and adapt them to the minimized model
-origRxnScores = scoreComplexModel(prepData.refModel,hpaData,transcrData,tissue,celltype);
+origRxnScores = scoreModel(prepData.refModel,hpaData,transcrData,tissue,celltype);
 origRxnScores(origRxnScores > -0.1 & origRxnScores <= 0) = -0.1;%we don't want reaction scores that are exactly 0 (or close), this causes problems in the milp
 origRxnScores(origRxnScores < 0.1 & origRxnScores > 0) = 0.1;
 
@@ -326,8 +326,9 @@ initModel = removeMets(initModel, setdiff(unusedMets, prepData.essentialMetsForT
 %    printScores(removeReactions(cModel,setdiff(cModel.rxns,rxnsToRem),true,true),"Reactions deleted by INIT",hpaData,transcrData,tissue,celltype);
 %end
 
-%The full model has exchange reactions in it. ftINITFillGapsForAllTasks calls 
-%ftINITFillGaps, which automatically removes exchange metabolites (because it 
+%The full model has exchange reactions in it. fitTasks with gapFillMode
+%'preMerged' calls ftINITFillGaps, which automatically removes exchange
+%metabolites (because it
 %assumes that the reactions are constrained when appropriate). In this case the
 %uptakes/outputs are retrieved from the task sheet instead. To prevent
 %exchange reactions being used to fill gaps, they are deleted from the
@@ -357,9 +358,15 @@ if ~isempty(prepData.taskStruct)
         rxnScores2nd = NaN(length(refModelNoExc.rxns),1);
         rxnScores2nd(ia) = origRxnScores(ib);
         %all(rxnScores2nd == refRxnScores);%should be the same, ok!
-        [outModel,addedRxnMat] = ftINITFillGapsForAllTasks(initModelNoExc,refModelNoExc,[],true,min(rxnScores2nd,-0.1),prepData.taskStruct,paramsFT,verbose);
+        [outModel,addedRxnMat] = fitTasks(initModelNoExc,refModelNoExc,[], ...
+            'printOutput',true,'rxnScores',min(rxnScores2nd,-0.1), ...
+            'taskStructure',prepData.taskStruct,'gapFillMode','preMerged', ...
+            'params',paramsFT,'verbose',verbose);
     else
-        [outModel,addedRxnMat] = ftINITFillGapsForAllTasks(initModelNoExc,refModelNoExc,[],true,[],prepData.taskStruct,paramsFT,verbose);
+        [outModel,addedRxnMat] = fitTasks(initModelNoExc,refModelNoExc,[], ...
+            'printOutput',true,'rxnScores',[], ...
+            'taskStructure',prepData.taskStruct,'gapFillMode','preMerged', ...
+            'params',paramsFT,'verbose',verbose);
     end
     %if printReport == true
     %    printScores(outModel,"Functional model statistics",hpaData,transcrData,tissue,celltype);
@@ -398,7 +405,7 @@ outModel = removeReactions(prepData.refModel, deletedRxnsInINIT, true); %we skip
 % See the "removeLowScoreGenes" function more more details, and to adjust
 % any default parameters therein.
 if ( removeGenes )
-    [~, geneScores] = scoreComplexModel(outModel,hpaData,transcrData,tissue,celltype);
+    [~, geneScores] = scoreModel(outModel,hpaData,transcrData,tissue,celltype);
     outModel = removeLowScoreGenes(outModel,geneScores);
 end
 
@@ -409,7 +416,7 @@ end
 
 %This is for printing a summary of a model
 function [rxnS, geneS] = printScores(model,name,hpaData,transcrData,tissue,celltype)
-    [a, b] = scoreComplexModel(model,hpaData,transcrData,tissue,celltype);
+    [a, b] = scoreModel(model,hpaData,transcrData,tissue,celltype);
     rxnS = mean(a);
     geneS = mean(b,'omitnan');
     fprintf([name ':\n']);

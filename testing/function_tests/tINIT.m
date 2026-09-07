@@ -5,11 +5,12 @@ classdef tINIT < RavenTestCase
 %   (built by the local getTstModel* helpers, illustrated in tINITtestInfo/):
 %   ftINITPipelineRuns / ftINITWithTaskRuns / ftINITMetabolomicsRuns /
 %   ftINITFullVsThreeStepRuns cover prepINITModel + ftINIT and the internal
-%   ftINITInternalAlg / groupRxnScores helpers, ftINITFillGapsForAllTasksRuns
-%   covers the gap-filling step, all guarded on a MILP solver (Gurobi/SCIP).
-%   The self-contained helpers (mergeLinear, groupRxnScores, reverseRxns,
-%   rescaleModelForINIT, scoreComplexModel, getExprForRxnScore) are tested
-%   directly against known results.
+%   ftINITInternalAlg / groupRxnScores helpers, fitTasksPreMerged* covers the
+%   gap-filling step (fitTasks with gapFillMode 'preMerged', ftINIT's mode),
+%   all guarded on a MILP solver (Gurobi/SCIP). The self-contained helpers
+%   (mergeLinear, groupRxnScores, reverseRxns, rescaleModelForINIT,
+%   scoreModel, getExprForRxnScore) are tested directly against known
+%   results.
 
     methods (Test)
 
@@ -107,16 +108,16 @@ classdef tINIT < RavenTestCase
             testCase.verifyTrue(all(find(reversedRxns) == [6;9]));
         end
 
-        function scoreComplexModelRuns(testCase)
+        function scoreModelRuns(testCase)
             arrayData.genes   = testCase.model.genes;
             arrayData.tissues = {'t1'};
             arrayData.levels  = abs(randn(numel(testCase.model.genes), 1)) + 1;
             arrayData.threshold = 1;
-            evalc('rxnScores = scoreComplexModel(testCase.model, [], arrayData, ''t1'', []);');
+            evalc('rxnScores = scoreModel(testCase.model, [], arrayData, ''t1'', []);');
             testCase.verifyNumElements(rxnScores, numel(testCase.model.rxns));
         end
 
-        function scoreComplexModelHpaUnmeasuredCellTypeIsNotZero(testCase)
+        function scoreModelHpaUnmeasuredCellTypeIsNotZero(testCase)
             % A gene not detected in one cell type of a tissue and not
             % measured in the other must keep its 'Not detected' score. An
             % unmeasured cell type is not a measurement of zero, and zero
@@ -131,18 +132,18 @@ classdef tINIT < RavenTestCase
             hpaData.gene2Level(1,1) = 1;   % not detected in hepatocyte
                                            % not measured in kupffer
 
-            evalc(['[~,~,hpaScores] = scoreComplexModel(m, hpaData, [], ' ...
+            evalc(['[~,~,hpaScores] = scoreModel(m, hpaData, [], ' ...
                 '''liver'', ''multipleCellScoring'', ''max'');']);
             testCase.verifyEqual(hpaScores(1), -8, 'AbsTol', 1e-9);
 
             % The average is likewise taken over the measurements that exist
-            evalc(['[~,~,hpaScores] = scoreComplexModel(m, hpaData, [], ' ...
+            evalc(['[~,~,hpaScores] = scoreModel(m, hpaData, [], ' ...
                 '''liver'', ''multipleCellScoring'', ''average'');']);
             testCase.verifyEqual(hpaScores(1), -8, 'AbsTol', 1e-9);
         end
 
-        function scoreComplexModelExactScores(testCase)
-            % scoreComplexModel must reproduce the known reaction scores for
+        function scoreModelExactScores(testCase)
+            % scoreModel must reproduce the known reaction scores for
             % the reference model prepared by prepINITModel.
             testCase.assumeMILPSolver();
             testModel = getTstModel();
@@ -151,7 +152,7 @@ classdef tINIT < RavenTestCase
             arrayData.tissues   = {'a'};
             arrayData.levels    = getExprForRxnScore(getTstModelRxnScores());
             arrayData.threshold = 1;
-            rxnScores = scoreComplexModel(prepData.refModel, [], arrayData, arrayData.tissues{1}, []);
+            rxnScores = scoreModel(prepData.refModel, [], arrayData, arrayData.tissues{1}, []);
             testCase.verifyTrue(all(abs(rxnScores - getTstModelRxnScores()) < 10^-10));
         end
 
@@ -236,9 +237,10 @@ classdef tINIT < RavenTestCase
                 {'R1';'R2';'R4';'R6';'R7';'R8';'R9';'R10'})));
         end
 
-        function ftINITFillGapsForAllTasksRuns(testCase)
+        function fitTasksPreMergedRuns(testCase)
             % Remove exchange rxns (required for gap filling) and create a gap
-            % by removing R7; ftINITFillGapsForAllTasks must add R7 back.
+            % by removing R7; fitTasks with gapFillMode 'preMerged' must add
+            % R7 back.
             testCase.assumeMILPSolver();
             testModel      = getTstModel();
             testModelTasks = getTstModelTasks();
@@ -249,15 +251,17 @@ classdef tINIT < RavenTestCase
             mTemp    = removeReactions(mTempRef, {'R7'});
             mTemp.id = 'tmp';
             tmpRxnScores = testRxnScores([2;3;4;5;6;7;9;10]);
-            evalc(['[~,addedRxnMat] = ftINITFillGapsForAllTasks(mTemp,mTempRef,' ...
-                '[],false,min(tmpRxnScores,-0.1),testModelTasks,struct(),false);']);
+            evalc(['[~,addedRxnMat] = fitTasks(mTemp,mTempRef,[],' ...
+                '''printOutput'',false,''rxnScores'',min(tmpRxnScores,-0.1),' ...
+                '''taskStructure'',testModelTasks,''gapFillMode'',''preMerged'',' ...
+                '''params'',struct(),''verbose'',false);']);
             % An equality rather than all(strcmp(...)): an empty selection
             % makes strcmp return an empty logical, which all() reports as
             % true, so a run that added nothing would pass silently.
             testCase.verifyEqual(mTempRef.rxns(any(addedRxnMat,2)), {'R7'});
         end
 
-        function ftINITFillGapsForAllTasksReportsUnfillableTask(testCase)
+        function fitTasksPreMergedReportsUnfillableTask(testCase)
             % R7 is the only producer of e[s], so removing it from the
             % reference model as well leaves the task unfillable. R8 is kept
             % so that e[s] still takes part in a reaction, and R9 is withheld
@@ -275,8 +279,9 @@ classdef tINIT < RavenTestCase
             mTemp.id = 'tmp';
             tmpRxnScores = testRxnScores([2;3;4;5;6;8;9;10]);
             lastwarn('');
-            evalc(['[~,addedRxnMat,failedTasks] = ftINITFillGapsForAllTasks(mTemp,' ...
-                'mTempRef,[],false,min(tmpRxnScores,-0.1),testModelTasks);']);
+            evalc(['[~,addedRxnMat,failedTasks] = fitTasks(mTemp,mTempRef,[],' ...
+                '''printOutput'',false,''rxnScores'',min(tmpRxnScores,-0.1),' ...
+                '''taskStructure'',testModelTasks,''gapFillMode'',''preMerged'');']);
             testCase.verifyTrue(failedTasks(1));
             testCase.verifyFalse(any(addedRxnMat(:)));
             % Every way of failing sets failedTasks, so the reason has to be
@@ -285,7 +290,7 @@ classdef tINIT < RavenTestCase
             testCase.verifySubstring(lastwarn, 'no feasible solution exists');
         end
 
-        function ftINITFillGapsForAllTasksHandlesEmptyReferenceSet(testCase)
+        function fitTasksPreMergedHandlesEmptyReferenceSet(testCase)
             % The reference model holds nothing the model does not already
             % have, so no reaction can be added. An empty reaction list
             % means "all reactions" to the MILP, which would otherwise
@@ -301,14 +306,16 @@ classdef tINIT < RavenTestCase
             mTemp.id = 'tmp';
             tmpRxnScores = testRxnScores([2;3;4;5;6;9;10]);
             lastwarn('');
-            evalc(['[~,addedRxnMat,failedTasks] = ftINITFillGapsForAllTasks(mTemp,' ...
-                'mTempRef,[],false,min(tmpRxnScores,-0.1),testModelTasks,struct(),false);']);
+            evalc(['[~,addedRxnMat,failedTasks] = fitTasks(mTemp,mTempRef,[],' ...
+                '''printOutput'',false,''rxnScores'',min(tmpRxnScores,-0.1),' ...
+                '''taskStructure'',testModelTasks,''gapFillMode'',''preMerged'',' ...
+                '''params'',struct(),''verbose'',false);']);
             testCase.verifyTrue(failedTasks(1));
             testCase.verifyFalse(any(addedRxnMat(:)));
             testCase.verifySubstring(lastwarn, 'no feasible solution exists');
         end
 
-        function ftINITFillGapsForAllTasksWarningHasRealNewlineAndPercent(testCase)
+        function fitTasksPreMergedWarningHasRealNewlineAndPercent(testCase)
             % The "could not be gap-filled" warning embeds the task
             % id/description; a literal "\n" must become a real newline
             % (not print as the two characters backslash-n), and a "%" in
@@ -326,8 +333,10 @@ classdef tINIT < RavenTestCase
             mTemp.id = 'tmp';
             tmpRxnScores = testRxnScores([2;3;4;5;6;9;10]);
             lastwarn('');
-            evalc(['ftINITFillGapsForAllTasks(mTemp,mTempRef,[],false,' ...
-                'min(tmpRxnScores,-0.1),testModelTasks,struct(),false);']);
+            evalc(['fitTasks(mTemp,mTempRef,[],' ...
+                '''printOutput'',false,''rxnScores'',min(tmpRxnScores,-0.1),' ...
+                '''taskStructure'',testModelTasks,''gapFillMode'',''preMerged'',' ...
+                '''params'',struct(),''verbose'',false);']);
             msg = lastwarn();
             testCase.verifySubstring(msg, 'Task 50% test');
             testCase.verifyFalse(contains(msg, '\n'));
@@ -512,6 +521,64 @@ classdef tINIT < RavenTestCase
             testCase.verifyEqual(resModel.rxns, {'R1';'R2';'R4';'R6';'R8';'R9';'R10'});
         end
 
+        function scoreModelDataPrecedenceReactionPrefersHpaWholeRule(testCase)
+            % dataPrecedence 'reaction': any gene of a reaction having HPA
+            % data means array data is ignored for the whole reaction, not
+            % just that gene. R7 is "G1 or G4", G1 has (low) HPA data and G4
+            % only array data; per-gene scoring would let G4's higher array
+            % score win, per-reaction scoring must not.
+            m = scoringTestModel();
+            a = scoringArrayData();
+            h = scoringHpaDataLowG1();
+            perGene = scoreModel(m, h, a, 't1', ...
+                'isozymeScoring', 'max', 'complexScoring', 'max');
+            perRxn  = scoreModel(m, h, a, 't1', ...
+                'isozymeScoring', 'max', 'complexScoring', 'max', ...
+                'dataPrecedence', 'reaction');
+            r7 = strcmp(m.rxns, 'R7');
+
+            testCase.verifyEqual(perRxn(r7), -8, 'AbsTol', 1e-12);
+            % Per gene, G4's array score is seen too, and it is higher
+            testCase.verifyEqual(perGene(r7), 5*log(3), 'AbsTol', 1e-12);
+            testCase.verifyNotEqual(perRxn(r7), perGene(r7));
+        end
+
+        function scoreModelAverageReducesDownTheRule(testCase)
+            % multipleGeneScoring 'average' averages down the grRule, so a
+            % complex counts once against its isozymes rather than once per
+            % subunit. R5 is "(G1 and G2) or G3".
+            m = scoringTestModel();
+            a = scoringArrayData();
+            scores = scoreModel(m, [], a, 't1', ...
+                'isozymeScoring', 'average', 'complexScoring', 'average');
+            r5 = strcmp(m.rxns, 'R5');
+
+            g = 5*log([1.5; 2; 2.5]);          % scores of G1, G2, G3
+            testCase.verifyEqual(scores(r5), mean([mean(g(1:2)); g(3)]), ...
+                'AbsTol', 1e-12);
+            testCase.verifyNotEqual(scores(r5), mean(g));   % not a flat mean
+        end
+
+        function scoreModelReadsGrRulesNotRxnGeneMat(testCase)
+            % A model carrying its gene associations only in grRules (no
+            % rxnGeneMat) must still score every reaction correctly.
+            m = scoringTestModel();
+            a = scoringArrayData();
+            noMat = m;
+            noMat.rxnGeneMat = [];
+            withMat = scoreModel(m, [], a, 't1');
+            withoutMat = scoreModel(noMat, [], a, 't1');
+            testCase.verifyEqual(withoutMat, withMat, 'AbsTol', 1e-12);
+        end
+
+        function scoreModelRejectsUnknownDataPrecedence(testCase)
+            m = scoringTestModel();
+            a = scoringArrayData();
+            testCase.verifyError( ...
+                @() scoreModel(m, [], a, 't1', 'dataPrecedence', 'model'), ...
+                'RAVEN:badInput');
+        end
+
     end
 end
 
@@ -560,7 +627,7 @@ testModelRxnScores = [-2;-2;-1;7;0.5;0.5;-1;-2;-3;3.5];
 end
 
 function model = setTaskBounds(model)
-% The b bounds that ftINITFillGapsForAllTasks derives from getTstModelTasks:
+% The b bounds that fitTasks (gapFillMode 'preMerged') derives from getTstModelTasks:
 % a[s] may be taken up freely, e[s] has to leave at exactly one unit.
 model.b = zeros(numel(model.mets), 2);
 model.b(strcmp(model.mets, 'as'), :) = [-inf 0];
@@ -718,4 +785,57 @@ end
 function testModelLGeneScores = getTstModelLGeneScores()
 %testModelL.genes = {'Ge1';'Ge2';'Ge4';'Ge5';'Ge7';'Ge9'; 'Gr1';'Gr2';'Gr3';'Gr5';'Gr6';'Gr7';'Gr8';'Gr9';'Gr10';'Gr11';'Gr12';'Gr14';'Gr15'};
 testModelLGeneScores = [3; -1;   8;    6;    -5;    5;     4;    5;    2;    3;    6;    1;    3;    1;    -3;    1;     3;      1;    2];
+end
+
+%==========================================================================
+% Fixtures for the scoreModel* tests: a small model whose grRules cover
+% every rule shape the scoring treats differently (none, single, OR, AND,
+% nested, mixed-data-source OR), and matching array/HPA data.
+%==========================================================================
+
+function m = scoringTestModel()
+m = struct();
+m.id = 'scoringTest';
+m.rxns = {}; m.S = []; m.rev = [];
+m.mets     = {'ac'; 'bc'; 'cc'; 'dc'; 'ec'};
+m.metNames = {'a'; 'b'; 'c'; 'd'; 'e'};
+m.comps = {'c'}; m.compNames = m.comps;
+m.metComps = [1; 1; 1; 1; 1];
+m.genes = {'G1'; 'G2'; 'G3'; 'G4'};
+m.grRules = {}; m.rxnGeneMat = [];
+r = struct();
+r.rxns = {'R1'; 'R2'; 'R3'; 'R4'; 'R5'; 'R6'; 'R7'};
+r.equations = {'=> a[c]'; 'a[c] => b[c]'; 'b[c] => c[c]'; ...
+    'c[c] => d[c]'; 'a[c] => d[c]'; 'd[c] => e[c]'; 'e[c] =>'};
+r.grRules = {''; 'G1'; 'G1 or G2'; 'G1 and G2'; ...
+    '(G1 and G2) or G3'; 'G4'; 'G1 or G4'};
+evalc('m = addRxns(m, r, 3);');
+m.c = zeros(7, 1);
+m.lb = zeros(7, 1);
+m.ub = repmat(1000, 7, 1);
+m.rxnNames = m.rxns;
+m.b = zeros(5, 1);
+evalc('[m.grRules, m.rxnGeneMat] = standardizeGrRules(m, true);');
+end
+
+function a = scoringArrayData()
+% Distinct, uncapped scores: with a threshold of 1 the score of each gene
+% is 5*log(level), i.e. 2.03, 3.47, 4.58 and 5.49.
+a = struct();
+a.genes     = {'G1'; 'G2'; 'G3'; 'G4'};
+a.tissues   = {'t1'; 't2'};
+a.celltypes = {'ct1'; 'ct2'};
+a.levels    = [1.5 1; 2 1; 2.5 1; 3 1];
+a.threshold = ones(4, 1);
+end
+
+function h = scoringHpaDataLowG1()
+% Only G1 has HPA data, and its level is the lowest one, so any array
+% score for the other genes outranks it.
+h = struct();
+h.genes      = {'G1'};
+h.tissues    = {'t1'};
+h.celltypes  = {'ct1'};
+h.levels     = {'High', 'Medium', 'Low', 'None'};
+h.gene2Level = 4;
 end

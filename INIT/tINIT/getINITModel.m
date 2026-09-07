@@ -10,8 +10,8 @@
 % supported, and issues a RAVEN:legacyMethod notice once per session, which
 % warning('off','RAVEN:legacyMethod') silences.
 %
-% Not all settings are reachable through this function; scoreModel, runINIT and
-% fitTasks can be called individually for the ones that are not.
+% Not all settings are reachable through this function; runINIT and fitTasks
+% can be called individually for the ones that are not.
 %
 % Parameters
 % ----------
@@ -311,8 +311,15 @@ else
     essentialRxnsForTasks={};
 end
 
-%Score the connected model
-[rxnScores, geneScores]=scoreModel(cModel,hpaData,arrayData,tissue,celltype);
+%Score the connected model. isozymeScoring/complexScoring use one operator
+%for both and/or (a rule reduces to a single statistic over its genes) and
+%dataPrecedence is per-reaction, matching the original tINIT algorithm.
+[rxnScores, geneScores]=scoreModel(cModel,hpaData,arrayData,tissue,celltype, ...
+    'isozymeScoring','max','complexScoring','max','dataPrecedence','reaction');
+%scoreModel marks an unmeasured gene NaN (removeLowScoreGenes reads that as
+%"no evidence" and leaves it be); this algorithm instead needs -Inf, so an
+%unmeasured gene never ranks equal-or-above a measured one further down.
+geneScores(isnan(geneScores))=-Inf;
 
 %Run the INIT algorithm. The exchange reactions that are used in the final
 %reactions will be open, which does not fit with the last step. Therefore
@@ -350,7 +357,8 @@ if ~isempty(taskStructure)
     %in the current formulation. Therefore, such reactions will have to be
     %assigned a small negative score instead.
     if useScoresForTasks==true
-        refRxnScores=scoreModel(refModelNoExc,hpaData,arrayData,tissue,celltype);
+        refRxnScores=scoreModel(refModelNoExc,hpaData,arrayData,tissue,celltype, ...
+            'isozymeScoring','max','complexScoring','max','dataPrecedence','reaction');
         [outModel, addedRxnMat]=fitTasks(initModel,refModelNoExc,[],true,min(refRxnScores,-0.1),taskStructure,paramsFT);
     else
         [outModel, addedRxnMat]=fitTasks(initModel,refModelNoExc,[],true,[],taskStructure,paramsFT);
@@ -470,7 +478,9 @@ end
 
 %This is for printing a summary of a model
 function [rxnS, geneS]=printScores(model,name,hpaData,arrayData,tissue,celltype)
-[a, b]=scoreModel(model,hpaData,arrayData,tissue,celltype);
+[a, b]=scoreModel(model,hpaData,arrayData,tissue,celltype, ...
+    'isozymeScoring','max','complexScoring','max','dataPrecedence','reaction');
+b(isnan(b))=-Inf;
 rxnS=mean(a);
 geneS=mean(b(~isinf(b)));
 fprintf([name ':\n']);

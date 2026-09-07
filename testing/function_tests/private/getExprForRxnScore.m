@@ -33,7 +33,7 @@ threshold=p.threshold;
 %This is how the score is calculated: 5*log(expression./threshold)
 %expression = threshold*10.^(scores/5)
 %This is a bit confusing - it seems that it is threshold*e.^(scores/5)
-%This is probably what is being used in scoreComplexModel, this code
+%This is probably what is being used in scoreModel, this code
 %negates that perfectly, see the T0009 test case.
 
 expr = threshold*exp(scores/5);

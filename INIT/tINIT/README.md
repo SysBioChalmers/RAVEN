@@ -13,16 +13,27 @@ appear to overlap they do not:
 | | tINIT | ftINIT |
 |---|---|---|
 | Entry point | `getINITModel` | `prepINITModel`, then `ftINIT` |
-| Reaction scoring | `scoreModel` | `scoreComplexModel`, `groupRxnScores` |
+| Reaction scoring | `scoreModel` (isozyme/complex scoring fixed to `'max'`, `dataPrecedence` `'reaction'`) | `scoreModel` (`omics/`), `groupRxnScores` |
 | Core MILP | `runINIT` | `ftINITInternalAlg`, scheduled by `getINITSteps` |
-| Task gap-filling | `fitTasks` | `ftINITFillGapsForAllTasks` |
+| Task gap-filling | `fitTasks` | `fitTasks` (`gapFillMode` `'preMerged'`), `ftINITFillGaps` |
 | Gene pruning | inline in `getINITModel` | `removeLowScoreGenes` |
 
 What they genuinely share is RAVEN's general machinery: `checkTasks` and
 `getEssentialRxns` for task feasibility, `parseTaskList`, `simplifyModel`, the
 solver layer, and the model-manipulation and I/O functions.
 
-`fitTasks` has callers outside tINIT, so it stays in `gapfilling/`. `scoreModel`
-has none besides `getINITModel`, and is now a wrapper over `scoreComplexModel`
-(`omics/`) holding the tINIT argument order, the per-reaction `dataPrecedence`
-this method scores with, and its `-Inf` convention for a gene with no data.
+Reaction scoring and task gap-filling look forked in the table above only
+because the two entry points call their shared functions with different
+settings, not because two implementations exist. `scoreModel` (`omics/`) is
+one function for both: `getINITModel` calls it with the fixed argument
+combination the original tINIT algorithm needs — a single operator for both
+`and`/`or` in a grRule, `dataPrecedence` `'reaction'`, and geneScores rewritten
+from `NaN` to `-Inf` for a gene with no data — while `ftINIT` calls it with the
+general defaults. Likewise `fitTasks` (`gapfilling/`) is the one task
+gap-filling loop for both: `getINITModel` uses its default `gapFillMode`
+(`'merge'`, backed by `fillGaps`), `ftINIT` passes `'preMerged'` (backed by
+`ftINITFillGaps`, since ftINIT's reference model already contains the
+sample's own reactions and needs no per-task merge). That MILP-formulation
+split — `fillGaps` merging per task vs. `ftINITFillGaps` expecting a
+pre-merged model — is the one place the two genuinely differ, not
+`getINITModel` vs. `ftINIT` themselves.
