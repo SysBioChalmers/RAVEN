@@ -19,7 +19,7 @@ function downloadRavenBinaries(tools)
 %   Usage: downloadRavenBinaries({'blast+','diamond'})
 %
 % NOTE: lazily invoked by getBlast/getDiamond/getKEGGModelForOrganism and
-% offered by checkInstallation when a binary is missing.
+% offered by checkRaven when a binary is missing.
 
 if nargin < 1 || isempty(tools)
     tools = {'blast+','diamond','hmmer'};

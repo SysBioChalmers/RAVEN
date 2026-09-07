@@ -10,7 +10,7 @@ function [ravenPath, prevDir] = findRAVENroot()
 %   preference from disk every time is both wasteful and, under the sustained
 %   call volume of a full test run, an intermittent source of failures from
 %   MATLAB's own preference-file I/O. Run `clear findRAVENroot` after
-%   changing that preference (checkInstallation does this already) to pick
+%   changing that preference (checkRaven does this already) to pick
 %   up the change without restarting MATLAB.
 
 persistent cachedPath
