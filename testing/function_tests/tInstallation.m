@@ -37,7 +37,7 @@ classdef tInstallation < RavenTestCase
         function checkInstallationWarnsAndForwards(testCase)
             lastwarn('');
             [~, currVer] = evalc('checkInstallation(false, false)');
-            testCase.verifySubstring(lastwarn, 'checkInstallation is deprecated');
+            testCase.verifySubstring(lastwarn, 'checkInstallation is deprecated and will be removed');
             testCase.verifyNotEmpty(currVer);
         end
 

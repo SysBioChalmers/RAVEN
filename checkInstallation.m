@@ -1,14 +1,17 @@
 function [currVer, installType] = checkInstallation(developMode, checkBinaries)
-% checkInstallation
-%   Deprecated, use checkRaven instead. Forwards all arguments and outputs.
+% checkInstallation  DEPRECATED. Use checkRaven instead.
+%
+%   Forwards all arguments and outputs to checkRaven.
 %
 %   NOTE: this function is run before RAVEN has been added to the MATLAB
 %   path, so it must not call any other RAVEN functions until checkRaven has
-%   added RAVEN to the path itself.
+%   added RAVEN to the path itself. It cannot use the shared
+%   utils/deprecationWarning for the same reason.
 %
 % Usage: [currVer, installType] = checkInstallation(developMode, checkBinaries)
 
-warning('checkInstallation is deprecated and will be removed in a future release, use checkRaven instead.')
+warning('RAVEN:deprecated', ...
+    'checkInstallation is deprecated and will be removed in the next major release. Use checkRaven instead.')
 if nargin < 1
     developMode = false;
 end
