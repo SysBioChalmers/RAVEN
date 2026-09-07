@@ -28,6 +28,13 @@ function [taskReport, essentialRxns, taskStructure, essentialFluxes]=checkTasks(
 % taskStructure : struct
 %     structure with the tasks, as from parseTaskList. If this is supplied
 %     then inputFile is ignored.
+% runParallel : logical
+%     true to evaluate tasks in parallel workers, since each task is
+%     independent of the others (see parallelWorkersRAVEN). Gurobi is
+%     automatically pinned to one thread per worker by optimizeProb, so
+%     this does not oversubscribe cores. Default false, matching the
+%     previous (serial) behaviour, since checkTasks is often called on
+%     small task lists where starting a pool would only add overhead.
 %
 % Returns
 % -------
@@ -53,11 +60,12 @@ function [taskReport, essentialRxns, taskStructure, essentialFluxes]=checkTasks(
 %     [taskReport, essentialRxns, taskStructure] = checkTasks(model, inputFile, ...
 %         printOutput, printOnlyFailed, getEssential, taskStructure);
 
-p=parseRAVENargs(varargin, {'printOutput',true; 'printOnlyFailed',false; 'getEssential',false; 'taskStructure',[]});
+p=parseRAVENargs(varargin, {'printOutput',true; 'printOnlyFailed',false; 'getEssential',false; 'taskStructure',[]; 'runParallel',false});
 printOutput=p.printOutput;
 printOnlyFailed=p.printOnlyFailed;
 getEssential=p.getEssential;
 taskStructure=p.taskStructure;
+runParallel=p.runParallel;
 
 %Prepare the input model a little
 model.b=zeros(numel(model.mets),2);
@@ -73,14 +81,27 @@ if isempty(taskStructure)
     taskStructure=parseTaskList(inputFile);
 end
 
-essentialRxns=false(numel(model.rxns),numel(taskStructure));
-essentialFluxes = NaN(numel(model.rxns),numel(taskStructure));
+nTasks=numel(taskStructure);
+essentialRxns=false(numel(model.rxns),nTasks);
+essentialFluxes = NaN(numel(model.rxns),nTasks);
 
-tModel=model;
-taskReport=[];
-for i=1:numel(taskStructure)
-    taskReport.id{i,1}=taskStructure(i).id;
-    taskReport.description{i,1}=taskStructure(i).description;
+%Each task is independent (tModel is rebuilt from model at the top of
+%every iteration, nothing carries over), so this loop can run in
+%parallel. ids/descriptions/ok are plain arrays sliced by i and only
+%assembled into taskReport once the loop is done, because parfor's
+%classifier rejects slicing a struct field that is itself indexed with
+%cell/array subscripts (taskReport.id{i,1}=... is not a supported sliced
+%form). runParallel=false (the default) makes this run exactly like the
+%previous for loop, in the client, serially.
+ids=cell(nTasks,1);
+descriptions=cell(nTasks,1);
+ok=false(nTasks,1);
+
+nW=parallelWorkersRAVEN(runParallel);
+parfor (i=1:nTasks, nW)
+    tModel=model;
+    ids{i}=taskStructure(i).id;
+    descriptions{i}=taskStructure(i).description;
     %Set the inputs
     if ~isempty(taskStructure(i).inputs)
         [I, J]=ismember(upper(taskStructure(i).inputs),modelMets);
@@ -91,8 +112,7 @@ for i=1:numel(taskStructure)
         %ALLMETS/ALLMETSIN
         if ~all(I|K|L)
             fprintf(['ERROR: Could not find all inputs in "[' taskStructure(i).id '] ' taskStructure(i).description '"\n']);
-            taskReport.ok(i,1)=false;
-            tModel=model;
+            ok(i)=false;
             continue;
         end
         if numel(J)~=numel(unique(J))
@@ -145,8 +165,7 @@ for i=1:numel(taskStructure)
         %ALLMETS/ALLMETSIN
         if ~all(I|K|L)
             fprintf(['ERROR: Could not find all outputs in "[' taskStructure(i).id '] ' taskStructure(i).description '"\n']);
-            taskReport.ok(i,1)=false;
-            tModel=model;
+            ok(i)=false;
             continue;
         end
         if numel(J)~=numel(unique(J))
@@ -201,14 +220,18 @@ for i=1:numel(taskStructure)
     end
     %Add new rxns
     if ~isempty(taskStructure(i).equations)
-        rxn.equations=taskStructure(i).equations;
-        rxn.lb=taskStructure(i).LBequ;
-        rxn.ub=taskStructure(i).UBequ;
         % num2str on the whole column right-aligns every row to a common
         % width, embedding a leading space in "TEMPORARY_ 1" once any id
         % reaches two digits ("TEMPORARY_10"); format each one independently.
-        rxn.rxns=arrayfun(@(x) sprintf('TEMPORARY_%d',x), ...
+        rxnIds=arrayfun(@(x) sprintf('TEMPORARY_%d',x), ...
             (1:numel(taskStructure(i).equations))', 'UniformOutput', false);
+        % Built as a single struct() call, not incremental rxn.field=...
+        % assignments: parfor's variable classifier cannot establish that a
+        % variable built up via several dot-indexed assignments is a
+        % same-shape temporary in every iteration, and rejects it outright.
+        rxn=struct('equations',{taskStructure(i).equations}, ...
+            'lb',taskStructure(i).LBequ, 'ub',taskStructure(i).UBequ, ...
+            'rxns',{rxnIds});
         %Allow for new metabolites to be added. This is because it should
         %be possible to add, say, a whole new pathway
         tModel=addRxns(tModel,rxn,3,[],true);
@@ -226,7 +249,7 @@ for i=1:numel(taskStructure)
         essentialFluxes(:,i) = sol.x(1:numel(model.rxns));
         
         if ~taskStructure(i).shouldFail
-            taskReport.ok(i,1)=true;
+            ok(i)=true;
             if printOnlyFailed==false && printOutput==true
                 fprintf(['PASS: [' taskStructure(i).id '] ' taskStructure(i).description '\n']);
             end
@@ -234,23 +257,28 @@ for i=1:numel(taskStructure)
             if getEssential==true
                 [~, taskEssential]=getEssentialRxns(tModel);
                 %This is because there could be more reactions in tModel
-                %than in model
-                essentialRxns(taskEssential(taskEssential<=numel(model.rxns)),i)=true;
+                %than in model. Built as a full local column and written
+                %with a plain ':' row index: parfor only accepts a sliced
+                %output write when every subscript besides the loop
+                %variable is ':', not a data-dependent index vector.
+                essentialCol=false(numel(model.rxns),1);
+                essentialCol(taskEssential(taskEssential<=numel(model.rxns)))=true;
+                essentialRxns(:,i)=essentialCol;
             end
         else
-            taskReport.ok(i,1)=false;
+            ok(i)=false;
             if printOutput==true
                 fprintf(['PASS (should fail): [' taskStructure(i).id '] ' taskStructure(i).description '\n']);
             end
         end
     else
         if ~taskStructure(i).shouldFail
-            taskReport.ok(i,1)=false;
+            ok(i)=false;
             if printOutput==true
                 fprintf(['FAIL: [' taskStructure(i).id '] ' taskStructure(i).description '\n']);
             end
         else
-            taskReport.ok(i,1)=true;
+            ok(i)=true;
             if printOnlyFailed==false && printOutput==true
                 fprintf(['FAIL (should fail): [' taskStructure(i).id '] ' taskStructure(i).description '\n']);
             end
@@ -263,6 +291,10 @@ for i=1:numel(taskStructure)
             fprintf('\n');
         end
     end
-    tModel=model;
 end
+
+taskReport.id=ids;
+taskReport.description=descriptions;
+taskReport.ok=ok;
+
 end

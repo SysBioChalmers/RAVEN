@@ -39,6 +39,11 @@ function prepData = prepINITModel(origRefModel, taskStruct, varargin)
 %     infeasible, it may be worth trying to turn off the scaling. Note that it
 %     is only the minModel that is scaled, the scaling will not be present in
 %     the final model (default false).
+% runParallel : logical
+%     true to run the task-essentiality check in Step 3 (checkTasks) across
+%     parallel workers, since each task is independent of the others (see
+%     parallelWorkersRAVEN). Default false, matching the previous (serial)
+%     behaviour.
 %
 % Returns
 % -------
@@ -46,12 +51,13 @@ function prepData = prepINITModel(origRefModel, taskStruct, varargin)
 %     the resulting prepData structure which is used as input to ftINIT.
 
 
-p=parseRAVENargs(varargin, {'spontRxnNames',{}; 'convertGenes',false; 'customRxnsToIgnore',{}; 'extComp','e'; 'skipScaling',false});
+p=parseRAVENargs(varargin, {'spontRxnNames',{}; 'convertGenes',false; 'customRxnsToIgnore',{}; 'extComp','e'; 'skipScaling',false; 'runParallel',false});
 spontRxnNames=p.spontRxnNames;
 convertGenes=p.convertGenes;
 customRxnsToIgnore=p.customRxnsToIgnore;
 extComp=p.extComp;
 skipScaling=p.skipScaling;
+runParallel=p.runParallel;
 disp('Step 1: Gene rules')
 [origRefModel.grRules, origRefModel.rxnGeneMat] = standardizeGrRules(origRefModel, true);
 
@@ -87,7 +93,7 @@ cModel = removeReactions(origRefModel,deletedDeadEndRxns,false,true);
 disp('Step 3: Check tasks (~10 min)')
 if ~isempty(taskStruct)
     bModel = closeModel(cModel);
-    [taskReport, essentialRxnMat, ~, essentialFluxes] = checkTasks(bModel,[],true,false,true,taskStruct);
+    [taskReport, essentialRxnMat, ~, essentialFluxes] = checkTasks(bModel,[],true,false,true,taskStruct,'runParallel',runParallel);
 
     %extract the essential rxns:
     sel = sum(essentialRxnMat,2) > 0;
