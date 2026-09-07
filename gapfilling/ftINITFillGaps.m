@@ -1,4 +1,4 @@
-function [addedRxns, newModel, exitFlag]=ftINITFillGaps(tModel, origModel, tRefModel,allowNetProduction,supressWarnings,rxnScores,params,verbose)
+function [addedRxns, newModel, exitFlag]=ftINITFillGaps(tModel, origModel, tRefModel,allowNetProduction,supressWarnings,rxnScores,params,verbose,resolveTies)
 % ftINITFillGaps
 %   Variant of fillGaps specially adapted to speed up generation of ftINIT models.
 %
@@ -19,7 +19,11 @@ function [addedRxns, newModel, exitFlag]=ftINITFillGaps(tModel, origModel, tRefM
 %                       The solver will try to maximize the sum of the
 %                       scores for the included reactions
 %   params              *obsolete option*
-%   verbose             if true, the MILP progression will be shown. 
+%   verbose             if true, the MILP progression will be shown.
+%   resolveTies         if true, pin the gap-fill MILP's degenerate optimum to a
+%                       canonical answer instead of relying on the solver Seed
+%                       alone -- see getMinNrFluxes' resolveTies (optional,
+%                       default false)
 %
 %   addedRxns           the rxns added
 %   newModel            the tModel with reactions added to fill gaps
@@ -42,8 +46,11 @@ function [addedRxns, newModel, exitFlag]=ftINITFillGaps(tModel, origModel, tRefM
 %
 % Usage: [addedRxns, newModel, exitFlag]=...
 %           ftINITFillGaps(tModel,origModel,tRefModel,allowNetProduction,...
-%           supressWarnings,rxnScores,params,verbose)
+%           supressWarnings,rxnScores,params,verbose,resolveTies)
 
+if nargin<9 || isempty(resolveTies)
+    resolveTies=false;
+end
 if isempty(rxnScores)
     rxnScores=ones(numel(tRefModel.rxns),1)*-1;
 end
@@ -92,7 +99,7 @@ end
 %The reversible formulation uses one binary per reaction rather than one
 %per irreversible reaction, which is what makes this fast enough to run
 %once per task on a genome-scale reference model
-[~, J, exitFlag]=getMinNrFluxes(fullModel,templateRxns,params,fullModel.rxnScores(templateRxns),'formulation','reversible','verbose',verbose);%only the scores from the template rxns are used, so the others doesn't matter
+[~, J, exitFlag]=getMinNrFluxes(fullModel,templateRxns,params,fullModel.rxnScores(templateRxns),'formulation','reversible','verbose',verbose,'resolveTies',resolveTies);%only the scores from the template rxns are used, so the others doesn't matter
 
 %Remove everything except for the added ones
 addedRxns = fullModel.rxns(templateRxns(J));

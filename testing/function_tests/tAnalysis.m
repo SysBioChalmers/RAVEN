@@ -50,6 +50,33 @@ classdef tAnalysis < RavenTestCase
             testCase.verifyEqual(sum(Irev), sum(Iirrev));
         end
 
+        function getMinNrFluxesResolveTiesIsDeterministic(testCase)
+            % The reversible-formulation MILP is degenerate on a real model
+            % (see getMinNrFluxesFormulationsAgree above): resolveTies pins
+            % it to a canonical answer instead of leaving the choice to the
+            % solver/seed, so three independent runs must all agree
+            % (raven-gecko-parity#104).
+            testCase.assumeMILPSolver();
+            evalc(['[~, I1, flag1] = getMinNrFluxes(testCase.model, testCase.model.rxns, ' ...
+                '[], [], ''reversible'', false, ''resolveTies'', true);']);
+            evalc(['[~, I2, flag2] = getMinNrFluxes(testCase.model, testCase.model.rxns, ' ...
+                '[], [], ''reversible'', false, ''resolveTies'', true);']);
+            evalc(['[~, I3, flag3] = getMinNrFluxes(testCase.model, testCase.model.rxns, ' ...
+                '[], [], ''reversible'', false, ''resolveTies'', true);']);
+            testCase.verifyEqual(flag1, 1);
+            testCase.verifyEqual(flag2, 1);
+            testCase.verifyEqual(flag3, 1);
+            testCase.verifyEqual(I1, I2);
+            testCase.verifyEqual(I2, I3);
+        end
+
+        function getMinNrFluxesResolveTiesOnlySupportsReversible(testCase)
+            testCase.verifyError( ...
+                @() getMinNrFluxes(testCase.model, testCase.model.rxns, [], [], 'irrev', ...
+                    false, 'resolveTies', true), ...
+                'RAVEN:badInput');
+        end
+
         function getMinNrFluxesRejectsUnknownFormulation(testCase)
             testCase.verifyError( ...
                 @() getMinNrFluxes(testCase.model, testCase.model.rxns, [], [], 'both'), ...

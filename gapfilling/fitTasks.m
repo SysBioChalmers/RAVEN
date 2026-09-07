@@ -43,6 +43,10 @@ function [outModel, addedRxns, failedTasks]=fitTasks(model,refModel,inputFile,va
 % verbose : logical
 %     if true, the MILP progression will be shown. Only read when
 %     gapFillMode is 'preMerged' (default false).
+% resolveTies : logical
+%     if true, pin the gap-fill MILP's degenerate optimum to a canonical answer
+%     instead of relying on the solver Seed alone. Only read when gapFillMode is
+%     'preMerged' -- see ftINITFillGaps' resolveTies (default false).
 %
 % Returns
 % -------
@@ -69,13 +73,15 @@ p=parseRAVENargs(varargin, {'printOutput',true; ...
     'taskStructure',[]; ...
     'params',[]; ...
     'gapFillMode','merge'; ...
-    'verbose',false});
+    'verbose',false; ...
+    'resolveTies',false});
 printOutput=p.printOutput;
 rxnScores=p.rxnScores;
 taskStructure=p.taskStructure;
 params=p.params;
 gapFillMode=p.gapFillMode;
 verbose=p.verbose;
+resolveTies=p.resolveTies;
 
 if isempty(gapFillMode)
     gapFillMode='merge';
@@ -271,7 +277,7 @@ for i=1:numel(taskStructure)
             failed=false;
             try
                 if preMerged
-                    [newRxns, newModel, exitFlag]=ftINITFillGaps(tModel,model,tRefModel,false,supressWarnings,tRxnScores,params,verbose);
+                    [newRxns, newModel, exitFlag]=ftINITFillGaps(tModel,model,tRefModel,false,supressWarnings,tRxnScores,params,verbose,resolveTies);
                 else
                     [~, ~, newRxns, newModel, exitFlag]=fillGaps(tModel,refModel,false,true,supressWarnings,rxnScores,params);
                 end

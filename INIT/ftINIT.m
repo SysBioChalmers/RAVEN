@@ -67,6 +67,11 @@
 %     *obsolete option*.
 % verbose : logical
 %     if true, the MILP progression will be shown (default false).
+% resolveTies : logical
+%     if true, pin the final gap-filling step's degenerate MILP to a canonical
+%     answer instead of relying on the solver Seed alone -- see fitTasks'
+%     resolveTies. Covers only gap-filling for now, not the main extraction
+%     MILP's own tie-break (raven-gecko-parity#104) (default false).
 %
 % Returns
 % -------
@@ -99,7 +104,7 @@
 % metabolites remaining.
 %
 
-p=parseRAVENargs(varargin, {'transcrData',[]; 'metabolomicsData',[]; 'INITSteps',[]; 'removeGenes',[]; 'useScoresForTasks',[]; 'paramsFT',[]; 'verbose',false});
+p=parseRAVENargs(varargin, {'transcrData',[]; 'metabolomicsData',[]; 'INITSteps',[]; 'removeGenes',[]; 'useScoresForTasks',[]; 'paramsFT',[]; 'verbose',false; 'resolveTies',false});
 transcrData=p.transcrData;
 metabolomicsData=p.metabolomicsData;
 INITSteps=p.INITSteps;
@@ -107,6 +112,7 @@ removeGenes=p.removeGenes;
 useScoresForTasks=p.useScoresForTasks;
 paramsFT=p.paramsFT;
 verbose=p.verbose;
+resolveTies=p.resolveTies;
 if isempty(INITSteps)
     INITSteps = getINITSteps([],'1+1');
 end
@@ -361,12 +367,12 @@ if ~isempty(prepData.taskStruct)
         [outModel,addedRxnMat] = fitTasks(initModelNoExc,refModelNoExc,[], ...
             'printOutput',true,'rxnScores',min(rxnScores2nd,-0.1), ...
             'taskStructure',prepData.taskStruct,'gapFillMode','preMerged', ...
-            'params',paramsFT,'verbose',verbose);
+            'params',paramsFT,'verbose',verbose,'resolveTies',resolveTies);
     else
         [outModel,addedRxnMat] = fitTasks(initModelNoExc,refModelNoExc,[], ...
             'printOutput',true,'rxnScores',[], ...
             'taskStructure',prepData.taskStruct,'gapFillMode','preMerged', ...
-            'params',paramsFT,'verbose',verbose);
+            'params',paramsFT,'verbose',verbose,'resolveTies',resolveTies);
     end
     %if printReport == true
     %    printScores(outModel,"Functional model statistics",hpaData,transcrData,tissue,celltype);

@@ -261,6 +261,31 @@ classdef tINIT < RavenTestCase
             testCase.verifyEqual(mTempRef.rxns(any(addedRxnMat,2)), {'R7'});
         end
 
+        function fitTasksPreMergedResolveTiesStillFillsCorrectly(testCase)
+            % resolveTies is threaded through fitTasks (gapFillMode preMerged)
+            % -> ftINITFillGaps -> getMinNrFluxes (raven-gecko-parity#104); this
+            % exercises that whole chain end to end. Same fixture as
+            % fitTasksPreMergedRuns above -- correctness (R7 still gets added
+            % back) is what this checks, since that fixture has a unique fill
+            % (no tie to actually break); getMinNrFluxesResolveTiesIsDeterministic
+            % in tAnalysis.m covers the tie-breaking property itself.
+            testCase.assumeMILPSolver();
+            testModel      = getTstModel();
+            testModelTasks = getTstModelTasks();
+            testRxnScores  = getTstModelRxnScores();
+
+            mTempRef = closeModel(testModel);
+            mTempRef = removeReactions(mTempRef, {'R1';'R8'});
+            mTemp    = removeReactions(mTempRef, {'R7'});
+            mTemp.id = 'tmp';
+            tmpRxnScores = testRxnScores([2;3;4;5;6;7;9;10]);
+            evalc(['[~,addedRxnMat] = fitTasks(mTemp,mTempRef,[],' ...
+                '''printOutput'',false,''rxnScores'',min(tmpRxnScores,-0.1),' ...
+                '''taskStructure'',testModelTasks,''gapFillMode'',''preMerged'',' ...
+                '''params'',struct(),''verbose'',false,''resolveTies'',true);']);
+            testCase.verifyEqual(mTempRef.rxns(any(addedRxnMat,2)), {'R7'});
+        end
+
         function fitTasksPreMergedReportsUnfillableTask(testCase)
             % R7 is the only producer of e[s], so removing it from the
             % reference model as well leaves the task unfillable. R8 is kept
