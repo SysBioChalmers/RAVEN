@@ -35,9 +35,12 @@ classdef tInstallation < RavenTestCase
         end
 
         function checkInstallationWarnsAndForwards(testCase)
-            lastwarn('');
+            % checkRaven itself issues other warnings during its checks (e.g.
+            % SBML id-prefixing), which would overwrite lastwarn before it
+            % could be inspected here. verifyWarning tracks every warning
+            % issued during the call, not just the most recent one.
+            testCase.verifyWarning(@() evalc('checkInstallation(false, false)'), 'RAVEN:deprecated');
             [~, currVer] = evalc('checkInstallation(false, false)');
-            testCase.verifySubstring(lastwarn, 'checkInstallation is deprecated and will be removed');
             testCase.verifyNotEmpty(currVer);
         end
 
