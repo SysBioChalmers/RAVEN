@@ -215,6 +215,50 @@ classdef tINIT < RavenTestCase
                 {'R1';'R2';'R4';'R6';'R7';'R8'})));
         end
 
+        function ftINITResolveTiesAndProveAbsGapStillRunCorrectly(testCase)
+            % resolveTies and proveAbsGap are threaded through ftINIT ->
+            % ftINITInternalAlg (main extraction) and, for resolveTies, also
+            % into fitTasks' gap-filling (raven-gecko-parity#104). This
+            % fixture (same as ftINITPipelineRuns above) is too small to carry
+            % a genuine tie or to expose the escalation's near-zero-objective
+            % gap defect -- both are covered at genome scale in the PR
+            % description -- so this only checks that turning either or both
+            % on does not change the correct result or throw.
+            % proveAbsGap is deliberately set to 0.05 here, not the
+            % genome-scale-recommended 1.0: this fixture's reaction scores
+            % (getTstModelRxnScores, as small as 0.5) make 1.0 genuinely loose
+            % enough to accept a worse, different incumbent by design -- a
+            % real property of a fixed absolute gap, not a bug -- so a value
+            % below the model's own score granularity is what actually proves
+            % the true optimum here.
+            testCase.assumeMILPSolver();
+            testModel  = getTstModel();
+            testParams = struct();
+            evalc('prepData = prepINITModel(testModel, {}, {}, false, {}, ''s'');');
+
+            arrayData.genes     = testModel.genes;
+            arrayData.tissues   = {'a'};
+            arrayData.levels    = getExprForRxnScore(getTstModelRxnScores());
+            arrayData.threshold = 1;
+
+            expected = {'R1';'R4';'R6';'R8';'R9';'R10'};
+
+            evalc(['resTies = ftINIT(prepData,arrayData.tissues{1},[],[],' ...
+                'arrayData,[],getINITSteps(),true,true,testParams,false,' ...
+                '''resolveTies'',true);']);
+            testCase.verifyTrue(all(strcmp(resTies.rxns, expected)));
+
+            evalc(['resGap = ftINIT(prepData,arrayData.tissues{1},[],[],' ...
+                'arrayData,[],getINITSteps(),true,true,testParams,false,' ...
+                '''proveAbsGap'',0.05);']);
+            testCase.verifyTrue(all(strcmp(resGap.rxns, expected)));
+
+            evalc(['resBoth = ftINIT(prepData,arrayData.tissues{1},[],[],' ...
+                'arrayData,[],getINITSteps(),true,true,testParams,false,' ...
+                '''resolveTies'',true,''proveAbsGap'',0.05);']);
+            testCase.verifyTrue(all(strcmp(resBoth.rxns, expected)));
+        end
+
         function ftINITWithTaskRuns(testCase)
             % A task requiring e[s] from a[s] forces R2 and R7 to be essential.
             testCase.assumeMILPSolver();

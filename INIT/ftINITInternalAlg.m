@@ -1,4 +1,4 @@
-function [deletedRxns,metProduction,res,turnedOnRxns,fluxes]=ftINITInternalAlg(model,rxnScores,metData,essentialRxns,prodWeight,allowExcretion,remPosRev,params,startVals,fluxes,verbose,forceOn)
+function [deletedRxns,metProduction,res,turnedOnRxns,fluxes]=ftINITInternalAlg(model,rxnScores,metData,essentialRxns,prodWeight,allowExcretion,remPosRev,params,startVals,fluxes,verbose,forceOn,resolveTies)
 % ftINITInternalAlg
 %	This function runs the MILP for a step in ftINIT.
 %
@@ -36,6 +36,17 @@ function [deletedRxns,metProduction,res,turnedOnRxns,fluxes]=ftINITInternalAlg(m
 %   verbose         If true, the MILP progression will be shown.
 %   forceOn         minimum flux magnitude enforced through a reaction once
 %                   it is turned on in the MILP (optional, default 0.1)
+%   resolveTies     if true, pin the MILP's degenerate optimum to a canonical
+%                   answer instead of relying on the solver Seed alone: hold
+%                   the score objective at its optimum, then minimise the
+%                   count of "on" removable (negative-score) reactions, then,
+%                   among the sparsest, minimise their summed reaction-id
+%                   rank. Positive-score reactions carry a continuous, not a
+%                   free binary, on/off variable (pinned near 1 by the score
+%                   objective), so only the negative-score ones are a genuine
+%                   tie to resolve -- matches raven-toolbox's resolve_ties /
+%                   _resolve_ties (raven-gecko-parity#104) (optional, default
+%                   false)
 %
 %   deletedRxns     reactions which were deleted by the algorithm (only
 %                   rxns included in the problem)
@@ -58,6 +69,9 @@ function [deletedRxns,metProduction,res,turnedOnRxns,fluxes]=ftINITInternalAlg(m
 
 if nargin < 12 || isempty(forceOn)
     forceOn = 0.1;
+end
+if nargin < 13 || isempty(resolveTies)
+    resolveTies = false;
 end
 if isempty(essentialRxns)
     essentialRxns={};
@@ -437,6 +451,83 @@ if ~checkSolution(res)
         EM='The problem is infeasible';
     end
     error('RAVEN:badInput', '%s', EM);
+end
+
+if resolveTies && (nNegIrrev + nNegRev) > 0
+    %This MILP is highly degenerate: many reaction subsets reach the same
+    %score optimum, and the solver returns an arbitrary one -- reproducible
+    %for a fixed solver build + Seed, but fragile to a solver version bump
+    %(raven-gecko-parity#104). This runs a lexicographic phase 2, holding
+    %the score objective at its optimum with a floor constraint: first
+    %minimise the count of "on" removable reactions (the sparsest optimum),
+    %then, among the sparsest, minimise their summed reaction-id rank
+    %(prefer lower ids). Only the negative-score "on" variables (onoffNegIrrev,
+    %onoffNegRev) are a genuine tie to resolve: positive-score ones are
+    %continuous, pinned near 1 by the score objective rather than a free
+    %binary choice. Ports raven-toolbox's _resolve_ties (raven-toolbox#114).
+    negCols = [onoffNegIrrev, onoffNegRev];
+    negRxnIdx = [negIrrevRxns; negRevRxns];
+    primaryObj = full(prob.c' * res.full);
+    tol = max(abs(primaryObj)*1e-7, 1e-7);
+
+    floorRow = prob.c';
+    tieProb = prob;
+    tieProb.A = [prob.A; floorRow];
+    tieProb.a = tieProb.A;
+    tieProb.b = [prob.b; primaryObj+tol];
+    tieProb.csense = [prob.csense 'L'];
+
+    %An integer objective needs only a cheap absolute-gap proof, not a tiny
+    %relative one -- mirrors raven-toolbox's own MIPGap=0/MIPGapAbs=0.4 for
+    %the same two phases.
+    tieParams = params;
+    tieParams.MIPGap = 0;
+    tieParams.MIPGapAbs = 0.4;
+
+    unproven = {};
+
+    %Phase 2a: fewest "on" removable reactions among the score-optimal solutions.
+    countObj = zeros(size(prob.c));
+    countObj(negCols) = 1;
+    tieProb.c = countObj;
+    res2a = optimizeProb(tieProb,tieParams,verbose);
+    [isFeasible2a, isOptimal2a] = checkSolution(res2a);
+    if ~isOptimal2a
+        unproven{end+1} = 'phase2a-parsimony';
+    end
+    if isFeasible2a
+        kmin = full(countObj'*res2a.full);
+
+        %Phase 2b: among the sparsest, prefer lower reaction ids -- a
+        %deterministic tie-break independent of solver/seed.
+        countRow = sparse(1,size(tieProb.A,2));
+        countRow(negCols) = 1;
+        tieProb2b = tieProb;
+        tieProb2b.A = [tieProb.A; countRow];
+        tieProb2b.a = tieProb2b.A;
+        tieProb2b.b = [tieProb.b; kmin+0.5];
+        tieProb2b.csense = [tieProb.csense 'L'];
+
+        [~, sortOrder] = sort(model.rxns(negRxnIdx));
+        ranks = zeros(numel(negRxnIdx),1);
+        ranks(sortOrder) = (1:numel(negRxnIdx))';
+        idObj = zeros(size(prob.c));
+        idObj(negCols) = ranks;
+        tieProb2b.c = idObj;
+        res2b = optimizeProb(tieProb2b,tieParams,verbose);
+        [isFeasible2b, isOptimal2b] = checkSolution(res2b);
+        if ~isOptimal2b
+            unproven{end+1} = 'phase2b-idrank';
+        end
+        if isFeasible2b
+            %Adopt the tie-resolved solution for the on/off read-out below.
+            res = res2b;
+        end
+    end
+    if ~isempty(unproven)
+        EM = ['ftINITInternalAlg tie resolution did not converge (' strjoin(unproven,', ') '): the selection among equally score-optimal solutions is itself an unproven incumbent, so resolveTies has reduced but not removed the run-to-run spread. Raise params.TimeLimit for a proven tie-break.'];
+        warning('RAVEN:warning', '%s', EM);
+    end
 end
 
 %get the on/off vals
