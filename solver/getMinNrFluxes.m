@@ -38,6 +38,15 @@ function [x,I,exitFlag]=getMinNrFluxes(model, varargin)
 %       magnitudes is made, so an arbitrary large flux is assumed.
 % verbose : logical
 %     if true, the MILP progression will be shown (default false).
+% resolveTies : logical
+%     if true, pin the MILP's degenerate optimum to a canonical answer instead of
+%     relying on Seed alone: hold the primary (scores) objective at its optimum,
+%     then minimize the count of "on" reactions, then, among the sparsest, minimize
+%     their summed reaction-id rank (lowest ids preferred). Two extra MILP solves;
+%     best-effort, so a phase that does not converge within TimeLimit is dropped
+%     with a warning rather than changing the result. Only implemented for
+%     formulation='reversible' -- errors if combined with 'irrev'. Matches
+%     raven-toolbox's resolve_ties (raven-gecko-parity#104) (default false).
 %
 % Returns
 % -------
@@ -65,12 +74,13 @@ function [x,I,exitFlag]=getMinNrFluxes(model, varargin)
 % problems if the fluxes in the model are larger than that.
 
 p=parseRAVENargs(varargin, {'toMinimize',[]; 'params',[]; 'scores',[]; ...
-    'formulation','irrev'; 'verbose',false});
+    'formulation','irrev'; 'verbose',false; 'resolveTies',false});
 toMinimize=p.toMinimize;
 params=p.params;
 scores=p.scores;
 formulation=p.formulation;
 verbose=p.verbose;
+resolveTies=p.resolveTies;
 if isempty(toMinimize)
     toMinimize=model.rxns;
 elseif ~islogical(toMinimize) && ~isnumeric(toMinimize)
@@ -120,8 +130,12 @@ else
 end
 
 if strcmp(formulation,'reversible')
-    [x,I,exitFlag]=minNrFluxesReversible(model,toMinimize,scores,params,verbose);
+    [x,I,exitFlag]=minNrFluxesReversible(model,toMinimize,scores,params,verbose,resolveTies);
 else
+    if resolveTies
+        EM='resolveTies is only implemented for formulation=''reversible''';
+        error('RAVEN:badInput', '%s', EM);
+    end
     [x,I,exitFlag]=minNrFluxesIrrev(model,toMinimize,scores,params,verbose);
 end
 end
@@ -236,7 +250,7 @@ end
 I=ismember(toMinimize,strrep(irrevModel.rxns(indexes(I>10^-12)),'_REV',''));
 end
 
-function [x,I,exitFlag]=minNrFluxesReversible(model,toMinimize,scores,params,verbose)
+function [x,I,exitFlag]=minNrFluxesReversible(model,toMinimize,scores,params,verbose,resolveTies)
 %One binary per reaction, on the reversible model. Trades a larger
 %constraint matrix for half the binaries on reversible reactions.
 
@@ -408,6 +422,93 @@ if ~isOptimal
     %reaching optimality. The solution is still returned, but must not be
     %reported as optimal: it may use more fluxes than the minimum.
     exitFlag=-2;
+end
+
+if resolveTies
+    %This MILP is highly degenerate: many reaction subsets reach the same
+    %score optimum, and the solver returns an arbitrary one -- reproducible
+    %for a fixed solver build + Seed, but fragile to a solver version bump
+    %or an unrelated change upstream of the MILP (see raven-gecko-parity#104,
+    %where this was demonstrated on genome-scale Human-GEM: the same Seed,
+    %same problem, but a different MILP construction path flipped a tied
+    %pair of reactions). This runs a lexicographic phase 2, holding the
+    %score objective at its optimum with a floor constraint: first minimise
+    %the count of "on" reactions (the sparsest optimum), then, among the
+    %sparsest, minimise their summed reaction-id rank (prefer lower ids).
+    %Ports raven-toolbox's _resolve_ties_fill (raven-toolbox#114).
+    %
+    %intCols identifies the int/binary variable columns directly from the
+    %block layout (prob.c = [zeros(rxns); zeros(2*revIndexes); scores(:);
+    %zeros(mets+indexes)]) rather than via find(prob.c~=0): a zero-scored
+    %reaction would otherwise silently drop out of the column count and
+    %misalign every later index into "indexes".
+    intCols = numel(model.rxns) + 2*numel(revIndexes) + (1:numel(indexes));
+    primaryObj = full(prob.c(intCols)' * res.full(intCols));
+    tol = max(abs(primaryObj)*1e-7, 1e-7);
+
+    floorRow = sparse(1,size(prob.A,2));
+    floorRow(intCols) = prob.c(intCols)';
+    tieProb = prob;
+    tieProb.A = [prob.A; floorRow];
+    tieProb.a = tieProb.A;
+    tieProb.b = [prob.b; primaryObj+tol];
+    tieProb.csense = [prob.csense 'L'];
+
+    %An integer objective needs only a cheap absolute-gap proof, not a tiny
+    %relative one -- RAVEN's own MIPGap default (1e-12) can be slow to prove
+    %on a genome-scale problem where a gap below 1 already proves optimality
+    %exactly (mirrors raven-toolbox's own MIPGap=0/MIPGapAbs=0.4 for the same
+    %two phases).
+    tieParams = params;
+    tieParams.MIPGap = 0;
+    tieParams.MIPGapAbs = 0.4;
+
+    unproven = {};
+
+    %Phase 2a: fewest "on" reactions among the score-optimal solutions.
+    countObj = zeros(size(prob.c));
+    countObj(intCols) = 1;
+    tieProb.c = countObj;
+    res2a = optimizeProb(tieProb,tieParams,verbose);
+    [isFeasible2a, isOptimal2a] = checkSolution(res2a);
+    if ~isOptimal2a
+        unproven{end+1} = 'phase2a-parsimony';
+    end
+    if isFeasible2a
+        kmin = full(countObj'*res2a.full);
+
+        %Phase 2b: among the sparsest, prefer lower reaction ids -- a
+        %deterministic tie-break independent of solver/seed.
+        countRow = sparse(1,size(tieProb.A,2));
+        countRow(intCols) = 1;
+        tieProb2b = tieProb;
+        tieProb2b.A = [tieProb.A; countRow];
+        tieProb2b.a = tieProb2b.A;
+        tieProb2b.b = [tieProb.b; kmin+0.5];
+        tieProb2b.csense = [tieProb.csense 'L'];
+
+        [~, sortOrder] = sort(model.rxns(indexes));
+        ranks = zeros(numel(indexes),1);
+        ranks(sortOrder) = (1:numel(indexes))';
+        idObj = zeros(size(prob.c));
+        idObj(intCols) = ranks;
+        tieProb2b.c = idObj;
+        res2b = optimizeProb(tieProb2b,tieParams,verbose);
+        [isFeasible2b, isOptimal2b] = checkSolution(res2b);
+        if ~isOptimal2b
+            unproven{end+1} = 'phase2b-idrank';
+        end
+        if isFeasible2b
+            %Adopt the tie-resolved solution; exitFlag still reflects
+            %whether the *primary* (scores) objective was proven optimal,
+            %same as without resolveTies.
+            res = res2b;
+        end
+    end
+    if ~isempty(unproven)
+        EM = ['getMinNrFluxes tie resolution did not converge (' strjoin(unproven,', ') '): the selection among equally score-optimal solutions is itself an unproven incumbent, so resolveTies has reduced but not removed the run-to-run spread. Raise params.TimeLimit for a proven tie-break.'];
+        warning('RAVEN:warning', '%s', EM);
+    end
 end
 
 x=res.full(1:numel(model.rxns));%the fluxes
