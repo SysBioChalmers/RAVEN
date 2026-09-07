@@ -202,7 +202,7 @@ This function is called by:
 0156 <span class="keyword">end</span>
 0157 
 0158 <span class="comment">% Get rxn scores and adapt them to the minimized model</span>
-0159 origRxnScores = scoreComplexModel(prepData.refModel,hpaData,transcrData,tissue,celltype);
+0159 origRxnScores = scoreModel(prepData.refModel,hpaData,transcrData,tissue,celltype);
 0160 origRxnScores(origRxnScores &gt; -0.1 &amp; origRxnScores &lt;= 0) = -0.1;<span class="comment">%we don't want reaction scores that are exactly 0 (or close), this causes problems in the milp</span>
 0161 origRxnScores(origRxnScores &lt; 0.1 &amp; origRxnScores &gt; 0) = 0.1;
 0162 
@@ -372,111 +372,118 @@ This function is called by:
 0326 <span class="comment">%    printScores(removeReactions(cModel,setdiff(cModel.rxns,rxnsToRem),true,true),&quot;Reactions deleted by INIT&quot;,hpaData,transcrData,tissue,celltype);</span>
 0327 <span class="comment">%end</span>
 0328 
-0329 <span class="comment">%The full model has exchange reactions in it. ftINITFillGapsForAllTasks calls</span>
-0330 <span class="comment">%ftINITFillGaps, which automatically removes exchange metabolites (because it</span>
-0331 <span class="comment">%assumes that the reactions are constrained when appropriate). In this case the</span>
-0332 <span class="comment">%uptakes/outputs are retrieved from the task sheet instead. To prevent</span>
-0333 <span class="comment">%exchange reactions being used to fill gaps, they are deleted from the</span>
-0334 <span class="comment">%reference model here.</span>
-0335 initModel.id = <span class="string">'INITModel'</span>;
-0336 
-0337 <span class="comment">%If gaps in the model should be filled using a task list</span>
-0338 <span class="keyword">if</span> ~isempty(prepData.taskStruct)
-0339     <span class="comment">%Remove exchange reactions and reactions already included in the INIT</span>
-0340     <span class="comment">%model. Exchange rxns that are essential are kept.</span>
-0341 
-0342     <span class="comment">%At this stage the model is fully connected and most of the genes with</span>
-0343     <span class="comment">%good scores should have been included. The final gap-filling should</span>
-0344     <span class="comment">%take the scores of the genes into account, so that &quot;rather bad&quot;</span>
-0345     <span class="comment">%reactions are preferred to &quot;very bad&quot; reactions. However, reactions</span>
-0346     <span class="comment">%with positive scores will be included even if they are not connected</span>
-0347     <span class="comment">%in the current formulation. Therefore, such reactions will have to be</span>
-0348     <span class="comment">%assigned a small negative score instead.</span>
-0349     exchRxns = getExchangeRxns(prepData.refModel);
-0350     refModelNoExc = removeReactions(prepData.refModelWithBM,exchRxns,false,true);
-0351     exchRxns = getExchangeRxns(initModel);
-0352     initModelNoExc = removeReactions(closeModel(initModel),exchRxns,false,true);
-0353     
-0354     <span class="keyword">if</span> useScoresForTasks == true
-0355         <span class="comment">%map the rxn scores to the model without exchange rxns</span>
-0356         [~,ia,ib] = intersect(refModelNoExc.rxns,prepData.refModel.rxns);
-0357         rxnScores2nd = NaN(length(refModelNoExc.rxns),1);
-0358         rxnScores2nd(ia) = origRxnScores(ib);
-0359         <span class="comment">%all(rxnScores2nd == refRxnScores);%should be the same, ok!</span>
-0360         [outModel,addedRxnMat] = ftINITFillGapsForAllTasks(initModelNoExc,refModelNoExc,[],true,min(rxnScores2nd,-0.1),prepData.taskStruct,paramsFT,verbose);
-0361     <span class="keyword">else</span>
-0362         [outModel,addedRxnMat] = ftINITFillGapsForAllTasks(initModelNoExc,refModelNoExc,[],true,[],prepData.taskStruct,paramsFT,verbose);
-0363     <span class="keyword">end</span>
-0364     <span class="comment">%if printReport == true</span>
-0365     <span class="comment">%    printScores(outModel,&quot;Functional model statistics&quot;,hpaData,transcrData,tissue,celltype);</span>
-0366     <span class="comment">%    printScores(removeReactions(outModel,intersect(outModel.rxns,initModel.rxns),true,true),&quot;Reactions added to perform the tasks&quot;,hpaData,transcrData,tissue,celltype);</span>
-0367     <span class="comment">%end</span>
-0368     
-0369     addedRxnsForTasks = refModelNoExc.rxns(any(addedRxnMat,2));
-0370 <span class="keyword">else</span>
-0371     outModel = initModel;
-0372     addedRxnMat = [];
-0373     addedRxnsForTasks = {};
-0374 <span class="keyword">end</span>
-0375 
-0376 <span class="comment">% The model can now perform all the tasks defined in the task list.</span>
-0377 model = outModel;
-0378 
-0379 
-0380 <span class="comment">% At this stage the model will contain some exchange reactions but probably</span>
-0381 <span class="comment">% not all (and maybe zero). This can be inconvenient, so all exchange</span>
-0382 <span class="comment">% reactions from the reference model are added, except for those which</span>
-0383 <span class="comment">% involve metabolites that are not in the model.</span>
-0384 
-0385 <span class="comment">%Start from the original model, and just remove the reactions that are no longer there (and keep exchange rxns). The model we got out</span>
-0386 <span class="comment">%from the problem is not complete, it does not have GRPs etc.</span>
-0387 <span class="comment">%The logic below is a bit complicated. We identify the reactions that should be removed from the full model as</span>
-0388 <span class="comment">%reactions that have been removed in the init model except the ones that were added back. In addition, we make</span>
-0389 <span class="comment">%sure that no exchange rxns are removed - they can be removed in the init model if they were linearly merged with other</span>
-0390 <span class="comment">%reactions that were decided to be removed from the model. We want to keep all exchange rxns to make sure the tasks can</span>
-0391 <span class="comment">%be performed also without manipulating the b vector in the model (which is what is done in the gap-filling).</span>
-0392 exchRxns = getExchangeRxns(prepData.refModel);
-0393 deletedRxnsInINIT = setdiff(prepData.refModel.rxns,union(union(initModel.rxns, addedRxnsForTasks), exchRxns));
-0394 outModel = removeReactions(prepData.refModel, deletedRxnsInINIT, true); <span class="comment">%we skip removing the genes for now, I'm not sure it is desirable</span>
-0395 
-0396 <span class="comment">% If requested, attempt to remove negative-score genes from the model,</span>
-0397 <span class="comment">% depending on their role (isozyme or complex subunit) in each grRule.</span>
-0398 <span class="comment">% See the &quot;removeLowScoreGenes&quot; function more more details, and to adjust</span>
-0399 <span class="comment">% any default parameters therein.</span>
-0400 <span class="keyword">if</span> ( removeGenes )
-0401     [~, geneScores] = scoreComplexModel(outModel,hpaData,transcrData,tissue,celltype);
-0402     outModel = removeLowScoreGenes(outModel,geneScores);
-0403 <span class="keyword">end</span>
-0404 
-0405 
-0406 model = outModel;
-0407 
-0408 <span class="keyword">end</span>
-0409 
-0410 <span class="comment">%This is for printing a summary of a model</span>
-0411 <a name="_sub0" href="#_subfunctions" class="code">function [rxnS, geneS] = printScores(model,name,hpaData,transcrData,tissue,celltype)</a>
-0412     [a, b] = scoreComplexModel(model,hpaData,transcrData,tissue,celltype);
-0413     rxnS = mean(a);
-0414     geneS = mean(b,<span class="string">'omitnan'</span>);
-0415     fprintf([name <span class="string">':\n'</span>]);
-0416     fprintf([<span class="string">'\t'</span> num2str(numel(model.rxns)) <span class="string">' reactions, '</span> num2str(numel(model.genes)) <span class="string">' genes\n'</span>]);
-0417     fprintf([<span class="string">'\tMean reaction score: '</span> num2str(rxnS) <span class="string">'\n'</span>]);
-0418     fprintf([<span class="string">'\tMean gene score: '</span> num2str(geneS) <span class="string">'\n'</span>]);
-0419     fprintf([<span class="string">'\tReactions with positive scores: '</span> num2str(100*sum(a&gt;0)/numel(a)) <span class="string">'%%\n\n'</span>]);
-0420 <span class="keyword">end</span>
-0421 
-0422 <a name="_sub1" href="#_subfunctions" class="code">function rxnsToIgnore = getRxnsFromPattern(rxnsToIgnorePattern, prepData)</a>
-0423     rxnsToIgnore = false(length(prepData.toIgnoreExch),1);
-0424     <span class="keyword">if</span> rxnsToIgnorePattern(1) rxnsToIgnore = rxnsToIgnore | prepData.toIgnoreExch; <span class="keyword">end</span>;
-0425     <span class="keyword">if</span> rxnsToIgnorePattern(2) rxnsToIgnore = rxnsToIgnore | prepData.toIgnoreImportRxns; <span class="keyword">end</span>;
-0426     <span class="keyword">if</span> rxnsToIgnorePattern(3) rxnsToIgnore = rxnsToIgnore | prepData.toIgnoreSimpleTransp; <span class="keyword">end</span>;
-0427     <span class="keyword">if</span> rxnsToIgnorePattern(4) rxnsToIgnore = rxnsToIgnore | prepData.toIgnoreAdvTransp; <span class="keyword">end</span>;
-0428     <span class="keyword">if</span> rxnsToIgnorePattern(5) rxnsToIgnore = rxnsToIgnore | prepData.toIgnoreSpont; <span class="keyword">end</span>;
-0429     <span class="keyword">if</span> rxnsToIgnorePattern(6) rxnsToIgnore = rxnsToIgnore | prepData.toIgnoreS; <span class="keyword">end</span>;
-0430     <span class="keyword">if</span> rxnsToIgnorePattern(7) rxnsToIgnore = rxnsToIgnore | prepData.toIgnoreCustomRxns; <span class="keyword">end</span>;
-0431     <span class="keyword">if</span> rxnsToIgnorePattern(8) rxnsToIgnore = rxnsToIgnore | prepData.toIgnoreAllWithoutGPRs; <span class="keyword">end</span>;
-0432 <span class="keyword">end</span>
-0433</pre></div>
+0329 <span class="comment">%The full model has exchange reactions in it. fitTasks with gapFillMode</span>
+0330 <span class="comment">%'preMerged' calls ftINITFillGaps, which automatically removes exchange</span>
+0331 <span class="comment">%metabolites (because it</span>
+0332 <span class="comment">%assumes that the reactions are constrained when appropriate). In this case the</span>
+0333 <span class="comment">%uptakes/outputs are retrieved from the task sheet instead. To prevent</span>
+0334 <span class="comment">%exchange reactions being used to fill gaps, they are deleted from the</span>
+0335 <span class="comment">%reference model here.</span>
+0336 initModel.id = <span class="string">'INITModel'</span>;
+0337 
+0338 <span class="comment">%If gaps in the model should be filled using a task list</span>
+0339 <span class="keyword">if</span> ~isempty(prepData.taskStruct)
+0340     <span class="comment">%Remove exchange reactions and reactions already included in the INIT</span>
+0341     <span class="comment">%model. Exchange rxns that are essential are kept.</span>
+0342 
+0343     <span class="comment">%At this stage the model is fully connected and most of the genes with</span>
+0344     <span class="comment">%good scores should have been included. The final gap-filling should</span>
+0345     <span class="comment">%take the scores of the genes into account, so that &quot;rather bad&quot;</span>
+0346     <span class="comment">%reactions are preferred to &quot;very bad&quot; reactions. However, reactions</span>
+0347     <span class="comment">%with positive scores will be included even if they are not connected</span>
+0348     <span class="comment">%in the current formulation. Therefore, such reactions will have to be</span>
+0349     <span class="comment">%assigned a small negative score instead.</span>
+0350     exchRxns = getExchangeRxns(prepData.refModel);
+0351     refModelNoExc = removeReactions(prepData.refModelWithBM,exchRxns,false,true);
+0352     exchRxns = getExchangeRxns(initModel);
+0353     initModelNoExc = removeReactions(closeModel(initModel),exchRxns,false,true);
+0354     
+0355     <span class="keyword">if</span> useScoresForTasks == true
+0356         <span class="comment">%map the rxn scores to the model without exchange rxns</span>
+0357         [~,ia,ib] = intersect(refModelNoExc.rxns,prepData.refModel.rxns);
+0358         rxnScores2nd = NaN(length(refModelNoExc.rxns),1);
+0359         rxnScores2nd(ia) = origRxnScores(ib);
+0360         <span class="comment">%all(rxnScores2nd == refRxnScores);%should be the same, ok!</span>
+0361         [outModel,addedRxnMat] = fitTasks(initModelNoExc,refModelNoExc,[], <span class="keyword">...</span>
+0362             <span class="string">'printOutput'</span>,true,<span class="string">'rxnScores'</span>,min(rxnScores2nd,-0.1), <span class="keyword">...</span>
+0363             <span class="string">'taskStructure'</span>,prepData.taskStruct,<span class="string">'gapFillMode'</span>,<span class="string">'preMerged'</span>, <span class="keyword">...</span>
+0364             <span class="string">'params'</span>,paramsFT,<span class="string">'verbose'</span>,verbose);
+0365     <span class="keyword">else</span>
+0366         [outModel,addedRxnMat] = fitTasks(initModelNoExc,refModelNoExc,[], <span class="keyword">...</span>
+0367             <span class="string">'printOutput'</span>,true,<span class="string">'rxnScores'</span>,[], <span class="keyword">...</span>
+0368             <span class="string">'taskStructure'</span>,prepData.taskStruct,<span class="string">'gapFillMode'</span>,<span class="string">'preMerged'</span>, <span class="keyword">...</span>
+0369             <span class="string">'params'</span>,paramsFT,<span class="string">'verbose'</span>,verbose);
+0370     <span class="keyword">end</span>
+0371     <span class="comment">%if printReport == true</span>
+0372     <span class="comment">%    printScores(outModel,&quot;Functional model statistics&quot;,hpaData,transcrData,tissue,celltype);</span>
+0373     <span class="comment">%    printScores(removeReactions(outModel,intersect(outModel.rxns,initModel.rxns),true,true),&quot;Reactions added to perform the tasks&quot;,hpaData,transcrData,tissue,celltype);</span>
+0374     <span class="comment">%end</span>
+0375     
+0376     addedRxnsForTasks = refModelNoExc.rxns(any(addedRxnMat,2));
+0377 <span class="keyword">else</span>
+0378     outModel = initModel;
+0379     addedRxnMat = [];
+0380     addedRxnsForTasks = {};
+0381 <span class="keyword">end</span>
+0382 
+0383 <span class="comment">% The model can now perform all the tasks defined in the task list.</span>
+0384 model = outModel;
+0385 
+0386 
+0387 <span class="comment">% At this stage the model will contain some exchange reactions but probably</span>
+0388 <span class="comment">% not all (and maybe zero). This can be inconvenient, so all exchange</span>
+0389 <span class="comment">% reactions from the reference model are added, except for those which</span>
+0390 <span class="comment">% involve metabolites that are not in the model.</span>
+0391 
+0392 <span class="comment">%Start from the original model, and just remove the reactions that are no longer there (and keep exchange rxns). The model we got out</span>
+0393 <span class="comment">%from the problem is not complete, it does not have GRPs etc.</span>
+0394 <span class="comment">%The logic below is a bit complicated. We identify the reactions that should be removed from the full model as</span>
+0395 <span class="comment">%reactions that have been removed in the init model except the ones that were added back. In addition, we make</span>
+0396 <span class="comment">%sure that no exchange rxns are removed - they can be removed in the init model if they were linearly merged with other</span>
+0397 <span class="comment">%reactions that were decided to be removed from the model. We want to keep all exchange rxns to make sure the tasks can</span>
+0398 <span class="comment">%be performed also without manipulating the b vector in the model (which is what is done in the gap-filling).</span>
+0399 exchRxns = getExchangeRxns(prepData.refModel);
+0400 deletedRxnsInINIT = setdiff(prepData.refModel.rxns,union(union(initModel.rxns, addedRxnsForTasks), exchRxns));
+0401 outModel = removeReactions(prepData.refModel, deletedRxnsInINIT, true); <span class="comment">%we skip removing the genes for now, I'm not sure it is desirable</span>
+0402 
+0403 <span class="comment">% If requested, attempt to remove negative-score genes from the model,</span>
+0404 <span class="comment">% depending on their role (isozyme or complex subunit) in each grRule.</span>
+0405 <span class="comment">% See the &quot;removeLowScoreGenes&quot; function more more details, and to adjust</span>
+0406 <span class="comment">% any default parameters therein.</span>
+0407 <span class="keyword">if</span> ( removeGenes )
+0408     [~, geneScores] = scoreModel(outModel,hpaData,transcrData,tissue,celltype);
+0409     outModel = removeLowScoreGenes(outModel,geneScores);
+0410 <span class="keyword">end</span>
+0411 
+0412 
+0413 model = outModel;
+0414 
+0415 <span class="keyword">end</span>
+0416 
+0417 <span class="comment">%This is for printing a summary of a model</span>
+0418 <a name="_sub0" href="#_subfunctions" class="code">function [rxnS, geneS] = printScores(model,name,hpaData,transcrData,tissue,celltype)</a>
+0419     [a, b] = scoreModel(model,hpaData,transcrData,tissue,celltype);
+0420     rxnS = mean(a);
+0421     geneS = mean(b,<span class="string">'omitnan'</span>);
+0422     fprintf([name <span class="string">':\n'</span>]);
+0423     fprintf([<span class="string">'\t'</span> num2str(numel(model.rxns)) <span class="string">' reactions, '</span> num2str(numel(model.genes)) <span class="string">' genes\n'</span>]);
+0424     fprintf([<span class="string">'\tMean reaction score: '</span> num2str(rxnS) <span class="string">'\n'</span>]);
+0425     fprintf([<span class="string">'\tMean gene score: '</span> num2str(geneS) <span class="string">'\n'</span>]);
+0426     fprintf([<span class="string">'\tReactions with positive scores: '</span> num2str(100*sum(a&gt;0)/numel(a)) <span class="string">'%%\n\n'</span>]);
+0427 <span class="keyword">end</span>
+0428 
+0429 <a name="_sub1" href="#_subfunctions" class="code">function rxnsToIgnore = getRxnsFromPattern(rxnsToIgnorePattern, prepData)</a>
+0430     rxnsToIgnore = false(length(prepData.toIgnoreExch),1);
+0431     <span class="keyword">if</span> rxnsToIgnorePattern(1) rxnsToIgnore = rxnsToIgnore | prepData.toIgnoreExch; <span class="keyword">end</span>;
+0432     <span class="keyword">if</span> rxnsToIgnorePattern(2) rxnsToIgnore = rxnsToIgnore | prepData.toIgnoreImportRxns; <span class="keyword">end</span>;
+0433     <span class="keyword">if</span> rxnsToIgnorePattern(3) rxnsToIgnore = rxnsToIgnore | prepData.toIgnoreSimpleTransp; <span class="keyword">end</span>;
+0434     <span class="keyword">if</span> rxnsToIgnorePattern(4) rxnsToIgnore = rxnsToIgnore | prepData.toIgnoreAdvTransp; <span class="keyword">end</span>;
+0435     <span class="keyword">if</span> rxnsToIgnorePattern(5) rxnsToIgnore = rxnsToIgnore | prepData.toIgnoreSpont; <span class="keyword">end</span>;
+0436     <span class="keyword">if</span> rxnsToIgnorePattern(6) rxnsToIgnore = rxnsToIgnore | prepData.toIgnoreS; <span class="keyword">end</span>;
+0437     <span class="keyword">if</span> rxnsToIgnorePattern(7) rxnsToIgnore = rxnsToIgnore | prepData.toIgnoreCustomRxns; <span class="keyword">end</span>;
+0438     <span class="keyword">if</span> rxnsToIgnorePattern(8) rxnsToIgnore = rxnsToIgnore | prepData.toIgnoreAllWithoutGPRs; <span class="keyword">end</span>;
+0439 <span class="keyword">end</span>
+0440</pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
