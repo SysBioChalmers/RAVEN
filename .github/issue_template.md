@@ -12,7 +12,7 @@ INSERT CODE HERE
 ```
 
 #### System information
-<!-- Please report the complete output from checkInstallation, for instance:
+<!-- Please report the complete output from checkRaven, for instance:
  > Installing from location             C:\Work\GitHub\RAVEN
  > Checking RAVEN release               2.8.6
    > You are running the latest RAVEN release

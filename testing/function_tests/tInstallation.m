@@ -19,7 +19,7 @@ classdef tInstallation < RavenTestCase
             % called on every solver invocation, so re-reading the
             % preference from disk every time is wasteful). Repeated calls
             % must keep returning the same root, and it must still resolve
-            % correctly after being cleared, which is what checkInstallation
+            % correctly after being cleared, which is what checkRaven
             % does when the RAVEN.ravenPath preference changes.
             p1 = findRAVENroot();
             p2 = findRAVENroot();
@@ -29,7 +29,17 @@ classdef tInstallation < RavenTestCase
             testCase.verifyEqual(p3, p1);
         end
 
-        function checkInstallationReturnsVersion(testCase)
+        function checkRavenReturnsVersion(testCase)
+            [~, currVer] = evalc('checkRaven(false, false)');
+            testCase.verifyNotEmpty(currVer);
+        end
+
+        function checkInstallationWarnsAndForwards(testCase)
+            % checkRaven itself issues other warnings during its checks (e.g.
+            % SBML id-prefixing), which would overwrite lastwarn before it
+            % could be inspected here. verifyWarning tracks every warning
+            % issued during the call, not just the most recent one.
+            testCase.verifyWarning(@() evalc('checkInstallation(false, false)'), 'RAVEN:deprecated');
             [~, currVer] = evalc('checkInstallation(false, false)');
             testCase.verifyNotEmpty(currVer);
         end
