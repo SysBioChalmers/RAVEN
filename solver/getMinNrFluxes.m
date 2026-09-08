@@ -59,7 +59,8 @@ function [x,I,exitFlag]=getMinNrFluxes(model, varargin)
 %     exit status:
 %
 %     - 1 : optimal solution found
-%     - -1 : no feasible solution found
+%     - -1 : no solution found, either because the problem is infeasible or
+%       because the solver reached its time limit before finding one
 %     - -2 : a solution was found but is not proven optimal, because the
 %       solver stopped before reaching optimality. It is returned, but it
 %       may use more fluxes than the minimum
@@ -229,12 +230,21 @@ if ~isFeasible
     x=[];
     I=[];
     exitFlag=-1;
+    if res.hitTimeLimit
+        %Nothing is returned either way, but the caller reports -1 as "no
+        %feasible solution exists", which is not what happened here.
+        EM='Time limit reached before finding a solution. Try increasing the TimeLimit parameter.';
+        warning('RAVEN:warning', '%s', EM);
+    end
     return;
 end
-if ~isOptimal
+if res.hitTimeLimit || ~isOptimal
     %A feasible but suboptimal solution, i.e. the solver stopped before
     %reaching optimality. The solution is still returned, but must not be
     %reported as optimal: it may use more fluxes than the minimum.
+    %Not every solver reports this in its status, gurobi for one presents a
+    %MILP solution found before the limit as optimal, so res.hitTimeLimit is
+    %consulted as well.
     exitFlag=-2;
 end
 
@@ -415,12 +425,21 @@ if ~isFeasible
     x=[];
     I=[];
     exitFlag=-1;
+    if res.hitTimeLimit
+        %Nothing is returned either way, but the caller reports -1 as "no
+        %feasible solution exists", which is not what happened here.
+        EM='Time limit reached before finding a solution. Try increasing the TimeLimit parameter.';
+        warning('RAVEN:warning', '%s', EM);
+    end
     return;
 end
-if ~isOptimal
+if res.hitTimeLimit || ~isOptimal
     %A feasible but suboptimal solution, i.e. the solver stopped before
     %reaching optimality. The solution is still returned, but must not be
     %reported as optimal: it may use more fluxes than the minimum.
+    %Not every solver reports this in its status, gurobi for one presents a
+    %MILP solution found before the limit as optimal, so res.hitTimeLimit is
+    %consulted as well.
     exitFlag=-2;
 end
 

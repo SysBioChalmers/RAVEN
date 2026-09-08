@@ -28,7 +28,9 @@ function [addedRxns, newModel, exitFlag]=ftINITFillGaps(tModel, origModel, tRefM
 %   addedRxns           the rxns added
 %   newModel            the tModel with reactions added to fill gaps
 %   exitFlag            1: optimal solution found
-%                      -1: no feasible solution found
+%                      -1: no solution found, either because the problem is
+%                          infeasible or because the solver reached its time
+%                          limit before finding one
 %                      -2: a solution was found but is not proven optimal,
 %                          because the solver stopped before reaching
 %                          optimality
