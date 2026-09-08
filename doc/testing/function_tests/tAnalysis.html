@@ -79,321 +79,323 @@ This function is called by:
 0033             testCase.assumeMILPSolver();
 0034             evalc(<span class="string">'[x, I, exitFlag] = getMinNrFluxes(testCase.model, testCase.model.rxns);'</span>);
 0035             testCase.verifyNotEmpty(x);
-0036         <span class="keyword">end</span>
-0037 
-0038         <a name="_sub5" href="#_subfunctions" class="code">function getMinNrFluxesFormulationsAgree(testCase)</a>
-0039             <span class="comment">% The two formulations build different MILPs for the same</span>
-0040             <span class="comment">% problem, so they may pick different reactions, but both</span>
-0041             <span class="comment">% minimise the same objective and must therefore pick the same</span>
-0042             <span class="comment">% number of them.</span>
-0043             testCase.assumeMILPSolver();
-0044             evalc(<span class="string">'[xIrrev, Iirrev, flagIrrev] = getMinNrFluxes(testCase.model, testCase.model.rxns, [], [], ''irrev'');'</span>);
-0045             evalc(<span class="string">'[xRev, Irev, flagRev] = getMinNrFluxes(testCase.model, testCase.model.rxns, [], [], ''reversible'');'</span>);
-0046             testCase.verifyEqual(flagIrrev, 1);
-0047             testCase.verifyEqual(flagRev, 1);
-0048             testCase.verifyNumElements(xRev, numel(testCase.model.rxns));
-0049             testCase.verifyNumElements(Irev, numel(testCase.model.rxns));
-0050             testCase.verifyEqual(sum(Irev), sum(Iirrev));
-0051         <span class="keyword">end</span>
-0052 
-0053         <a name="_sub6" href="#_subfunctions" class="code">function getMinNrFluxesResolveTiesIsDeterministic(testCase)</a>
-0054             <span class="comment">% The reversible-formulation MILP is degenerate on a real model</span>
-0055             <span class="comment">% (see getMinNrFluxesFormulationsAgree above): resolveTies pins</span>
-0056             <span class="comment">% it to a canonical answer instead of leaving the choice to the</span>
-0057             <span class="comment">% solver/seed, so three independent runs must all agree</span>
-0058             <span class="comment">% (raven-gecko-parity#104).</span>
-0059             testCase.assumeMILPSolver();
-0060             evalc([<span class="string">'[~, I1, flag1] = getMinNrFluxes(testCase.model, testCase.model.rxns, '</span> <span class="keyword">...</span>
-0061                 <span class="string">'[], [], ''reversible'', false, ''resolveTies'', true);'</span>]);
-0062             evalc([<span class="string">'[~, I2, flag2] = getMinNrFluxes(testCase.model, testCase.model.rxns, '</span> <span class="keyword">...</span>
+0036             <span class="comment">%A problem this small is solved well within the time limit</span>
+0037             testCase.verifyEqual(exitFlag, 1);
+0038         <span class="keyword">end</span>
+0039 
+0040         <a name="_sub5" href="#_subfunctions" class="code">function getMinNrFluxesFormulationsAgree(testCase)</a>
+0041             <span class="comment">% The two formulations build different MILPs for the same</span>
+0042             <span class="comment">% problem, so they may pick different reactions, but both</span>
+0043             <span class="comment">% minimise the same objective and must therefore pick the same</span>
+0044             <span class="comment">% number of them.</span>
+0045             testCase.assumeMILPSolver();
+0046             evalc(<span class="string">'[xIrrev, Iirrev, flagIrrev] = getMinNrFluxes(testCase.model, testCase.model.rxns, [], [], ''irrev'');'</span>);
+0047             evalc(<span class="string">'[xRev, Irev, flagRev] = getMinNrFluxes(testCase.model, testCase.model.rxns, [], [], ''reversible'');'</span>);
+0048             testCase.verifyEqual(flagIrrev, 1);
+0049             testCase.verifyEqual(flagRev, 1);
+0050             testCase.verifyNumElements(xRev, numel(testCase.model.rxns));
+0051             testCase.verifyNumElements(Irev, numel(testCase.model.rxns));
+0052             testCase.verifyEqual(sum(Irev), sum(Iirrev));
+0053         <span class="keyword">end</span>
+0054 
+0055         <a name="_sub6" href="#_subfunctions" class="code">function getMinNrFluxesResolveTiesIsDeterministic(testCase)</a>
+0056             <span class="comment">% The reversible-formulation MILP is degenerate on a real model</span>
+0057             <span class="comment">% (see getMinNrFluxesFormulationsAgree above): resolveTies pins</span>
+0058             <span class="comment">% it to a canonical answer instead of leaving the choice to the</span>
+0059             <span class="comment">% solver/seed, so three independent runs must all agree</span>
+0060             <span class="comment">% (raven-gecko-parity#104).</span>
+0061             testCase.assumeMILPSolver();
+0062             evalc([<span class="string">'[~, I1, flag1] = getMinNrFluxes(testCase.model, testCase.model.rxns, '</span> <span class="keyword">...</span>
 0063                 <span class="string">'[], [], ''reversible'', false, ''resolveTies'', true);'</span>]);
-0064             evalc([<span class="string">'[~, I3, flag3] = getMinNrFluxes(testCase.model, testCase.model.rxns, '</span> <span class="keyword">...</span>
+0064             evalc([<span class="string">'[~, I2, flag2] = getMinNrFluxes(testCase.model, testCase.model.rxns, '</span> <span class="keyword">...</span>
 0065                 <span class="string">'[], [], ''reversible'', false, ''resolveTies'', true);'</span>]);
-0066             testCase.verifyEqual(flag1, 1);
-0067             testCase.verifyEqual(flag2, 1);
-0068             testCase.verifyEqual(flag3, 1);
-0069             testCase.verifyEqual(I1, I2);
-0070             testCase.verifyEqual(I2, I3);
-0071         <span class="keyword">end</span>
-0072 
-0073         <a name="_sub7" href="#_subfunctions" class="code">function getMinNrFluxesResolveTiesOnlySupportsReversible(testCase)</a>
-0074             testCase.verifyError( <span class="keyword">...</span>
-0075                 @() getMinNrFluxes(testCase.model, testCase.model.rxns, [], [], <span class="string">'irrev'</span>, <span class="keyword">...</span>
-0076                     false, <span class="string">'resolveTies'</span>, true), <span class="keyword">...</span>
-0077                 <span class="string">'RAVEN:badInput'</span>);
-0078         <span class="keyword">end</span>
-0079 
-0080         <a name="_sub8" href="#_subfunctions" class="code">function getMinNrFluxesRejectsUnknownFormulation(testCase)</a>
-0081             testCase.verifyError( <span class="keyword">...</span>
-0082                 @() getMinNrFluxes(testCase.model, testCase.model.rxns, [], [], <span class="string">'both'</span>), <span class="keyword">...</span>
-0083                 <span class="string">'RAVEN:badInput'</span>);
-0084         <span class="keyword">end</span>
-0085 
-0086         <a name="_sub9" href="#_subfunctions" class="code">function getAllSubGraphsReturnsResult(testCase)</a>
-0087             sg = getAllSubGraphs(testCase.model);
-0088             testCase.verifyNotEmpty(sg);
-0089         <span class="keyword">end</span>
-0090 
-0091         <a name="_sub10" href="#_subfunctions" class="code">function findGeneDeletionsRuns(testCase)</a>
-0092             evalc(<span class="string">'[genes, fluxes] = findGeneDeletions(testCase.model, ''sgd'');'</span>);
-0093             testCase.verifyNotEmpty(genes);
-0094         <span class="keyword">end</span>
-0095 
-0096         <a name="_sub11" href="#_subfunctions" class="code">function findGeneDeletionsComputesGrRatio(testCase)</a>
-0097             evalc([<span class="string">'[genes, ~, ~, ~, grRatioMuts] = findGeneDeletions(testCase.model, '</span> <span class="keyword">...</span>
-0098                 <span class="string">'''sgd'');'</span>]);
-0099             testCase.verifyNotEmpty(genes);
-0100             testCase.verifyEqual(numel(grRatioMuts), numel(genes));
-0101             testCase.verifyGreaterThan(max(grRatioMuts), 0);
-0102         <span class="keyword">end</span>
-0103 
-0104         <a name="_sub12" href="#_subfunctions" class="code">function traceFluxPathReturnsCells(testCase)</a>
-0105             testCase.assumeSolver(<span class="string">'solveLP'</span>);
-0106             sol = solveLP(testCase.model);
-0107             <span class="comment">% Use two reactions that must be metabolically connected</span>
-0108             biomassRxn = testCase.model.rxns{find(testCase.model.c == 1, 1)};
-0109             [~, exchIdx] = getExchangeRxns(testCase.model);
-0110             <span class="comment">% Pick an exchange reaction with non-zero flux</span>
-0111             exchFlux = sol.x(exchIdx);
-0112             active   = exchIdx(abs(exchFlux) &gt; 1e-8);
-0113             <span class="keyword">if</span> isempty(active), testCase.assumeTrue(false); <span class="keyword">end</span>
-0114             targetRxn = testCase.model.rxns{active(1)};
-0115             evalc(<span class="string">'[p, m, f] = traceFluxPath(testCase.model, sol.x, biomassRxn, targetRxn, ''verbose'', false);'</span>);
-0116             <span class="comment">% Either a path is found (cell + double) or not — both are valid</span>
-0117             testCase.verifyClass(f, <span class="string">'double'</span>);
-0118             testCase.verifyGreaterThanOrEqual(f, 0);
-0119             testCase.verifyLessThanOrEqual(f, 1);
-0120         <span class="keyword">end</span>
-0121 
-0122         <a name="_sub13" href="#_subfunctions" class="code">function traceFluxPathSameReactionIsIdentity(testCase)</a>
-0123             testCase.assumeSolver(<span class="string">'solveLP'</span>);
-0124             sol  = solveLP(testCase.model);
-0125             rxn1 = testCase.model.rxns{find(testCase.model.c == 1, 1)};
-0126             [p, m, f] = traceFluxPath(testCase.model, sol.x, rxn1, rxn1, <span class="string">'verbose'</span>, false);
-0127             testCase.verifyEqual(f, 1.0);
-0128             testCase.verifyNumElements(p, 1);
-0129             testCase.verifyEmpty(m);
-0130         <span class="keyword">end</span>
-0131 
-0132         <a name="_sub14" href="#_subfunctions" class="code">function walkFluxesRefusesNonInteractive(testCase)</a>
-0133             <span class="comment">% The test suite itself runs under -batch, so this exercises the</span>
-0134             <span class="comment">% real guard rather than a mocked one.</span>
-0135             testCase.assumeTrue(batchStartupOptionUsed, <span class="keyword">...</span>
-0136                 <span class="string">'Test runner is not using -batch; the non-interactive guard cannot be exercised here.'</span>);
-0137             testCase.assumeSolver(<span class="string">'solveLP'</span>);
-0138             sol = solveLP(testCase.model);
-0139             biomassRxn = testCase.model.rxns{find(testCase.model.c == 1, 1)};
-0140             testCase.verifyError(@() walkFluxes(testCase.model, sol.x, biomassRxn), <span class="keyword">...</span>
-0141                 <span class="string">'walkFluxes:nonInteractive'</span>);
-0142         <span class="keyword">end</span>
-0143 
-0144         <a name="_sub15" href="#_subfunctions" class="code">function compareFluxesReturnsResult(testCase)</a>
-0145             testCase.assumeSolver(<span class="string">'solveLP'</span>);
-0146             solA = solveLP(testCase.model);
-0147             o2exch = find(strcmp(testCase.model.rxnNames, <span class="string">'O2 exchange'</span>), 1);
-0148             modelAna = setParam(testCase.model, <span class="string">'eq'</span>, testCase.model.rxns(o2exch), 0);
-0149             solB = solveLP(modelAna);
-0150             result = compareFluxes(testCase.model, solA.x, solB.x, <span class="string">'verbose'</span>, false);
-0151             testCase.verifyTrue(isfield(result, <span class="string">'turnedOn'</span>));
-0152             testCase.verifyTrue(isfield(result, <span class="string">'turnedOff'</span>));
-0153             testCase.verifyTrue(isfield(result, <span class="string">'flipped'</span>));
-0154             testCase.verifyTrue(isfield(result, <span class="string">'changed'</span>));
-0155             testCase.verifyClass(result.changed.rxn, <span class="string">'cell'</span>);
-0156             testCase.verifyNotEmpty(result.changed.rxn);
-0157             testCase.verifyEqual(numel(result.changed.flux1), numel(result.changed.rxn));
-0158             testCase.verifyEqual(numel(result.changed.absDelta), numel(result.changed.rxn));
-0159             <span class="comment">% sorted descending</span>
-0160             testCase.verifyTrue(all(diff(result.changed.absDelta) &lt;= 0));
-0161         <span class="keyword">end</span>
-0162 
-0163         <a name="_sub16" href="#_subfunctions" class="code">function compareFluxesIdenticalIsEmpty(testCase)</a>
-0164             testCase.assumeSolver(<span class="string">'solveLP'</span>);
-0165             sol = solveLP(testCase.model);
-0166             result = compareFluxes(testCase.model, sol.x, sol.x, <span class="string">'verbose'</span>, false);
-0167             testCase.verifyEmpty(result.changed.rxn);
-0168             testCase.verifyEmpty(result.turnedOn);
-0169             testCase.verifyEmpty(result.turnedOff);
-0170         <span class="keyword">end</span>
-0171 
-0172         <a name="_sub17" href="#_subfunctions" class="code">function compareFluxesMetaboliteListRestrictsResult(testCase)</a>
-0173             testCase.assumeSolver(<span class="string">'solveLP'</span>);
-0174             solA = solveLP(testCase.model);
-0175             o2exch = find(strcmp(testCase.model.rxnNames, <span class="string">'O2 exchange'</span>), 1);
-0176             modelAna = setParam(testCase.model, <span class="string">'eq'</span>, testCase.model.rxns(o2exch), 0);
-0177             solB = solveLP(modelAna);
-0178             unfiltered = compareFluxes(testCase.model, solA.x, solB.x, <span class="string">'verbose'</span>, false);
-0179             testCase.assumeNotEmpty(unfiltered.changed.rxn);
-0180 
-0181             <span class="comment">% Name a metabolite of the largest-changing reaction, so the</span>
-0182             <span class="comment">% filtered result is guaranteed to be non-empty and the subset</span>
-0183             <span class="comment">% checks below are not satisfied vacuously.</span>
-0184             topRxn = strcmp(testCase.model.rxns, unfiltered.changed.rxn{1});
-0185             met = testCase.model.metNames{find(testCase.model.S(:,topRxn) ~= 0, 1)};
-0186             filtered = compareFluxes(testCase.model, solA.x, solB.x, <span class="keyword">...</span>
-0187                 <span class="string">'metaboliteList'</span>, {met}, <span class="string">'verbose'</span>, false);
-0188             testCase.verifyNotEmpty(filtered.changed.rxn);
-0189 
-0190             <span class="comment">% Every kept reaction must involve the named metabolite, and the</span>
-0191             <span class="comment">% filtered result can only be a subset of the unfiltered one.</span>
-0192             metIdx = strcmpi(met, testCase.model.metNames);
-0193             withMet = testCase.model.rxns(any(testCase.model.S(metIdx,:) ~= 0, 1));
-0194             testCase.verifyTrue(all(ismember(filtered.changed.rxn, withMet)));
-0195             testCase.verifyTrue(all(ismember(filtered.changed.rxn, unfiltered.changed.rxn)));
-0196         <span class="keyword">end</span>
-0197 
-0198         <a name="_sub18" href="#_subfunctions" class="code">function compareFluxesUnknownMetaboliteWarns(testCase)</a>
-0199             testCase.assumeSolver(<span class="string">'solveLP'</span>);
-0200             sol = solveLP(testCase.model);
-0201             testCase.verifyWarning(@() compareFluxes(testCase.model, sol.x, sol.x, <span class="keyword">...</span>
-0202                 <span class="string">'metaboliteList'</span>, {<span class="string">'no such metabolite'</span>}, <span class="string">'verbose'</span>, false), <span class="keyword">...</span>
-0203                 <span class="string">'RAVEN:warning'</span>);
-0204         <span class="keyword">end</span>
-0205 
-0206         <a name="_sub19" href="#_subfunctions" class="code">function getFluxZZeroVarianceSignMatchesGeneralCase(testCase)</a>
-0207             <span class="comment">% The zero-variance branch's sign must agree with the general</span>
-0208             <span class="comment">% branch: positive when flux increased from A to B, negative</span>
-0209             <span class="comment">% when it decreased.</span>
-0210             solA = [1 1 1; 5 5 5];    <span class="comment">% rxn1 constant at 1, rxn2 constant at 5</span>
-0211             solB = [5 5 5; 1 1 1];    <span class="comment">% rxn1 increased to 5, rxn2 decreased to 1</span>
-0212             Z = getFluxZ(solA, solB);
-0213             testCase.verifyEqual(Z(1), 100);
-0214             testCase.verifyEqual(Z(2), -100);
-0215         <span class="keyword">end</span>
-0216 
-0217         <a name="_sub20" href="#_subfunctions" class="code">function getFluxZComputesScores(testCase)</a>
-0218             n = numel(testCase.model.rxns);
-0219             Z = getFluxZ(rand(n, 20), rand(n, 20));
-0220             testCase.verifyNumElements(Z, n);
-0221         <span class="keyword">end</span>
-0222 
-0223         <a name="_sub21" href="#_subfunctions" class="code">function analyzeSamplingRuns(testCase)</a>
-0224             n = numel(testCase.model.rxns);
-0225             Tex = randn(n, 1);           <span class="comment">% per-reaction expression t-scores</span>
-0226             solutionsA = rand(n, 20);
-0227             solutionsB = rand(n, 20);
-0228             evalc(<span class="string">'scores = analyzeSampling(Tex, 18, solutionsA, solutionsB, false);'</span>);
-0229             testCase.verifySize(scores, [n 3]);
-0230         <span class="keyword">end</span>
-0231 
-0232         <a name="_sub22" href="#_subfunctions" class="code">function randomSamplingRuns(testCase)</a>
-0233             <span class="comment">% Bare call exercises the default method (ACHR).</span>
-0234             evalc(<span class="string">'sols = randomSampling(testCase.model, 5);'</span>);
-0235             testCase.verifyEqual(size(sols, 1), numel(testCase.model.rxns));
-0236         <span class="keyword">end</span>
-0237 
-0238         <a name="_sub23" href="#_subfunctions" class="code">function randomSamplingDeterministicWithSeed(testCase)</a>
-0239             <span class="comment">% goodRxns reuse is specific to the random-objective method.</span>
-0240             evalc(<span class="string">'[~, gR] = randomSampling(testCase.model, 0, ''method'', ''randomObjective'', ''runParallel'', false);'</span>);
-0241             evalc(<span class="string">'s1 = randomSampling(testCase.model, 5, ''method'', ''randomObjective'', ''seed'', 42, ''runParallel'', false, ''goodRxns'', gR);'</span>);
-0242             evalc(<span class="string">'s2 = randomSampling(testCase.model, 5, ''method'', ''randomObjective'', ''seed'', 42, ''runParallel'', false, ''goodRxns'', gR);'</span>);
-0243             testCase.verifyEqual(s1, s2);
-0244         <span class="keyword">end</span>
-0245 
-0246         <a name="_sub24" href="#_subfunctions" class="code">function reporterMetabolitesRuns(testCase)</a>
-0247             pvals = rand(numel(testCase.model.genes), 1);
-0248             rm = reporterMetabolites(testCase.model, testCase.model.genes, pvals);
-0249             testCase.verifyClass(rm, <span class="string">'struct'</span>);
-0250         <span class="keyword">end</span>
-0251 
-0252         <a name="_sub25" href="#_subfunctions" class="code">function reporterMetabolitesKeepsPercentInMetNames(testCase)</a>
-0253             <span class="comment">% A metNames entry containing &quot;%&quot; must survive intact in the</span>
-0254             <span class="comment">% outputFile report, not be truncated by fprintf misreading it</span>
-0255             <span class="comment">% as a format directive.</span>
-0256             m = testCase.model;
-0257             m.metNames{1} = <span class="string">'metabolite 30% pure'</span>;
-0258             pvals = rand(numel(m.genes), 1);
-0259             outFile = [tempname <span class="string">'.txt'</span>];
-0260             c = onCleanup(@() delete(outFile));
-0261             evalc(<span class="string">'reporterMetabolites(m, m.genes, pvals, ''outputFile'', outFile);'</span>);
-0262             content = fileread(outFile);
-0263             testCase.verifySubstring(content, <span class="string">'metabolite 30% pure'</span>);
-0264         <span class="keyword">end</span>
-0265 
-0266         <a name="_sub26" href="#_subfunctions" class="code">function reporterMetabolitesIsDeterministic(testCase)</a>
-0267             <span class="comment">% Closed-form background correction (RM1) must produce identical</span>
-0268             <span class="comment">% Z-scores on repeated calls with identical inputs.</span>
-0269             pvals = rand(numel(testCase.model.genes), 1);
-0270             rm1 = reporterMetabolites(testCase.model, testCase.model.genes, pvals);
-0271             rm2 = reporterMetabolites(testCase.model, testCase.model.genes, pvals);
-0272             testCase.verifyEqual(rm1.metZScores, rm2.metZScores);
-0273         <span class="keyword">end</span>
-0274 
-0275         <a name="_sub27" href="#_subfunctions" class="code">function FSEOFRuns(testCase)</a>
-0276             biomassRxn = testCase.model.rxns{find(testCase.model.c == 1, 1)};
-0277             [~, exchIdx] = getExchangeRxns(testCase.model);
-0278             targetRxn = testCase.model.rxns{exchIdx(1)};
-0279             outFile = [tempname <span class="string">'.txt'</span>];
-0280             evalc(<span class="string">'targets = FSEOF(testCase.model, biomassRxn, targetRxn, 5, 0.9, outFile);'</span>);
-0281             testCase.verifyClass(targets, <span class="string">'struct'</span>);
-0282         <span class="keyword">end</span>
-0283 
-0284         <a name="_sub28" href="#_subfunctions" class="code">function runRobustnessAnalysisRuns(testCase)</a>
-0285             [~, exchIdx] = getExchangeRxns(testCase.model);
-0286             controlRxn = testCase.model.rxns{exchIdx(1)};
-0287             evalc(<span class="string">'[cFlux, oFlux] = runRobustnessAnalysis(testCase.model, controlRxn, 5);'</span>);
-0288             testCase.verifyNumElements(cFlux, 5);
-0289         <span class="keyword">end</span>
-0290 
-0291         <a name="_sub29" href="#_subfunctions" class="code">function runProductionEnvelopeRuns(testCase)</a>
-0292             biomassRxn = testCase.model.rxns{find(testCase.model.c == 1, 1)};
-0293             [~, exchIdx] = getExchangeRxns(testCase.model);
-0294             targetRxn = testCase.model.rxns{exchIdx(1)};
-0295             evalc(<span class="string">'[bio, tgt] = runProductionEnvelope(testCase.model, targetRxn, biomassRxn, 5);'</span>);
-0296             testCase.verifyNotEmpty(bio);
-0297         <span class="keyword">end</span>
-0298 
-0299         <a name="_sub30" href="#_subfunctions" class="code">function runPhenotypePhasePlaneRuns(testCase)</a>
-0300             [~, exchIdx] = getExchangeRxns(testCase.model);
-0301             r1 = testCase.model.rxns{exchIdx(1)};
-0302             r2 = testCase.model.rxns{exchIdx(2)};
-0303             evalc(<span class="string">'g = runPhenotypePhasePlane(testCase.model, r1, r2, 3, 3);'</span>);
-0304             testCase.verifyNotEmpty(g);
-0305         <span class="keyword">end</span>
-0306 
-0307         <a name="_sub31" href="#_subfunctions" class="code">function runDynamicFBARuns(testCase)</a>
-0308             <span class="comment">% Use glucose (consumed) as substrate and plot target; the function</span>
-0309             <span class="comment">% always plots, so the plotted reaction must carry non-zero flux.</span>
-0310             [~, exchIdx] = getExchangeRxns(testCase.model);
-0311             glcMet = find(strcmp(testCase.model.metNames, <span class="string">'D-Glucose'</span>), 1);
-0312             glcExch = exchIdx(any(testCase.model.S(glcMet, exchIdx) ~= 0, 1));
-0313             subRxn = testCase.model.rxns(glcExch);
-0314             evalc([<span class="string">'c = runDynamicFBA(testCase.model, subRxn, 10, 0.1, 0.1, 2, '</span> <span class="keyword">...</span>
-0315                 <span class="string">'subRxn, {});'</span>]);
-0316             testCase.verifyNotEmpty(c);
-0317         <span class="keyword">end</span>
-0318 
-0319         <a name="_sub32" href="#_subfunctions" class="code">function getMinimalMediumReturnsMedium(testCase)</a>
-0320             testCase.assumeMILPSolver();
-0321             evalc(<span class="string">'[med, idx] = getMinimalMedium(testCase.model, ''verbose'', false);'</span>);
-0322             testCase.verifyClass(med, <span class="string">'cell'</span>);
-0323             testCase.verifyClass(idx, <span class="string">'double'</span>);
-0324             <span class="comment">% Every returned reaction must have lb &lt; 0 (it is an uptake exchange)</span>
-0325             [~, exchIdx] = getExchangeRxns(testCase.model);
-0326             testCase.verifyTrue(all(ismember(idx, exchIdx)));
-0327             testCase.verifyTrue(all(testCase.model.lb(idx) &lt; 0));
-0328         <span class="keyword">end</span>
-0329 
-0330         <a name="_sub33" href="#_subfunctions" class="code">function getMinimalMediumExplicitGrowth(testCase)</a>
-0331             testCase.assumeMILPSolver();
-0332             sol = solveLP(testCase.model);
-0333             minG = 0.05 * sol.f;
-0334             evalc(<span class="string">'[med, idx] = getMinimalMedium(testCase.model, ''minGrowth'', minG, ''verbose'', false);'</span>);
-0335             testCase.verifyClass(med, <span class="string">'cell'</span>);
-0336             testCase.verifyNotEmpty(med);
-0337         <span class="keyword">end</span>
-0338 
-0339         <a name="_sub34" href="#_subfunctions" class="code">function runSimpleOptKnockRuns(testCase)</a>
-0340             testCase.assumeMILPSolver();
-0341             biomassRxn = testCase.model.rxns{find(testCase.model.c == 1, 1)};
-0342             [~, exchIdx] = getExchangeRxns(testCase.model);
-0343             targetRxn = testCase.model.rxns{exchIdx(1)};
-0344             evalc([<span class="string">'out = runSimpleOptKnock(testCase.model, targetRxn, biomassRxn, '</span> <span class="keyword">...</span>
-0345                 <span class="string">'testCase.model.rxns(1:5), ''rxns'', 1);'</span>]);
-0346             testCase.verifyClass(out, <span class="string">'struct'</span>);
-0347         <span class="keyword">end</span>
-0348 
-0349     <span class="keyword">end</span>
-0350 <span class="keyword">end</span></pre></div>
+0066             evalc([<span class="string">'[~, I3, flag3] = getMinNrFluxes(testCase.model, testCase.model.rxns, '</span> <span class="keyword">...</span>
+0067                 <span class="string">'[], [], ''reversible'', false, ''resolveTies'', true);'</span>]);
+0068             testCase.verifyEqual(flag1, 1);
+0069             testCase.verifyEqual(flag2, 1);
+0070             testCase.verifyEqual(flag3, 1);
+0071             testCase.verifyEqual(I1, I2);
+0072             testCase.verifyEqual(I2, I3);
+0073         <span class="keyword">end</span>
+0074 
+0075         <a name="_sub7" href="#_subfunctions" class="code">function getMinNrFluxesResolveTiesOnlySupportsReversible(testCase)</a>
+0076             testCase.verifyError( <span class="keyword">...</span>
+0077                 @() getMinNrFluxes(testCase.model, testCase.model.rxns, [], [], <span class="string">'irrev'</span>, <span class="keyword">...</span>
+0078                     false, <span class="string">'resolveTies'</span>, true), <span class="keyword">...</span>
+0079                 <span class="string">'RAVEN:badInput'</span>);
+0080         <span class="keyword">end</span>
+0081 
+0082         <a name="_sub8" href="#_subfunctions" class="code">function getMinNrFluxesRejectsUnknownFormulation(testCase)</a>
+0083             testCase.verifyError( <span class="keyword">...</span>
+0084                 @() getMinNrFluxes(testCase.model, testCase.model.rxns, [], [], <span class="string">'both'</span>), <span class="keyword">...</span>
+0085                 <span class="string">'RAVEN:badInput'</span>);
+0086         <span class="keyword">end</span>
+0087 
+0088         <a name="_sub9" href="#_subfunctions" class="code">function getAllSubGraphsReturnsResult(testCase)</a>
+0089             sg = getAllSubGraphs(testCase.model);
+0090             testCase.verifyNotEmpty(sg);
+0091         <span class="keyword">end</span>
+0092 
+0093         <a name="_sub10" href="#_subfunctions" class="code">function findGeneDeletionsRuns(testCase)</a>
+0094             evalc(<span class="string">'[genes, fluxes] = findGeneDeletions(testCase.model, ''sgd'');'</span>);
+0095             testCase.verifyNotEmpty(genes);
+0096         <span class="keyword">end</span>
+0097 
+0098         <a name="_sub11" href="#_subfunctions" class="code">function findGeneDeletionsComputesGrRatio(testCase)</a>
+0099             evalc([<span class="string">'[genes, ~, ~, ~, grRatioMuts] = findGeneDeletions(testCase.model, '</span> <span class="keyword">...</span>
+0100                 <span class="string">'''sgd'');'</span>]);
+0101             testCase.verifyNotEmpty(genes);
+0102             testCase.verifyEqual(numel(grRatioMuts), numel(genes));
+0103             testCase.verifyGreaterThan(max(grRatioMuts), 0);
+0104         <span class="keyword">end</span>
+0105 
+0106         <a name="_sub12" href="#_subfunctions" class="code">function traceFluxPathReturnsCells(testCase)</a>
+0107             testCase.assumeSolver(<span class="string">'solveLP'</span>);
+0108             sol = solveLP(testCase.model);
+0109             <span class="comment">% Use two reactions that must be metabolically connected</span>
+0110             biomassRxn = testCase.model.rxns{find(testCase.model.c == 1, 1)};
+0111             [~, exchIdx] = getExchangeRxns(testCase.model);
+0112             <span class="comment">% Pick an exchange reaction with non-zero flux</span>
+0113             exchFlux = sol.x(exchIdx);
+0114             active   = exchIdx(abs(exchFlux) &gt; 1e-8);
+0115             <span class="keyword">if</span> isempty(active), testCase.assumeTrue(false); <span class="keyword">end</span>
+0116             targetRxn = testCase.model.rxns{active(1)};
+0117             evalc(<span class="string">'[p, m, f] = traceFluxPath(testCase.model, sol.x, biomassRxn, targetRxn, ''verbose'', false);'</span>);
+0118             <span class="comment">% Either a path is found (cell + double) or not — both are valid</span>
+0119             testCase.verifyClass(f, <span class="string">'double'</span>);
+0120             testCase.verifyGreaterThanOrEqual(f, 0);
+0121             testCase.verifyLessThanOrEqual(f, 1);
+0122         <span class="keyword">end</span>
+0123 
+0124         <a name="_sub13" href="#_subfunctions" class="code">function traceFluxPathSameReactionIsIdentity(testCase)</a>
+0125             testCase.assumeSolver(<span class="string">'solveLP'</span>);
+0126             sol  = solveLP(testCase.model);
+0127             rxn1 = testCase.model.rxns{find(testCase.model.c == 1, 1)};
+0128             [p, m, f] = traceFluxPath(testCase.model, sol.x, rxn1, rxn1, <span class="string">'verbose'</span>, false);
+0129             testCase.verifyEqual(f, 1.0);
+0130             testCase.verifyNumElements(p, 1);
+0131             testCase.verifyEmpty(m);
+0132         <span class="keyword">end</span>
+0133 
+0134         <a name="_sub14" href="#_subfunctions" class="code">function walkFluxesRefusesNonInteractive(testCase)</a>
+0135             <span class="comment">% The test suite itself runs under -batch, so this exercises the</span>
+0136             <span class="comment">% real guard rather than a mocked one.</span>
+0137             testCase.assumeTrue(batchStartupOptionUsed, <span class="keyword">...</span>
+0138                 <span class="string">'Test runner is not using -batch; the non-interactive guard cannot be exercised here.'</span>);
+0139             testCase.assumeSolver(<span class="string">'solveLP'</span>);
+0140             sol = solveLP(testCase.model);
+0141             biomassRxn = testCase.model.rxns{find(testCase.model.c == 1, 1)};
+0142             testCase.verifyError(@() walkFluxes(testCase.model, sol.x, biomassRxn), <span class="keyword">...</span>
+0143                 <span class="string">'walkFluxes:nonInteractive'</span>);
+0144         <span class="keyword">end</span>
+0145 
+0146         <a name="_sub15" href="#_subfunctions" class="code">function compareFluxesReturnsResult(testCase)</a>
+0147             testCase.assumeSolver(<span class="string">'solveLP'</span>);
+0148             solA = solveLP(testCase.model);
+0149             o2exch = find(strcmp(testCase.model.rxnNames, <span class="string">'O2 exchange'</span>), 1);
+0150             modelAna = setParam(testCase.model, <span class="string">'eq'</span>, testCase.model.rxns(o2exch), 0);
+0151             solB = solveLP(modelAna);
+0152             result = compareFluxes(testCase.model, solA.x, solB.x, <span class="string">'verbose'</span>, false);
+0153             testCase.verifyTrue(isfield(result, <span class="string">'turnedOn'</span>));
+0154             testCase.verifyTrue(isfield(result, <span class="string">'turnedOff'</span>));
+0155             testCase.verifyTrue(isfield(result, <span class="string">'flipped'</span>));
+0156             testCase.verifyTrue(isfield(result, <span class="string">'changed'</span>));
+0157             testCase.verifyClass(result.changed.rxn, <span class="string">'cell'</span>);
+0158             testCase.verifyNotEmpty(result.changed.rxn);
+0159             testCase.verifyEqual(numel(result.changed.flux1), numel(result.changed.rxn));
+0160             testCase.verifyEqual(numel(result.changed.absDelta), numel(result.changed.rxn));
+0161             <span class="comment">% sorted descending</span>
+0162             testCase.verifyTrue(all(diff(result.changed.absDelta) &lt;= 0));
+0163         <span class="keyword">end</span>
+0164 
+0165         <a name="_sub16" href="#_subfunctions" class="code">function compareFluxesIdenticalIsEmpty(testCase)</a>
+0166             testCase.assumeSolver(<span class="string">'solveLP'</span>);
+0167             sol = solveLP(testCase.model);
+0168             result = compareFluxes(testCase.model, sol.x, sol.x, <span class="string">'verbose'</span>, false);
+0169             testCase.verifyEmpty(result.changed.rxn);
+0170             testCase.verifyEmpty(result.turnedOn);
+0171             testCase.verifyEmpty(result.turnedOff);
+0172         <span class="keyword">end</span>
+0173 
+0174         <a name="_sub17" href="#_subfunctions" class="code">function compareFluxesMetaboliteListRestrictsResult(testCase)</a>
+0175             testCase.assumeSolver(<span class="string">'solveLP'</span>);
+0176             solA = solveLP(testCase.model);
+0177             o2exch = find(strcmp(testCase.model.rxnNames, <span class="string">'O2 exchange'</span>), 1);
+0178             modelAna = setParam(testCase.model, <span class="string">'eq'</span>, testCase.model.rxns(o2exch), 0);
+0179             solB = solveLP(modelAna);
+0180             unfiltered = compareFluxes(testCase.model, solA.x, solB.x, <span class="string">'verbose'</span>, false);
+0181             testCase.assumeNotEmpty(unfiltered.changed.rxn);
+0182 
+0183             <span class="comment">% Name a metabolite of the largest-changing reaction, so the</span>
+0184             <span class="comment">% filtered result is guaranteed to be non-empty and the subset</span>
+0185             <span class="comment">% checks below are not satisfied vacuously.</span>
+0186             topRxn = strcmp(testCase.model.rxns, unfiltered.changed.rxn{1});
+0187             met = testCase.model.metNames{find(testCase.model.S(:,topRxn) ~= 0, 1)};
+0188             filtered = compareFluxes(testCase.model, solA.x, solB.x, <span class="keyword">...</span>
+0189                 <span class="string">'metaboliteList'</span>, {met}, <span class="string">'verbose'</span>, false);
+0190             testCase.verifyNotEmpty(filtered.changed.rxn);
+0191 
+0192             <span class="comment">% Every kept reaction must involve the named metabolite, and the</span>
+0193             <span class="comment">% filtered result can only be a subset of the unfiltered one.</span>
+0194             metIdx = strcmpi(met, testCase.model.metNames);
+0195             withMet = testCase.model.rxns(any(testCase.model.S(metIdx,:) ~= 0, 1));
+0196             testCase.verifyTrue(all(ismember(filtered.changed.rxn, withMet)));
+0197             testCase.verifyTrue(all(ismember(filtered.changed.rxn, unfiltered.changed.rxn)));
+0198         <span class="keyword">end</span>
+0199 
+0200         <a name="_sub18" href="#_subfunctions" class="code">function compareFluxesUnknownMetaboliteWarns(testCase)</a>
+0201             testCase.assumeSolver(<span class="string">'solveLP'</span>);
+0202             sol = solveLP(testCase.model);
+0203             testCase.verifyWarning(@() compareFluxes(testCase.model, sol.x, sol.x, <span class="keyword">...</span>
+0204                 <span class="string">'metaboliteList'</span>, {<span class="string">'no such metabolite'</span>}, <span class="string">'verbose'</span>, false), <span class="keyword">...</span>
+0205                 <span class="string">'RAVEN:warning'</span>);
+0206         <span class="keyword">end</span>
+0207 
+0208         <a name="_sub19" href="#_subfunctions" class="code">function getFluxZZeroVarianceSignMatchesGeneralCase(testCase)</a>
+0209             <span class="comment">% The zero-variance branch's sign must agree with the general</span>
+0210             <span class="comment">% branch: positive when flux increased from A to B, negative</span>
+0211             <span class="comment">% when it decreased.</span>
+0212             solA = [1 1 1; 5 5 5];    <span class="comment">% rxn1 constant at 1, rxn2 constant at 5</span>
+0213             solB = [5 5 5; 1 1 1];    <span class="comment">% rxn1 increased to 5, rxn2 decreased to 1</span>
+0214             Z = getFluxZ(solA, solB);
+0215             testCase.verifyEqual(Z(1), 100);
+0216             testCase.verifyEqual(Z(2), -100);
+0217         <span class="keyword">end</span>
+0218 
+0219         <a name="_sub20" href="#_subfunctions" class="code">function getFluxZComputesScores(testCase)</a>
+0220             n = numel(testCase.model.rxns);
+0221             Z = getFluxZ(rand(n, 20), rand(n, 20));
+0222             testCase.verifyNumElements(Z, n);
+0223         <span class="keyword">end</span>
+0224 
+0225         <a name="_sub21" href="#_subfunctions" class="code">function analyzeSamplingRuns(testCase)</a>
+0226             n = numel(testCase.model.rxns);
+0227             Tex = randn(n, 1);           <span class="comment">% per-reaction expression t-scores</span>
+0228             solutionsA = rand(n, 20);
+0229             solutionsB = rand(n, 20);
+0230             evalc(<span class="string">'scores = analyzeSampling(Tex, 18, solutionsA, solutionsB, false);'</span>);
+0231             testCase.verifySize(scores, [n 3]);
+0232         <span class="keyword">end</span>
+0233 
+0234         <a name="_sub22" href="#_subfunctions" class="code">function randomSamplingRuns(testCase)</a>
+0235             <span class="comment">% Bare call exercises the default method (ACHR).</span>
+0236             evalc(<span class="string">'sols = randomSampling(testCase.model, 5);'</span>);
+0237             testCase.verifyEqual(size(sols, 1), numel(testCase.model.rxns));
+0238         <span class="keyword">end</span>
+0239 
+0240         <a name="_sub23" href="#_subfunctions" class="code">function randomSamplingDeterministicWithSeed(testCase)</a>
+0241             <span class="comment">% goodRxns reuse is specific to the random-objective method.</span>
+0242             evalc(<span class="string">'[~, gR] = randomSampling(testCase.model, 0, ''method'', ''randomObjective'', ''runParallel'', false);'</span>);
+0243             evalc(<span class="string">'s1 = randomSampling(testCase.model, 5, ''method'', ''randomObjective'', ''seed'', 42, ''runParallel'', false, ''goodRxns'', gR);'</span>);
+0244             evalc(<span class="string">'s2 = randomSampling(testCase.model, 5, ''method'', ''randomObjective'', ''seed'', 42, ''runParallel'', false, ''goodRxns'', gR);'</span>);
+0245             testCase.verifyEqual(s1, s2);
+0246         <span class="keyword">end</span>
+0247 
+0248         <a name="_sub24" href="#_subfunctions" class="code">function reporterMetabolitesRuns(testCase)</a>
+0249             pvals = rand(numel(testCase.model.genes), 1);
+0250             rm = reporterMetabolites(testCase.model, testCase.model.genes, pvals);
+0251             testCase.verifyClass(rm, <span class="string">'struct'</span>);
+0252         <span class="keyword">end</span>
+0253 
+0254         <a name="_sub25" href="#_subfunctions" class="code">function reporterMetabolitesKeepsPercentInMetNames(testCase)</a>
+0255             <span class="comment">% A metNames entry containing &quot;%&quot; must survive intact in the</span>
+0256             <span class="comment">% outputFile report, not be truncated by fprintf misreading it</span>
+0257             <span class="comment">% as a format directive.</span>
+0258             m = testCase.model;
+0259             m.metNames{1} = <span class="string">'metabolite 30% pure'</span>;
+0260             pvals = rand(numel(m.genes), 1);
+0261             outFile = [tempname <span class="string">'.txt'</span>];
+0262             c = onCleanup(@() delete(outFile));
+0263             evalc(<span class="string">'reporterMetabolites(m, m.genes, pvals, ''outputFile'', outFile);'</span>);
+0264             content = fileread(outFile);
+0265             testCase.verifySubstring(content, <span class="string">'metabolite 30% pure'</span>);
+0266         <span class="keyword">end</span>
+0267 
+0268         <a name="_sub26" href="#_subfunctions" class="code">function reporterMetabolitesIsDeterministic(testCase)</a>
+0269             <span class="comment">% Closed-form background correction (RM1) must produce identical</span>
+0270             <span class="comment">% Z-scores on repeated calls with identical inputs.</span>
+0271             pvals = rand(numel(testCase.model.genes), 1);
+0272             rm1 = reporterMetabolites(testCase.model, testCase.model.genes, pvals);
+0273             rm2 = reporterMetabolites(testCase.model, testCase.model.genes, pvals);
+0274             testCase.verifyEqual(rm1.metZScores, rm2.metZScores);
+0275         <span class="keyword">end</span>
+0276 
+0277         <a name="_sub27" href="#_subfunctions" class="code">function FSEOFRuns(testCase)</a>
+0278             biomassRxn = testCase.model.rxns{find(testCase.model.c == 1, 1)};
+0279             [~, exchIdx] = getExchangeRxns(testCase.model);
+0280             targetRxn = testCase.model.rxns{exchIdx(1)};
+0281             outFile = [tempname <span class="string">'.txt'</span>];
+0282             evalc(<span class="string">'targets = FSEOF(testCase.model, biomassRxn, targetRxn, 5, 0.9, outFile);'</span>);
+0283             testCase.verifyClass(targets, <span class="string">'struct'</span>);
+0284         <span class="keyword">end</span>
+0285 
+0286         <a name="_sub28" href="#_subfunctions" class="code">function runRobustnessAnalysisRuns(testCase)</a>
+0287             [~, exchIdx] = getExchangeRxns(testCase.model);
+0288             controlRxn = testCase.model.rxns{exchIdx(1)};
+0289             evalc(<span class="string">'[cFlux, oFlux] = runRobustnessAnalysis(testCase.model, controlRxn, 5);'</span>);
+0290             testCase.verifyNumElements(cFlux, 5);
+0291         <span class="keyword">end</span>
+0292 
+0293         <a name="_sub29" href="#_subfunctions" class="code">function runProductionEnvelopeRuns(testCase)</a>
+0294             biomassRxn = testCase.model.rxns{find(testCase.model.c == 1, 1)};
+0295             [~, exchIdx] = getExchangeRxns(testCase.model);
+0296             targetRxn = testCase.model.rxns{exchIdx(1)};
+0297             evalc(<span class="string">'[bio, tgt] = runProductionEnvelope(testCase.model, targetRxn, biomassRxn, 5);'</span>);
+0298             testCase.verifyNotEmpty(bio);
+0299         <span class="keyword">end</span>
+0300 
+0301         <a name="_sub30" href="#_subfunctions" class="code">function runPhenotypePhasePlaneRuns(testCase)</a>
+0302             [~, exchIdx] = getExchangeRxns(testCase.model);
+0303             r1 = testCase.model.rxns{exchIdx(1)};
+0304             r2 = testCase.model.rxns{exchIdx(2)};
+0305             evalc(<span class="string">'g = runPhenotypePhasePlane(testCase.model, r1, r2, 3, 3);'</span>);
+0306             testCase.verifyNotEmpty(g);
+0307         <span class="keyword">end</span>
+0308 
+0309         <a name="_sub31" href="#_subfunctions" class="code">function runDynamicFBARuns(testCase)</a>
+0310             <span class="comment">% Use glucose (consumed) as substrate and plot target; the function</span>
+0311             <span class="comment">% always plots, so the plotted reaction must carry non-zero flux.</span>
+0312             [~, exchIdx] = getExchangeRxns(testCase.model);
+0313             glcMet = find(strcmp(testCase.model.metNames, <span class="string">'D-Glucose'</span>), 1);
+0314             glcExch = exchIdx(any(testCase.model.S(glcMet, exchIdx) ~= 0, 1));
+0315             subRxn = testCase.model.rxns(glcExch);
+0316             evalc([<span class="string">'c = runDynamicFBA(testCase.model, subRxn, 10, 0.1, 0.1, 2, '</span> <span class="keyword">...</span>
+0317                 <span class="string">'subRxn, {});'</span>]);
+0318             testCase.verifyNotEmpty(c);
+0319         <span class="keyword">end</span>
+0320 
+0321         <a name="_sub32" href="#_subfunctions" class="code">function getMinimalMediumReturnsMedium(testCase)</a>
+0322             testCase.assumeMILPSolver();
+0323             evalc(<span class="string">'[med, idx] = getMinimalMedium(testCase.model, ''verbose'', false);'</span>);
+0324             testCase.verifyClass(med, <span class="string">'cell'</span>);
+0325             testCase.verifyClass(idx, <span class="string">'double'</span>);
+0326             <span class="comment">% Every returned reaction must have lb &lt; 0 (it is an uptake exchange)</span>
+0327             [~, exchIdx] = getExchangeRxns(testCase.model);
+0328             testCase.verifyTrue(all(ismember(idx, exchIdx)));
+0329             testCase.verifyTrue(all(testCase.model.lb(idx) &lt; 0));
+0330         <span class="keyword">end</span>
+0331 
+0332         <a name="_sub33" href="#_subfunctions" class="code">function getMinimalMediumExplicitGrowth(testCase)</a>
+0333             testCase.assumeMILPSolver();
+0334             sol = solveLP(testCase.model);
+0335             minG = 0.05 * sol.f;
+0336             evalc(<span class="string">'[med, idx] = getMinimalMedium(testCase.model, ''minGrowth'', minG, ''verbose'', false);'</span>);
+0337             testCase.verifyClass(med, <span class="string">'cell'</span>);
+0338             testCase.verifyNotEmpty(med);
+0339         <span class="keyword">end</span>
+0340 
+0341         <a name="_sub34" href="#_subfunctions" class="code">function runSimpleOptKnockRuns(testCase)</a>
+0342             testCase.assumeMILPSolver();
+0343             biomassRxn = testCase.model.rxns{find(testCase.model.c == 1, 1)};
+0344             [~, exchIdx] = getExchangeRxns(testCase.model);
+0345             targetRxn = testCase.model.rxns{exchIdx(1)};
+0346             evalc([<span class="string">'out = runSimpleOptKnock(testCase.model, targetRxn, biomassRxn, '</span> <span class="keyword">...</span>
+0347                 <span class="string">'testCase.model.rxns(1:5), ''rxns'', 1);'</span>]);
+0348             testCase.verifyClass(out, <span class="string">'struct'</span>);
+0349         <span class="keyword">end</span>
+0350 
+0351     <span class="keyword">end</span>
+0352 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

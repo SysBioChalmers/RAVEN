@@ -41,7 +41,7 @@ This function is called by:
 
 <h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <ul style="list-style-image:url(../../matlabicon.gif)">
-<li><a href="#_sub1" class="code">function setRavenSolverAcceptsGlpk(testCase)</a></li><li><a href="#_sub2" class="code">function setRavenSolverRejectsUnknown(testCase)</a></li><li><a href="#_sub3" class="code">function solveLPFindsOptimum(testCase)</a></li><li><a href="#_sub4" class="code">function solveLPMinimiseFluxes(testCase)</a></li><li><a href="#_sub5" class="code">function optimizeProbSolvesLP(testCase)</a></li><li><a href="#_sub6" class="code">function checkSolutionOnFeasibleProblem(testCase)</a></li><li><a href="#_sub7" class="code">function splitProbForConditioningReturnsProb(testCase)</a></li><li><a href="#_sub8" class="code">function prob = modelLP(testCase)</a></li></ul>
+<li><a href="#_sub1" class="code">function setRavenSolverAcceptsGlpk(testCase)</a></li><li><a href="#_sub2" class="code">function setRavenSolverRejectsUnknown(testCase)</a></li><li><a href="#_sub3" class="code">function solveLPFindsOptimum(testCase)</a></li><li><a href="#_sub4" class="code">function solveLPMinimiseFluxes(testCase)</a></li><li><a href="#_sub5" class="code">function optimizeProbSolvesLP(testCase)</a></li><li><a href="#_sub6" class="code">function optimizeProbReportsTimeLimit(testCase)</a></li><li><a href="#_sub7" class="code">function checkSolutionOnFeasibleProblem(testCase)</a></li><li><a href="#_sub8" class="code">function splitProbForConditioningReturnsProb(testCase)</a></li><li><a href="#_sub9" class="code">function prob = modelLP(testCase)</a></li></ul>
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <div class="fragment"><pre>0001 classdef <a href="tSolver.html" class="code" title="">tSolver</a> &lt; <a href="RavenTestCase.html" class="code" title="">RavenTestCase</a>
@@ -75,39 +75,47 @@ This function is called by:
 0029             testCase.verifyTrue(isfield(res, <span class="string">'obj'</span>));
 0030         <span class="keyword">end</span>
 0031 
-0032         <a name="_sub5" href="#_subfunctions" class="code">function checkSolutionOnFeasibleProblem(testCase)</a>
+0032         <a name="_sub5" href="#_subfunctions" class="code">function optimizeProbReportsTimeLimit(testCase)</a>
 0033             res = optimizeProb(testCase.modelLP());
-0034             [isFeasible, isOptimal] = checkSolution(res);
-0035             testCase.verifyTrue(logical(isFeasible));
-0036             testCase.verifyTrue(logical(isOptimal));
-0037         <span class="keyword">end</span>
-0038 
-0039         <a name="_sub6" href="#_subfunctions" class="code">function splitProbForConditioningReturnsProb(testCase)</a>
-0040             [p2, condInfo] = splitProbForConditioning(testCase.modelLP(), 1e6); <span class="comment">%#ok&lt;ASGLU&gt;</span>
-0041             testCase.verifyClass(p2, <span class="string">'struct'</span>);
-0042         <span class="keyword">end</span>
-0043 
-0044     <span class="keyword">end</span>
-0045 
-0046     methods (Access = private)
-0047         <a name="_sub7" href="#_subfunctions" class="code">function prob = modelLP(testCase)</a>
-0048             <span class="comment">% Build the COBRA-style LP problem for the test model exactly as</span>
-0049             <span class="comment">% solveLP does, so the low-level solver functions get a valid input.</span>
-0050             m = testCase.model;
-0051             nMets = size(m.S, 1);
-0052             prob = [];
-0053             prob.c = [m.c * -1; zeros(nMets, 1)];
-0054             prob.b = zeros(nMets, 1);
-0055             prob.lb = [m.lb; m.b(:, 1)];
-0056             prob.ub = [m.ub; m.b(:, min(size(m.b, 2), 2))];
-0057             prob.csense = repmat(<span class="string">'E'</span>, 1, numel(prob.b));
-0058             prob.osense = 1;
-0059             prob.vartype = repmat(<span class="string">'C'</span>, 1, numel(prob.c));
-0060             prob.A = [m.S, -speye(nMets)];
-0061             prob.a = m.S;
-0062         <span class="keyword">end</span>
-0063     <span class="keyword">end</span>
-0064 <span class="keyword">end</span></pre></div>
+0034             testCase.verifyTrue(isfield(res, <span class="string">'hitTimeLimit'</span>));
+0035             testCase.verifyTrue(islogical(res.hitTimeLimit));
+0036             <span class="comment">%The problem is solved long before the time limit is reached</span>
+0037             testCase.verifyFalse(res.hitTimeLimit);
+0038         <span class="keyword">end</span>
+0039 
+0040         <a name="_sub6" href="#_subfunctions" class="code">function checkSolutionOnFeasibleProblem(testCase)</a>
+0041             res = optimizeProb(testCase.modelLP());
+0042             [isFeasible, isOptimal] = checkSolution(res);
+0043             testCase.verifyTrue(logical(isFeasible));
+0044             testCase.verifyTrue(logical(isOptimal));
+0045         <span class="keyword">end</span>
+0046 
+0047         <a name="_sub7" href="#_subfunctions" class="code">function splitProbForConditioningReturnsProb(testCase)</a>
+0048             [p2, condInfo] = splitProbForConditioning(testCase.modelLP(), 1e6); <span class="comment">%#ok&lt;ASGLU&gt;</span>
+0049             testCase.verifyClass(p2, <span class="string">'struct'</span>);
+0050         <span class="keyword">end</span>
+0051 
+0052     <span class="keyword">end</span>
+0053 
+0054     methods (Access = private)
+0055         <a name="_sub8" href="#_subfunctions" class="code">function prob = modelLP(testCase)</a>
+0056             <span class="comment">% Build the COBRA-style LP problem for the test model exactly as</span>
+0057             <span class="comment">% solveLP does, so the low-level solver functions get a valid input.</span>
+0058             m = testCase.model;
+0059             nMets = size(m.S, 1);
+0060             prob = [];
+0061             prob.c = [m.c * -1; zeros(nMets, 1)];
+0062             prob.b = zeros(nMets, 1);
+0063             prob.lb = [m.lb; m.b(:, 1)];
+0064             prob.ub = [m.ub; m.b(:, min(size(m.b, 2), 2))];
+0065             prob.csense = repmat(<span class="string">'E'</span>, 1, numel(prob.b));
+0066             prob.osense = 1;
+0067             prob.vartype = repmat(<span class="string">'C'</span>, 1, numel(prob.c));
+0068             prob.A = [m.S, -speye(nMets)];
+0069             prob.a = m.S;
+0070         <span class="keyword">end</span>
+0071     <span class="keyword">end</span>
+0072 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
