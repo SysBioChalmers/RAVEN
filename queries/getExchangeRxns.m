@@ -54,12 +54,19 @@ function [exchangeRxns, exchangeRxnsIndexes, exchangedMets]=getExchangeRxns(mode
 p=parseRAVENargs(varargin, {'reactionType','all'});
 reactionType=char(p.reactionType);
 
-% Find exchange reactions
-if isfield(model, 'unconstrained')
-    [~, I]=find(model.S(model.unconstrained~=0,:)>0);
-    hasNoProd(I)=true;
-    [~, I]=find(model.S(model.unconstrained~=0,:)<0);
-    hasNoSubs(I)=true;
+% Find exchange reactions. Both branches must produce a column of reaction
+% indexes: every use below (concatenation, bound lookups, model.rxns
+% indexing) reads them as indexes, not as a mask over the reactions.
+if isfield(model, 'unconstrained') && any(model.unconstrained~=0)
+    % With boundary metabolites present, an exchange reaction is one that
+    % involves a boundary metabolite. Producing the boundary metabolite is
+    % what leaves the reaction without a product once the boundary
+    % metabolite is removed, which is the definition the branch below uses.
+    boundaryMets = model.unconstrained~=0;
+    [~, I]=find(model.S(boundaryMets,:)>0);
+    hasNoProd = unique(I(:));
+    [~, I]=find(model.S(boundaryMets,:)<0);
+    hasNoSubs = unique(I(:));
 else
     hasNoProd = transpose(find(sum(model.S>0)==0));
     hasNoSubs = transpose(find(sum(model.S<0)==0));
@@ -87,7 +94,10 @@ switch reactionType
     otherwise
         error('Invalid reactionType specified')
 end
-exchangeRxnsIndexes = sort(exchangeRxnsIndexes);
+% unique rather than sort: a reaction that involves two boundary metabolites,
+% and an empty reaction (no substrates and no products), each appear in both
+% halves of allExch and would otherwise be reported twice.
+exchangeRxnsIndexes = unique(exchangeRxnsIndexes);
 exchangeRxns = model.rxns(exchangeRxnsIndexes);
 
 if nargout > 2

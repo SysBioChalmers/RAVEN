@@ -21,6 +21,14 @@ classdef tAnalysis < RavenTestCase
             testCase.verifyNumElements(I, numel(testCase.model.rxns));
         end
 
+        function haveFluxSeedIsReproducible(testCase)
+            % The order reactions are tested in is randomised; a given
+            % seed must make that order (and so results) reproducible.
+            I1 = haveFlux(testCase.model, 'seed', 42);
+            I2 = haveFlux(testCase.model, 'seed', 42);
+            testCase.verifyEqual(I1, I2);
+        end
+
         function getMinNrFluxesReturnsFlux(testCase)
             testCase.assumeMILPSolver();
             evalc('[x, I, exitFlag] = getMinNrFluxes(testCase.model, testCase.model.rxns);');
@@ -29,14 +37,70 @@ classdef tAnalysis < RavenTestCase
             testCase.verifyEqual(exitFlag, 1);
         end
 
+        function getMinNrFluxesFormulationsAgree(testCase)
+            % The two formulations build different MILPs for the same
+            % problem, so they may pick different reactions, but both
+            % minimise the same objective and must therefore pick the same
+            % number of them.
+            testCase.assumeMILPSolver();
+            evalc('[xIrrev, Iirrev, flagIrrev] = getMinNrFluxes(testCase.model, testCase.model.rxns, [], [], ''irrev'');');
+            evalc('[xRev, Irev, flagRev] = getMinNrFluxes(testCase.model, testCase.model.rxns, [], [], ''reversible'');');
+            testCase.verifyEqual(flagIrrev, 1);
+            testCase.verifyEqual(flagRev, 1);
+            testCase.verifyNumElements(xRev, numel(testCase.model.rxns));
+            testCase.verifyNumElements(Irev, numel(testCase.model.rxns));
+            testCase.verifyEqual(sum(Irev), sum(Iirrev));
+        end
+
+        function getMinNrFluxesResolveTiesIsDeterministic(testCase)
+            % The reversible-formulation MILP is degenerate on a real model
+            % (see getMinNrFluxesFormulationsAgree above): resolveTies pins
+            % it to a canonical answer instead of leaving the choice to the
+            % solver/seed, so three independent runs must all agree
+            % (raven-gecko-parity#104).
+            testCase.assumeMILPSolver();
+            evalc(['[~, I1, flag1] = getMinNrFluxes(testCase.model, testCase.model.rxns, ' ...
+                '[], [], ''reversible'', false, ''resolveTies'', true);']);
+            evalc(['[~, I2, flag2] = getMinNrFluxes(testCase.model, testCase.model.rxns, ' ...
+                '[], [], ''reversible'', false, ''resolveTies'', true);']);
+            evalc(['[~, I3, flag3] = getMinNrFluxes(testCase.model, testCase.model.rxns, ' ...
+                '[], [], ''reversible'', false, ''resolveTies'', true);']);
+            testCase.verifyEqual(flag1, 1);
+            testCase.verifyEqual(flag2, 1);
+            testCase.verifyEqual(flag3, 1);
+            testCase.verifyEqual(I1, I2);
+            testCase.verifyEqual(I2, I3);
+        end
+
+        function getMinNrFluxesResolveTiesOnlySupportsReversible(testCase)
+            testCase.verifyError( ...
+                @() getMinNrFluxes(testCase.model, testCase.model.rxns, [], [], 'irrev', ...
+                    false, 'resolveTies', true), ...
+                'RAVEN:badInput');
+        end
+
+        function getMinNrFluxesRejectsUnknownFormulation(testCase)
+            testCase.verifyError( ...
+                @() getMinNrFluxes(testCase.model, testCase.model.rxns, [], [], 'both'), ...
+                'RAVEN:badInput');
+        end
+
         function getAllSubGraphsReturnsResult(testCase)
             sg = getAllSubGraphs(testCase.model);
             testCase.verifyNotEmpty(sg);
         end
 
         function findGeneDeletionsRuns(testCase)
-            evalc('[genes, fluxes] = findGeneDeletions(testCase.model, ''sgd'', ''fba'');');
+            evalc('[genes, fluxes] = findGeneDeletions(testCase.model, ''sgd'');');
             testCase.verifyNotEmpty(genes);
+        end
+
+        function findGeneDeletionsComputesGrRatio(testCase)
+            evalc(['[genes, ~, ~, ~, grRatioMuts] = findGeneDeletions(testCase.model, ' ...
+                '''sgd'');']);
+            testCase.verifyNotEmpty(genes);
+            testCase.verifyEqual(numel(grRatioMuts), numel(genes));
+            testCase.verifyGreaterThan(max(grRatioMuts), 0);
         end
 
         function traceFluxPathReturnsCells(testCase)
@@ -67,6 +131,18 @@ classdef tAnalysis < RavenTestCase
             testCase.verifyEmpty(m);
         end
 
+        function walkFluxesRefusesNonInteractive(testCase)
+            % The test suite itself runs under -batch, so this exercises the
+            % real guard rather than a mocked one.
+            testCase.assumeTrue(batchStartupOptionUsed, ...
+                'Test runner is not using -batch; the non-interactive guard cannot be exercised here.');
+            testCase.assumeSolver('solveLP');
+            sol = solveLP(testCase.model);
+            biomassRxn = testCase.model.rxns{find(testCase.model.c == 1, 1)};
+            testCase.verifyError(@() walkFluxes(testCase.model, sol.x, biomassRxn), ...
+                'walkFluxes:nonInteractive');
+        end
+
         function compareFluxesReturnsResult(testCase)
             testCase.assumeSolver('solveLP');
             solA = solveLP(testCase.model);
@@ -95,15 +171,49 @@ classdef tAnalysis < RavenTestCase
             testCase.verifyEmpty(result.turnedOff);
         end
 
-        function followChangedRuns(testCase)
-            % Aerobic vs anaerobic guarantees several reactions change, which
-            % avoids the empty-selection edge case.
+        function compareFluxesMetaboliteListRestrictsResult(testCase)
+            testCase.assumeSolver('solveLP');
             solA = solveLP(testCase.model);
-            o2exch = find(strcmp(testCase.model.rxnNames, 'O2 exchange'));
+            o2exch = find(strcmp(testCase.model.rxnNames, 'O2 exchange'), 1);
             modelAna = setParam(testCase.model, 'eq', testCase.model.rxns(o2exch), 0);
             solB = solveLP(modelAna);
-            out = evalc('followChanged(testCase.model, solA.x, solB.x, 10, 0.01, 0);');
-            testCase.verifyClass(out, 'char');
+            unfiltered = compareFluxes(testCase.model, solA.x, solB.x, 'verbose', false);
+            testCase.assumeNotEmpty(unfiltered.changed.rxn);
+
+            % Name a metabolite of the largest-changing reaction, so the
+            % filtered result is guaranteed to be non-empty and the subset
+            % checks below are not satisfied vacuously.
+            topRxn = strcmp(testCase.model.rxns, unfiltered.changed.rxn{1});
+            met = testCase.model.metNames{find(testCase.model.S(:,topRxn) ~= 0, 1)};
+            filtered = compareFluxes(testCase.model, solA.x, solB.x, ...
+                'metaboliteList', {met}, 'verbose', false);
+            testCase.verifyNotEmpty(filtered.changed.rxn);
+
+            % Every kept reaction must involve the named metabolite, and the
+            % filtered result can only be a subset of the unfiltered one.
+            metIdx = strcmpi(met, testCase.model.metNames);
+            withMet = testCase.model.rxns(any(testCase.model.S(metIdx,:) ~= 0, 1));
+            testCase.verifyTrue(all(ismember(filtered.changed.rxn, withMet)));
+            testCase.verifyTrue(all(ismember(filtered.changed.rxn, unfiltered.changed.rxn)));
+        end
+
+        function compareFluxesUnknownMetaboliteWarns(testCase)
+            testCase.assumeSolver('solveLP');
+            sol = solveLP(testCase.model);
+            testCase.verifyWarning(@() compareFluxes(testCase.model, sol.x, sol.x, ...
+                'metaboliteList', {'no such metabolite'}, 'verbose', false), ...
+                'RAVEN:warning');
+        end
+
+        function getFluxZZeroVarianceSignMatchesGeneralCase(testCase)
+            % The zero-variance branch's sign must agree with the general
+            % branch: positive when flux increased from A to B, negative
+            % when it decreased.
+            solA = [1 1 1; 5 5 5];    % rxn1 constant at 1, rxn2 constant at 5
+            solB = [5 5 5; 1 1 1];    % rxn1 increased to 5, rxn2 decreased to 1
+            Z = getFluxZ(solA, solB);
+            testCase.verifyEqual(Z(1), 100);
+            testCase.verifyEqual(Z(2), -100);
         end
 
         function getFluxZComputesScores(testCase)
@@ -139,6 +249,20 @@ classdef tAnalysis < RavenTestCase
             pvals = rand(numel(testCase.model.genes), 1);
             rm = reporterMetabolites(testCase.model, testCase.model.genes, pvals);
             testCase.verifyClass(rm, 'struct');
+        end
+
+        function reporterMetabolitesKeepsPercentInMetNames(testCase)
+            % A metNames entry containing "%" must survive intact in the
+            % outputFile report, not be truncated by fprintf misreading it
+            % as a format directive.
+            m = testCase.model;
+            m.metNames{1} = 'metabolite 30% pure';
+            pvals = rand(numel(m.genes), 1);
+            outFile = [tempname '.txt'];
+            c = onCleanup(@() delete(outFile));
+            evalc('reporterMetabolites(m, m.genes, pvals, ''outputFile'', outFile);');
+            content = fileread(outFile);
+            testCase.verifySubstring(content, 'metabolite 30% pure');
         end
 
         function reporterMetabolitesIsDeterministic(testCase)

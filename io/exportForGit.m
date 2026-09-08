@@ -207,7 +207,7 @@ end
 if mainBranchFlag
     [~,currentBranch] = system('git rev-parse --abbrev-ref HEAD');
     currentBranch = strtrim(currentBranch);
-    if any([strcmp(currentBranch, "main"), strcmp(currentBranch, "master")])
+    if ~any([strcmp(currentBranch, "main"), strcmp(currentBranch, "master")])
         cd(currentPath);
         error(['ERROR: ' toolbox ' not in main (or master) branch. Check-out this branch of ' toolbox ' before submitting model for Git.'])
     end

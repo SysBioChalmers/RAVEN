@@ -32,8 +32,26 @@
  Returns a containers.Map from lower-case predictor / database compartment labels (as used by
  DeepLoc, MULocDeep, COMPARTMENTS and UniProt) to compartment ids, tuned for yeast/fungal
  models (e.g. yeast-GEM codes). Pass it (or your own map) to parseScores / getUniProtScores as
- 'compartmentMap' to rename and merge compartments; labels not listed here (e.g. plastid, which
- fungi lack) are dropped.
+ 'compartmentMap'.
+
+ The table below is also the worked example of how such a map is built, so read it as three
+ deliberate decisions rather than a lookup list:
+
+ - **Which compartments exist.** A label absent from the map is dropped along with its score
+   column, so listing only the ids your model has is how unwanted compartments are excluded.
+   'plastid' is absent because fungi lack one; a plant model would add it.
+ - **Which labels are the same thing.** Predictors disagree on wording, so 'cytoplasm' and
+   'cytosol' both map to 'c', and 'mitochondrion' / 'mitochondria' / 'mitochondrial' all map
+   to 'm'. Merged columns are combined by maximum, not sum.
+ - **Which distinct compartments to collapse.** 'lysosome' maps to 'v' not because it is a
+   vacuole but because a yeast model has no lysosome and the vacuole is its functional
+   equivalent. Change this if your model separates them.
+
+ Extend a copy rather than editing this function, e.g.
+
+     map = defaultCompartmentMap;
+     map('cell wall') = 'ce';
+     GSS = parseScores(file, 'compartmentMap', map);
 
  Returns
  -------
@@ -63,30 +81,48 @@ This function is called by:
 0004 <span class="comment">% Returns a containers.Map from lower-case predictor / database compartment labels (as used by</span>
 0005 <span class="comment">% DeepLoc, MULocDeep, COMPARTMENTS and UniProt) to compartment ids, tuned for yeast/fungal</span>
 0006 <span class="comment">% models (e.g. yeast-GEM codes). Pass it (or your own map) to parseScores / getUniProtScores as</span>
-0007 <span class="comment">% 'compartmentMap' to rename and merge compartments; labels not listed here (e.g. plastid, which</span>
-0008 <span class="comment">% fungi lack) are dropped.</span>
-0009 <span class="comment">%</span>
-0010 <span class="comment">% Returns</span>
-0011 <span class="comment">% -------</span>
-0012 <span class="comment">% map : containers.Map</span>
-0013 <span class="comment">%     label (char, lower case) -&gt; compartment id (char).</span>
-0014 <span class="comment">%</span>
-0015 <span class="comment">% See also</span>
-0016 <span class="comment">% --------</span>
-0017 <span class="comment">% parseScores, getUniProtScores, predictLocalization</span>
-0018 
-0019 labels = {<span class="string">'cytoplasm'</span>,<span class="string">'cytosol'</span>,<span class="string">'nucleus'</span>,<span class="string">'nucleoplasm'</span>,<span class="string">'mitochondrion'</span>,<span class="string">'mitochondria'</span>, <span class="keyword">...</span>
-0020           <span class="string">'mitochondrial'</span>,<span class="string">'peroxisome'</span>,<span class="string">'endoplasmic reticulum'</span>,<span class="string">'golgi apparatus'</span>,<span class="string">'golgi'</span>, <span class="keyword">...</span>
-0021           <span class="string">'vacuole'</span>,<span class="string">'lysosome/vacuole'</span>,<span class="string">'lysosome'</span>,<span class="string">'extracellular'</span>,<span class="string">'extracellular space'</span>, <span class="keyword">...</span>
-0022           <span class="string">'extracellular region'</span>,<span class="string">'secreted'</span>,<span class="string">'cell membrane'</span>,<span class="string">'plasma membrane'</span>,<span class="string">'cell envelope'</span>, <span class="keyword">...</span>
-0023           <span class="string">'lipid particle'</span>,<span class="string">'lipid droplet'</span>};
-0024 ids    = {<span class="string">'c'</span>,<span class="string">'c'</span>,<span class="string">'n'</span>,<span class="string">'n'</span>,<span class="string">'m'</span>,<span class="string">'m'</span>, <span class="keyword">...</span>
-0025           <span class="string">'m'</span>,<span class="string">'p'</span>,<span class="string">'er'</span>,<span class="string">'g'</span>,<span class="string">'g'</span>, <span class="keyword">...</span>
-0026           <span class="string">'v'</span>,<span class="string">'v'</span>,<span class="string">'v'</span>,<span class="string">'e'</span>,<span class="string">'e'</span>, <span class="keyword">...</span>
-0027           <span class="string">'e'</span>,<span class="string">'e'</span>,<span class="string">'ce'</span>,<span class="string">'ce'</span>,<span class="string">'ce'</span>, <span class="keyword">...</span>
-0028           <span class="string">'lp'</span>,<span class="string">'lp'</span>};
-0029 map = containers.Map(labels, ids);
-0030 <span class="keyword">end</span></pre></div>
+0007 <span class="comment">% 'compartmentMap'.</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% The table below is also the worked example of how such a map is built, so read it as three</span>
+0010 <span class="comment">% deliberate decisions rather than a lookup list:</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">% - **Which compartments exist.** A label absent from the map is dropped along with its score</span>
+0013 <span class="comment">%   column, so listing only the ids your model has is how unwanted compartments are excluded.</span>
+0014 <span class="comment">%   'plastid' is absent because fungi lack one; a plant model would add it.</span>
+0015 <span class="comment">% - **Which labels are the same thing.** Predictors disagree on wording, so 'cytoplasm' and</span>
+0016 <span class="comment">%   'cytosol' both map to 'c', and 'mitochondrion' / 'mitochondria' / 'mitochondrial' all map</span>
+0017 <span class="comment">%   to 'm'. Merged columns are combined by maximum, not sum.</span>
+0018 <span class="comment">% - **Which distinct compartments to collapse.** 'lysosome' maps to 'v' not because it is a</span>
+0019 <span class="comment">%   vacuole but because a yeast model has no lysosome and the vacuole is its functional</span>
+0020 <span class="comment">%   equivalent. Change this if your model separates them.</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">% Extend a copy rather than editing this function, e.g.</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">%     map = defaultCompartmentMap;</span>
+0025 <span class="comment">%     map('cell wall') = 'ce';</span>
+0026 <span class="comment">%     GSS = parseScores(file, 'compartmentMap', map);</span>
+0027 <span class="comment">%</span>
+0028 <span class="comment">% Returns</span>
+0029 <span class="comment">% -------</span>
+0030 <span class="comment">% map : containers.Map</span>
+0031 <span class="comment">%     label (char, lower case) -&gt; compartment id (char).</span>
+0032 <span class="comment">%</span>
+0033 <span class="comment">% See also</span>
+0034 <span class="comment">% --------</span>
+0035 <span class="comment">% parseScores, getUniProtScores, predictLocalization</span>
+0036 
+0037 labels = {<span class="string">'cytoplasm'</span>,<span class="string">'cytosol'</span>,<span class="string">'nucleus'</span>,<span class="string">'nucleoplasm'</span>,<span class="string">'mitochondrion'</span>,<span class="string">'mitochondria'</span>, <span class="keyword">...</span>
+0038           <span class="string">'mitochondrial'</span>,<span class="string">'peroxisome'</span>,<span class="string">'endoplasmic reticulum'</span>,<span class="string">'golgi apparatus'</span>,<span class="string">'golgi'</span>, <span class="keyword">...</span>
+0039           <span class="string">'vacuole'</span>,<span class="string">'lysosome/vacuole'</span>,<span class="string">'lysosome'</span>,<span class="string">'extracellular'</span>,<span class="string">'extracellular space'</span>, <span class="keyword">...</span>
+0040           <span class="string">'extracellular region'</span>,<span class="string">'secreted'</span>,<span class="string">'cell membrane'</span>,<span class="string">'plasma membrane'</span>,<span class="string">'cell envelope'</span>, <span class="keyword">...</span>
+0041           <span class="string">'lipid particle'</span>,<span class="string">'lipid droplet'</span>};
+0042 ids    = {<span class="string">'c'</span>,<span class="string">'c'</span>,<span class="string">'n'</span>,<span class="string">'n'</span>,<span class="string">'m'</span>,<span class="string">'m'</span>, <span class="keyword">...</span>
+0043           <span class="string">'m'</span>,<span class="string">'p'</span>,<span class="string">'er'</span>,<span class="string">'g'</span>,<span class="string">'g'</span>, <span class="keyword">...</span>
+0044           <span class="string">'v'</span>,<span class="string">'v'</span>,<span class="string">'v'</span>,<span class="string">'e'</span>,<span class="string">'e'</span>, <span class="keyword">...</span>
+0045           <span class="string">'e'</span>,<span class="string">'e'</span>,<span class="string">'ce'</span>,<span class="string">'ce'</span>,<span class="string">'ce'</span>, <span class="keyword">...</span>
+0046           <span class="string">'lp'</span>,<span class="string">'lp'</span>};
+0047 map = containers.Map(labels, ids);
+0048 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

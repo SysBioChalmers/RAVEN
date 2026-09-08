@@ -19,6 +19,10 @@ function I=haveFlux(model,varargin)
 %     either a cell array of IDs, a logical vector with the same number of
 %     elements as metabolites in the model, or a vector of indexes (default
 %     model.rxns).
+% seed : double
+%     seed for the random number generator used to shuffle the order in
+%     which reactions are tested, so that order is reproducible across
+%     runs (default: current rng state is left untouched).
 %
 % Returns
 % -------
@@ -35,7 +39,10 @@ function I=haveFlux(model,varargin)
 % If a model has +/- Inf bounds then those are replaced with an arbitary
 % large value of +/- 10000 prior to solving.
 
-p=parseRAVENargs(varargin, {'cutOff',10^-6; 'rxns',[]});
+p=parseRAVENargs(varargin, {'cutOff',10^-6; 'rxns',[]; 'seed',[]});
+if ~isempty(p.seed)
+    rng(p.seed);
+end
 cutOff=p.cutOff;
 rxns=p.rxns;
 if isempty(cutOff)

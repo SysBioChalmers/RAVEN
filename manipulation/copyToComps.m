@@ -40,7 +40,7 @@ function model=copyToComps(model,toComps,varargin)
 % -----
 % New reactions and metabolites will be named as "id_toComps(i)".
 
-p=parseRAVENargs(varargin, {'rxns',[],[]; 'deleteOriginal',false,@emptyOrLogicalScalar; 'compNames',[],[]; 'compOutside','',[]});
+p=parseRAVENargs(varargin, {'rxns',[]; 'deleteOriginal',false; 'compNames',[]; 'compOutside',[]});
 rxns=p.rxns;
 if isempty(rxns)
     rxns=model.rxns;
@@ -55,7 +55,12 @@ else
     compNames=convertCharArray(compNames);
 end
 compOutside=p.compOutside;
-if ~isempty(compOutside)
+if isempty(compOutside)
+    % Default is {''} for every new compartment, not '': compOutside(i)
+    % below indexes into it once per new compartment, which a bare ''
+    % cannot support.
+    compOutside=repmat({''},size(compNames));
+else
     compOutside=convertCharArray(compOutside);
     if length(compOutside) ~= length(compNames)
         error('compOutside and compNames should be of equal size.');

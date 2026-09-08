@@ -28,8 +28,13 @@
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> updateDocumentation
-    Updates HTML documentation files for all RAVEN functions. It should
-    only be used when preparing `develop` branch for a new RAVEN release
+    Regenerates the HTML documentation in RAVEN's doc directory from the
+    function help texts. The doc directory is deleted and rebuilt, so
+    anything hand-edited there is lost.
+
+    The Documentation workflow runs this on every push to a release branch
+    and commits the result, so doc stays in step with the sources without
+    anyone running it by hand. Run it locally only to preview.
 
     Usage: updateDocumentation()</pre></div>
 
@@ -48,48 +53,73 @@ This function is called by:
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function updateDocumentation()</a>
 0002 <span class="comment">% updateDocumentation</span>
-0003 <span class="comment">%    Updates HTML documentation files for all RAVEN functions. It should</span>
-0004 <span class="comment">%    only be used when preparing `develop` branch for a new RAVEN release</span>
-0005 <span class="comment">%</span>
-0006 <span class="comment">%    Usage: updateDocumentation()</span>
-0007 
-0008 <span class="comment">%Get the RAVEN path</span>
-0009 ravenDir=<a href="findRAVENroot.html" class="code" title="function [ravenPath, prevDir] = findRAVENroot()">findRAVENroot</a>();
-0010 <span class="comment">%Make sure that RAVEN-provided m2html is used</span>
-0011 path(fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'m2html'</span>),path);
-0012 <span class="comment">%Get a non-redundant list of RAVEN subdirectories containing MATLAB</span>
-0013 <span class="comment">%functions. Absolute paths are not compatible with M2HTML, so convert them</span>
-0014 <span class="comment">%to the relative paths instead.</span>
-0015 ravenDirs=dir(fullfile(ravenDir,<span class="string">'**/*.m'</span>));
-0016 ravenDirs=unique({ravenDirs.folder})';
-0017 
-0018 <span class="comment">%Get rid of MATLAB functions from external software</span>
-0019 ravenDirs(startsWith(ravenDirs,strcat(ravenDir,filesep,<span class="string">'software'</span>)))=[];
-0020 ravenDirs(startsWith(ravenDirs,strcat(ravenDir,filesep,<span class="string">'legacy'</span>,filesep,<span class="string">'software'</span>)))=[];
-0021 
-0022 <span class="comment">%Remove keggModel.mat if it exists</span>
-0023 <span class="keyword">if</span> exist(fullfile(ravenDir,<span class="string">'reconstruction'</span>,<span class="string">'kegg'</span>,<span class="string">'keggModel.mat'</span>), <span class="string">'file'</span>) == 2
-0024     delete(fullfile(ravenDir,<span class="string">'reconstruction'</span>,<span class="string">'kegg'</span>,<span class="string">'keggModel.mat'</span>));
-0025 <span class="keyword">end</span>
+0003 <span class="comment">%    Regenerates the HTML documentation in RAVEN's doc directory from the</span>
+0004 <span class="comment">%    function help texts. The doc directory is deleted and rebuilt, so</span>
+0005 <span class="comment">%    anything hand-edited there is lost.</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">%    The Documentation workflow runs this on every push to a release branch</span>
+0008 <span class="comment">%    and commits the result, so doc stays in step with the sources without</span>
+0009 <span class="comment">%    anyone running it by hand. Run it locally only to preview.</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">%    Usage: updateDocumentation()</span>
+0012 
+0013 <span class="comment">%Get the RAVEN path</span>
+0014 ravenDir=<a href="findRAVENroot.html" class="code" title="function [ravenPath, prevDir] = findRAVENroot()">findRAVENroot</a>();
+0015 <span class="comment">%Make sure that RAVEN-provided m2html is used</span>
+0016 path(fullfile(ravenDir,<span class="string">'software'</span>,<span class="string">'m2html'</span>),path);
+0017 <span class="comment">%Get a non-redundant list of RAVEN subdirectories containing MATLAB</span>
+0018 <span class="comment">%functions. Absolute paths are not compatible with M2HTML, so convert them</span>
+0019 <span class="comment">%to the relative paths instead.</span>
+0020 ravenDirs=dir(fullfile(ravenDir,<span class="string">'**/*.m'</span>));
+0021 ravenDirs=unique({ravenDirs.folder})';
+0022 
+0023 <span class="comment">%Get rid of MATLAB functions from external software</span>
+0024 ravenDirs(startsWith(ravenDirs,strcat(ravenDir,filesep,<span class="string">'software'</span>)))=[];
+0025 ravenDirs(startsWith(ravenDirs,strcat(ravenDir,filesep,<span class="string">'legacy'</span>,filesep,<span class="string">'software'</span>)))=[];
 0026 
-0027 <span class="comment">%Remove existing &quot;doc&quot; directory from RAVEN</span>
-0028 rmdir(fullfile(ravenDir,<span class="string">'doc'</span>),<span class="string">'s'</span>);
-0029 
-0030 <span class="comment">%Make relative path</span>
-0031 relStart = numel(ravenDir)+2;
-0032 <span class="keyword">for</span> i=1:numel(ravenDirs)
-0033     ravenDirs{i,1} = ravenDirs{i,1}(relStart:end);
-0034 <span class="keyword">end</span>
-0035 
-0036 <span class="comment">%Save the current working directory and go to RAVEN root directory</span>
-0037 originalDir=pwd;
-0038 cd(ravenDir);
-0039 <span class="comment">%Generate HTML documentation files for RAVEN MATLAB functions</span>
-0040 m2html(<span class="string">'mFiles'</span>,ravenDirs,<span class="string">'htmldir'</span>,<span class="string">'doc'</span>);
-0041 <span class="comment">%Go back to the original working directory</span>
-0042 cd(originalDir);
-0043 
-0044 <span class="keyword">end</span></pre></div>
+0027 <span class="comment">%Skip deprecated wrappers: they are on the path so existing scripts keep</span>
+0028 <span class="comment">%working, but documenting them would advertise functions that are on their</span>
+0029 <span class="comment">%way out. Each one names its replacement when called.</span>
+0030 ravenDirs(startsWith(ravenDirs,strcat(ravenDir,filesep,<span class="string">'deprecated'</span>)))=[];
+0031 
+0032 <span class="comment">%Remove keggModel.mat if it exists</span>
+0033 <span class="keyword">if</span> exist(fullfile(ravenDir,<span class="string">'reconstruction'</span>,<span class="string">'kegg'</span>,<span class="string">'keggModel.mat'</span>), <span class="string">'file'</span>) == 2
+0034     delete(fullfile(ravenDir,<span class="string">'reconstruction'</span>,<span class="string">'kegg'</span>,<span class="string">'keggModel.mat'</span>));
+0035 <span class="keyword">end</span>
+0036 
+0037 <span class="comment">%Remove the existing &quot;doc&quot; directory from RAVEN</span>
+0038 docDir=fullfile(ravenDir,<span class="string">'doc'</span>);
+0039 <span class="keyword">if</span> isfolder(docDir)
+0040     rmdir(docDir,<span class="string">'s'</span>);
+0041 <span class="keyword">end</span>
+0042 
+0043 <span class="comment">%Make relative path</span>
+0044 relStart = numel(ravenDir)+2;
+0045 <span class="keyword">for</span> i=1:numel(ravenDirs)
+0046     ravenDirs{i,1} = ravenDirs{i,1}(relStart:end);
+0047 <span class="keyword">end</span>
+0048 
+0049 <span class="comment">%Recreate the output tree before handing over to m2html. m2html only creates an</span>
+0050 <span class="comment">%output directory when exist() says it is not already there, and exist() keeps</span>
+0051 <span class="comment">%answering &quot;directory&quot; for a relative path that was just deleted -- a stale</span>
+0052 <span class="comment">%answer that neither rmpath nor rehash clears. It would therefore skip the</span>
+0053 <span class="comment">%mkdir and then fail writing the first file into a directory that is gone.</span>
+0054 mkdir(docDir);
+0055 <span class="keyword">for</span> i=1:numel(ravenDirs)
+0056     <span class="keyword">if</span> ~isempty(ravenDirs{i})
+0057         mkdir(fullfile(docDir,ravenDirs{i}));
+0058     <span class="keyword">end</span>
+0059 <span class="keyword">end</span>
+0060 
+0061 <span class="comment">%Save the current working directory and go to RAVEN root directory</span>
+0062 originalDir=pwd;
+0063 cd(ravenDir);
+0064 <span class="comment">%Generate HTML documentation files for RAVEN MATLAB functions</span>
+0065 m2html(<span class="string">'mFiles'</span>,ravenDirs,<span class="string">'htmldir'</span>,<span class="string">'doc'</span>);
+0066 <span class="comment">%Go back to the original working directory</span>
+0067 cd(originalDir);
+0068 
+0069 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

@@ -28,8 +28,9 @@
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> tutorial4_solutions
-   This script contains the solutions for Tutorial 4, see Tutorial 4 in
-   &quot;RAVEN tutorials.docx&quot; for more details.
+   This script contains the solutions for Tutorial 4, see Tutorial 4 on
+   the RAVEN wiki for more details:
+   https://github.com/SysBioChalmers/RAVEN/wiki/Tutorials
 
    NOTE: Many of these changes are easier to do in the Excel sheet. They
    are done here in code just to avoid having several model files.</pre></div>
@@ -48,88 +49,89 @@ This function is called by:
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre>0001 <span class="comment">% tutorial4_solutions</span>
-0002 <span class="comment">%   This script contains the solutions for Tutorial 4, see Tutorial 4 in</span>
-0003 <span class="comment">%   &quot;RAVEN tutorials.docx&quot; for more details.</span>
-0004 <span class="comment">%</span>
-0005 <span class="comment">%   NOTE: Many of these changes are easier to do in the Excel sheet. They</span>
-0006 <span class="comment">%   are done here in code just to avoid having several model files.</span>
-0007 
-0008 <span class="comment">%Import the model</span>
-0009 model=readYAMLmodel(<span class="string">'smallYeastBad.yml'</span>);
-0010 
-0011 <span class="comment">%Close all uptake and maximize for production</span>
-0012 model=setParam(model,<span class="string">'eq'</span>,{<span class="string">'glcIN'</span>, <span class="string">'o2IN'</span>},[0 0]);
-0013 model=setParam(model,<span class="string">'obj'</span>,{<span class="string">'acOUT'</span> <span class="string">'biomassOUT'</span> <span class="string">'co2OUT'</span> <span class="string">'ethOUT'</span> <span class="string">'glyOUT'</span>},[1 1 1 1 1]);
-0014 sol=solveLP(model);
-0015 printFluxes(model,sol.x,true); <span class="comment">%Nothing produced, good</span>
-0016 
-0017 <span class="comment">%Add some fake reactions</span>
-0018 rxns.rxns={<span class="string">'FREE_ATP'</span>;<span class="string">'FREE_NADH'</span>;<span class="string">'FREE_NADPH'</span>};
-0019 rxns.equations={<span class="string">'ATP &lt;=&gt; ADP + phosphate'</span>;<span class="string">'NAD(+) &lt;=&gt; NADH'</span>;<span class="string">'NADP(+) &lt;=&gt; NADPH'</span>};
-0020 model=addRxns(model,rxns,2,<span class="string">'c'</span>);
-0021 sol=solveLP(model,1);
-0022 
-0023 <span class="comment">%Lots of ethanol produced. Also plot the equations to make the error easier</span>
-0024 <span class="comment">%to find</span>
-0025 printFluxes(model,sol.x,false,[],[],<span class="string">'%rxnID (%rxnName):%flux\n\t%eqn\n'</span>);
-0026 
-0027 <span class="comment">%See that ADH1 should only produce one unit of ethanol. Change the reaction</span>
-0028 <span class="comment">%equation</span>
-0029 model=changeRxns(model,<span class="string">'ADH1'</span>,<span class="string">'acetaldehyde[c] + NADH[c] =&gt; ethanol[c] + NAD(+)[c]'</span>,3);
-0030 sol=solveLP(model,1);
-0031 printFluxes(model,sol.x,true); <span class="comment">%Nothing produced, good</span>
-0032 
-0033 <span class="comment">%Add excretion of all metabolites</span>
-0034 model.b=[model.b inf(numel(model.b),1)];
-0035 sol=solveLP(model,1);
-0036 printFluxes(model,sol.x,false,10^-5,[],<span class="string">'%rxnID (%rxnName):\n\t%eqn\n\t%flux\n'</span>);
-0037 
-0038 <span class="comment">%By looking at the reactions which were unbalanced and that were in the</span>
-0039 <span class="comment">%flux list one can see that FBP should be changed to result in only one unit</span>
-0040 <span class="comment">%of F6P</span>
-0041 model=changeRxns(model,<span class="string">'FBP'</span>,<span class="string">'beta-D-fructofuranose 1,6-bisphosphate[c] =&gt; beta-D-fructofuranose 6-phosphate[c] + phosphate[c]'</span>,3);
-0042 sol=solveLP(model,1);
-0043 printFluxes(model,sol.x,false,10^-5,[],<span class="string">'%rxnID (%rxnName):\n\t%eqn\n\t%flux\n'</span>);
-0044 
-0045 <span class="comment">%The same thing again and one should change PFK to only give one unit of</span>
-0046 <span class="comment">%F16P</span>
-0047 model=changeRxns(model,<span class="string">'PFK'</span>,<span class="string">'ATP[c] + beta-D-fructofuranose 6-phosphate[c] =&gt; ADP[c] + beta-D-fructofuranose 1,6-bisphosphate[c]'</span>,3);
-0048 sol=solveLP(model,1);
-0049 printFluxes(model,sol.x,false,10^-5,[],<span class="string">'%rxnID (%rxnName):\n\t%eqn\n\t%flux\n'</span>); <span class="comment">%Now it works</span>
-0050 
-0051 <span class="comment">%Set all uptakes and production to 0</span>
-0052 model=setParam(model,<span class="string">'eq'</span>,getExchangeRxns(model),0);
-0053 
-0054 <span class="comment">%Since it is checked which metabolites could be consumed without</span>
-0055 <span class="comment">%production, one can no longer have free production of all metabolites</span>
-0056 model.b=model.b(:,1);
-0057 I=canConsume(model);
-0058 disp(model.mets(I)); <span class="comment">%These 12 metabolites can be consumed without any production</span>
-0059 
-0060 <span class="comment">%Allow all uptake</span>
-0061 model.b=[ones(numel(model.b),1)*-1000 model.b];
-0062 
-0063 <span class="comment">%Pick CO2 and force uptake of it</span>
-0064 model=setParam(model,<span class="string">'eq'</span>,{<span class="string">'co2OUT'</span>},-1); <span class="comment">%Negative output means input</span>
-0065 sol=solveLP(model);
-0066 printFluxes(model,sol.x,false,10^-5,[],<span class="string">'%rxnID (%rxnName):\n\t%eqn\n\t%flux\n'</span>); <span class="comment">%Now it works</span>
-0067 
-0068 <span class="comment">%See that PDC converts pyruvate (3 carbons) to acetaldehyde (2 carbons)</span>
-0069 <span class="comment">%without any other products. If one googles, one may realize that CO2 is</span>
-0070 <span class="comment">%missing. This would be simpler to change in the Excel file (or using</span>
-0071 <span class="comment">%changeRxns), but one can change it here as an exercise. One therefore</span>
-0072 <span class="comment">%needs to find the index of the reactions and the index of cytosolic CO2 in</span>
-0073 <span class="comment">%order to change the reaction</span>
-0074 Irxn=ismember(model.rxns,<span class="string">'PDC'</span>);
-0075 Imet=ismember(model.mets,<span class="string">'CO2_c'</span>);
-0076 model.S(Imet,Irxn)=1; <span class="comment">%The coefficient is 1.0</span>
-0077 
-0078 <span class="comment">%Display the new equation just to be sure</span>
-0079 constructEquations(model,Irxn)
-0080 
-0081 <span class="comment">%The solution is now not feasible, meaning that it is no longer possible to</span>
-0082 <span class="comment">%force uptake of CO2 without any output</span>
-0083 sol=solveLP(model);</pre></div>
+0002 <span class="comment">%   This script contains the solutions for Tutorial 4, see Tutorial 4 on</span>
+0003 <span class="comment">%   the RAVEN wiki for more details:</span>
+0004 <span class="comment">%   https://github.com/SysBioChalmers/RAVEN/wiki/Tutorials</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">%   NOTE: Many of these changes are easier to do in the Excel sheet. They</span>
+0007 <span class="comment">%   are done here in code just to avoid having several model files.</span>
+0008 
+0009 <span class="comment">%Import the model</span>
+0010 model=readYAMLmodel(<span class="string">'smallYeastBad.yml'</span>);
+0011 
+0012 <span class="comment">%Close all uptake and maximize for production</span>
+0013 model=setParam(model,<span class="string">'eq'</span>,{<span class="string">'glcIN'</span>, <span class="string">'o2IN'</span>},[0 0]);
+0014 model=setParam(model,<span class="string">'obj'</span>,{<span class="string">'acOUT'</span> <span class="string">'biomassOUT'</span> <span class="string">'co2OUT'</span> <span class="string">'ethOUT'</span> <span class="string">'glyOUT'</span>},[1 1 1 1 1]);
+0015 sol=solveLP(model);
+0016 printFluxes(model,sol.x,true); <span class="comment">%Nothing produced, good</span>
+0017 
+0018 <span class="comment">%Add some fake reactions</span>
+0019 rxns.rxns={<span class="string">'FREE_ATP'</span>;<span class="string">'FREE_NADH'</span>;<span class="string">'FREE_NADPH'</span>};
+0020 rxns.equations={<span class="string">'ATP &lt;=&gt; ADP + phosphate'</span>;<span class="string">'NAD(+) &lt;=&gt; NADH'</span>;<span class="string">'NADP(+) &lt;=&gt; NADPH'</span>};
+0021 model=addRxns(model,rxns,2,<span class="string">'c'</span>);
+0022 sol=solveLP(model,1);
+0023 
+0024 <span class="comment">%Lots of ethanol produced. Also plot the equations to make the error easier</span>
+0025 <span class="comment">%to find</span>
+0026 printFluxes(model,sol.x,false,[],[],<span class="string">'%rxnID (%rxnName):%flux\n\t%eqn\n'</span>);
+0027 
+0028 <span class="comment">%See that ADH1 should only produce one unit of ethanol. Change the reaction</span>
+0029 <span class="comment">%equation</span>
+0030 model=changeRxns(model,<span class="string">'ADH1'</span>,<span class="string">'acetaldehyde[c] + NADH[c] =&gt; ethanol[c] + NAD(+)[c]'</span>,3);
+0031 sol=solveLP(model,1);
+0032 printFluxes(model,sol.x,true); <span class="comment">%Nothing produced, good</span>
+0033 
+0034 <span class="comment">%Add excretion of all metabolites</span>
+0035 model.b=[model.b inf(numel(model.b),1)];
+0036 sol=solveLP(model,1);
+0037 printFluxes(model,sol.x,false,10^-5,[],<span class="string">'%rxnID (%rxnName):\n\t%eqn\n\t%flux\n'</span>);
+0038 
+0039 <span class="comment">%By looking at the reactions which were unbalanced and that were in the</span>
+0040 <span class="comment">%flux list one can see that FBP should be changed to result in only one unit</span>
+0041 <span class="comment">%of F6P</span>
+0042 model=changeRxns(model,<span class="string">'FBP'</span>,<span class="string">'beta-D-fructofuranose 1,6-bisphosphate[c] =&gt; beta-D-fructofuranose 6-phosphate[c] + phosphate[c]'</span>,3);
+0043 sol=solveLP(model,1);
+0044 printFluxes(model,sol.x,false,10^-5,[],<span class="string">'%rxnID (%rxnName):\n\t%eqn\n\t%flux\n'</span>);
+0045 
+0046 <span class="comment">%The same thing again and one should change PFK to only give one unit of</span>
+0047 <span class="comment">%F16P</span>
+0048 model=changeRxns(model,<span class="string">'PFK'</span>,<span class="string">'ATP[c] + beta-D-fructofuranose 6-phosphate[c] =&gt; ADP[c] + beta-D-fructofuranose 1,6-bisphosphate[c]'</span>,3);
+0049 sol=solveLP(model,1);
+0050 printFluxes(model,sol.x,false,10^-5,[],<span class="string">'%rxnID (%rxnName):\n\t%eqn\n\t%flux\n'</span>); <span class="comment">%Now it works</span>
+0051 
+0052 <span class="comment">%Set all uptakes and production to 0</span>
+0053 model=setParam(model,<span class="string">'eq'</span>,getExchangeRxns(model),0);
+0054 
+0055 <span class="comment">%Since it is checked which metabolites could be consumed without</span>
+0056 <span class="comment">%production, one can no longer have free production of all metabolites</span>
+0057 model.b=model.b(:,1);
+0058 I=canExchange(model,<span class="string">'consume'</span>);
+0059 disp(model.mets(I)); <span class="comment">%These 12 metabolites can be consumed without any production</span>
+0060 
+0061 <span class="comment">%Allow all uptake</span>
+0062 model.b=[ones(numel(model.b),1)*-1000 model.b];
+0063 
+0064 <span class="comment">%Pick CO2 and force uptake of it</span>
+0065 model=setParam(model,<span class="string">'eq'</span>,{<span class="string">'co2OUT'</span>},-1); <span class="comment">%Negative output means input</span>
+0066 sol=solveLP(model);
+0067 printFluxes(model,sol.x,false,10^-5,[],<span class="string">'%rxnID (%rxnName):\n\t%eqn\n\t%flux\n'</span>); <span class="comment">%Now it works</span>
+0068 
+0069 <span class="comment">%See that PDC converts pyruvate (3 carbons) to acetaldehyde (2 carbons)</span>
+0070 <span class="comment">%without any other products. If one googles, one may realize that CO2 is</span>
+0071 <span class="comment">%missing. This would be simpler to change in the Excel file (or using</span>
+0072 <span class="comment">%changeRxns), but one can change it here as an exercise. One therefore</span>
+0073 <span class="comment">%needs to find the index of the reactions and the index of cytosolic CO2 in</span>
+0074 <span class="comment">%order to change the reaction</span>
+0075 Irxn=ismember(model.rxns,<span class="string">'PDC'</span>);
+0076 Imet=ismember(model.mets,<span class="string">'CO2_c'</span>);
+0077 model.S(Imet,Irxn)=1; <span class="comment">%The coefficient is 1.0</span>
+0078 
+0079 <span class="comment">%Display the new equation just to be sure</span>
+0080 constructEquations(model,Irxn)
+0081 
+0082 <span class="comment">%The solution is now not feasible, meaning that it is no longer possible to</span>
+0083 <span class="comment">%force uptake of CO2 without any output</span>
+0084 sol=solveLP(model);</pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

@@ -1,2 +1,0 @@
-
-OutputSBML(m, 'other.xml');

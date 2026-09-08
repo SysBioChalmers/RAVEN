@@ -163,123 +163,131 @@ This function is called by:
 0083 <span class="comment">%parsing</span>
 0084 equations=strrep(equations,<span class="string">' + '</span>, <span class="string">'€'</span>);
 0085 
-0086 <span class="comment">%Generate the stoichiometric matrix</span>
-0087 S=zeros(numel(mets),numel(equations));
-0088 
-0089 <span class="comment">%Keep track of coefficients to be added to S-matrix</span>
-0090 metsToS = cell(100000,1);
-0091 rxnsToS = zeros(100000,1);
-0092 coefToS = zeros(100000,1);
-0093 newEntry = 1;
-0094 <span class="comment">%Loop through the equations and add the info to the S matrix</span>
-0095 <span class="keyword">for</span> i=1:numel(equations)
-0096     <span class="comment">%Start by finding the position of the (=&gt; or &lt;=&gt;)</span>
-0097     arrowIndex=strfind(equations{i},<span class="string">' &lt;=&gt; '</span>);
-0098     
-0099     <span class="keyword">if</span> numel(arrowIndex)~=1
-0100         <span class="keyword">if</span> isempty(rxns)
-0101             EM=[<span class="string">'The following equation does not have reversibility data: '</span> equations{i} ];
+0086 <span class="comment">%Keep track of coefficients to be added to S-matrix</span>
+0087 metsToS = cell(100000,1);
+0088 rxnsToS = zeros(100000,1);
+0089 coefToS = zeros(100000,1);
+0090 newEntry = 1;
+0091 <span class="comment">%Loop through the equations and add the info to the S matrix</span>
+0092 <span class="keyword">for</span> i=1:numel(equations)
+0093     <span class="comment">%Start by finding the position of the (=&gt; or &lt;=&gt;)</span>
+0094     arrowIndex=strfind(equations{i},<span class="string">' &lt;=&gt; '</span>);
+0095     
+0096     <span class="keyword">if</span> numel(arrowIndex)~=1
+0097         <span class="keyword">if</span> isempty(rxns)
+0098             EM=[<span class="string">'The following equation does not have reversibility data: '</span> equations{i} ];
+0099             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0100         <span class="keyword">else</span>
+0101             EM=[<span class="string">'The reaction '</span> rxns{i} <span class="string">' does not have reversibility data'</span>];
 0102             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0103         <span class="keyword">else</span>
-0104             EM=[<span class="string">'The reaction '</span> rxns{i} <span class="string">' does not have reversibility data'</span>];
-0105             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0106         <span class="keyword">end</span>
-0107     <span class="keyword">end</span>
+0103         <span class="keyword">end</span>
+0104     <span class="keyword">end</span>
+0105     
+0106     reactants=regexp(equations{i}(1:arrowIndex-1),<span class="string">'€'</span>,<span class="string">'split'</span>);
+0107     products=regexp(equations{i}(arrowIndex+5:end),<span class="string">'€'</span>,<span class="string">'split'</span>);
 0108     
-0109     reactants=regexp(equations{i}(1:arrowIndex-1),<span class="string">'€'</span>,<span class="string">'split'</span>);
-0110     products=regexp(equations{i}(arrowIndex+5:end),<span class="string">'€'</span>,<span class="string">'split'</span>);
-0111     
-0112     <span class="comment">%If the splitting character is at the end (if exchange rxns), then an</span>
-0113     <span class="comment">%empty string will exist together with the real ones. Remove it</span>
-0114     reactants(cellfun(@isempty,reactants))=[];
-0115     products(cellfun(@isempty,products))=[];
-0116     
-0117     <span class="comment">%A vector where an element is -1 is the corresponding metabolite is a</span>
-0118     <span class="comment">%reactant and 1 if it is a product</span>
-0119     multiplyWith=[ones(numel(reactants),1)*-1; ones(numel(products),1)];
-0120     
-0121     metabolites=strtrim([reactants products]);
-0122     
-0123     <span class="comment">%Now loop through the reactants and see if the metabolite has a</span>
-0124     <span class="comment">%coefficient (it will look as &quot;number name&quot;)</span>
-0125     <span class="keyword">for</span> j=1:numel(metabolites)
-0126         space=strfind(metabolites{j},<span class="string">' '</span>);
-0127         
-0128         <span class="keyword">if</span> isempty(space)
-0129             <span class="comment">%No coefficient</span>
-0130             coeff=1;
-0131             name=metabolites{j};
-0132         <span class="keyword">elseif</span> metsSupplied &amp;&amp; any(strcmp(strtrim(metabolites{j}),mets))
-0133             <span class="comment">%The whole entry is a known metabolite, so its leading number is</span>
-0134             <span class="comment">%part of its name (&quot;2 oxoglutarate&quot;) rather than a coefficient</span>
-0135             coeff=1;
-0136             name=strtrim(metabolites{j});
-0137         <span class="keyword">else</span>
-0138             coeff=str2double(metabolites{j}(1:space(1)));
-0139             
-0140             <span class="comment">%If it was not a coefficiant</span>
-0141             <span class="keyword">if</span> isnan(coeff)
-0142                 coeff=1;
-0143                 name=strtrim(metabolites{j});
-0144             <span class="keyword">else</span>
-0145                 name=strtrim(metabolites{j}(space(1)+1:end));
-0146             <span class="keyword">end</span>
-0147         <span class="keyword">end</span>
-0148         
-0149         <span class="comment">%Find the name in the mets list [a b]=ismember(name,mets);</span>
-0150         metsToS{newEntry}=name;
-0151         rxnsToS(newEntry)=i;
-0152         coefToS(newEntry)=coeff*multiplyWith(j);
-0153         newEntry=newEntry+1;
-0154     <span class="keyword">end</span>
-0155 <span class="keyword">end</span>
-0156 <span class="comment">%Remove unused fields</span>
-0157 metsToS(newEntry:end)=[];
-0158 rxnsToS(newEntry:end)=[];
-0159 coefToS(newEntry:end)=[];
+0109     <span class="comment">%If the splitting character is at the end (if exchange rxns), then an</span>
+0110     <span class="comment">%empty string will exist together with the real ones. Remove it</span>
+0111     reactants(cellfun(@isempty,reactants))=[];
+0112     products(cellfun(@isempty,products))=[];
+0113     
+0114     <span class="comment">%A vector where an element is -1 is the corresponding metabolite is a</span>
+0115     <span class="comment">%reactant and 1 if it is a product</span>
+0116     multiplyWith=[ones(numel(reactants),1)*-1; ones(numel(products),1)];
+0117     
+0118     metabolites=strtrim([reactants products]);
+0119     
+0120     <span class="comment">%Now loop through the reactants and see if the metabolite has a</span>
+0121     <span class="comment">%coefficient (it will look as &quot;number name&quot;)</span>
+0122     <span class="keyword">for</span> j=1:numel(metabolites)
+0123         space=strfind(metabolites{j},<span class="string">' '</span>);
+0124         
+0125         <span class="keyword">if</span> isempty(space)
+0126             <span class="comment">%No coefficient</span>
+0127             coeff=1;
+0128             name=metabolites{j};
+0129         <span class="keyword">elseif</span> metsSupplied &amp;&amp; any(strcmp(strtrim(metabolites{j}),mets))
+0130             <span class="comment">%The whole entry is a known metabolite, so its leading number is</span>
+0131             <span class="comment">%part of its name (&quot;2 oxoglutarate&quot;) rather than a coefficient</span>
+0132             coeff=1;
+0133             name=strtrim(metabolites{j});
+0134         <span class="keyword">else</span>
+0135             coeff=str2double(metabolites{j}(1:space(1)));
+0136             
+0137             <span class="comment">%If it was not a coefficiant</span>
+0138             <span class="keyword">if</span> isnan(coeff)
+0139                 coeff=1;
+0140                 name=strtrim(metabolites{j});
+0141             <span class="keyword">else</span>
+0142                 name=strtrim(metabolites{j}(space(1)+1:end));
+0143             <span class="keyword">end</span>
+0144         <span class="keyword">end</span>
+0145         
+0146         <span class="comment">%Find the name in the mets list [a b]=ismember(name,mets);</span>
+0147         metsToS{newEntry}=name;
+0148         rxnsToS(newEntry)=i;
+0149         coefToS(newEntry)=coeff*multiplyWith(j);
+0150         newEntry=newEntry+1;
+0151     <span class="keyword">end</span>
+0152 <span class="keyword">end</span>
+0153 <span class="comment">%Remove unused fields</span>
+0154 metsToS(newEntry:end)=[];
+0155 rxnsToS(newEntry:end)=[];
+0156 coefToS(newEntry:end)=[];
+0157 
+0158 <span class="comment">%Match to mets array</span>
+0159 [metsPresent,metsLoc]=ismember(metsToS,mets);
 0160 
-0161 <span class="comment">%Match to mets array</span>
-0162 [metsPresent,metsLoc]=ismember(metsToS,mets);
-0163 
-0164 <span class="comment">%Find badRxns</span>
-0165 [~,I]=unique([rxnsToS,metsLoc],<span class="string">'rows'</span>,<span class="string">'stable'</span>);
-0166 x=1:length(rxnsToS);
-0167 x(I)=[];
-0168 x=unique(rxnsToS(x));
-0169 badRxns(x)=true;
-0170 
-0171 <span class="keyword">if</span> any(~metsPresent)
-0172     <span class="keyword">if</span> isempty(rxns)
-0173         error([<span class="string">'Could not find the following metabolites in the metabolite list: '</span>,<span class="keyword">...</span>
-0174         strjoin(unique(metsToS(~metsPresent)),<span class="string">', '</span>)],<span class="string">''</span>)
-0175     <span class="keyword">else</span>
-0176         missingMet = find(~metsPresent);
-0177         missingMet = strcat(metsToS(missingMet),<span class="string">' (reaction:'</span>,rxns(rxnsToS(missingMet)),<span class="string">')\n'</span>);
-0178         missingMet = strjoin(missingMet,<span class="string">''</span>);
-0179         error([<span class="string">'Could not find the following metabolites (reaction indicated) in the metabolite list: \n'</span> <span class="keyword">...</span>
-0180             missingMet <span class="string">'%s'</span>],<span class="string">''</span>);
-0181     <span class="keyword">end</span>
-0182 <span class="keyword">end</span>
-0183 linearIndices=sub2ind(size(S),metsLoc,rxnsToS);
-0184 S(linearIndices)=coefToS;
-0185 S=sparse(S);
+0161 <span class="comment">%Find badRxns</span>
+0162 [~,I]=unique([rxnsToS,metsLoc],<span class="string">'rows'</span>,<span class="string">'stable'</span>);
+0163 x=1:length(rxnsToS);
+0164 x(I)=[];
+0165 x=unique(rxnsToS(x));
+0166 badRxns(x)=true;
+0167 
+0168 <span class="keyword">if</span> any(~metsPresent)
+0169     <span class="keyword">if</span> isempty(rxns)
+0170         EM=[<span class="string">'Could not find the following metabolites in the metabolite list: '</span>,<span class="keyword">...</span>
+0171             strjoin(unique(metsToS(~metsPresent)),<span class="string">', '</span>)];
+0172         error(<span class="string">'RAVEN:badInput'</span>,<span class="string">'%s'</span>,EM)
+0173     <span class="keyword">else</span>
+0174         <span class="comment">%Escaped: metabolite/reaction names are arbitrary model text and</span>
+0175         <span class="comment">%may contain &quot;%&quot;, which the sprintf below (needed to interpret</span>
+0176         <span class="comment">%the template's own &quot;\n&quot;) would otherwise misread as a format</span>
+0177         <span class="comment">%directive and truncate the rest of the message.</span>
+0178         esc=@(c) strrep(c,<span class="string">'%'</span>,<span class="string">'%%'</span>);
+0179         missingMet = find(~metsPresent);
+0180         missingMet = strcat(esc(metsToS(missingMet)),<span class="string">' (reaction:'</span>,esc(rxns(rxnsToS(missingMet))),<span class="string">')\n'</span>);
+0181         missingMet = strjoin(missingMet,<span class="string">''</span>);
+0182         EM=sprintf([<span class="string">'Could not find the following metabolites (reaction indicated) in the metabolite list: \n'</span> <span class="keyword">...</span>
+0183             missingMet]);
+0184         error(<span class="string">'RAVEN:badInput'</span>,<span class="string">'%s'</span>,EM)
+0185     <span class="keyword">end</span>
 0186 <span class="keyword">end</span>
-0187 
-0188 <a name="_sub1" href="#_subfunctions" class="code">function equ=fixEquations(equ)</a>
-0189 <span class="comment">%If the equation starts with &quot;=&gt;&quot; or &quot;&lt;=&gt;&quot; then add a space again. This is</span>
-0190 <span class="comment">%an alternative way to represent uptake reactions. The opposite way for</span>
-0191 <span class="comment">%producing reactions</span>
-0192 equ=equ(:);
-0193 <span class="keyword">for</span> i=1:numel(equ)
-0194     <span class="keyword">if</span> strcmp(equ{i}(1:2),<span class="string">'=&gt;'</span>) || strcmp(equ{i}(1:3),<span class="string">'&lt;=&gt;'</span>)
-0195         equ{i}=[<span class="string">' '</span> equ{i}];
-0196     <span class="keyword">else</span>
-0197         <span class="keyword">if</span> strcmp(equ{i}(end-1:end),<span class="string">'=&gt;'</span>) || strcmp(equ{i}(end-2:end),<span class="string">'&lt;=&gt;'</span>)
-0198             equ{i}=[equ{i} <span class="string">' '</span>];
-0199         <span class="keyword">end</span>
-0200     <span class="keyword">end</span>
-0201 <span class="keyword">end</span>
-0202 <span class="keyword">end</span></pre></div>
+0187 <span class="comment">%sparse() adds up repeated (metabolite,reaction) entries, which is what a</span>
+0188 <span class="comment">%metabolite occurring more than once in one equation means: &quot;2 H2O + H2O =&gt;&quot;</span>
+0189 <span class="comment">%is a coefficient of 3, and a metabolite on both sides cancels to an empty</span>
+0190 <span class="comment">%column, as badRxns above reports. Assigning into a preallocated matrix</span>
+0191 <span class="comment">%instead kept only the last occurrence, and materialised the whole matrix</span>
+0192 <span class="comment">%densely on the way.</span>
+0193 S=sparse(metsLoc,rxnsToS,coefToS,numel(mets),numel(equations));
+0194 <span class="keyword">end</span>
+0195 
+0196 <a name="_sub1" href="#_subfunctions" class="code">function equ=fixEquations(equ)</a>
+0197 <span class="comment">%If the equation starts with &quot;=&gt;&quot; or &quot;&lt;=&gt;&quot; then add a space again. This is</span>
+0198 <span class="comment">%an alternative way to represent uptake reactions. The opposite way for</span>
+0199 <span class="comment">%producing reactions</span>
+0200 equ=equ(:);
+0201 <span class="keyword">for</span> i=1:numel(equ)
+0202     <span class="keyword">if</span> strcmp(equ{i}(1:2),<span class="string">'=&gt;'</span>) || strcmp(equ{i}(1:3),<span class="string">'&lt;=&gt;'</span>)
+0203         equ{i}=[<span class="string">' '</span> equ{i}];
+0204     <span class="keyword">else</span>
+0205         <span class="keyword">if</span> strcmp(equ{i}(end-1:end),<span class="string">'=&gt;'</span>) || strcmp(equ{i}(end-2:end),<span class="string">'&lt;=&gt;'</span>)
+0206             equ{i}=[equ{i} <span class="string">' '</span>];
+0207         <span class="keyword">end</span>
+0208     <span class="keyword">end</span>
+0209 <span class="keyword">end</span>
+0210 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

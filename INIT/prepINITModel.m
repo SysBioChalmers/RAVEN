@@ -18,7 +18,9 @@ function prepData = prepINITModel(origRefModel, taskStruct, varargin)
 % spontRxnNames : cell
 %     the spontaneous rxns (default {}).
 % convertGenes : logical
-%     if true the genes are converted to gene names (from ENSEMBL) (default
+%     if true the genes are converted to gene names (from ENSEMBL). This
+%     relies on translateGrRules, which is distributed with Human-GEM rather
+%     than with RAVEN, so Human-GEM has to be on the MATLAB path (default
 %     false).
 % customRxnsToIgnore : cell
 %     these reactions can be ignored in the ignore mask (specifying b7=1)
@@ -37,6 +39,11 @@ function prepData = prepINITModel(origRefModel, taskStruct, varargin)
 %     infeasible, it may be worth trying to turn off the scaling. Note that it
 %     is only the minModel that is scaled, the scaling will not be present in
 %     the final model (default false).
+% runParallel : logical
+%     true to run the task-essentiality check in Step 3 (checkTasks) across
+%     parallel workers, since each task is independent of the others (see
+%     parallelWorkersRAVEN). Default false, matching the previous (serial)
+%     behaviour.
 %
 % Returns
 % -------
@@ -44,16 +51,23 @@ function prepData = prepINITModel(origRefModel, taskStruct, varargin)
 %     the resulting prepData structure which is used as input to ftINIT.
 
 
-p=parseRAVENargs(varargin, {'spontRxnNames',{}; 'convertGenes',false; 'customRxnsToIgnore',{}; 'extComp','e'; 'skipScaling',false});
+p=parseRAVENargs(varargin, {'spontRxnNames',{}; 'convertGenes',false; 'customRxnsToIgnore',{}; 'extComp','e'; 'skipScaling',false; 'runParallel',false});
 spontRxnNames=p.spontRxnNames;
 convertGenes=p.convertGenes;
 customRxnsToIgnore=p.customRxnsToIgnore;
 extComp=p.extComp;
 skipScaling=p.skipScaling;
+runParallel=p.runParallel;
 disp('Step 1: Gene rules')
 [origRefModel.grRules, origRefModel.rxnGeneMat] = standardizeGrRules(origRefModel, true);
 
 if convertGenes %For mouse we might want to translate in the opposite direction - this has to be done before calling this function in that case.
+    if ~exist('translateGrRules','file')
+        EM=['convertGenes requires translateGrRules, which is distributed with ' ...
+            'Human-GEM and not with RAVEN. Add Human-GEM to the MATLAB path, or ' ...
+            'convert the gene identifiers before calling prepINITModel.'];
+        error('RAVEN:badInput', '%s', EM);
+    end
     [origRefModel.grRules, origRefModel.genes, origRefModel.rxnGeneMat] = translateGrRules(origRefModel.grRules, 'Name');
 end
 
@@ -79,7 +93,7 @@ cModel = removeReactions(origRefModel,deletedDeadEndRxns,false,true);
 disp('Step 3: Check tasks (~10 min)')
 if ~isempty(taskStruct)
     bModel = closeModel(cModel);
-    [taskReport, essentialRxnMat, ~, essentialFluxes] = checkTasks(bModel,[],true,false,true,taskStruct);
+    [taskReport, essentialRxnMat, ~, essentialFluxes] = checkTasks(bModel,[],true,false,true,taskStruct,'runParallel',runParallel);
 
     %extract the essential rxns:
     sel = sum(essentialRxnMat,2) > 0;

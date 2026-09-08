@@ -111,7 +111,7 @@ function T = parseGFF(gffPath)
     % and an mRNA → gene map to resolve eukaryote CDS parents.
     geneMap    = containers.Map('KeyType', 'char', 'ValueType', 'any');
     mrnaToGene = containers.Map('KeyType', 'char', 'ValueType', 'char');
-    emptyGene = struct('locus_tag','','old_locus_tag','','geneID','','name','');
+    emptyGene = struct('locus_tag','','old_locus_tag','','geneID','','name','','uniProt','');
 
     fid = fopen(gffPath, 'r');
     while ~feof(fid)

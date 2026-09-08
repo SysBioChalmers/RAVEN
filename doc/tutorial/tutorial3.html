@@ -28,11 +28,12 @@
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> tutorial3
-   This exercise shows how to run FBA and minimization of metabolic
-   adjustment (MOMA) simulations and how one can use GEMs as a scaffold
-   for interpreting microarray data. A simplified model of yeast
-   metabolism is used in this approach as an example.
-   See Tutorial 3 in &quot;RAVEN tutorials.docx&quot; for more details.
+   This exercise shows how to run FBA simulations, gene deletion analysis,
+   and how one can use GEMs as a scaffold for interpreting microarray
+   data. A simplified model of yeast metabolism is used in this approach
+   as an example.
+   See Tutorial 3 on the RAVEN wiki for more details:
+   https://github.com/SysBioChalmers/RAVEN/wiki/Tutorials
 
    It is assumed that the user has already completed Tutorial 2</pre></div>
 
@@ -50,72 +51,62 @@ This function is called by:
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre>0001 <span class="comment">% tutorial3</span>
-0002 <span class="comment">%   This exercise shows how to run FBA and minimization of metabolic</span>
-0003 <span class="comment">%   adjustment (MOMA) simulations and how one can use GEMs as a scaffold</span>
-0004 <span class="comment">%   for interpreting microarray data. A simplified model of yeast</span>
-0005 <span class="comment">%   metabolism is used in this approach as an example.</span>
-0006 <span class="comment">%   See Tutorial 3 in &quot;RAVEN tutorials.docx&quot; for more details.</span>
-0007 <span class="comment">%</span>
-0008 <span class="comment">%   It is assumed that the user has already completed Tutorial 2</span>
-0009 
-0010 <span class="comment">%Import the model</span>
-0011 model=readYAMLmodel(<span class="string">'smallYeast.yml'</span>);
-0012 
-0013 <span class="comment">%Set the upper bound of glucose uptake to 1 and O2 uptake to unlimited</span>
-0014 model=setParam(model,<span class="string">'ub'</span>,{<span class="string">'glcIN'</span> <span class="string">'o2IN'</span>},[1 1000]);
-0015 
-0016 <span class="comment">%Set the objective to be ethanol production</span>
-0017 model=setParam(model,<span class="string">'obj'</span>,{<span class="string">'ethOUT'</span>},1);
-0018 
-0019 <span class="comment">%Solve the model</span>
-0020 sol=solveLP(model);
-0021 
-0022 <span class="comment">%Print the resulting exchange fluxes</span>
-0023 printFluxes(model,sol.x,true);
-0024 
-0025 <span class="comment">%Run a single gene deletion</span>
-0026 [genes, fluxes, originalGenes, details]=findGeneDeletions(model,<span class="string">'sgd'</span>,<span class="string">'fba'</span>);
-0027 
-0028 <span class="comment">%Get the indexes of these reactions</span>
-0029 I=getIndexes(model,{<span class="string">'biomassOUT'</span>},<span class="string">'rxns'</span>);
-0030 J=getIndexes(model,{<span class="string">'glyOUT'</span>},<span class="string">'rxns'</span>);
-0031 
-0032 okSolutions=find(fluxes(I,:)&gt;10^-2); <span class="comment">%Only look at solutions which are still growing</span>
-0033 [maxGlycerol, J]=max(fluxes(J,okSolutions));
-0034 disp(maxGlycerol);
-0035 disp(originalGenes(genes(okSolutions(J),:)));
-0036 
-0037 <span class="comment">%Compare the ZWF1 deletion strain to wild type</span>
-0038 model2=setParam(model,<span class="string">'eq'</span>,{<span class="string">'ZWF'</span>},0);
-0039 sol2=solveLP(model2);
-0040 followChanged(model,sol2.x,sol.x, 10, 10^-2, 0,{<span class="string">'NADPH'</span> <span class="string">'NADH'</span> <span class="string">'NAD'</span> <span class="string">'NADP'</span>});
-0041 
-0042 <span class="comment">%Reload the model with exchange metabolites removed for simulation</span>
-0043 model=readYAMLmodel(<span class="string">'smallYeast.yml'</span>);
-0044 sol=solveLP(model);
-0045 
-0046 <span class="comment">%Define another model where all exchange reactions are open</span>
-0047 model2=model;
-0048 I=getIndexes(model,getExchangeRxns(model),<span class="string">'rxns'</span>);
-0049 model2.lb(I)=0;
-0050 model2.ub(I)=1000;
-0051 
-0052 <span class="comment">%Delete ZWF gene</span>
-0053 model2=setParam(model2,<span class="string">'eq'</span>,{<span class="string">'ZWF'</span>},0);
-0054 
-0055 <span class="comment">%Run MOMA</span>
-0056 [fluxA, fluxB, flag]=qMOMA(model,model2);
-0057 
-0058 <span class="comment">%Read microarray results and calculate reporter metabolites (metabolites</span>
-0059 <span class="comment">%around which there are significant transcriptional changes)</span>
-0060 [orfs, pvalues]=textread(<span class="string">'expression.txt'</span>,<span class="string">'%s%f'</span>);
-0061 repMets=reporterMetabolites(model,orfs,pvalues);
-0062 [I, J]=sort(repMets.metPValues);
-0063 
-0064 fprintf(<span class="string">'TOP 10 REPORTER METABOLITES:\n'</span>);
-0065 <span class="keyword">for</span> i=1:min(numel(J),10)
-0066     fprintf([repMets.mets{J(i)} <span class="string">'\t'</span> num2str(I(i)) <span class="string">'\n'</span>]);
-0067 <span class="keyword">end</span></pre></div>
+0002 <span class="comment">%   This exercise shows how to run FBA simulations, gene deletion analysis,</span>
+0003 <span class="comment">%   and how one can use GEMs as a scaffold for interpreting microarray</span>
+0004 <span class="comment">%   data. A simplified model of yeast metabolism is used in this approach</span>
+0005 <span class="comment">%   as an example.</span>
+0006 <span class="comment">%   See Tutorial 3 on the RAVEN wiki for more details:</span>
+0007 <span class="comment">%   https://github.com/SysBioChalmers/RAVEN/wiki/Tutorials</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">%   It is assumed that the user has already completed Tutorial 2</span>
+0010 
+0011 <span class="comment">%Import the model</span>
+0012 model=readYAMLmodel(<span class="string">'smallYeast.yml'</span>);
+0013 
+0014 <span class="comment">%Set the upper bound of glucose uptake to 1 and O2 uptake to unlimited</span>
+0015 model=setParam(model,<span class="string">'ub'</span>,{<span class="string">'glcIN'</span> <span class="string">'o2IN'</span>},[1 1000]);
+0016 
+0017 <span class="comment">%Set the objective to be ethanol production</span>
+0018 model=setParam(model,<span class="string">'obj'</span>,{<span class="string">'ethOUT'</span>},1);
+0019 
+0020 <span class="comment">%Solve the model</span>
+0021 sol=solveLP(model);
+0022 
+0023 <span class="comment">%Print the resulting exchange fluxes</span>
+0024 printFluxes(model,sol.x,true);
+0025 
+0026 <span class="comment">%Run a single gene deletion</span>
+0027 [genes, fluxes, originalGenes, details]=findGeneDeletions(model,<span class="string">'sgd'</span>);
+0028 
+0029 <span class="comment">%Get the indexes of these reactions</span>
+0030 I=getIndexes(model,{<span class="string">'biomassOUT'</span>},<span class="string">'rxns'</span>);
+0031 J=getIndexes(model,{<span class="string">'glyOUT'</span>},<span class="string">'rxns'</span>);
+0032 
+0033 okSolutions=find(fluxes(I,:)&gt;10^-2); <span class="comment">%Only look at solutions which are still growing</span>
+0034 [maxGlycerol, J]=max(fluxes(J,okSolutions));
+0035 disp(maxGlycerol);
+0036 disp(originalGenes(genes(okSolutions(J),:)));
+0037 
+0038 <span class="comment">%Compare the ZWF1 deletion strain to wild type, looking only at the</span>
+0039 <span class="comment">%reactions that involve the redox cofactors</span>
+0040 model2=setParam(model,<span class="string">'eq'</span>,{<span class="string">'ZWF'</span>},0);
+0041 sol2=solveLP(model2);
+0042 compareFluxes(model,sol.x,sol2.x,<span class="string">'cutoff'</span>,10^-2, <span class="keyword">...</span>
+0043     <span class="string">'metaboliteList'</span>,{<span class="string">'NADPH'</span> <span class="string">'NADH'</span> <span class="string">'NAD'</span> <span class="string">'NADP'</span>});
+0044 
+0045 <span class="comment">%Reload the model, since earlier steps modified its bounds and objective</span>
+0046 model=readYAMLmodel(<span class="string">'smallYeast.yml'</span>);
+0047 
+0048 <span class="comment">%Read microarray results and calculate reporter metabolites (metabolites</span>
+0049 <span class="comment">%around which there are significant transcriptional changes)</span>
+0050 [orfs, pvalues]=textread(<span class="string">'expression.txt'</span>,<span class="string">'%s%f'</span>);
+0051 repMets=reporterMetabolites(model,orfs,pvalues);
+0052 [I, J]=sort(repMets.metPValues);
+0053 
+0054 fprintf(<span class="string">'TOP 10 REPORTER METABOLITES:\n'</span>);
+0055 <span class="keyword">for</span> i=1:min(numel(J),10)
+0056     fprintf([repMets.mets{J(i)} <span class="string">'\t'</span> num2str(I(i)) <span class="string">'\n'</span>]);
+0057 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

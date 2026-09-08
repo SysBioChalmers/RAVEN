@@ -15,7 +15,7 @@
 <div><a href="../../index.html">Home</a> &gt;  <a href="#">testing</a> &gt; <a href="index.html">function_tests</a> &gt; tConversion.m</div>
 
 <!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
-<td align="right"><a href="index.html">Index for testing\function_tests&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+<td align="right"><a href="index.html">Index for testing/function_tests&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
 
 <h1>tConversion
 </h1>
@@ -41,7 +41,7 @@ This function is called by:
 
 <h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <ul style="list-style-image:url(../../matlabicon.gif)">
-<li><a href="#_sub1" class="code">function identifierPrefixRoundTrip(testCase)</a></li><li><a href="#_sub2" class="code">function ravenCobraWrapperMarksCobra(testCase)</a></li><li><a href="#_sub3" class="code">function ravenCobraWrapperRoundTrip(testCase)</a></li><li><a href="#_sub4" class="code">function standardizeFieldOrderPreservesFields(testCase)</a></li><li><a href="#_sub5" class="code">function standardizeFieldOrderIsIdempotent(testCase)</a></li></ul>
+<li><a href="#_sub1" class="code">function identifierPrefixRoundTrip(testCase)</a></li><li><a href="#_sub2" class="code">function removeIdentifierPrefixSkipsMissingFields(testCase)</a></li><li><a href="#_sub3" class="code">function ravenCobraWrapperMarksCobra(testCase)</a></li><li><a href="#_sub4" class="code">function ravenCobraWrapperRoundTrip(testCase)</a></li><li><a href="#_sub5" class="code">function ravenCobraWrapperGeneFieldsUseGeneMiriams(testCase)</a></li><li><a href="#_sub6" class="code">function ravenCobraWrapperEscapesRegexGeneNames(testCase)</a></li><li><a href="#_sub7" class="code">function standardizeFieldOrderPreservesFields(testCase)</a></li><li><a href="#_sub8" class="code">function standardizeFieldOrderIsIdempotent(testCase)</a></li></ul>
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <div class="fragment"><pre>0001 classdef <a href="tConversion.html" class="code" title="">tConversion</a> &lt; <a href="RavenTestCase.html" class="code" title="">RavenTestCase</a>
@@ -58,32 +58,69 @@ This function is called by:
 0012             testCase.verifyEqual(mr.genes, testCase.model.genes);
 0013         <span class="keyword">end</span>
 0014 
-0015         <a name="_sub1" href="#_subfunctions" class="code">function ravenCobraWrapperMarksCobra(testCase)</a>
-0016             cobra = ravenCobraWrapper(testCase.model);
-0017             testCase.verifyTrue(isfield(cobra, <span class="string">'rules'</span>));   <span class="comment">% COBRA-only field</span>
-0018         <span class="keyword">end</span>
-0019 
-0020         <a name="_sub2" href="#_subfunctions" class="code">function ravenCobraWrapperRoundTrip(testCase)</a>
-0021             cobra = ravenCobraWrapper(testCase.model);
-0022             back = ravenCobraWrapper(cobra);
-0023             testCase.verifyEqual(back.rxns, testCase.model.rxns);
-0024             testCase.verifyNumElements(back.mets, numel(testCase.model.mets));
-0025             testCase.verifyEqual(size(back.S), size(testCase.model.S));
-0026         <span class="keyword">end</span>
-0027 
-0028         <a name="_sub3" href="#_subfunctions" class="code">function standardizeFieldOrderPreservesFields(testCase)</a>
-0029             m2 = standardizeModelFieldOrder(testCase.model);
-0030             testCase.verifyEqual(sort(fieldnames(m2)), sort(fieldnames(testCase.model)));
-0031         <span class="keyword">end</span>
-0032 
-0033         <a name="_sub4" href="#_subfunctions" class="code">function standardizeFieldOrderIsIdempotent(testCase)</a>
-0034             m2 = standardizeModelFieldOrder(testCase.model);
-0035             m3 = standardizeModelFieldOrder(m2);
-0036             testCase.verifyEqual(fieldnames(m3), fieldnames(m2));
-0037         <span class="keyword">end</span>
-0038 
-0039     <span class="keyword">end</span>
-0040 <span class="keyword">end</span></pre></div>
+0015         <a name="_sub1" href="#_subfunctions" class="code">function removeIdentifierPrefixSkipsMissingFields(testCase)</a>
+0016             <span class="comment">% A model missing an optional field (genes, metNames, rxnNames,</span>
+0017             <span class="comment">% id) must not make the default field list throw; it should</span>
+0018             <span class="comment">% just be skipped.</span>
+0019             m = rmfield(testCase.model, {<span class="string">'genes'</span>,<span class="string">'metNames'</span>,<span class="string">'rxnNames'</span>,<span class="string">'id'</span>});
+0020             m.rxns = strcat(<span class="string">'R_'</span>, m.rxns);
+0021             m2 = removeIdentifierPrefix(m);
+0022             testCase.verifyFalse(any(startsWith(m2.rxns, <span class="string">'R_'</span>)));
+0023         <span class="keyword">end</span>
+0024 
+0025         <a name="_sub2" href="#_subfunctions" class="code">function ravenCobraWrapperMarksCobra(testCase)</a>
+0026             cobra = ravenCobraWrapper(testCase.model);
+0027             testCase.verifyTrue(isfield(cobra, <span class="string">'rules'</span>));   <span class="comment">% COBRA-only field</span>
+0028         <span class="keyword">end</span>
+0029 
+0030         <a name="_sub3" href="#_subfunctions" class="code">function ravenCobraWrapperRoundTrip(testCase)</a>
+0031             cobra = ravenCobraWrapper(testCase.model);
+0032             back = ravenCobraWrapper(cobra);
+0033             testCase.verifyEqual(back.rxns, testCase.model.rxns);
+0034             testCase.verifyNumElements(back.mets, numel(testCase.model.mets));
+0035             testCase.verifyEqual(size(back.S), size(testCase.model.S));
+0036         <span class="keyword">end</span>
+0037 
+0038         <a name="_sub4" href="#_subfunctions" class="code">function ravenCobraWrapperGeneFieldsUseGeneMiriams(testCase)</a>
+0039             <span class="comment">% Gene annotation fields must come from geneMiriams, not from</span>
+0040             <span class="comment">% whatever extractMiriam last returned for metMiriams.</span>
+0041             m = testCase.model;
+0042             m.metMiriams = cell(numel(m.mets),1);
+0043             m.metMiriams{1}.name  = {<span class="string">'hmdb'</span>};
+0044             m.metMiriams{1}.value = {<span class="string">'HMDB00001'</span>};
+0045             m.geneMiriams = cell(numel(m.genes),1);
+0046             m.geneMiriams{1}.name  = {<span class="string">'ncbigene'</span>};
+0047             m.geneMiriams{1}.value = {<span class="string">'12345'</span>};
+0048             evalc(<span class="string">'newModel = ravenCobraWrapper(m);'</span>);
+0049             testCase.verifyEqual(numel(newModel.geneEntrezID), numel(newModel.genes));
+0050             testCase.verifyEqual(newModel.geneEntrezID{1}, <span class="string">'12345'</span>);
+0051         <span class="keyword">end</span>
+0052 
+0053         <a name="_sub5" href="#_subfunctions" class="code">function ravenCobraWrapperEscapesRegexGeneNames(testCase)</a>
+0054             <span class="comment">% A gene id containing a regex metacharacter ('.') must be</span>
+0055             <span class="comment">% matched literally in grRules, not as a wildcard that could</span>
+0056             <span class="comment">% also match an unrelated gene id (e.g. 'G.1' vs 'GX1').</span>
+0057             m = testCase.model;
+0058             m.genes{1} = <span class="string">'G.1'</span>;
+0059             m.genes{2} = <span class="string">'GX1'</span>;
+0060             m.grRules{3} = <span class="string">'GX1'</span>;
+0061             evalc(<span class="string">'cobra = ravenCobraWrapper(m);'</span>);
+0062             testCase.verifyEqual(cobra.rules{3}, <span class="string">'x(2)'</span>);
+0063         <span class="keyword">end</span>
+0064 
+0065         <a name="_sub6" href="#_subfunctions" class="code">function standardizeFieldOrderPreservesFields(testCase)</a>
+0066             m2 = standardizeModelFieldOrder(testCase.model);
+0067             testCase.verifyEqual(sort(fieldnames(m2)), sort(fieldnames(testCase.model)));
+0068         <span class="keyword">end</span>
+0069 
+0070         <a name="_sub7" href="#_subfunctions" class="code">function standardizeFieldOrderIsIdempotent(testCase)</a>
+0071             m2 = standardizeModelFieldOrder(testCase.model);
+0072             m3 = standardizeModelFieldOrder(m2);
+0073             testCase.verifyEqual(fieldnames(m3), fieldnames(m2));
+0074         <span class="keyword">end</span>
+0075 
+0076     <span class="keyword">end</span>
+0077 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

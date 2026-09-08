@@ -36,12 +36,15 @@ function model=mergeModels(models,varargin)
 % --------
 %     model = mergeModels(models);
 
-p=parseRAVENargs(varargin, {'metParam',"metNames",@emptyOrTextScalar; 'supressWarnings',false,@emptyOrLogicalScalar; 'copyToComps',false,@emptyOrLogicalScalar});
+p=parseRAVENargs(varargin, {'metParam',"metNames"; 'supressWarnings',false; 'copyToComps',false});
 metParam=p.metParam;
 supressWarnings=p.supressWarnings;
 copyToComps=p.copyToComps;
 
 metParam = char(metParam);
+if ~any(strcmpi(metParam,{'metNames','mets'}))
+    error('RAVEN:badInput','metParam must be "metNames" or "mets", got "%s".',metParam)
+end
 
 %Just return the model
 if numel(models)<=1
@@ -278,6 +281,18 @@ for i=2:numel(models)
     else
         if isfield(model,'pwys')
             model.pwys=[model.pwys;cell(numel(models{i}.rxns),1)];
+        end
+    end
+
+    if isfield(models{i},'spontaneous')
+        if isfield(model,'spontaneous')
+            model.spontaneous=[model.spontaneous;models{i}.spontaneous];
+        else
+            model.spontaneous=[false(numel(model.rxns)-numel(models{i}.rxns),1);models{i}.spontaneous];
+        end
+    else
+        if isfield(model,'spontaneous')
+            model.spontaneous=[model.spontaneous;false(numel(models{i}.rxns),1)];
         end
     end
 

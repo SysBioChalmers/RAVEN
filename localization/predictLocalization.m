@@ -509,13 +509,13 @@ while toc<maxTime*60
                 %If transMet is in the default compartment then everything
                 %is fine, just connect it to a random one
                 if transMet==dcIndex
-                    newS=addTransport(newS,nRxns,nER,nMets,nEM,nComps,transMet,connectedUsed(randsample(numel(connectedUsed),1)));
+                    newS=addTransportToS(newS,nRxns,nER,nMets,nEM,nComps,transMet,connectedUsed(randsample(numel(connectedUsed),1)));
                 else
                     %If one of the connectedUsed is in the default
                     %compartment then connect to that one
                     I=connectedUsed(connectedUsed<(nMets+nEM));
                     if any(I)
-                        newS=addTransport(newS,nRxns,nER,nMets,nEM,nComps,transMet,I(randsample(numel(I),1)));
+                        newS=addTransportToS(newS,nRxns,nER,nMets,nEM,nComps,transMet,I(randsample(numel(I),1)));
                     else
                         %This is if the only way to connect it is by adding
                         %two transport reactions, going via the default
@@ -548,7 +548,7 @@ while toc<maxTime*60
         
         %Score the solution and determine whether to keep it as a new
         %solution
-        [score, geneScore, trCost]=scoreModel(newS,newg2c,GSS,transportCost);
+        [score, geneScore, trCost]=scoreLocalization(newS,newg2c,GSS,transportCost);
         
         %If it was the best solution so far, keep it
         if score>bestScore
@@ -1011,7 +1011,7 @@ end
 %reactant and product. This is not a "real" reaction, but since all normal
 %reactions have coefficient -1/1 or -10/10 it is a compact way of writing
 %it
-function S=addTransport(S,nRxns,nER,nMets,nEM,nComps,metA,metB)
+function S=addTransportToS(S,nRxns,nER,nMets,nEM,nComps,metA,metB)
 mets=[metA;metB];
 %Find the current compartments for the metabolites
 comps=ceil((mets-nEM)/((size(S,1)-nEM)/nComps));
@@ -1029,7 +1029,7 @@ end
 
 %Scores a network based on the localization of the genes and the number of
 %transporter reactions used
-function [score, geneScore, transportCost]=scoreModel(S,g2c,GSS,transportCost)
+function [score, geneScore, transportCost]=scoreLocalization(S,g2c,GSS,transportCost)
 [I, J]=find(g2c);
 geneScore=sum(GSS.scores(sub2ind(size(g2c),I,J)));
 [I, ~]=find(S==2);

@@ -122,7 +122,16 @@ if toAdd > 0
     if isfield(model,'rxnDeltaG')
         model.rxnDeltaG=[model.rxnDeltaG;model.rxnDeltaG(cpyIndices)];
     end
-    
+    if isfield(model,'pwys')
+        model.pwys=[model.pwys;model.pwys(cpyIndices)];
+    end
+    if isfield(model,'spontaneous')
+        model.spontaneous=[model.spontaneous;model.spontaneous(cpyIndices)];
+    end
+    if isfield(model,'rxnScores')
+        model.rxnScores=[model.rxnScores;model.rxnScores(cpyIndices)];
+    end
+
     %now expand the more complex fields - will be filled in later
     model.rxns=[model.rxns;cell(toAdd,1)];
     model.grRules=[model.grRules;cell(toAdd,1)];

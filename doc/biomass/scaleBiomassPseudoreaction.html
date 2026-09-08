@@ -31,8 +31,7 @@
 
  Multiply the substrate coefficients of one biomass component
  pseudoreaction by factor and rebalance H+ to preserve charge neutrality.
- Mirrors raven_python.biomass.rescale_pseudoreaction and yeast-GEM's
- legacy rescalePseudoReaction.
+ The MATLAB counterpart of yeast-GEM's legacy rescalePseudoReaction.
 
  &quot;Substrate&quot; means every metabolite in the pseudoreaction whose
  metabolite name does NOT match the component name (the component's
@@ -87,95 +86,94 @@ This function is called by:
 0003 <span class="comment">%</span>
 0004 <span class="comment">% Multiply the substrate coefficients of one biomass component</span>
 0005 <span class="comment">% pseudoreaction by factor and rebalance H+ to preserve charge neutrality.</span>
-0006 <span class="comment">% Mirrors raven_python.biomass.rescale_pseudoreaction and yeast-GEM's</span>
-0007 <span class="comment">% legacy rescalePseudoReaction.</span>
-0008 <span class="comment">%</span>
-0009 <span class="comment">% &quot;Substrate&quot; means every metabolite in the pseudoreaction whose</span>
-0010 <span class="comment">% metabolite name does NOT match the component name (the component's</span>
-0011 <span class="comment">% product is left untouched). After rescaling, the coefficient of</span>
-0012 <span class="comment">% biomassConfig.proton_met is recomputed so the pseudoreaction's total</span>
-0013 <span class="comment">% ionic charge sums to zero.</span>
-0014 <span class="comment">%</span>
-0015 <span class="comment">% Parameters</span>
-0016 <span class="comment">% ----------</span>
-0017 <span class="comment">% model : struct</span>
-0018 <span class="comment">%     RAVEN model struct.</span>
-0019 <span class="comment">% biomassConfig : struct</span>
-0020 <span class="comment">%     Struct (see getBiomassFractions).</span>
-0021 <span class="comment">% componentName : char</span>
-0022 <span class="comment">%     Name of the component to rescale (must match</span>
-0023 <span class="comment">%     biomassConfig.components{i}.name for some i, AND be the</span>
-0024 <span class="comment">%     model.metNames of the produced metabolite in the matching</span>
-0025 <span class="comment">%     pseudoreaction).</span>
-0026 <span class="comment">% factor : double</span>
-0027 <span class="comment">%     Multiplicative factor.</span>
-0028 <span class="comment">%</span>
-0029 <span class="comment">% Returns</span>
-0030 <span class="comment">% -------</span>
-0031 <span class="comment">% model : struct</span>
-0032 <span class="comment">%     Modified model.</span>
-0033 <span class="comment">%</span>
-0034 <span class="comment">% Examples</span>
-0035 <span class="comment">% --------</span>
-0036 <span class="comment">%     model = scaleBiomassPseudoreaction(model, biomassConfig, 'protein', 0.9);</span>
-0037 <span class="comment">%</span>
-0038 <span class="comment">% See also</span>
-0039 <span class="comment">% --------</span>
-0040 <span class="comment">% getBiomassFractions</span>
-0041 
-0042 comp = <a href="#_sub2" class="code" title="subfunction comp = findComponent(cfg, name)">findComponent</a>(biomassConfig, componentName);
-0043 rxnPos = find(strcmp(model.rxnNames, comp.pseudoreaction_name));
-0044 <span class="keyword">if</span> isempty(rxnPos)
-0045     error(<span class="string">'scaleBiomassPseudoreaction:missingPseudoreaction'</span>, <span class="keyword">...</span>
-0046         <span class="string">'No reaction named %s in model.'</span>, comp.pseudoreaction_name);
-0047 <span class="keyword">end</span>
-0048 
-0049 <span class="keyword">for</span> i = 1:length(model.mets)
-0050     S_ir = model.S(i, rxnPos);
-0051     isProd = strcmp(model.metNames{i}, componentName);
-0052     <span class="keyword">if</span> S_ir ~= 0 &amp;&amp; ~isProd
-0053         model.S(i, rxnPos) = factor * S_ir;
-0054     <span class="keyword">end</span>
-0055 <span class="keyword">end</span>
-0056 
-0057 <span class="comment">% Rebalance H+ to keep charge neutrality.</span>
-0058 Hc = find(strcmp(model.mets, biomassConfig.proton_met));
-0059 model.S(Hc, rxnPos) = 0;
-0060 model.S(Hc, rxnPos) = -<a href="#_sub1" class="code" title="subfunction residual = chargeResidual(model, rxnPos)">chargeResidual</a>(model, rxnPos);
-0061 <span class="keyword">end</span>
-0062 
-0063 <a name="_sub1" href="#_subfunctions" class="code">function residual = chargeResidual(model, rxnPos)</a>
-0064 <span class="comment">% Sum of charges over the metabolites that take part in a reaction. Only the</span>
-0065 <span class="comment">% participants may be summed: S is sparse and 0*NaN is NaN, so any unset</span>
-0066 <span class="comment">% charge in the model would otherwise poison the result. Summing with</span>
-0067 <span class="comment">% 'omitnan' instead would treat an unset charge as neutral and silently</span>
-0068 <span class="comment">% rebalance the reaction to the wrong coefficient.</span>
-0069 metIdx = find(model.S(:, rxnPos));
-0070 <span class="keyword">if</span> ~isfield(model, <span class="string">'metCharges'</span>)
-0071     error(<span class="string">'scaleBiomassPseudoreaction:noCharges'</span>, <span class="keyword">...</span>
-0072         [<span class="string">'Cannot rebalance charge: the model has no metCharges field. '</span> <span class="keyword">...</span>
-0073          <span class="string">'Provide metabolite charges, or rescale without charge balancing.'</span>]);
-0074 <span class="keyword">end</span>
-0075 unknown = metIdx(isnan(model.metCharges(metIdx)));
-0076 <span class="keyword">if</span> ~isempty(unknown)
-0077     error(<span class="string">'scaleBiomassPseudoreaction:unknownCharge'</span>, <span class="keyword">...</span>
-0078         [<span class="string">'Cannot rebalance charge of %s: the following metabolites have no '</span> <span class="keyword">...</span>
-0079          <span class="string">'charge, so the charge balance is unknown rather than zero:\n\t%s'</span>], <span class="keyword">...</span>
-0080         model.rxns{rxnPos}, strjoin(model.mets(unknown), <span class="string">', '</span>));
-0081 <span class="keyword">end</span>
-0082 residual = sum(full(model.S(metIdx, rxnPos)) .* model.metCharges(metIdx));
-0083 <span class="keyword">end</span>
-0084 
-0085 <a name="_sub2" href="#_subfunctions" class="code">function comp = findComponent(cfg, name)</a>
-0086 <span class="keyword">for</span> i = 1:numel(cfg.components)
-0087     <span class="keyword">if</span> strcmp(cfg.components{i}.name, name)
-0088         comp = cfg.components{i};
-0089         <span class="keyword">return</span>;
-0090     <span class="keyword">end</span>
-0091 <span class="keyword">end</span>
-0092 error(<span class="string">'scaleBiomassPseudoreaction:unknownComponent'</span>, <span class="keyword">...</span>
-0093     <span class="string">'biomassConfig has no component named %s'</span>, name);
-0094 <span class="keyword">end</span></pre></div>
+0006 <span class="comment">% The MATLAB counterpart of yeast-GEM's legacy rescalePseudoReaction.</span>
+0007 <span class="comment">%</span>
+0008 <span class="comment">% &quot;Substrate&quot; means every metabolite in the pseudoreaction whose</span>
+0009 <span class="comment">% metabolite name does NOT match the component name (the component's</span>
+0010 <span class="comment">% product is left untouched). After rescaling, the coefficient of</span>
+0011 <span class="comment">% biomassConfig.proton_met is recomputed so the pseudoreaction's total</span>
+0012 <span class="comment">% ionic charge sums to zero.</span>
+0013 <span class="comment">%</span>
+0014 <span class="comment">% Parameters</span>
+0015 <span class="comment">% ----------</span>
+0016 <span class="comment">% model : struct</span>
+0017 <span class="comment">%     RAVEN model struct.</span>
+0018 <span class="comment">% biomassConfig : struct</span>
+0019 <span class="comment">%     Struct (see getBiomassFractions).</span>
+0020 <span class="comment">% componentName : char</span>
+0021 <span class="comment">%     Name of the component to rescale (must match</span>
+0022 <span class="comment">%     biomassConfig.components{i}.name for some i, AND be the</span>
+0023 <span class="comment">%     model.metNames of the produced metabolite in the matching</span>
+0024 <span class="comment">%     pseudoreaction).</span>
+0025 <span class="comment">% factor : double</span>
+0026 <span class="comment">%     Multiplicative factor.</span>
+0027 <span class="comment">%</span>
+0028 <span class="comment">% Returns</span>
+0029 <span class="comment">% -------</span>
+0030 <span class="comment">% model : struct</span>
+0031 <span class="comment">%     Modified model.</span>
+0032 <span class="comment">%</span>
+0033 <span class="comment">% Examples</span>
+0034 <span class="comment">% --------</span>
+0035 <span class="comment">%     model = scaleBiomassPseudoreaction(model, biomassConfig, 'protein', 0.9);</span>
+0036 <span class="comment">%</span>
+0037 <span class="comment">% See also</span>
+0038 <span class="comment">% --------</span>
+0039 <span class="comment">% getBiomassFractions</span>
+0040 
+0041 comp = <a href="#_sub2" class="code" title="subfunction comp = findComponent(cfg, name)">findComponent</a>(biomassConfig, componentName);
+0042 rxnPos = find(strcmp(model.rxnNames, comp.pseudoreaction_name));
+0043 <span class="keyword">if</span> isempty(rxnPos)
+0044     error(<span class="string">'scaleBiomassPseudoreaction:missingPseudoreaction'</span>, <span class="keyword">...</span>
+0045         <span class="string">'No reaction named %s in model.'</span>, comp.pseudoreaction_name);
+0046 <span class="keyword">end</span>
+0047 
+0048 <span class="keyword">for</span> i = 1:length(model.mets)
+0049     S_ir = model.S(i, rxnPos);
+0050     isProd = strcmp(model.metNames{i}, componentName);
+0051     <span class="keyword">if</span> S_ir ~= 0 &amp;&amp; ~isProd
+0052         model.S(i, rxnPos) = factor * S_ir;
+0053     <span class="keyword">end</span>
+0054 <span class="keyword">end</span>
+0055 
+0056 <span class="comment">% Rebalance H+ to keep charge neutrality.</span>
+0057 Hc = find(strcmp(model.mets, biomassConfig.proton_met));
+0058 model.S(Hc, rxnPos) = 0;
+0059 model.S(Hc, rxnPos) = -<a href="#_sub1" class="code" title="subfunction residual = chargeResidual(model, rxnPos)">chargeResidual</a>(model, rxnPos);
+0060 <span class="keyword">end</span>
+0061 
+0062 <a name="_sub1" href="#_subfunctions" class="code">function residual = chargeResidual(model, rxnPos)</a>
+0063 <span class="comment">% Sum of charges over the metabolites that take part in a reaction. Only the</span>
+0064 <span class="comment">% participants may be summed: S is sparse and 0*NaN is NaN, so any unset</span>
+0065 <span class="comment">% charge in the model would otherwise poison the result. Summing with</span>
+0066 <span class="comment">% 'omitnan' instead would treat an unset charge as neutral and silently</span>
+0067 <span class="comment">% rebalance the reaction to the wrong coefficient.</span>
+0068 metIdx = find(model.S(:, rxnPos));
+0069 <span class="keyword">if</span> ~isfield(model, <span class="string">'metCharges'</span>)
+0070     error(<span class="string">'scaleBiomassPseudoreaction:noCharges'</span>, <span class="keyword">...</span>
+0071         [<span class="string">'Cannot rebalance charge: the model has no metCharges field. '</span> <span class="keyword">...</span>
+0072          <span class="string">'Provide metabolite charges, or rescale without charge balancing.'</span>]);
+0073 <span class="keyword">end</span>
+0074 unknown = metIdx(isnan(model.metCharges(metIdx)));
+0075 <span class="keyword">if</span> ~isempty(unknown)
+0076     error(<span class="string">'scaleBiomassPseudoreaction:unknownCharge'</span>, <span class="keyword">...</span>
+0077         [<span class="string">'Cannot rebalance charge of %s: the following metabolites have no '</span> <span class="keyword">...</span>
+0078          <span class="string">'charge, so the charge balance is unknown rather than zero:\n\t%s'</span>], <span class="keyword">...</span>
+0079         model.rxns{rxnPos}, strjoin(model.mets(unknown), <span class="string">', '</span>));
+0080 <span class="keyword">end</span>
+0081 residual = sum(full(model.S(metIdx, rxnPos)) .* model.metCharges(metIdx));
+0082 <span class="keyword">end</span>
+0083 
+0084 <a name="_sub2" href="#_subfunctions" class="code">function comp = findComponent(cfg, name)</a>
+0085 <span class="keyword">for</span> i = 1:numel(cfg.components)
+0086     <span class="keyword">if</span> strcmp(cfg.components{i}.name, name)
+0087         comp = cfg.components{i};
+0088         <span class="keyword">return</span>;
+0089     <span class="keyword">end</span>
+0090 <span class="keyword">end</span>
+0091 error(<span class="string">'scaleBiomassPseudoreaction:unknownComponent'</span>, <span class="keyword">...</span>
+0092     <span class="string">'biomassConfig has no component named %s'</span>, name);
+0093 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

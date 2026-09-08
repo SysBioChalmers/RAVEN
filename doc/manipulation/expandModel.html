@@ -132,10 +132,10 @@ This function is called by:
 0057     <span class="keyword">if</span> numel(c) &lt;= 1
 0058         <span class="keyword">continue</span>
 0059     <span class="keyword">end</span>
-0060     <span class="comment">%DEVIATION from raven-toolbox expand.py, which has no such guard: the</span>
-0061     <span class="comment">%cross-product is exponential in the number of ORed complexes, and</span>
-0062     <span class="comment">%MATLAB grows the model fields eagerly, so a pathological rule would</span>
-0063     <span class="comment">%exhaust memory instead of raising. Fail with the culprit named.</span>
+0060     <span class="comment">%This guard exists because the cross-product is exponential in the</span>
+0061     <span class="comment">%number of ORed complexes, and MATLAB grows the model fields eagerly,</span>
+0062     <span class="comment">%so a pathological rule would exhaust memory instead of raising. Fail</span>
+0063     <span class="comment">%with the culprit named.</span>
 0064     <span class="keyword">if</span> numel(c) &gt; 10000
 0065         error(<span class="string">'RAVEN:grRuleTooComplex'</span>,[<span class="string">'Reaction '</span> model.rxns{i} <span class="string">' has a grRule '</span> <span class="keyword">...</span>
 0066             <span class="string">'with '</span> num2str(numel(c)) <span class="string">' isozymes after expansion. This is almost '</span> <span class="keyword">...</span>
@@ -197,46 +197,55 @@ This function is called by:
 0122     <span class="keyword">if</span> isfield(model,<span class="string">'rxnDeltaG'</span>)
 0123         model.rxnDeltaG=[model.rxnDeltaG;model.rxnDeltaG(cpyIndices)];
 0124     <span class="keyword">end</span>
-0125     
-0126     <span class="comment">%now expand the more complex fields - will be filled in later</span>
-0127     model.rxns=[model.rxns;cell(toAdd,1)];
-0128     model.grRules=[model.grRules;cell(toAdd,1)];
-0129     model.rxnGeneMat=[model.rxnGeneMat;sparse(toAdd,size(model.rxnGeneMat,2))];
-0130     
-0131     <span class="comment">%Loop throught those reactions and fill in the expanded data</span>
-0132     nextIndex = prevNumRxns + 1;
-0133     <span class="keyword">for</span> i=1:prevNumRxns
-0134         <span class="keyword">if</span> (nCopies(i) &gt; 0)
-0135             geneSets = clauses{i};
-0136 
-0137             <span class="comment">%The first isozyme replaces the original reaction</span>
-0138             model.grRules{i}=strjoin(geneSets{1},<span class="string">' and '</span>);
-0139             model.rxnGeneMat(i,:)=0;
-0140             model.rxnGeneMat(i,ismember(model.genes,geneSets{1})) = 1;
-0141 
-0142             <span class="comment">%The rest are appended, named after the original reaction, which</span>
-0143             <span class="comment">%is why it is only renamed once the loop is done</span>
-0144             <span class="keyword">for</span> j=2:numel(geneSets)
-0145                 ind = nextIndex+j-2;
-0146                 model.rxns{ind}=[model.rxns{i} <span class="string">'_EXP_'</span> num2str(j)];
-0147                 model.grRules{ind}=strjoin(geneSets{j},<span class="string">' and '</span>);
-0148                 model.rxnGeneMat(ind,ismember(model.genes,geneSets{j})) = 1;
-0149             <span class="keyword">end</span>
-0150             model.rxns{i}=[model.rxns{i}, <span class="string">'_EXP_1'</span>];
-0151             nextIndex = nextIndex + nCopies(i);
-0152         <span class="keyword">end</span>
-0153     <span class="keyword">end</span>
-0154     newModel=model;
-0155 <span class="keyword">else</span>
-0156     <span class="comment">%There are no reactions to expand, return the model as is</span>
-0157     newModel=model;
-0158 <span class="keyword">end</span>
-0159 
-0160 <span class="comment">%Fix grRules and reconstruct rxnGeneMat</span>
-0161 [grRules,rxnGeneMat] = <a href="standardizeGrRules.html" class="code" title="function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,varargin)">standardizeGrRules</a>(newModel,true);
-0162 newModel.grRules = grRules;
-0163 newModel.rxnGeneMat = rxnGeneMat;
-0164 <span class="keyword">end</span></pre></div>
+0125     <span class="keyword">if</span> isfield(model,<span class="string">'pwys'</span>)
+0126         model.pwys=[model.pwys;model.pwys(cpyIndices)];
+0127     <span class="keyword">end</span>
+0128     <span class="keyword">if</span> isfield(model,<span class="string">'spontaneous'</span>)
+0129         model.spontaneous=[model.spontaneous;model.spontaneous(cpyIndices)];
+0130     <span class="keyword">end</span>
+0131     <span class="keyword">if</span> isfield(model,<span class="string">'rxnScores'</span>)
+0132         model.rxnScores=[model.rxnScores;model.rxnScores(cpyIndices)];
+0133     <span class="keyword">end</span>
+0134 
+0135     <span class="comment">%now expand the more complex fields - will be filled in later</span>
+0136     model.rxns=[model.rxns;cell(toAdd,1)];
+0137     model.grRules=[model.grRules;cell(toAdd,1)];
+0138     model.rxnGeneMat=[model.rxnGeneMat;sparse(toAdd,size(model.rxnGeneMat,2))];
+0139     
+0140     <span class="comment">%Loop throught those reactions and fill in the expanded data</span>
+0141     nextIndex = prevNumRxns + 1;
+0142     <span class="keyword">for</span> i=1:prevNumRxns
+0143         <span class="keyword">if</span> (nCopies(i) &gt; 0)
+0144             geneSets = clauses{i};
+0145 
+0146             <span class="comment">%The first isozyme replaces the original reaction</span>
+0147             model.grRules{i}=strjoin(geneSets{1},<span class="string">' and '</span>);
+0148             model.rxnGeneMat(i,:)=0;
+0149             model.rxnGeneMat(i,ismember(model.genes,geneSets{1})) = 1;
+0150 
+0151             <span class="comment">%The rest are appended, named after the original reaction, which</span>
+0152             <span class="comment">%is why it is only renamed once the loop is done</span>
+0153             <span class="keyword">for</span> j=2:numel(geneSets)
+0154                 ind = nextIndex+j-2;
+0155                 model.rxns{ind}=[model.rxns{i} <span class="string">'_EXP_'</span> num2str(j)];
+0156                 model.grRules{ind}=strjoin(geneSets{j},<span class="string">' and '</span>);
+0157                 model.rxnGeneMat(ind,ismember(model.genes,geneSets{j})) = 1;
+0158             <span class="keyword">end</span>
+0159             model.rxns{i}=[model.rxns{i}, <span class="string">'_EXP_1'</span>];
+0160             nextIndex = nextIndex + nCopies(i);
+0161         <span class="keyword">end</span>
+0162     <span class="keyword">end</span>
+0163     newModel=model;
+0164 <span class="keyword">else</span>
+0165     <span class="comment">%There are no reactions to expand, return the model as is</span>
+0166     newModel=model;
+0167 <span class="keyword">end</span>
+0168 
+0169 <span class="comment">%Fix grRules and reconstruct rxnGeneMat</span>
+0170 [grRules,rxnGeneMat] = <a href="standardizeGrRules.html" class="code" title="function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,varargin)">standardizeGrRules</a>(newModel,true);
+0171 newModel.grRules = grRules;
+0172 newModel.rxnGeneMat = rxnGeneMat;
+0173 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

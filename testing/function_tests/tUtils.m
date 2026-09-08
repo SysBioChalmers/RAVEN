@@ -3,6 +3,48 @@ classdef tUtils < RavenTestCase
 
     methods (Test)
 
+        function deprecationWarningWarnsOncePerSession(testCase)
+            % A name no deprecated wrapper uses, so this test does not
+            % depend on whether some other test warned first.
+            name = 'tUtilsDeprecationDummy';
+            testCase.verifyWarning( ...
+                @() deprecationWarning(name,'somethingElse(model)'), ...
+                'RAVEN:deprecated');
+            % Second call in the same session stays quiet.
+            testCase.verifyWarningFree( ...
+                @() deprecationWarning(name,'somethingElse(model)'));
+        end
+
+        function deprecationWarningNamesTheReplacement(testCase)
+            name = 'tUtilsDeprecationNamed';
+            lastwarn('');
+            deprecationWarning(name,'findLeakMetabolite(model,''produce'',...)');
+            testCase.verifySubstring(lastwarn, 'findLeakMetabolite');
+        end
+
+        function legacyMethodNoticeWarnsOncePerSession(testCase)
+            % A name no legacy function uses, so this test does not depend on
+            % whether some other test noticed first.
+            name = 'tUtilsLegacyDummy';
+            testCase.verifyWarning( ...
+                @() legacyMethodNotice(name,'somethingElse'), ...
+                'RAVEN:legacyMethod');
+            % Second call in the same session stays quiet.
+            testCase.verifyWarningFree( ...
+                @() legacyMethodNotice(name,'somethingElse'));
+        end
+
+        function legacyMethodNoticePromisesNoRemoval(testCase)
+            % The point of a separate identifier from RAVEN:deprecated is that
+            % it commits to nothing being removed.
+            name = 'tUtilsLegacyNamed';
+            lastwarn('');
+            legacyMethodNotice(name,'ftINIT');
+            testCase.verifySubstring(lastwarn, 'ftINIT');
+            testCase.verifySubstring(lastwarn, 'remains supported');
+            testCase.verifyEmpty(strfind(lastwarn, 'will be removed'));
+        end
+
         function convertCharArrayFromChar(testCase)
             testCase.verifyEqual(convertCharArray('abc'), {'abc'});
         end
@@ -21,6 +63,15 @@ classdef tUtils < RavenTestCase
             testCase.verifySubstring(msg, 'G2');
         end
 
+        function ravenListIndentsItemsWithATab(testCase)
+            % strcat(char(9), items) strips the tab entirely, since strcat
+            % removes trailing whitespace from a plain char argument and a
+            % lone tab is entirely trailing whitespace.
+            msg = ravenList('Bad genes:', {'G1'});
+            lines = strsplit(msg, newline);
+            testCase.verifyEqual(lines{2}(1), char(9));
+        end
+
         function ravenListTrimsToTenByDefault(testCase)
             items = arrayfun(@(n) sprintf('G%d',n), 1:12, 'UniformOutput', false);
             msg = ravenList('Too many:', items);
@@ -34,36 +85,17 @@ classdef tUtils < RavenTestCase
             testCase.verifyFalse(contains(msg, '...and'));
         end
 
-        function emptyOrLogicalScalarAcceptsValid(testCase)
-            testCase.verifyWarningFree(@() emptyOrLogicalScalar(true));
-            testCase.verifyWarningFree(@() emptyOrLogicalScalar([]));
-        end
-
-        function emptyOrLogicalScalarRejectsInvalid(testCase)
-            testCase.verifyError(@() emptyOrLogicalScalar([true false]), ?MException);
-        end
-
-        function emptyOrTextScalarAcceptsValid(testCase)
-            testCase.verifyWarningFree(@() emptyOrTextScalar('abc'));
-            testCase.verifyWarningFree(@() emptyOrTextScalar([]));
-        end
-
-        function emptyOrTextScalarRejectsInvalid(testCase)
-            testCase.verifyError(@() emptyOrTextScalar(5), ?MException);
-        end
-
-        function emptyOrTextOrCellOfTextAcceptsValid(testCase)
-            testCase.verifyWarningFree(@() emptyOrTextOrCellOfText({'a','b'}));
-            testCase.verifyWarningFree(@() emptyOrTextOrCellOfText('a'));
-        end
-
-        function emptyOrTextOrCellOfTextRejectsInvalid(testCase)
-            testCase.verifyError(@() emptyOrTextOrCellOfText(5), ?MException);
-        end
-
         function printOrangeReturnsTextContainingInput(testCase)
             evalc('s = printOrange(''hello'');');
             testCase.verifySubstring(s, 'hello');
+        end
+
+        function printOrangeKeepsPercentWhenPrinting(testCase)
+            % With nargout==0, printOrange prints via fprintf; a literal
+            % "%" in the input must not be reinterpreted as a format
+            % directive, which would truncate the rest of the text.
+            out = evalc('printOrange(''50% complete'');');
+            testCase.verifySubstring(out, '50% complete');
         end
 
         function parallelWorkersRAVENFalseReturnsZero(testCase)

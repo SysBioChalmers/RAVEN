@@ -15,7 +15,7 @@
 <div><a href="../../index.html">Home</a> &gt;  <a href="#">testing</a> &gt; <a href="index.html">function_tests</a> &gt; tComparison.m</div>
 
 <!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
-<td align="right"><a href="index.html">Index for testing\function_tests&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+<td align="right"><a href="index.html">Index for testing/function_tests&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
 
 <h1>tComparison
 </h1>
@@ -41,7 +41,7 @@ This function is called by:
 
 <h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <ul style="list-style-image:url(../../matlabicon.gif)">
-<li><a href="#_sub1" class="code">function compareRxnsGenesMetsCompsRuns(testCase)</a></li><li><a href="#_sub2" class="code">function compareMultipleModelsRuns(testCase)</a></li><li><a href="#_sub3" class="code">function diffModelsEqualToItself(testCase)</a></li><li><a href="#_sub4" class="code">function diffModelsDetectsDroppedReaction(testCase)</a></li><li><a href="#_sub5" class="code">function diffModelsDetectsBoundDifference(testCase)</a></li><li><a href="#_sub6" class="code">function diffModelsStoichWithinToleranceIsEqual(testCase)</a></li><li><a href="#_sub7" class="code">function diffModelsStoichOutsideToleranceIsNotEqual(testCase)</a></li><li><a href="#_sub8" class="code">function diffModelsGrRuleIsOrderInsensitive(testCase)</a></li><li><a href="#_sub9" class="code">function diffModelsGrRuleLogicalChangeIsDetected(testCase)</a></li><li><a href="#_sub10" class="code">function diffModelsTruncatesPerCategory(testCase)</a></li></ul>
+<li><a href="#_sub1" class="code">function compareMultipleModelsRuns(testCase)</a></li><li><a href="#_sub2" class="code">function compareMultipleModelsReportsIdentityOverlap(testCase)</a></li><li><a href="#_sub3" class="code">function diffModelsEqualToItself(testCase)</a></li><li><a href="#_sub4" class="code">function diffModelsDetectsDroppedReaction(testCase)</a></li><li><a href="#_sub5" class="code">function diffModelsDetectsBoundDifference(testCase)</a></li><li><a href="#_sub6" class="code">function diffModelsStoichWithinToleranceIsEqual(testCase)</a></li><li><a href="#_sub7" class="code">function diffModelsStoichOutsideToleranceIsNotEqual(testCase)</a></li><li><a href="#_sub8" class="code">function diffModelsGrRuleIsOrderInsensitive(testCase)</a></li><li><a href="#_sub9" class="code">function diffModelsGrRuleLogicalChangeIsDetected(testCase)</a></li><li><a href="#_sub10" class="code">function diffModelsTruncatesPerCategory(testCase)</a></li></ul>
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <div class="fragment"><pre>0001 classdef <a href="tComparison.html" class="code" title="">tComparison</a> &lt; <a href="RavenTestCase.html" class="code" title="">RavenTestCase</a>
@@ -49,96 +49,108 @@ This function is called by:
 0003 
 0004     methods (Test)
 0005 
-0006         <a name="_sub0" href="#_subfunctions" class="code">function compareRxnsGenesMetsCompsRuns(testCase)</a>
+0006         <a name="_sub0" href="#_subfunctions" class="code">function compareMultipleModelsRuns(testCase)</a>
 0007             modelA = testCase.model; modelA.id = <span class="string">'modelA'</span>;
 0008             modelB = removeReactions(testCase.model, testCase.model.rxns(1:5), <span class="keyword">...</span>
 0009                 true, true, true); modelB.id = <span class="string">'modelB'</span>;
-0010             evalc(<span class="string">'cs = compareRxnsGenesMetsComps({modelA, modelB});'</span>);
+0010             evalc(<span class="string">'cs = compareMultipleModels({modelA, modelB});'</span>);
 0011             testCase.verifyClass(cs, <span class="string">'struct'</span>);
 0012         <span class="keyword">end</span>
 0013 
-0014         <a name="_sub1" href="#_subfunctions" class="code">function compareMultipleModelsRuns(testCase)</a>
-0015             modelA = testCase.model; modelA.id = <span class="string">'modelA'</span>;
-0016             modelB = removeReactions(testCase.model, testCase.model.rxns(1:5), <span class="keyword">...</span>
-0017                 true, true, true); modelB.id = <span class="string">'modelB'</span>;
-0018             evalc(<span class="string">'cs = compareMultipleModels({modelA, modelB});'</span>);
-0019             testCase.verifyClass(cs, <span class="string">'struct'</span>);
-0020         <span class="keyword">end</span>
-0021 
-0022         <a name="_sub2" href="#_subfunctions" class="code">function diffModelsEqualToItself(testCase)</a>
-0023             r = diffModels(testCase.model, testCase.model);
-0024             testCase.verifyTrue(r.equal);
-0025             testCase.verifyEmpty(r.differences);
-0026         <span class="keyword">end</span>
-0027 
-0028         <a name="_sub3" href="#_subfunctions" class="code">function diffModelsDetectsDroppedReaction(testCase)</a>
-0029             modelB = removeReactions(testCase.model, testCase.model.rxns(1), <span class="keyword">...</span>
-0030                 true, true, true);
-0031             r = diffModels(testCase.model, modelB);
-0032             testCase.verifyFalse(r.equal);
-0033             testCase.verifyTrue(ismember(testCase.model.rxns{1}, r.rxnsOnlyInA));
-0034             testCase.verifyTrue(any(contains(r.differences, <span class="string">'reactions only in A'</span>)));
-0035         <span class="keyword">end</span>
-0036 
-0037         <a name="_sub4" href="#_subfunctions" class="code">function diffModelsDetectsBoundDifference(testCase)</a>
-0038             modelB = testCase.model;
-0039             modelB.lb(1) = modelB.lb(1) - 42;
-0040             r = diffModels(testCase.model, modelB);
-0041             testCase.verifyFalse(r.equal);
-0042             testCase.verifyTrue(any(contains(r.differences, <span class="string">'bounds'</span>)));
-0043         <span class="keyword">end</span>
-0044 
-0045         <a name="_sub5" href="#_subfunctions" class="code">function diffModelsStoichWithinToleranceIsEqual(testCase)</a>
-0046             modelB = testCase.model;
-0047             nz = find(modelB.S(:,1), 1);
-0048             modelB.S(nz,1) = modelB.S(nz,1) + 1e-12;
-0049             r = diffModels(testCase.model, modelB, <span class="string">'stoichTol'</span>, 1e-9);
-0050             testCase.verifyTrue(r.equal);
-0051         <span class="keyword">end</span>
-0052 
-0053         <a name="_sub6" href="#_subfunctions" class="code">function diffModelsStoichOutsideToleranceIsNotEqual(testCase)</a>
-0054             modelB = testCase.model;
-0055             nz = find(modelB.S(:,1), 1);
-0056             modelB.S(nz,1) = modelB.S(nz,1) + 5;
-0057             r = diffModels(testCase.model, modelB);
-0058             testCase.verifyFalse(r.equal);
-0059             testCase.verifyTrue(any(contains(r.differences, <span class="string">'coef['</span>)));
-0060         <span class="keyword">end</span>
-0061 
-0062         <a name="_sub7" href="#_subfunctions" class="code">function diffModelsGrRuleIsOrderInsensitive(testCase)</a>
-0063             <span class="comment">% The improvement over a string compare: &quot;a and b&quot; == &quot;b and a&quot;.</span>
-0064             withGpr = find(cellfun(@(r) contains(r,<span class="string">' and '</span>), testCase.model.grRules), 1);
-0065             testCase.assumeNotEmpty(withGpr, <span class="string">'model has an AND grRule'</span>);
+0014         <a name="_sub1" href="#_subfunctions" class="code">function compareMultipleModelsReportsIdentityOverlap(testCase)</a>
+0015             <span class="comment">% Covers the overlap comparison merged in from the now-removed</span>
+0016             <span class="comment">% compareRxnsGenesMetsComps: rxns/mets/genes/eccodes/metNames/equ/uEqu.</span>
+0017             modelA = testCase.model; modelA.id = <span class="string">'modelA'</span>;
+0018             removedRxn = testCase.model.rxns{1};
+0019             modelB = removeReactions(testCase.model, testCase.model.rxns(1), <span class="keyword">...</span>
+0020                 true, true, true); modelB.id = <span class="string">'modelB'</span>;
+0021             evalc(<span class="string">'cs = compareMultipleModels({modelA, modelB});'</span>);
+0022             <span class="keyword">for</span> field = {<span class="string">'rxns'</span>,<span class="string">'mets'</span>,<span class="string">'genes'</span>,<span class="string">'eccodes'</span>,<span class="string">'metNames'</span>,<span class="string">'equ'</span>,<span class="string">'uEqu'</span>}
+0023                 testCase.verifyTrue(isfield(cs, field{1}));
+0024                 testCase.verifyTrue(isfield(cs.(field{1}), <span class="string">'comparison'</span>));
+0025                 testCase.verifyTrue(isfield(cs.(field{1}), <span class="string">'nElements'</span>));
+0026             <span class="keyword">end</span>
+0027             <span class="comment">% modelA has one more reaction than modelB, so the rxns overlap must</span>
+0028             <span class="comment">% show a combination where only modelA is included.</span>
+0029             onlyA = cs.rxns.comparison(:,1) &amp; ~cs.rxns.comparison(:,2);
+0030             testCase.verifyTrue(any(cs.rxns.nElements(onlyA) &gt; 0));
+0031             testCase.verifyTrue(any(strcmp(modelA.rxns, removedRxn)));
+0032         <span class="keyword">end</span>
+0033 
+0034         <a name="_sub2" href="#_subfunctions" class="code">function diffModelsEqualToItself(testCase)</a>
+0035             r = diffModels(testCase.model, testCase.model);
+0036             testCase.verifyTrue(r.equal);
+0037             testCase.verifyEmpty(r.differences);
+0038         <span class="keyword">end</span>
+0039 
+0040         <a name="_sub3" href="#_subfunctions" class="code">function diffModelsDetectsDroppedReaction(testCase)</a>
+0041             modelB = removeReactions(testCase.model, testCase.model.rxns(1), <span class="keyword">...</span>
+0042                 true, true, true);
+0043             r = diffModels(testCase.model, modelB);
+0044             testCase.verifyFalse(r.equal);
+0045             testCase.verifyTrue(ismember(testCase.model.rxns{1}, r.rxnsOnlyInA));
+0046             testCase.verifyTrue(any(contains(r.differences, <span class="string">'reactions only in A'</span>)));
+0047         <span class="keyword">end</span>
+0048 
+0049         <a name="_sub4" href="#_subfunctions" class="code">function diffModelsDetectsBoundDifference(testCase)</a>
+0050             modelB = testCase.model;
+0051             modelB.lb(1) = modelB.lb(1) - 42;
+0052             r = diffModels(testCase.model, modelB);
+0053             testCase.verifyFalse(r.equal);
+0054             testCase.verifyTrue(any(contains(r.differences, <span class="string">'bounds'</span>)));
+0055         <span class="keyword">end</span>
+0056 
+0057         <a name="_sub5" href="#_subfunctions" class="code">function diffModelsStoichWithinToleranceIsEqual(testCase)</a>
+0058             modelB = testCase.model;
+0059             nz = find(modelB.S(:,1), 1);
+0060             modelB.S(nz,1) = modelB.S(nz,1) + 1e-12;
+0061             r = diffModels(testCase.model, modelB, <span class="string">'stoichTol'</span>, 1e-9);
+0062             testCase.verifyTrue(r.equal);
+0063         <span class="keyword">end</span>
+0064 
+0065         <a name="_sub6" href="#_subfunctions" class="code">function diffModelsStoichOutsideToleranceIsNotEqual(testCase)</a>
 0066             modelB = testCase.model;
-0067             genes = strtrim(strsplit(modelB.grRules{withGpr}, <span class="string">' and '</span>));
-0068             modelB.grRules{withGpr} = strjoin(fliplr(genes), <span class="string">' and '</span>);
+0067             nz = find(modelB.S(:,1), 1);
+0068             modelB.S(nz,1) = modelB.S(nz,1) + 5;
 0069             r = diffModels(testCase.model, modelB);
-0070             <span class="comment">% this reaction must not be reported as a grRule difference</span>
-0071             testCase.verifyFalse(any(contains(r.differences, <span class="keyword">...</span>
-0072                 [testCase.model.rxns{withGpr} <span class="string">': grRule'</span>])));
-0073         <span class="keyword">end</span>
-0074 
-0075         <a name="_sub8" href="#_subfunctions" class="code">function diffModelsGrRuleLogicalChangeIsDetected(testCase)</a>
+0070             testCase.verifyFalse(r.equal);
+0071             testCase.verifyTrue(any(contains(r.differences, <span class="string">'coef['</span>)));
+0072         <span class="keyword">end</span>
+0073 
+0074         <a name="_sub7" href="#_subfunctions" class="code">function diffModelsGrRuleIsOrderInsensitive(testCase)</a>
+0075             <span class="comment">% The improvement over a string compare: &quot;a and b&quot; == &quot;b and a&quot;.</span>
 0076             withGpr = find(cellfun(@(r) contains(r,<span class="string">' and '</span>), testCase.model.grRules), 1);
 0077             testCase.assumeNotEmpty(withGpr, <span class="string">'model has an AND grRule'</span>);
 0078             modelB = testCase.model;
-0079             modelB.grRules{withGpr} = strrep(modelB.grRules{withGpr}, <span class="string">' and '</span>, <span class="string">' or '</span>);
-0080             r = diffModels(testCase.model, modelB);
-0081             testCase.verifyFalse(r.equal);
-0082             testCase.verifyTrue(any(contains(r.differences, <span class="keyword">...</span>
-0083                 [testCase.model.rxns{withGpr} <span class="string">': grRule'</span>])));
-0084         <span class="keyword">end</span>
-0085 
-0086         <a name="_sub9" href="#_subfunctions" class="code">function diffModelsTruncatesPerCategory(testCase)</a>
-0087             modelB = testCase.model;
-0088             modelB.lb = modelB.lb - 1; <span class="comment">% a bound diff on every reaction</span>
-0089             r = diffModels(testCase.model, modelB, <span class="string">'maxPerCategory'</span>, 5);
-0090             testCase.verifyFalse(r.equal);
-0091             testCase.verifyTrue(any(contains(r.differences, <span class="string">'truncated at 5'</span>)));
-0092         <span class="keyword">end</span>
-0093 
-0094     <span class="keyword">end</span>
-0095 <span class="keyword">end</span></pre></div>
+0079             genes = strtrim(strsplit(modelB.grRules{withGpr}, <span class="string">' and '</span>));
+0080             modelB.grRules{withGpr} = strjoin(fliplr(genes), <span class="string">' and '</span>);
+0081             r = diffModels(testCase.model, modelB);
+0082             <span class="comment">% this reaction must not be reported as a grRule difference</span>
+0083             testCase.verifyFalse(any(contains(r.differences, <span class="keyword">...</span>
+0084                 [testCase.model.rxns{withGpr} <span class="string">': grRule'</span>])));
+0085         <span class="keyword">end</span>
+0086 
+0087         <a name="_sub8" href="#_subfunctions" class="code">function diffModelsGrRuleLogicalChangeIsDetected(testCase)</a>
+0088             withGpr = find(cellfun(@(r) contains(r,<span class="string">' and '</span>), testCase.model.grRules), 1);
+0089             testCase.assumeNotEmpty(withGpr, <span class="string">'model has an AND grRule'</span>);
+0090             modelB = testCase.model;
+0091             modelB.grRules{withGpr} = strrep(modelB.grRules{withGpr}, <span class="string">' and '</span>, <span class="string">' or '</span>);
+0092             r = diffModels(testCase.model, modelB);
+0093             testCase.verifyFalse(r.equal);
+0094             testCase.verifyTrue(any(contains(r.differences, <span class="keyword">...</span>
+0095                 [testCase.model.rxns{withGpr} <span class="string">': grRule'</span>])));
+0096         <span class="keyword">end</span>
+0097 
+0098         <a name="_sub9" href="#_subfunctions" class="code">function diffModelsTruncatesPerCategory(testCase)</a>
+0099             modelB = testCase.model;
+0100             modelB.lb = modelB.lb - 1; <span class="comment">% a bound diff on every reaction</span>
+0101             r = diffModels(testCase.model, modelB, <span class="string">'maxPerCategory'</span>, 5);
+0102             testCase.verifyFalse(r.equal);
+0103             testCase.verifyTrue(any(contains(r.differences, <span class="string">'truncated at 5'</span>)));
+0104         <span class="keyword">end</span>
+0105 
+0106     <span class="keyword">end</span>
+0107 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

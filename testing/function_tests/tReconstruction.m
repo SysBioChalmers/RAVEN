@@ -12,6 +12,18 @@ classdef tReconstruction < RavenTestCase
             testCase.verifyClass(m2, 'struct');
         end
 
+        function guessCompositionAccountsForStoichiometricCoefficient(testCase)
+            % A -> 2 B, with A's formula known (CH4). B's own coefficient is
+            % 2, so its atom counts must be half of A's (C0.5H4/2 = C0.5H2),
+            % not identical to A's.
+            model = tReconstruction.toyModel();
+            model.metFormulas = {'CH4'; ''};
+            evalc('[m2, guessedFor, couldNotGuess] = guessComposition(model);');
+            testCase.verifyEqual(guessedFor, {'B'});
+            testCase.verifyEmpty(couldNotGuess);
+            testCase.verifyEqual(m2.metFormulas{2}, 'C0.5H2');
+        end
+
         function makeFakeBlastStructureReturnsStruct(testCase)
             % makeFakeBlastStructure requires at least 10 ortholog pairs.
             ol = [testCase.model.genes(1:10), strcat('t_', testCase.model.genes(1:10))];
@@ -26,11 +38,6 @@ classdef tReconstruction < RavenTestCase
             bs = makeFakeBlastStructure(ol, 'srcModel', 'tgtOrg');
             evalc('draft = getModelFromHomology({src}, bs, ''tgtOrg'');');
             testCase.verifyClass(draft, 'struct');
-        end
-
-        function getWSLpathReturnsPath(testCase)
-            p = getWSLpath('C:\foo\bar');
-            testCase.verifyTrue(ischar(p) || isstring(p));
         end
 
         function getBlastRunsWhenAvailable(testCase)
@@ -86,5 +93,28 @@ classdef tReconstruction < RavenTestCase
             testCase.verifyError(@() getPhylDist(), 'getPhylDist:noData');
         end
 
+    end
+
+    methods (Static)
+        function model = toyModel()
+            % Single reaction: A -> 2 B, one compartment.
+            model = struct();
+            model.id          = 'toy';
+            model.name        = 'toy';
+            model.mets        = {'m1'; 'm2'};
+            model.metNames    = {'A'; 'B'};
+            model.comps       = {'c'};
+            model.compNames   = {'cytosol'};
+            model.metComps    = [1; 1];
+            model.metFormulas = {''; ''};
+            model.rxns        = {'R1'};
+            model.rxnNames    = {'R1'};
+            model.S           = sparse([-1; 2]);
+            model.lb          = 0;
+            model.ub          = 1000;
+            model.rev         = 0;
+            model.c           = 0;
+            model.b           = zeros(2, 1);
+        end
     end
 end

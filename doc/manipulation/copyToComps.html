@@ -123,7 +123,7 @@ This function is called by:
 0040 <span class="comment">% -----</span>
 0041 <span class="comment">% New reactions and metabolites will be named as &quot;id_toComps(i)&quot;.</span>
 0042 
-0043 p=parseRAVENargs(varargin, {<span class="string">'rxns'</span>,[],[]; <span class="string">'deleteOriginal'</span>,false,@emptyOrLogicalScalar; <span class="string">'compNames'</span>,[],[]; <span class="string">'compOutside'</span>,<span class="string">''</span>,[]});
+0043 p=parseRAVENargs(varargin, {<span class="string">'rxns'</span>,[]; <span class="string">'deleteOriginal'</span>,false; <span class="string">'compNames'</span>,[]; <span class="string">'compOutside'</span>,[]});
 0044 rxns=p.rxns;
 0045 <span class="keyword">if</span> isempty(rxns)
 0046     rxns=model.rxns;
@@ -138,68 +138,73 @@ This function is called by:
 0055     compNames=convertCharArray(compNames);
 0056 <span class="keyword">end</span>
 0057 compOutside=p.compOutside;
-0058 <span class="keyword">if</span> ~isempty(compOutside)
-0059     compOutside=convertCharArray(compOutside);
-0060     <span class="keyword">if</span> length(compOutside) ~= length(compNames)
-0061         error(<span class="string">'compOutside and compNames should be of equal size.'</span>);
-0062     <span class="keyword">end</span>
-0063 <span class="keyword">end</span>
-0064 
-0065 originalID=model.id;
-0066 originalName=model.name;
-0067 
-0068 rxns=getIndexes(model,rxns,<span class="string">'rxns'</span>);
+0058 <span class="keyword">if</span> isempty(compOutside)
+0059     <span class="comment">% Default is {''} for every new compartment, not '': compOutside(i)</span>
+0060     <span class="comment">% below indexes into it once per new compartment, which a bare ''</span>
+0061     <span class="comment">% cannot support.</span>
+0062     compOutside=repmat({<span class="string">''</span>},size(compNames));
+0063 <span class="keyword">else</span>
+0064     compOutside=convertCharArray(compOutside);
+0065     <span class="keyword">if</span> length(compOutside) ~= length(compNames)
+0066         error(<span class="string">'compOutside and compNames should be of equal size.'</span>);
+0067     <span class="keyword">end</span>
+0068 <span class="keyword">end</span>
 0069 
-0070 <span class="keyword">for</span> i=1:numel(toComps)
-0071     <span class="comment">%Check if the compartment exists, otherwise add it</span>
-0072     [I,J]=ismember(toComps(i),model.comps);
-0073     <span class="keyword">if</span> I==false
-0074         model.comps=[model.comps;toComps(i)];
-0075         model.compNames=[model.compNames;compNames(i)];
-0076         <span class="keyword">if</span> isfield(model,<span class="string">'compOutside'</span>)
-0077             model.compOutside=[model.compOutside;compOutside(i)];
-0078         <span class="keyword">end</span>
-0079         <span class="keyword">if</span> isfield(model,<span class="string">'compMiriams'</span>)
-0080             model.compMiriams=[model.compMiriams;cell(1,1)];
-0081         <span class="keyword">end</span>
-0082         J=numel(model.comps);
-0083     <span class="keyword">end</span>
-0084     <span class="comment">%Copy the reactions by making a model structure with only them, then</span>
-0085     <span class="comment">%change the localization, and finally merge with the original model</span>
-0086     modelToAdd=model;
-0087     modelToAdd=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,varargin)">removeReactions</a>(modelToAdd,setdiff(1:numel(model.rxns),rxns),true,true);
-0088     modelToAdd.rxns=strcat(modelToAdd.rxns,<span class="string">'_'</span>,toComps(i));
-0089     modelToAdd.mets=strcat(modelToAdd.mets,<span class="string">'_'</span>,toComps(i));
-0090     modelToAdd.comps=modelToAdd.comps(J);
-0091     modelToAdd.compNames=modelToAdd.compNames(J);
-0092     <span class="keyword">if</span> isfield(modelToAdd,<span class="string">'compOutside'</span>)
-0093         modelToAdd.compOutside=modelToAdd.compOutside(J);
-0094     <span class="keyword">end</span>
-0095     <span class="keyword">if</span> isfield(modelToAdd,<span class="string">'compMiriams'</span>)
-0096         modelToAdd.compMiriams=modelToAdd.compMiriams(J);
-0097     <span class="keyword">end</span>
-0098     modelToAdd.metComps=ones(numel(modelToAdd.mets),1);
-0099     <span class="keyword">if</span> isfield(modelToAdd,<span class="string">'metFrom'</span>)
-0100         modelToAdd = rmfield(modelToAdd,<span class="string">'metFrom'</span>);
-0101     <span class="keyword">end</span>
-0102     <span class="keyword">if</span> isfield(modelToAdd,<span class="string">'rxnFrom'</span>)
-0103         modelToAdd = rmfield(modelToAdd,<span class="string">'rxnFrom'</span>);
-0104     <span class="keyword">end</span>
-0105     <span class="keyword">if</span> isfield(modelToAdd,<span class="string">'geneFrom'</span>)
-0106         modelToAdd = rmfield(modelToAdd,<span class="string">'geneFrom'</span>);
-0107     <span class="keyword">end</span>
-0108   
-0109     <span class="comment">%Merge the models</span>
-0110     model=<a href="mergeModels.html" class="code" title="function model=mergeModels(models,varargin)">mergeModels</a>({model;modelToAdd},<span class="string">'metNames'</span>,[],true);
-0111 <span class="keyword">end</span>
-0112 
-0113 <span class="keyword">if</span> deleteOriginal==true
-0114     model=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,varargin)">removeReactions</a>(model,rxns,true,true,true); <span class="comment">%Also delete unused compartments</span>
-0115 <span class="keyword">end</span>
-0116 
-0117 model.id=originalID;
-0118 model.name=originalName;
-0119 <span class="keyword">end</span></pre></div>
+0070 originalID=model.id;
+0071 originalName=model.name;
+0072 
+0073 rxns=getIndexes(model,rxns,<span class="string">'rxns'</span>);
+0074 
+0075 <span class="keyword">for</span> i=1:numel(toComps)
+0076     <span class="comment">%Check if the compartment exists, otherwise add it</span>
+0077     [I,J]=ismember(toComps(i),model.comps);
+0078     <span class="keyword">if</span> I==false
+0079         model.comps=[model.comps;toComps(i)];
+0080         model.compNames=[model.compNames;compNames(i)];
+0081         <span class="keyword">if</span> isfield(model,<span class="string">'compOutside'</span>)
+0082             model.compOutside=[model.compOutside;compOutside(i)];
+0083         <span class="keyword">end</span>
+0084         <span class="keyword">if</span> isfield(model,<span class="string">'compMiriams'</span>)
+0085             model.compMiriams=[model.compMiriams;cell(1,1)];
+0086         <span class="keyword">end</span>
+0087         J=numel(model.comps);
+0088     <span class="keyword">end</span>
+0089     <span class="comment">%Copy the reactions by making a model structure with only them, then</span>
+0090     <span class="comment">%change the localization, and finally merge with the original model</span>
+0091     modelToAdd=model;
+0092     modelToAdd=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,varargin)">removeReactions</a>(modelToAdd,setdiff(1:numel(model.rxns),rxns),true,true);
+0093     modelToAdd.rxns=strcat(modelToAdd.rxns,<span class="string">'_'</span>,toComps(i));
+0094     modelToAdd.mets=strcat(modelToAdd.mets,<span class="string">'_'</span>,toComps(i));
+0095     modelToAdd.comps=modelToAdd.comps(J);
+0096     modelToAdd.compNames=modelToAdd.compNames(J);
+0097     <span class="keyword">if</span> isfield(modelToAdd,<span class="string">'compOutside'</span>)
+0098         modelToAdd.compOutside=modelToAdd.compOutside(J);
+0099     <span class="keyword">end</span>
+0100     <span class="keyword">if</span> isfield(modelToAdd,<span class="string">'compMiriams'</span>)
+0101         modelToAdd.compMiriams=modelToAdd.compMiriams(J);
+0102     <span class="keyword">end</span>
+0103     modelToAdd.metComps=ones(numel(modelToAdd.mets),1);
+0104     <span class="keyword">if</span> isfield(modelToAdd,<span class="string">'metFrom'</span>)
+0105         modelToAdd = rmfield(modelToAdd,<span class="string">'metFrom'</span>);
+0106     <span class="keyword">end</span>
+0107     <span class="keyword">if</span> isfield(modelToAdd,<span class="string">'rxnFrom'</span>)
+0108         modelToAdd = rmfield(modelToAdd,<span class="string">'rxnFrom'</span>);
+0109     <span class="keyword">end</span>
+0110     <span class="keyword">if</span> isfield(modelToAdd,<span class="string">'geneFrom'</span>)
+0111         modelToAdd = rmfield(modelToAdd,<span class="string">'geneFrom'</span>);
+0112     <span class="keyword">end</span>
+0113   
+0114     <span class="comment">%Merge the models</span>
+0115     model=<a href="mergeModels.html" class="code" title="function model=mergeModels(models,varargin)">mergeModels</a>({model;modelToAdd},<span class="string">'metNames'</span>,[],true);
+0116 <span class="keyword">end</span>
+0117 
+0118 <span class="keyword">if</span> deleteOriginal==true
+0119     model=<a href="removeReactions.html" class="code" title="function reducedModel=removeReactions(model,rxnsToRemove,varargin)">removeReactions</a>(model,rxns,true,true,true); <span class="comment">%Also delete unused compartments</span>
+0120 <span class="keyword">end</span>
+0121 
+0122 model.id=originalID;
+0123 model.name=originalName;
+0124 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

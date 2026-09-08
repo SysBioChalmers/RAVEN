@@ -3,26 +3,27 @@ classdef tGapfilling < RavenTestCase
 
     methods (Test)
 
-        function canConsumeReturnsLogical(testCase)
-            out = canConsume(testCase.model, testCase.model.mets(1:3));
+        function canExchangeConsumeReturnsLogical(testCase)
+            out = canExchange(testCase.model, 'consume', testCase.model.mets(1:3));
             testCase.verifyClass(out, 'logical');
             testCase.verifyNumElements(out, 3);
         end
 
-        function canProduceReturnsLogical(testCase)
-            out = canProduce(testCase.model, testCase.model.mets(1:3));
+        function canExchangeProduceReturnsLogical(testCase)
+            out = canExchange(testCase.model, 'produce', testCase.model.mets(1:3));
             testCase.verifyClass(out, 'logical');
             testCase.verifyNumElements(out, 3);
+        end
+
+        function canExchangeInvalidDirectionErrors(testCase)
+            testCase.verifyError( ...
+                @() canExchange(testCase.model, 'neither'), ...
+                'RAVEN:badInput');
         end
 
         function checkProductionReturnsIndices(testCase)
             evalc('notProduced = checkProduction(testCase.model);');
             testCase.verifyClass(notProduced, 'double');
-        end
-
-        function checkRxnReturnsReport(testCase)
-            evalc('report = checkRxn(testCase.model, testCase.model.rxns{1});');
-            testCase.verifyClass(report, 'struct');
         end
 
         function findLeakMetaboliteProduceReturnsSolution(testCase)
@@ -41,13 +42,27 @@ classdef tGapfilling < RavenTestCase
                 'RAVEN:badInput');
         end
 
-        function makeSomethingReturnsSolution(testCase)
+        function deprecatedMakeSomethingStillWorks(testCase)
+            % The deprecated/ wrapper must keep returning what it always did.
+            % Its warning is once-per-session, so it is not asserted here
+            % (ordering across tests would decide whether it fires); the
+            % warning itself is covered by tUtils/deprecationWarning*.
             evalc('[sol, metabolite] = makeSomething(testCase.model);');
             testCase.verifyNotEmpty(sol);
         end
 
-        function consumeSomethingReturnsSolution(testCase)
+        function deprecatedConsumeSomethingStillWorks(testCase)
             evalc('[sol, metabolite] = consumeSomething(testCase.model);');
+            testCase.verifyNotEmpty(sol);
+        end
+
+        function deprecatedConsumeSomethingKeepsItsOwnArgumentOrder(testCase)
+            % consumeSomething's positional order has no allowExcretion,
+            % unlike findLeakMetabolite's. Passing its 5th argument
+            % (ignoreIntBounds) must reach ignoreIntBounds, not params --
+            % forwarding varargin verbatim used to shift it silently.
+            evalc(['[sol, metabolite] = consumeSomething(testCase.model, ' ...
+                '[], false, false, [], true);']);
             testCase.verifyNotEmpty(sol);
         end
 
@@ -65,6 +80,32 @@ classdef tGapfilling < RavenTestCase
             testCase.verifyClass(noFluxRxns, 'cell');
         end
 
+        function gapReportKeepsPercentInModelName(testCase)
+            % A model.name containing "%" must survive intact in the
+            % report header, not be truncated by fprintf misreading it as
+            % a format directive.
+            m = testCase.model;
+            m.name = 'ecoli 50% subset';
+            out = evalc('gapReport(m);');
+            testCase.verifySubstring(out, 'ecoli 50% subset');
+        end
+
+        function fitTasksShouldFailWarningHasRealNewlineAndPercent(testCase)
+            % The SHOULD FAIL warning embeds the task id/description; a
+            % literal "\n" must become a real newline (not print as the
+            % two characters backslash-n), and a "%" in the task id must
+            % survive intact rather than being read as a format directive.
+            refModel = testCase.taskTestModel(); refModel.id = 'DB';
+            task = testCase.taskTestStruct();
+            task.shouldFail = true;
+            task.id = 'Task 50% done'; task.description = task.id;
+            lastwarn('');
+            evalc('fitTasks(refModel, refModel, [], true, [], task);');
+            msg = lastwarn();
+            testCase.verifySubstring(msg, 'Task 50% done');
+            testCase.verifyFalse(contains(msg, '\n'));
+        end
+
         function fitTasksProducesModel(testCase)
             testCase.assumeMILPSolver();
             refModel = testCase.taskTestModel(); refModel.id = 'DB';
@@ -73,6 +114,56 @@ classdef tGapfilling < RavenTestCase
             evalc('[outModel, addedRxns] = fitTasks(gapModel, refModel, [], true, [], task);');
             testCase.verifyClass(outModel, 'struct');
             testCase.verifyTrue(ismember('R2', outModel.rxns));
+        end
+
+        function fitTasksPrintOutputKeepsPercentInTaskId(testCase)
+            % The per-task "Added N reaction(s)" notice embeds the task
+            % id/description; a "%" there must survive intact, not be
+            % read as an fprintf format directive.
+            testCase.assumeMILPSolver();
+            refModel = testCase.taskTestModel(); refModel.id = 'DB';
+            gapModel = removeReactions(refModel, {'R2'}); gapModel.id = 'testModel';
+            task = testCase.taskTestStruct();
+            task.id = 'Task 50% done'; task.description = task.id;
+            out = evalc('fitTasks(gapModel, refModel, [], true, [], task);');
+            testCase.verifySubstring(out, 'Task 50% done');
+        end
+
+        function fitTasksAcceptsAllMetsShorthands(testCase)
+            % ALLMETS and ALLMETSIN[comp] open uptake for a whole model or a
+            % whole compartment rather than for a listed metabolite, and
+            % write the input bounds along a different route than a named
+            % metabolite does. The task needs e[s] out of a[s], and the model
+            % is missing R2, the only route from a[s] into the cell.
+            testCase.assumeMILPSolver();
+            refModel = testCase.taskTestModel(); refModel.id = 'DB';
+            gapModel = removeReactions(refModel, {'R2'}); gapModel.id = 'testModel';
+
+            % Opening the extracellular compartment is the same thing as
+            % naming a[s], so R2 is still the reaction that has to be added
+            task = testCase.taskTestStruct();
+            task.inputs = {'ALLMETSIN[s]'};
+            evalc('outModel = fitTasks(gapModel, refModel, [], false, [], task);');
+            testCase.verifyTrue(ismember('R2', outModel.rxns));
+
+            % ALLMETS also opens uptake of the cytosolic metabolites, e[c]
+            % among them, so the task is satisfiable without crossing the
+            % membrane at all and nothing needs to be added
+            task.inputs = {'ALLMETS'};
+            evalc('outModel = fitTasks(gapModel, refModel, [], false, [], task);');
+            testCase.verifyFalse(ismember('R2', outModel.rxns));
+        end
+
+        function fitTasksRejectsUnknownAllMetsInCompartment(testCase)
+            % The compartment named in ALLMETSIN has to exist, otherwise the
+            % task silently constrains nothing.
+            refModel = testCase.taskTestModel(); refModel.id = 'DB';
+            gapModel = removeReactions(refModel, {'R2'}); gapModel.id = 'testModel';
+            task = testCase.taskTestStruct();
+            task.inputs = {'ALLMETSIN[z]'};
+            testCase.verifyError( ...
+                @() fitTasks(gapModel, refModel, [], false, [], task), ...
+                'RAVEN:badInput');
         end
 
         function gapFillFastCoreReturnsLogical(testCase)
@@ -85,6 +176,22 @@ classdef tGapfilling < RavenTestCase
             testCase.verifyTrue(active(coreIdx));  % core reaction must be active
         end
 
+        function gapFillFastCoreRejectsTriviallySelfCancelingReversibleCore(testCase)
+            % A reversible core reaction touching only its own,
+            % otherwise-unused metabolites cannot carry any real
+            % steady-state flux (mass balance on those metabolites forces
+            % v=0). Forcing both its forward and reverse irreversible
+            % copies to >= epsilon must not let them satisfy the core
+            % requirement by canceling each other out.
+            model = testCase.model;
+            r.rxns = {'isolatedRev'};
+            r.equations = {'newA[c] <=> newB[c]'};
+            evalc('model = addRxns(model, r, 3, ''c'', true);');
+            coreIdx = getIndexes(model,'isolatedRev','rxns');
+            active = gapFillFastCore(model, coreIdx, 1e-4);
+            testCase.verifyFalse(active(coreIdx));
+        end
+
         function gapFillSwiftCoreReturnsLogical(testCase)
             % gapFillSwiftCore returns same shape as gapFillFastCore.
             model = testCase.model;
@@ -93,6 +200,37 @@ classdef tGapfilling < RavenTestCase
             testCase.verifyClass(active, 'logical');
             testCase.verifyNumElements(active, numel(model.rxns));
             testCase.verifyTrue(active(coreIdx));
+        end
+
+        function gapFillSwiftCoreRejectsTriviallySelfCancelingReversibleCore(testCase)
+            % Same issue as gapFillFastCore's identically-named test: a
+            % reversible core reaction touching only its own,
+            % otherwise-unused metabolites cannot carry any real
+            % steady-state flux, so forcing both its forward and reverse
+            % irreversible copies to >= epsilon must not let them satisfy
+            % the core requirement by canceling each other out.
+            model = testCase.model;
+            r.rxns = {'isolatedRev'};
+            r.equations = {'newA[c] <=> newB[c]'};
+            evalc('model = addRxns(model, r, 3, ''c'', true);');
+            coreIdx = getIndexes(model,'isolatedRev','rxns');
+            active = gapFillSwiftCore(model, coreIdx, 1e-4);
+            testCase.verifyFalse(active(coreIdx));
+        end
+
+        function fillGapsIdentifiesOwnRxnsWhenRxnFromPreset(testCase)
+            % model.rxnFrom, as e.g. getModelFromHomology output already
+            % carries it, must not stop fillGaps from recognising the
+            % model's own reactions when checking which of them regain
+            % flux via the template.
+            testCase.assumeMILPSolver();
+            modelDB = testCase.model; modelDB.id = 'DB';
+            gapModel = removeReactions(modelDB, (1:10));
+            gapModel.id = 'gapModel';
+            gapModel.rxnFrom = repmat({'someTemplate'}, numel(gapModel.rxns), 1);
+            evalc('[newConnected,~,~,newModel] = fillGaps(gapModel, modelDB);');
+            testCase.verifyNotEmpty(newConnected);
+            testCase.verifyTrue(all(ismember(gapModel.rxns, newModel.rxns)));
         end
 
         function gapFillFastLPReturnsAddedRxns(testCase)
@@ -184,6 +322,71 @@ classdef tGapfilling < RavenTestCase
             % The repaired model should be able to produce objective flux.
             sol = solveLP(newModel);
             testCase.verifyNotEmpty(sol.f);
+            testCase.verifyGreaterThan(sol.f, 0);
+        end
+
+        function gapFillMILPHandlesUnboundedUniversalReaction(testCase)
+            % A universal reaction with ub=Inf (RAVEN's own default when no
+            % upper-bound annotation is set) must not put an Inf
+            % coefficient into the coupling constraint matrix -- SCIP
+            % rejects that outright, and Inf*0 is NaN even where it
+            % wouldn't be rejected.
+            testCase.assumeMILPSolver();
+            gapModel = struct();
+            gapModel.id='gapModel'; gapModel.rxns={'R1';'ExB'}; gapModel.rxnNames=gapModel.rxns;
+            gapModel.mets={'a';'b'}; gapModel.metNames=gapModel.mets; gapModel.metComps=[1;1];
+            gapModel.comps={'c'}; gapModel.compNames={'c'};
+            gapModel.S=sparse([-1 0; 1 -1]); % R1: a=>b   ExB: b=>
+            gapModel.lb=[0;0]; gapModel.ub=[1000;1000]; gapModel.rev=[0;0];
+            gapModel.c=[1;0]; gapModel.b=zeros(2,1);
+            gapModel.genes={}; gapModel.grRules={'';''}; gapModel.rxnGeneMat=sparse(2,0);
+
+            modelDB = struct();
+            modelDB.id='DB'; modelDB.rxns={'ExA'}; modelDB.rxnNames=modelDB.rxns;
+            modelDB.mets={'a'}; modelDB.metNames=modelDB.mets; modelDB.metComps=1;
+            modelDB.comps={'c'}; modelDB.compNames={'c'};
+            modelDB.S=sparse(1,1); modelDB.S(1,1)=1;
+            modelDB.lb=0; modelDB.ub=Inf; modelDB.rev=0; modelDB.c=0; modelDB.b=0;
+            modelDB.genes={}; modelDB.grRules={''}; modelDB.rxnGeneMat=sparse(1,0);
+
+            evalc(['[addedRxns,~,newModel,exitFlag] = gapFillMILP(gapModel, modelDB, ' ...
+                '''verbose'', false);']);
+            testCase.verifyEqual(exitFlag, 1);
+            testCase.verifyEqual(addedRxns, {'ExA'});
+            sol = solveLP(newModel);
+            testCase.verifyGreaterThan(sol.f, 0);
+        end
+
+        function gapFillMILPKeepsRenamedUniversalReaction(testCase)
+            % A universal reaction whose id collides with an unrelated
+            % draft reaction gets renamed by mergeModels; that renamed
+            % reaction must still end up in addedRxns and in newModel, not
+            % be silently dropped by a lookup keyed on its original name.
+            testCase.assumeMILPSolver();
+            gapModel = struct();
+            gapModel.id='gapModel'; gapModel.rxns={'R1';'Rname'}; gapModel.rxnNames=gapModel.rxns;
+            gapModel.mets={'a';'b'}; gapModel.metNames=gapModel.mets; gapModel.metComps=[1;1];
+            gapModel.comps={'c'}; gapModel.compNames={'c'};
+            gapModel.S=sparse([-1 0; 1 -1]); % R1: a=>b   Rname (draft): b=>, irrelevant to growth
+            gapModel.lb=[0;0]; gapModel.ub=[1000;1000]; gapModel.rev=[0;0];
+            gapModel.c=[1;0]; gapModel.b=zeros(2,1);
+            gapModel.genes={}; gapModel.grRules={'';''}; gapModel.rxnGeneMat=sparse(2,0);
+
+            modelDB = struct();
+            % Same id "Rname" as the draft's, but a completely different
+            % reaction: this is the one actually needed to enable growth.
+            modelDB.id='DB'; modelDB.rxns={'Rname'}; modelDB.rxnNames=modelDB.rxns;
+            modelDB.mets={'a'}; modelDB.metNames=modelDB.mets; modelDB.metComps=1;
+            modelDB.comps={'c'}; modelDB.compNames={'c'};
+            modelDB.S=sparse(1,1); modelDB.S(1,1)=1; % =>a
+            modelDB.lb=0; modelDB.ub=1000; modelDB.rev=0; modelDB.c=0; modelDB.b=0;
+            modelDB.genes={}; modelDB.grRules={''}; modelDB.rxnGeneMat=sparse(1,0);
+
+            evalc(['[addedRxns,~,newModel,exitFlag] = gapFillMILP(gapModel, modelDB, ' ...
+                '''verbose'', false);']);
+            testCase.verifyEqual(exitFlag, 1);
+            testCase.verifyNotEmpty(addedRxns);
+            sol = solveLP(newModel);
             testCase.verifyGreaterThan(sol.f, 0);
         end
 

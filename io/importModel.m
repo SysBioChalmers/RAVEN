@@ -232,7 +232,8 @@ proteins={};
 metSBOs = [];
 %Regex of compartment names, later to be used to remove from metabolite
 %names if present as suffix.
-regexCompNames = ['\s?\[((' strjoin({modelSBML.compartment.name},')|(') '))\]$'];
+escapedCompNames = regexptranslate('escape',{modelSBML.compartment.name});
+regexCompNames = ['\s?\[((' strjoin(escapedCompNames,')|(') '))\]$'];
 for i=1:numel(modelSBML.species)
     metaboliteNames{numel(metaboliteNames)+1,1}=modelSBML.species(i).name;
     metaboliteIDs{numel(metaboliteIDs)+1,1}=modelSBML.species(i).id;
@@ -299,9 +300,13 @@ for i=1:numel(modelSBML.species)
         metaboliteFormula{numel(metaboliteFormula)+1,1}='';
         metaboliteMiriams{numel(metaboliteMiriams)+1,1}=[];
     end
-    %Get SBO term
+    %Get SBO term. One entry per species, always, so metSBOs stays aligned
+    %with metaboliteNames below even when some species have no SBO term;
+    %-1 (SBML's own "unset" value) marks those.
     if isfield(modelSBML.species(i),'sboTerm') && ~(modelSBML.species(i).sboTerm==-1)
         metSBOs(end+1,1) = modelSBML.species(i).sboTerm;
+    else
+        metSBOs(end+1,1) = -1;
     end
 
     %Remove trailing [compartment] from metabolite name if present
@@ -334,7 +339,9 @@ end
 %Add SBO terms to metabolite miriam fields
 if numel(unique(metSBOs)) > 1
     for i = 1:numel(metaboliteNames)
-        metaboliteMiriams{i} = addSBOtoMiriam(metaboliteMiriams{i},metSBOs(i));
+        if metSBOs(i) ~= -1
+            metaboliteMiriams{i} = addSBOtoMiriam(metaboliteMiriams{i},metSBOs(i));
+        end
     end
 end
 
@@ -359,8 +366,17 @@ reactionUB=zeros(numel(modelSBML.reaction),1);
 reactionLB=zeros(numel(modelSBML.reaction),1);
 reactionObjective=zeros(numel(modelSBML.reaction),1);
 
-%Construct the stoichiometric matrix while the reaction info is read
-S=zeros(numel(metaboliteIDs),numel(modelSBML.reaction));
+%Construct the stoichiometric matrix while the reaction info is read.
+%Accumulated as (row,col,value) triples and assembled into a sparse
+%matrix in one pass at the end (sparse() sums duplicate (row,col)
+%triples, matching the +'d accumulation below), rather than allocating a
+%dense (mets x rxns) matrix, which for a genome-scale model can be
+%hundreds of MB even though S is typically >95% sparse.
+nStoichEntries=sum(arrayfun(@(r) numel(r.reactant)+numel(r.product),modelSBML.reaction));
+sRow=zeros(nStoichEntries,1);
+sCol=zeros(nStoichEntries,1);
+sVal=zeros(nStoichEntries,1);
+sN=0;
 
 counter=0;
 %If FBC, then bounds have parameter ids defined for the whole model
@@ -428,7 +444,10 @@ for i=1:numel(modelSBML.reaction)
     miriamStruct=parseMiriam(modelSBML.reaction(i).annotation);
     rxnMiriams{counter}=miriamStruct;
     if isfield(modelSBML.reaction(i),'notes')
-        subsystems{counter,1}=cellstr(parseNote(modelSBML.reaction(i).notes,'SUBSYSTEM'));
+        %parseNote joins several SUBSYSTEM notes on a reaction with ';',
+        %so split on it, or a reaction with more than one subsystem ends
+        %up with a single subsystem literally named "a;b"
+        subsystems{counter,1}=strtrim(strsplit(parseNote(modelSBML.reaction(i).notes,'SUBSYSTEM'),';'));
         subsystems{counter,1}(cellfun('isempty',subsystems{counter,1})) = [];
         if strfind(modelSBML.reaction(i).notes,'Confidence Level')
             confScore = parseNote(modelSBML.reaction(i).notes,'Confidence Level');
@@ -470,7 +489,10 @@ for i=1:numel(modelSBML.reaction)
             EM=['Could not find metabolite ' modelSBML.reaction(i).reactant(j).species ' in reaction ' reactionIDs{counter}];
             error('RAVEN:badInput', '%s', EM);
         end
-        S(metIndex,counter)=S(metIndex,counter)+modelSBML.reaction(i).reactant(j).stoichiometry*-1;
+        sN=sN+1;
+        sRow(sN)=metIndex;
+        sCol(sN)=counter;
+        sVal(sN)=modelSBML.reaction(i).reactant(j).stoichiometry*-1;
     end
 
     %Add all products
@@ -481,7 +503,10 @@ for i=1:numel(modelSBML.reaction)
             EM=['Could not find metabolite ' modelSBML.reaction(i).product(j).species ' in reaction ' reactionIDs{counter}];
             error('RAVEN:badInput', '%s', EM);
         end
-        S(metIndex,counter)=S(metIndex,counter)+modelSBML.reaction(i).product(j).stoichiometry;
+        sN=sN+1;
+        sRow(sN)=metIndex;
+        sCol(sN)=counter;
+        sVal(sN)=modelSBML.reaction(i).product(j).stoichiometry;
     end
 end
 
@@ -492,9 +517,14 @@ if isfield(modelSBML, 'fbc_activeObjective')
     for i=1:numel(modelSBML.fbc_objective)
         if strcmp(obj,modelSBML.fbc_objective(i).fbc_id)
             if ~isempty(modelSBML.fbc_objective(i).fbc_fluxObjective)
-                rxn=modelSBML.fbc_objective(i).fbc_fluxObjective.fbc_reaction;
-                idx=ismember(reactionIDs,rxn);
-                reactionObjective(idx)=modelSBML.fbc_objective(i).fbc_fluxObjective.fbc_coefficient;
+                %fbc_fluxObjective is a struct array when the objective is
+                %a combination of more than one reaction; indexing it
+                %directly would silently keep only the first
+                fluxObjective=modelSBML.fbc_objective(i).fbc_fluxObjective;
+                for k=1:numel(fluxObjective)
+                    idx=ismember(reactionIDs,fluxObjective(k).fbc_reaction);
+                    reactionObjective(idx)=fluxObjective(k).fbc_coefficient;
+                end
             end
         end
     end
@@ -532,13 +562,12 @@ reactionReversibility=reactionReversibility(1:counter);
 reactionUB=reactionUB(1:counter);
 reactionLB=reactionLB(1:counter);
 reactionObjective=reactionObjective(1:counter);
-S=S(:,1:counter);
 
 model.name=modelSBML.name;
 model.id=modelSBML.id;
 model.rxns=reactionIDs;
 model.mets=metaboliteIDs;
-model.S=sparse(S);
+model.S=sparse(sRow(1:sN),sCol(1:sN),sVal(1:sN),numel(metaboliteIDs),counter);
 model.lb=reactionLB;
 model.ub=reactionUB;
 model.rev=reactionReversibility;
@@ -647,7 +676,10 @@ end
 
 if all(cellfun(@isempty,geneShortNames))
     if isfield(modelSBML,'fbc_geneProduct')
-        for i=1:numel(genes)
+        %Iterate fbc_geneProduct directly: genes is only assigned above
+        %when grRules is non-empty, but fbc_geneProduct can be present
+        %(even as an empty list) regardless of that.
+        for i=1:numel(modelSBML.fbc_geneProduct)
             if ~isempty(modelSBML.fbc_geneProduct(i).fbc_label)
                 geneShortNames{i,1}=modelSBML.fbc_geneProduct(i).fbc_label;
             elseif ~isempty(modelSBML.fbc_geneProduct(i).fbc_name)
@@ -820,7 +852,13 @@ end
 if isempty(model.metMiriams)
     model=rmfield(model,'metMiriams');
 end
-if ~any(model.metCharges)
+%Unlike inchis/metFormulas/metMiriams above, metCharges always gets one
+%entry per metabolite (NaN where SBML had no fbc_charge), so it is never
+%literally empty; drop it only when none of those entries are real, not
+%when they are all genuinely zero (any(zeros)==false would remove a
+%field of real, all-neutral charges; any(NaN)==true would keep an
+%all-unset field)
+if all(isnan(model.metCharges))
     model=rmfield(model,'metCharges');
 end
 

@@ -113,12 +113,12 @@ if ~isempty(indexes)
             end
         end
         if strcmpi(paramType{j},'unc')
-            if isfield(model.annotation,'defaultLB')
+            if isfield(model,'annotation') && isfield(model.annotation,'defaultLB')
                 lb = model.annotation.defaultLB;
             else
                 lb = -1000;
             end
-            if isfield(model.annotation,'defaultUB')
+            if isfield(model,'annotation') && isfield(model.annotation,'defaultUB')
                 ub = model.annotation.defaultUB;
             else
                 ub = 1000;

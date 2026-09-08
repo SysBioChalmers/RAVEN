@@ -1,6 +1,7 @@
 % tutorial4_solutions
-%   This script contains the solutions for Tutorial 4, see Tutorial 4 in
-%   "RAVEN tutorials.docx" for more details.
+%   This script contains the solutions for Tutorial 4, see Tutorial 4 on
+%   the RAVEN wiki for more details:
+%   https://github.com/SysBioChalmers/RAVEN/wiki/Tutorials
 %
 %   NOTE: Many of these changes are easier to do in the Excel sheet. They
 %   are done here in code just to avoid having several model files.
@@ -54,7 +55,7 @@ model=setParam(model,'eq',getExchangeRxns(model),0);
 %Since it is checked which metabolites could be consumed without
 %production, one can no longer have free production of all metabolites
 model.b=model.b(:,1);
-I=canConsume(model);
+I=canExchange(model,'consume');
 disp(model.mets(I)); %These 12 metabolites can be consumed without any production
 
 %Allow all uptake

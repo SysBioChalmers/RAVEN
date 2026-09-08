@@ -117,12 +117,24 @@ if any(revIndexesBool)
     if isfield(irrevModel,'rxnReferences')
         irrevModel.rxnReferences=[irrevModel.rxnReferences;irrevModel.rxnReferences(revIndexes)];
     end
+    if isfield(irrevModel,'pwys')
+        irrevModel.pwys=[irrevModel.pwys;irrevModel.pwys(revIndexes)];
+    end
+    if isfield(irrevModel,'spontaneous')
+        irrevModel.spontaneous=[irrevModel.spontaneous;irrevModel.spontaneous(revIndexes)];
+    end
 end
     % Additional output
     if nargout>1
         irrev2rev = [transpose(1:numOrigRxns);revIndexes];
         rev2irrev = num2cell(transpose(1:numOrigRxns));
-        newIdxs   = [revIndexes transpose(1:numRevRxns)];
+        % The reverse copy of original reaction revIndexes(i) is appended
+        % after all numOrigRxns forward copies, at position i within that
+        % block -- so its irrevModel index is numOrigRxns+i, matching how
+        % matchRev computes the same thing below. A bare 1:numRevRxns
+        % here (i.e. without the +numOrigRxns offset) named the reaction's
+        % rank among reversible reactions instead of its actual position.
+        newIdxs   = [revIndexes transpose(1:numRevRxns)+numOrigRxns];
         for i=1:numRevRxns
             rev2irrev{revIndexes(i)} = newIdxs(i,:);
         end

@@ -1,9 +1,10 @@
 % tutorial3
-%   This exercise shows how to run FBA and minimization of metabolic
-%   adjustment (MOMA) simulations and how one can use GEMs as a scaffold
-%   for interpreting microarray data. A simplified model of yeast
-%   metabolism is used in this approach as an example.
-%   See Tutorial 3 in "RAVEN tutorials.docx" for more details.
+%   This exercise shows how to run FBA simulations, gene deletion analysis,
+%   and how one can use GEMs as a scaffold for interpreting microarray
+%   data. A simplified model of yeast metabolism is used in this approach
+%   as an example.
+%   See Tutorial 3 on the RAVEN wiki for more details:
+%   https://github.com/SysBioChalmers/RAVEN/wiki/Tutorials
 %
 %   It is assumed that the user has already completed Tutorial 2
 
@@ -23,7 +24,7 @@ sol=solveLP(model);
 printFluxes(model,sol.x,true);
 
 %Run a single gene deletion
-[genes, fluxes, originalGenes, details]=findGeneDeletions(model,'sgd','fba');
+[genes, fluxes, originalGenes, details]=findGeneDeletions(model,'sgd');
 
 %Get the indexes of these reactions
 I=getIndexes(model,{'biomassOUT'},'rxns');
@@ -34,26 +35,15 @@ okSolutions=find(fluxes(I,:)>10^-2); %Only look at solutions which are still gro
 disp(maxGlycerol);
 disp(originalGenes(genes(okSolutions(J),:)));
 
-%Compare the ZWF1 deletion strain to wild type
+%Compare the ZWF1 deletion strain to wild type, looking only at the
+%reactions that involve the redox cofactors
 model2=setParam(model,'eq',{'ZWF'},0);
 sol2=solveLP(model2);
-followChanged(model,sol2.x,sol.x, 10, 10^-2, 0,{'NADPH' 'NADH' 'NAD' 'NADP'});
+compareFluxes(model,sol.x,sol2.x,'cutoff',10^-2, ...
+    'metaboliteList',{'NADPH' 'NADH' 'NAD' 'NADP'});
 
-%Reload the model with exchange metabolites removed for simulation
+%Reload the model, since earlier steps modified its bounds and objective
 model=readYAMLmodel('smallYeast.yml');
-sol=solveLP(model);
-
-%Define another model where all exchange reactions are open
-model2=model;
-I=getIndexes(model,getExchangeRxns(model),'rxns');
-model2.lb(I)=0;
-model2.ub(I)=1000;
-
-%Delete ZWF gene
-model2=setParam(model2,'eq',{'ZWF'},0);
-
-%Run MOMA
-[fluxA, fluxB, flag]=qMOMA(model,model2);
 
 %Read microarray results and calculate reporter metabolites (metabolites
 %around which there are significant transcriptional changes)

@@ -20,8 +20,9 @@ function args = parseRAVENargs(rawArgs, spec)
 %     - column 1 : parameter name (char).
 %     - column 2 : default value, used when the parameter is not supplied.
 %     - column 3 : optional validator, a function handle that is called with
-%       the resolved value and should error on an invalid value (e.g. one of
-%       the utils/emptyOr* helpers). Use [] for no validation.
+%       the resolved value (including the default, when the parameter was not
+%       supplied) and should error on an invalid value, e.g. @mustBeNumeric.
+%       Use [] for no validation.
 %
 % Returns
 % -------

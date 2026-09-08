@@ -83,9 +83,6 @@ equations=strrep(equations,' => ',' <=> ');
 %parsing
 equations=strrep(equations,' + ', '€');
 
-%Generate the stoichiometric matrix
-S=zeros(numel(mets),numel(equations));
-
 %Keep track of coefficients to be added to S-matrix
 metsToS = cell(100000,1);
 rxnsToS = zeros(100000,1);
@@ -170,19 +167,30 @@ badRxns(x)=true;
 
 if any(~metsPresent)
     if isempty(rxns)
-        error(['Could not find the following metabolites in the metabolite list: ',...
-        strjoin(unique(metsToS(~metsPresent)),', ')],'')
+        EM=['Could not find the following metabolites in the metabolite list: ',...
+            strjoin(unique(metsToS(~metsPresent)),', ')];
+        error('RAVEN:badInput','%s',EM)
     else
+        %Escaped: metabolite/reaction names are arbitrary model text and
+        %may contain "%", which the sprintf below (needed to interpret
+        %the template's own "\n") would otherwise misread as a format
+        %directive and truncate the rest of the message.
+        esc=@(c) strrep(c,'%','%%');
         missingMet = find(~metsPresent);
-        missingMet = strcat(metsToS(missingMet),' (reaction:',rxns(rxnsToS(missingMet)),')\n');
+        missingMet = strcat(esc(metsToS(missingMet)),' (reaction:',esc(rxns(rxnsToS(missingMet))),')\n');
         missingMet = strjoin(missingMet,'');
-        error(['Could not find the following metabolites (reaction indicated) in the metabolite list: \n' ...
-            missingMet '%s'],'');
+        EM=sprintf(['Could not find the following metabolites (reaction indicated) in the metabolite list: \n' ...
+            missingMet]);
+        error('RAVEN:badInput','%s',EM)
     end
 end
-linearIndices=sub2ind(size(S),metsLoc,rxnsToS);
-S(linearIndices)=coefToS;
-S=sparse(S);
+%sparse() adds up repeated (metabolite,reaction) entries, which is what a
+%metabolite occurring more than once in one equation means: "2 H2O + H2O =>"
+%is a coefficient of 3, and a metabolite on both sides cancels to an empty
+%column, as badRxns above reports. Assigning into a preallocated matrix
+%instead kept only the last occurrence, and materialised the whole matrix
+%densely on the way.
+S=sparse(metsLoc,rxnsToS,coefToS,numel(mets),numel(equations));
 end
 
 function equ=fixEquations(equ)

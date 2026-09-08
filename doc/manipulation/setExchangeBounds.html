@@ -292,36 +292,41 @@ This function is called by:
 0195 <span class="comment">% determine which metabolite is exchanged in each exchange reaction</span>
 0196 [metInd,rxnInd] = find(model_temp.S(exchMetInd,exchRxnInd) ~= 0);
 0197 
-0198 <span class="comment">% check for any metabolites that are exchanged in more than one reaction</span>
-0199 [tbl,i,~] = unique(metInd,<span class="string">'first'</span>);
-0200 repeatedInds = find(not(ismember(1:numel(tbl),i)));
-0201 multiMetInd = exchMetInd(metInd(repeatedInds));
-0202 <span class="keyword">if</span> ~isempty(multiMetInd)
-0203     fprintf(<span class="string">'WARNING: The following metabolites are involved in more than one exchange reaction:\n'</span>);
-0204     fprintf(<span class="string">'\t%s\n'</span>,model.metNames{multiMetInd(1:min(numel(multiMetInd),10))});
-0205     <span class="keyword">if</span> numel(multiMetInd) &gt; 10
-0206         fprintf(<span class="string">'\t... and %u more.\n'</span>,numel(multiMetInd)-10);
-0207     <span class="keyword">end</span>
-0208 <span class="keyword">end</span>
-0209 
-0210 <span class="comment">% set exchange reaction bounds</span>
-0211 model = <a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'lb'</span>,exchRxnInd(rxnInd),lb(metInd));
-0212 model = <a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'ub'</span>,exchRxnInd(rxnInd),ub(metInd));
-0213 
-0214 <span class="keyword">if</span> closeOthers
-0215     <span class="comment">% constrain import of all other exchange reactions to zero</span>
-0216     constrainInd = setdiff(exchRxnInd,exchRxnInd(rxnInd));
-0217     <span class="keyword">if</span> strcmp(importDir,<span class="string">'backward'</span>)
-0218         model = <a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'lb'</span>,constrainInd,0);
-0219     <span class="keyword">else</span>
-0220         model = <a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'ub'</span>,constrainInd,0);
-0221     <span class="keyword">end</span>
-0222 <span class="keyword">end</span>
-0223 
-0224 <span class="comment">% assign output model</span>
-0225 exchModel = model;
-0226 
-0227</pre></div>
+0198 <span class="comment">% check for any metabolites that are exchanged in more than one reaction.</span>
+0199 <span class="comment">% metInd holds one entry per (metabolite,reaction) pair, so a metabolite</span>
+0200 <span class="comment">% involved in more than one exchange reaction is a repeated *value* in</span>
+0201 <span class="comment">% metInd, not a position past numel(unique(metInd)) -- comparing those two</span>
+0202 <span class="comment">% index spaces directly (as a previous version of this check did) compares</span>
+0203 <span class="comment">% positions in the unique list against indices into metInd itself.</span>
+0204 [uniqueMetInd,~,ic] = unique(metInd);
+0205 counts = accumarray(ic,1);
+0206 multiMetInd = exchMetInd(uniqueMetInd(counts&gt;1));
+0207 <span class="keyword">if</span> ~isempty(multiMetInd)
+0208     fprintf(<span class="string">'WARNING: The following metabolites are involved in more than one exchange reaction:\n'</span>);
+0209     fprintf(<span class="string">'\t%s\n'</span>,model.metNames{multiMetInd(1:min(numel(multiMetInd),10))});
+0210     <span class="keyword">if</span> numel(multiMetInd) &gt; 10
+0211         fprintf(<span class="string">'\t... and %u more.\n'</span>,numel(multiMetInd)-10);
+0212     <span class="keyword">end</span>
+0213 <span class="keyword">end</span>
+0214 
+0215 <span class="comment">% set exchange reaction bounds</span>
+0216 model = <a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'lb'</span>,exchRxnInd(rxnInd),lb(metInd));
+0217 model = <a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'ub'</span>,exchRxnInd(rxnInd),ub(metInd));
+0218 
+0219 <span class="keyword">if</span> closeOthers
+0220     <span class="comment">% constrain import of all other exchange reactions to zero</span>
+0221     constrainInd = setdiff(exchRxnInd,exchRxnInd(rxnInd));
+0222     <span class="keyword">if</span> strcmp(importDir,<span class="string">'backward'</span>)
+0223         model = <a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'lb'</span>,constrainInd,0);
+0224     <span class="keyword">else</span>
+0225         model = <a href="setParam.html" class="code" title="function model=setParam(model, paramType, rxnList, params, var)">setParam</a>(model,<span class="string">'ub'</span>,constrainInd,0);
+0226     <span class="keyword">end</span>
+0227 <span class="keyword">end</span>
+0228 
+0229 <span class="comment">% assign output model</span>
+0230 exchModel = model;
+0231 
+0232</pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

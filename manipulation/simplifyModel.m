@@ -99,7 +99,7 @@ if deleteZeroInterval==true
     reducedModel=removeReactions(reducedModel,rxnsToDelete);
     
     %Find metabolites that no longer are used and delete them
-    notInUse=sum(reducedModel.S~=0,2)==0;
+    notInUse=orphanedMets(reducedModel);
     deletedMetabolites=[deletedMetabolites;reducedModel.mets(notInUse)];
     
     %Remove metabolites
@@ -149,7 +149,7 @@ if deleteInaccessible==true
             
             %Remove metabolites. Recalculate since it could be that some
             %cannot be deleted due to reserved rxns
-            notInUse=sum(reducedModel.S~=0,2)==0;
+            notInUse=orphanedMets(reducedModel);
             deletedMetabolites=[deletedMetabolites; reducedModel.mets(notInUse)];
             reducedModel=removeMets(reducedModel,notInUse);
             
@@ -178,7 +178,7 @@ if deleteMinMax==true
     reducedModel=removeReactions(reducedModel,rxnsToDelete);
     
     %Remove metabolites
-    notInUse=sum(reducedModel.S~=0,2)==0;
+    notInUse=orphanedMets(reducedModel);
     deletedMetabolites=[deletedMetabolites; reducedModel.mets(notInUse)];
     reducedModel=removeMets(reducedModel,notInUse);
 end
@@ -314,10 +314,18 @@ if groupLinear==true
         irrevModel=removeReactions(irrevModel,I);
         
         %Remove metabolites
-        notInUse=sum(irrevModel.S~=0,2)==0;
+        notInUse=orphanedMets(irrevModel);
         irrevModel=removeMets(irrevModel,notInUse);
     end
     
     reducedModel=irrevModel;
 end
+end
+
+function I=orphanedMets(model)
+%Metabolites that take part in no reaction, and can therefore be removed
+%without changing what the model can do. Metabolites with a non-zero
+%model.b are kept: b is a boundary condition on the metabolite, so removing
+%the row would drop that constraint along with it.
+I=sum(model.S~=0,2)==0 & ~any(model.b~=0,2);
 end

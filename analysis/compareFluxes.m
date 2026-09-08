@@ -18,6 +18,12 @@ function result = compareFluxes(model, fluxes1, fluxes2, varargin)
 % --------------------
 % cutoff : double
 %     minimum |flux| to consider a reaction active (default 1e-8).
+% metaboliteList : cell
+%     cell array of metabolite names. Only reactions involving at least one
+%     of these metabolites are compared; every other reaction is left out of
+%     the result entirely. Matching is against model.metNames and is case
+%     insensitive. A name that matches no metabolite is reported as a warning
+%     rather than an error (default all reactions).
 % nMax : double
 %     maximum rows printed in the summary table (default 20).
 % verbose : logical
@@ -46,14 +52,16 @@ function result = compareFluxes(model, fluxes1, fluxes2, varargin)
 %     solB = solveLP(modelAna);
 %     result = compareFluxes(model, solA.x, solB.x)
 %     result = compareFluxes(model, solA.x, solB.x, 'nMax', 50)
+%     result = compareFluxes(model, solA.x, solB.x, 'metaboliteList', {'ATP','NADH'})
 %
 % See also
 %     walkFluxes, traceFluxPath, modelSummary
 
-p = parseRAVENargs(varargin, {'cutoff',1e-8; 'nMax',20; 'verbose',true});
-cutoff  = p.cutoff;
-nMax    = p.nMax;
-verbose = p.verbose;
+p = parseRAVENargs(varargin, {'cutoff',1e-8; 'metaboliteList',[]; 'nMax',20; 'verbose',true});
+cutoff         = p.cutoff;
+metaboliteList = p.metaboliteList;
+nMax           = p.nMax;
+verbose        = p.verbose;
 
 f1    = fluxes1(:);
 f2    = fluxes2(:);
@@ -67,6 +75,30 @@ end
 active1 = abs(f1) > cutoff;
 active2 = abs(f2) > cutoff;
 delta   = f2 - f1;
+
+% Restrict to reactions involving one of metaboliteList, if given. Reactions
+% left out are treated as unchanged, so they appear in no output field.
+inList = true(nRxns, 1);
+if ~isempty(metaboliteList)
+    metaboliteList = convertCharArray(metaboliteList);
+    inList = false(nRxns, 1);
+    notFound = {};
+    for i = 1:numel(metaboliteList)
+        metIdx = find(strcmpi(metaboliteList{i}, model.metNames));
+        if isempty(metIdx)
+            notFound{end+1} = metaboliteList{i}; %#ok<AGROW>
+        else
+            inList(any(model.S(metIdx,:) ~= 0, 1)) = true;
+        end
+    end
+    if ~isempty(notFound)
+        warning('RAVEN:warning', '%s', ...
+            ravenList('No metabolite in the model is named:', notFound));
+    end
+    active1(~inList) = false;
+    active2(~inList) = false;
+    delta(~inList)   = 0;
+end
 
 onMask   = ~active1 &  active2;
 offMask  =  active1 & ~active2;
@@ -108,19 +140,19 @@ result.changed.relChange = relChange;
 result.changed.type      = changedTypes;
 
 if verbose
-    printTable_(model, result, nMax, nRxns);
+    printTable_(model, result, nMax, nnz(inList));
 end
 end
 
 %--------------------------------------------------------------------------
-function printTable_(model, r, nMax, nTotal)
+function printTable_(model, r, nMax, nConsidered)
     W   = 72;
     bar = repmat('=', 1, W);
     sep = repmat('-', 1, W);
     nC  = numel(r.changed.rxn);
 
     fprintf('\n%s\n', bar);
-    fprintf('  Flux comparison: %d of %d reactions changed\n', nC, nTotal);
+    fprintf('  Flux comparison: %d of %d reactions changed\n', nC, nConsidered);
     nOn  = numel(r.turnedOn);
     nOff = numel(r.turnedOff);
     nFlp = numel(r.flipped);

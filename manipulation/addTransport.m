@@ -110,15 +110,18 @@ for i=1:numel(toComps)
         namesInComp=metNames; %All requested metabolites now exist
     end
     
-    %Construct the S matrix
+    %Construct the S matrix directly as sparse (indexed assignment on a
+    %sparse matrix still overwrites rather than summing on a repeated
+    %index, same as on a dense one): a dense (mets x newRxns) intermediate
+    %is wasted allocation for a genome-scale model.
     nRxns=numel(fromMetsInComp);
-    newS=zeros(numel(model.mets),nRxns);
+    newS=sparse(numel(model.mets),nRxns);
     newS(sub2ind(size(newS),fromMetsInComp(:),(1:nRxns)'))=-1;
     newS(sub2ind(size(newS),toMets(:),(1:nRxns)'))=1;
-    
+
     %Add the reactions
-    model.S=[model.S sparse(newS)];
-    if isfield(model.annotation,'defaultLB')
+    model.S=[model.S newS];
+    if isfield(model,'annotation') && isfield(model.annotation,'defaultLB')
         lb = model.annotation.defaultLB;
         ub = model.annotation.defaultUB;
     else

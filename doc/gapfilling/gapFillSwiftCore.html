@@ -130,53 +130,81 @@ This function is called by:
 0052 <span class="comment">% ---- Convert to irreversible form ----</span>
 0053 <span class="comment">% SWIFTCORE requires an irreversible model so all fluxes are non-negative</span>
 0054 <span class="comment">% and the maximisation objective is well-defined.</span>
-0055 [irrevModel, ~, ~, irrev2rev] = convertToIrrev(model);
+0055 [irrevModel, matchRev, ~, irrev2rev] = convertToIrrev(model);
 0056 nIrrev = numel(irrevModel.rxns);
 0057 nMets  = numel(irrevModel.mets);
 0058 
-0059 <span class="comment">% Map core to irreversible equivalents.</span>
-0060 coreIdxIrrev = ismember(irrev2rev, coreOrigIdx);
-0061 
-0062 <span class="comment">% ---- Formulate LP ----</span>
-0063 <span class="comment">% Maximise sum of non-core fluxes, forcing core reactions &gt;= epsilon.</span>
-0064 <span class="comment">%</span>
-0065 <span class="comment">%   max   sum_{j not in C} v_j</span>
-0066 <span class="comment">%   s.t.  S_irrev * v = 0</span>
-0067 <span class="comment">%         v_j &gt;= epsilon   for j in C</span>
-0068 <span class="comment">%         0 &lt;= v &lt;= ub</span>
-0069 <span class="comment">%</span>
-0070 lb = irrevModel.lb;
-0071 lb(coreIdxIrrev) = max(lb(coreIdxIrrev), epsilon);
-0072 
-0073 c = -ones(nIrrev, 1);    <span class="comment">% negate because optimizeProb minimises by default</span>
-0074 c(coreIdxIrrev) = 0;     <span class="comment">% core reactions not in objective</span>
-0075 
-0076 prob.A      = irrevModel.S;
-0077 prob.a      = prob.A;
-0078 prob.b      = zeros(nMets, 1);
-0079 prob.csense = repmat(<span class="string">'E'</span>, 1, nMets);
-0080 prob.c      = c;
-0081 prob.osense = 1;           <span class="comment">% minimise (with negated c → maximises the original)</span>
-0082 prob.lb     = lb;
-0083 prob.ub     = irrevModel.ub;
-0084 prob.vartype = repmat(<span class="string">'C'</span>, 1, nIrrev);
-0085 
-0086 sol = optimizeProb(prob, [], false);
-0087 
-0088 <span class="keyword">if</span> ~checkSolution(sol)
-0089     activeRxns = false(numel(model.rxns), 1);
-0090     <span class="keyword">return</span>;
-0091 <span class="keyword">end</span>
-0092 
-0093 <span class="comment">% ---- Map solution back to original model ----</span>
-0094 irrevActive = sol.full(1:nIrrev) &gt;= epsilon / 2;
-0095 activeRxns  = false(numel(model.rxns), 1);
-0096 <span class="keyword">for</span> k = 1:nIrrev
-0097     <span class="keyword">if</span> irrevActive(k)
-0098         activeRxns(irrev2rev(k)) = true;
-0099     <span class="keyword">end</span>
-0100 <span class="keyword">end</span>
-0101 <span class="keyword">end</span></pre></div>
+0059 <span class="comment">% Map core to irreversible equivalents. convertToIrrev keeps the forward</span>
+0060 <span class="comment">% copy at the reaction's original index, so coreOrigIdx already are that</span>
+0061 <span class="comment">% copy's indices.</span>
+0062 coreIdxIrrev = false(nIrrev, 1);
+0063 coreIdxIrrev(coreOrigIdx) = true;
+0064 
+0065 <span class="comment">% A reversible core reaction also has a reverse copy elsewhere in</span>
+0066 <span class="comment">% irrevModel, with identical but oppositely-signed stoichiometry. Forcing</span>
+0067 <span class="comment">% both copies to &gt;= epsilon would let them cancel out in S_irrev*v=0</span>
+0068 <span class="comment">% (v_fwd=v_bwd=epsilon nets to zero for every metabolite the reaction</span>
+0069 <span class="comment">% touches), satisfying the &quot;core must carry flux&quot; requirement with a</span>
+0070 <span class="comment">% self-contained loop that needs no support from the rest of the network,</span>
+0071 <span class="comment">% regardless of whether the reaction has any real connectivity. Force one</span>
+0072 <span class="comment">% copy at a time instead, retrying in the other direction if the first is</span>
+0073 <span class="comment">% infeasible -- see gapFillFastCore, which has the identical issue.</span>
+0074 isRevCore   = matchRev(coreOrigIdx) &gt; 0;
+0075 fwdCoreCopy = coreOrigIdx(isRevCore);          <span class="comment">% forward copy of reversible core rxns</span>
+0076 revCoreCopy = matchRev(coreOrigIdx(isRevCore)); <span class="comment">% their reverse copy</span>
+0077 irrCoreCopy = coreOrigIdx(~isRevCore);          <span class="comment">% irreversible core rxns: single copy</span>
+0078 
+0079 <span class="comment">% ---- Formulate LP ----</span>
+0080 <span class="comment">% Maximise sum of non-core fluxes, forcing core reactions &gt;= epsilon.</span>
+0081 <span class="comment">%</span>
+0082 <span class="comment">%   max   sum_{j not in C} v_j</span>
+0083 <span class="comment">%   s.t.  S_irrev * v = 0</span>
+0084 <span class="comment">%         v_j &gt;= epsilon   for j in C</span>
+0085 <span class="comment">%         0 &lt;= v &lt;= ub</span>
+0086 <span class="comment">%</span>
+0087 c = -ones(nIrrev, 1);    <span class="comment">% negate because optimizeProb minimises by default</span>
+0088 c(coreIdxIrrev) = 0;     <span class="comment">% core reactions not in objective</span>
+0089 
+0090 prob.A      = irrevModel.S;
+0091 prob.a      = prob.A;
+0092 prob.b      = zeros(nMets, 1);
+0093 prob.csense = repmat(<span class="string">'E'</span>, 1, nMets);
+0094 prob.c      = c;
+0095 prob.osense = 1;           <span class="comment">% minimise (with negated c → maximises the original)</span>
+0096 prob.vartype = repmat(<span class="string">'C'</span>, 1, nIrrev);
+0097 
+0098 forceCopy   = {fwdCoreCopy, revCoreCopy};
+0099 disableCopy = {revCoreCopy, fwdCoreCopy};
+0100 nPasses     = 1 + ~isempty(fwdCoreCopy);   <span class="comment">% a second pass only differs when a reversible core rxn exists</span>
+0101 <span class="keyword">for</span> pass = 1:nPasses
+0102     lb = irrevModel.lb;
+0103     lb(irrCoreCopy)         = max(lb(irrCoreCopy), epsilon);
+0104     lb(forceCopy{pass})     = max(lb(forceCopy{pass}), epsilon);
+0105     ub = irrevModel.ub;
+0106     ub(disableCopy{pass})   = 0;
+0107     prob.lb = lb;
+0108     prob.ub = ub;
+0109 
+0110     sol = optimizeProb(prob, [], false);
+0111     <span class="keyword">if</span> checkSolution(sol)
+0112         <span class="keyword">break</span>;
+0113     <span class="keyword">end</span>
+0114 <span class="keyword">end</span>
+0115 
+0116 <span class="keyword">if</span> ~checkSolution(sol)
+0117     activeRxns = false(numel(model.rxns), 1);
+0118     <span class="keyword">return</span>;
+0119 <span class="keyword">end</span>
+0120 
+0121 <span class="comment">% ---- Map solution back to original model ----</span>
+0122 irrevActive = sol.full(1:nIrrev) &gt;= epsilon / 2;
+0123 activeRxns  = false(numel(model.rxns), 1);
+0124 <span class="keyword">for</span> k = 1:nIrrev
+0125     <span class="keyword">if</span> irrevActive(k)
+0126         activeRxns(irrev2rev(k)) = true;
+0127     <span class="keyword">end</span>
+0128 <span class="keyword">end</span>
+0129 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

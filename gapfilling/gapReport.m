@@ -69,7 +69,12 @@ if isempty(templateModels)
     addedFromTemplates=[];
 end
 
-fprintf(['Gap analysis for ' model.id ' - ' model.name '\n\n']);
+%Escapes model text before it is spliced into an fprintf template, since
+%a literal "%" in e.g. a model id or metabolite name would otherwise be
+%misread as a format directive and swallow the remainder of the line.
+esc=@(s) strrep(s,'%','%%');
+
+fprintf(['Gap analysis for ' esc(model.id) ' - ' esc(model.name) '\n\n']);
 if isfield(model,'unconstrained')
     calculateINOUT=true;
     closedModel=model;
@@ -106,14 +111,14 @@ fprintf('\n***Metabolite connectivity\n');
 fprintf(['To enable net production of all metabolites, a total of ' num2str(numel(minToConnect)) ' metabolites must be connected\n']);
 fprintf('Top 10 metabolites to connect:\n');
 for i=1:min(10,numel(minToConnect))
-    fprintf(['\t' num2str(i) '. ' minToConnect{i} '\n']);
+    fprintf(['\t' num2str(i) '. ' esc(minToConnect{i}) '\n']);
 end
 
 if calculateINOUT==true
     fprintf('\n***Mass balancing\n');
-    produced=canProduce(closedModel);
+    produced=canExchange(closedModel,'produce');
     canProduceWithoutInput=closedModel.mets(produced);
-    consumed=canConsume(closedModel);
+    consumed=canExchange(closedModel,'consume');
     canConsumeWithoutOutput=closedModel.mets(consumed);
     fprintf([num2str(numel(canConsumeWithoutOutput)) ' metabolites could be consumed without any outputs\n' num2str(numel(canProduceWithoutInput)) ' metabolites could be produced without any inputs\n']);
 end
@@ -121,9 +126,9 @@ end
 if ~isempty(templateModels)
     fprintf('\n***Automated gap-filling\n');
     [connectedFromTemplates, ~, addedFromTemplates]=fillGaps(model,templateModels);
-    t=templateModels{1}.id;
+    t=esc(templateModels{1}.id);
     for i=2:numel(templateModels)
-        t=[t ', ' templateModels{i}.id];
+        t=[t ', ' esc(templateModels{i}.id)];
     end
     fprintf([num2str(numel(connectedFromTemplates)) ' unconnected reactions can be connected by including ' num2str(numel(addedFromTemplates)) ' reactions from\n' t '\n']);
 end

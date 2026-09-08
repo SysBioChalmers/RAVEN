@@ -1,0 +1,482 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of runINIT</title>
+  <meta name="keywords" content="runINIT">
+  <meta name="description" content="runINIT  Solve the MILP of the original INIT algorithm.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../index.html">Home</a> &gt;  <a href="../index.html">INIT</a> &gt; <a href="index.html">tINIT</a> &gt; runINIT.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for INIT/tINIT&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+
+<h1>runINIT
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>runINIT  Solve the MILP of the original INIT algorithm.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>function [outModel, deletedRxns, metProduction, fValue]=runINIT(model,varargin) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> runINIT  Solve the MILP of the original INIT algorithm.
+
+ Generates a model using the INIT algorithm, based on proteomics and/or
+ transcriptomics and/or metabolomics and/or metabolic tasks. This function is
+ the actual implementation of the algorithm; see getINITModel for the
+ higher-level reconstruction function, and PLoS Comput Biol. 2012;8(5):e1002518
+ for the formulation.
+
+ ftINIT is the recommended method for context-specific model extraction, and
+ solves a different MILP in ftINITInternalAlg. This function remains
+ supported, and issues a RAVEN:legacyMethod notice once per session, which
+ warning('off','RAVEN:legacyMethod') silences.
+
+ Parameters
+ ----------
+ model : struct
+     a reference model structure.
+
+ Name-Value Arguments
+ --------------------
+ rxnScores : double
+     a vector of scores for the reactions in the model. Positive scores are
+     reactions to keep and negative scores are reactions to exclude (default
+     all 0.0).
+ presentMets : cell
+     cell array with unique metabolite names that the model should produce
+     (default []).
+ essentialRxns : cell
+     cell array of reactions that are essential and that have to be in the
+     resulting model. This is normally used when fitting a model to task (see
+     fitTasks) (default []).
+ prodWeight : double
+     a score that determines the value of having net-production of
+     metabolites. This is a way of having a more functional network as it
+     provides a reason for including bad reactions for connectivity reasons.
+     This score is for each metabolite, and the sum of these weights and the
+     scores for the reactions is what is optimized (default 0.5).
+ allowExcretion : logical
+     true if excretion of all metabolites should be allowed. This results in
+     fewer reactions being considered dead-ends, but all reactions in the
+     resulting model may not be able to carry flux. If this is &quot;false&quot; then
+     the equality constraints are taken from model.b. If the input model
+     lacks exchange reactions then this should probably be &quot;true&quot;, or a large
+     proportion of the model would be excluded for connectivity reasons
+     (default false).
+ noRevLoops : logical
+     true if reversible reactions should be constrained to only carry flux in
+     one direction. This prevents reversible reactions from being wrongly
+     assigned as connected (the forward and backward reactions can form a loop
+     and therefore appear connected), but it makes the problem significantly
+     more computationally intensive to solve (two more integer constraints per
+     reversible reaction) (default false).
+ params : struct
+     parameter structure for use by optimizeProb.
+
+ Returns
+ -------
+ outModel : struct
+     the resulting model structure.
+ deletedRxns : cell
+     reactions which were deleted by the algorithm.
+ metProduction : double
+     array that indicates which of the metabolites in presentMets that could
+     be produced:
+
+     - -2 : metabolite name not found in model.
+     - -1 : metabolite found, but it could not be produced.
+     - 1 : metabolite could be produced.
+ fValue : double
+     objective value (sum of (the negative of) reaction scores for the
+     included reactions and prodWeight*number of produced metabolites).
+
+ See Also
+ --------
+ <a href="getINITModel.html" class="code" title="">getINITModel</a>, ftINITInternalAlg, ftINIT</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="getINITModel.html" class="code" title="">getINITModel</a>	</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [outModel, deletedRxns, metProduction, fValue]=runINIT(model,varargin)</a>
+0002 <span class="comment">% runINIT  Solve the MILP of the original INIT algorithm.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Generates a model using the INIT algorithm, based on proteomics and/or</span>
+0005 <span class="comment">% transcriptomics and/or metabolomics and/or metabolic tasks. This function is</span>
+0006 <span class="comment">% the actual implementation of the algorithm; see getINITModel for the</span>
+0007 <span class="comment">% higher-level reconstruction function, and PLoS Comput Biol. 2012;8(5):e1002518</span>
+0008 <span class="comment">% for the formulation.</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% ftINIT is the recommended method for context-specific model extraction, and</span>
+0011 <span class="comment">% solves a different MILP in ftINITInternalAlg. This function remains</span>
+0012 <span class="comment">% supported, and issues a RAVEN:legacyMethod notice once per session, which</span>
+0013 <span class="comment">% warning('off','RAVEN:legacyMethod') silences.</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">% Parameters</span>
+0016 <span class="comment">% ----------</span>
+0017 <span class="comment">% model : struct</span>
+0018 <span class="comment">%     a reference model structure.</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% Name-Value Arguments</span>
+0021 <span class="comment">% --------------------</span>
+0022 <span class="comment">% rxnScores : double</span>
+0023 <span class="comment">%     a vector of scores for the reactions in the model. Positive scores are</span>
+0024 <span class="comment">%     reactions to keep and negative scores are reactions to exclude (default</span>
+0025 <span class="comment">%     all 0.0).</span>
+0026 <span class="comment">% presentMets : cell</span>
+0027 <span class="comment">%     cell array with unique metabolite names that the model should produce</span>
+0028 <span class="comment">%     (default []).</span>
+0029 <span class="comment">% essentialRxns : cell</span>
+0030 <span class="comment">%     cell array of reactions that are essential and that have to be in the</span>
+0031 <span class="comment">%     resulting model. This is normally used when fitting a model to task (see</span>
+0032 <span class="comment">%     fitTasks) (default []).</span>
+0033 <span class="comment">% prodWeight : double</span>
+0034 <span class="comment">%     a score that determines the value of having net-production of</span>
+0035 <span class="comment">%     metabolites. This is a way of having a more functional network as it</span>
+0036 <span class="comment">%     provides a reason for including bad reactions for connectivity reasons.</span>
+0037 <span class="comment">%     This score is for each metabolite, and the sum of these weights and the</span>
+0038 <span class="comment">%     scores for the reactions is what is optimized (default 0.5).</span>
+0039 <span class="comment">% allowExcretion : logical</span>
+0040 <span class="comment">%     true if excretion of all metabolites should be allowed. This results in</span>
+0041 <span class="comment">%     fewer reactions being considered dead-ends, but all reactions in the</span>
+0042 <span class="comment">%     resulting model may not be able to carry flux. If this is &quot;false&quot; then</span>
+0043 <span class="comment">%     the equality constraints are taken from model.b. If the input model</span>
+0044 <span class="comment">%     lacks exchange reactions then this should probably be &quot;true&quot;, or a large</span>
+0045 <span class="comment">%     proportion of the model would be excluded for connectivity reasons</span>
+0046 <span class="comment">%     (default false).</span>
+0047 <span class="comment">% noRevLoops : logical</span>
+0048 <span class="comment">%     true if reversible reactions should be constrained to only carry flux in</span>
+0049 <span class="comment">%     one direction. This prevents reversible reactions from being wrongly</span>
+0050 <span class="comment">%     assigned as connected (the forward and backward reactions can form a loop</span>
+0051 <span class="comment">%     and therefore appear connected), but it makes the problem significantly</span>
+0052 <span class="comment">%     more computationally intensive to solve (two more integer constraints per</span>
+0053 <span class="comment">%     reversible reaction) (default false).</span>
+0054 <span class="comment">% params : struct</span>
+0055 <span class="comment">%     parameter structure for use by optimizeProb.</span>
+0056 <span class="comment">%</span>
+0057 <span class="comment">% Returns</span>
+0058 <span class="comment">% -------</span>
+0059 <span class="comment">% outModel : struct</span>
+0060 <span class="comment">%     the resulting model structure.</span>
+0061 <span class="comment">% deletedRxns : cell</span>
+0062 <span class="comment">%     reactions which were deleted by the algorithm.</span>
+0063 <span class="comment">% metProduction : double</span>
+0064 <span class="comment">%     array that indicates which of the metabolites in presentMets that could</span>
+0065 <span class="comment">%     be produced:</span>
+0066 <span class="comment">%</span>
+0067 <span class="comment">%     - -2 : metabolite name not found in model.</span>
+0068 <span class="comment">%     - -1 : metabolite found, but it could not be produced.</span>
+0069 <span class="comment">%     - 1 : metabolite could be produced.</span>
+0070 <span class="comment">% fValue : double</span>
+0071 <span class="comment">%     objective value (sum of (the negative of) reaction scores for the</span>
+0072 <span class="comment">%     included reactions and prodWeight*number of produced metabolites).</span>
+0073 <span class="comment">%</span>
+0074 <span class="comment">% See Also</span>
+0075 <span class="comment">% --------</span>
+0076 <span class="comment">% getINITModel, ftINITInternalAlg, ftINIT</span>
+0077 
+0078 legacyMethodNotice(<span class="string">'runINIT'</span>,<span class="string">'ftINIT'</span>);
+0079 
+0080 p=parseRAVENargs(varargin, {<span class="string">'rxnScores'</span>,[]; <span class="string">'presentMets'</span>,[]; <span class="string">'essentialRxns'</span>,[]; <span class="string">'prodWeight'</span>,[]; <span class="string">'allowExcretion'</span>,false; <span class="string">'noRevLoops'</span>,false; <span class="string">'params'</span>,[]; <span class="string">'eps'</span>,1});
+0081 rxnScores=p.rxnScores;
+0082 presentMets=p.presentMets;
+0083 essentialRxns=p.essentialRxns;
+0084 prodWeight=p.prodWeight;
+0085 allowExcretion=p.allowExcretion;
+0086 noRevLoops=p.noRevLoops;
+0087 params=p.params;
+0088 initEps=p.eps;
+0089 <span class="keyword">if</span> isempty(rxnScores)
+0090     rxnScores=zeros(numel(model.rxns),1);
+0091 <span class="keyword">end</span>
+0092 <span class="keyword">if</span> isempty(presentMets)
+0093     presentMets={};
+0094 <span class="keyword">else</span>
+0095     presentMets=convertCharArray(presentMets);
+0096 <span class="keyword">end</span>
+0097 <span class="keyword">if</span> isempty(essentialRxns)
+0098     essentialRxns={};
+0099 <span class="keyword">else</span>
+0100     essentialRxns=convertCharArray(essentialRxns);
+0101 <span class="keyword">end</span>
+0102 <span class="keyword">if</span> isempty(prodWeight)
+0103     prodWeight=0.5;
+0104 <span class="keyword">end</span>
+0105 
+0106 <span class="keyword">if</span> numel(presentMets)~=numel(unique(presentMets))
+0107     EM=<span class="string">'Duplicate metabolite names in presentMets'</span>;
+0108     error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0109 <span class="keyword">end</span>
+0110 
+0111 <span class="comment">%Default is that the metabolites cannot be produced</span>
+0112 <span class="keyword">if</span> ~isempty(presentMets)
+0113     metProduction=ones(numel(presentMets),1)*-2;
+0114     presentMets=upper(presentMets);
+0115     pmIndexes=find(ismember(presentMets,upper(model.metNames)));
+0116     metProduction(pmIndexes)=-1; <span class="comment">%Then set that they are at least found</span>
+0117 <span class="keyword">else</span>
+0118     metProduction=[];
+0119     pmIndexes=[];
+0120 <span class="keyword">end</span>
+0121 
+0122 <span class="comment">%The model should be in the reversible format and all relevant exchange</span>
+0123 <span class="comment">%reactions should be open</span>
+0124 <span class="keyword">if</span> isfield(model,<span class="string">'unconstrained'</span>)
+0125     EM=<span class="string">'Exchange metabolites are still present in the model. Use simplifyModel if this is not intended'</span>;
+0126     warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'%s'</span>, EM);
+0127 <span class="keyword">end</span>
+0128 
+0129 <span class="comment">%The irreversible reactions that are essential must have a flux and are</span>
+0130 <span class="comment">%therefore not optimized for using MILP, which reduces the problem size.</span>
+0131 <span class="comment">%However, reversible reactions must have a flux in one direction, so they</span>
+0132 <span class="comment">%have to stay in the problem. The essentiality constraint on reversible</span>
+0133 <span class="comment">%reactions is implemented in the same manner as for reversible reactions</span>
+0134 <span class="comment">%when noRevLoops==true, but with the additional constraint that C ub=-1.</span>
+0135 <span class="comment">%This forces one of the directions to be active.</span>
+0136 revRxns=find(model.rev~=0);
+0137 essentialReversible=find(ismember(model.rxns(revRxns),essentialRxns));
+0138 essentialRxns=intersect(essentialRxns,model.rxns(model.rev==0));
+0139 
+0140 <span class="comment">%Convert the model to irreversible</span>
+0141 irrevModel=convertToIrrev(model);
+0142 rxnScores=[rxnScores;rxnScores(model.rev==1)];
+0143 <span class="comment">%These are used if noRevLoops is true</span>
+0144 <span class="keyword">if</span> noRevLoops==true
+0145     forwardIndexes=find(model.rev~=0);
+0146     backwardIndexes=(numel(model.rxns)+1:numel(irrevModel.rxns))';
+0147 <span class="keyword">else</span>
+0148     <span class="comment">%Then they should only be used for essential reversible reactions</span>
+0149     forwardIndexes=revRxns(essentialReversible);
+0150     backwardIndexes=essentialReversible+numel(model.rxns);
+0151 <span class="keyword">end</span>
+0152 
+0153 <span class="comment">%Get the indexes of the essential reactions and remove them from the</span>
+0154 <span class="comment">%scoring vector</span>
+0155 essentialIndex=find(ismember(irrevModel.rxns,essentialRxns));
+0156 rxnScores(essentialIndex)=[];
+0157 
+0158 <span class="comment">%Go through each of the presentMets (if they exist) and modify the S matrix</span>
+0159 <span class="comment">%so that each reaction which produces any of them also produces a</span>
+0160 <span class="comment">%corresponding fake metabolite and the opposite in the reverse direction.</span>
+0161 
+0162 <span class="comment">%This is to deal with the fact that there is no compartment info regarding</span>
+0163 <span class="comment">%the presentMets. This modifies the irrevModel structure, but that is fine</span>
+0164 <span class="comment">%since it is the model structure that is returned.</span>
+0165 <span class="keyword">if</span> any(pmIndexes)
+0166     irrevModel.metNames=upper(irrevModel.metNames);
+0167     <span class="comment">% num2str on the whole column right-aligns every row to a common width,</span>
+0168     <span class="comment">% embedding padding spaces once the indices span more than one digit</span>
+0169     <span class="comment">% count; format each one independently.</span>
+0170     metsToAdd.mets=arrayfun(@(x) sprintf(<span class="string">'FAKEFORPM%d'</span>,x), pmIndexes, <span class="string">'UniformOutput'</span>, false);
+0171     metsToAdd.metNames=metsToAdd.mets;
+0172     metsToAdd.compartments=irrevModel.comps{1};
+0173     
+0174     <span class="comment">%There is no constraints on the metabolites yet, since maybe not all of</span>
+0175     <span class="comment">%them could be produced</span>
+0176     irrevModel=addMets(irrevModel,metsToAdd);
+0177 <span class="keyword">end</span>
+0178 
+0179 <span class="comment">%Modify the matrix</span>
+0180 <span class="keyword">for</span> i=1:numel(pmIndexes)
+0181     <span class="comment">%Get the matching mets</span>
+0182     I=ismember(irrevModel.metNames,presentMets(pmIndexes(i)));
+0183     
+0184     <span class="comment">%Find the reactions where any of them are used.</span>
+0185     [~, K, L]=find(irrevModel.S(I,:));
+0186     
+0187     <span class="comment">%This ugly loop is to avoid problems if a metabolite occurs several</span>
+0188     <span class="comment">%times in one reaction</span>
+0189     KK=unique(K);
+0190     LL=zeros(numel(KK),1);
+0191     <span class="keyword">for</span> j=1:numel(KK)
+0192         LL(j)=sum(L(K==KK(j)));
+0193     <span class="keyword">end</span>
+0194     irrevModel.S(numel(irrevModel.mets)-numel(pmIndexes)+i,KK)=LL;
+0195 <span class="keyword">end</span>
+0196 
+0197 <span class="comment">%Some nice to have numbers</span>
+0198 nMets=numel(irrevModel.mets);
+0199 nRxns=numel(irrevModel.rxns);
+0200 nEssential=numel(essentialIndex);
+0201 nNonEssential=nRxns-nEssential;
+0202 nonEssentialIndex=setdiff(1:nRxns,essentialIndex);
+0203 <span class="comment">% Per-reaction big-M: use each reaction upper bound, capped at 1000.</span>
+0204 <span class="comment">% Must be at least initEps so the inclusion constraint is feasible.</span>
+0205 nonEssUBs = min(irrevModel.ub(nonEssentialIndex), 1000);
+0206 nonEssUBs = max(nonEssUBs(:), initEps);
+0207 S=irrevModel.S;
+0208 
+0209 <span class="comment">%Add so that each non-essential reaction produces one unit of a fake</span>
+0210 <span class="comment">%metabolite</span>
+0211 temp=sparse(1:nRxns,1:nRxns,1);
+0212 temp(essentialIndex,:)=[];
+0213 S=[S;temp];
+0214 
+0215 <span class="comment">%Add another set of reactions (will be binary) which also produce these</span>
+0216 <span class="comment">%fake metabolites, but with a stoichiometry of 1000</span>
+0217 temp=sparse(1:nNonEssential,1:nNonEssential,nonEssUBs);
+0218 temp=[sparse(nMets,nNonEssential);temp];
+0219 S=[S temp];
+0220 
+0221 <span class="comment">%Add reactions for net-production of (real) metabolites</span>
+0222 <span class="keyword">if</span> prodWeight~=0
+0223     temp=[speye(nMets-numel(pmIndexes))*-1;sparse(nNonEssential+numel(pmIndexes),nMets-numel(pmIndexes))];
+0224     S=[S temp];
+0225     <span class="comment">%To keep the number of reactions added like this</span>
+0226     nNetProd=nMets-numel(pmIndexes);
+0227 <span class="keyword">else</span>
+0228     nNetProd=0;
+0229 <span class="keyword">end</span>
+0230 
+0231 <span class="comment">%Add constraints so that reversible reactions can only be used in one</span>
+0232 <span class="comment">%direction. This is done by adding the fake metabolites A, B, C for each</span>
+0233 <span class="comment">%reversible reaction in the following manner</span>
+0234 <span class="comment">% forward: A + .. =&gt; ... backwards: B + ... =&gt; ... int1: C =&gt; 1000 A int2:</span>
+0235 <span class="comment">% C =&gt; 1000 B A ub=999.9 B ub=999.9 C lb=-1 int1 and int2 are binary</span>
+0236 <span class="keyword">if</span> any(forwardIndexes)
+0237     nRevBounds=numel(forwardIndexes);
+0238     
+0239     <span class="comment">%Add the A metabolites for the forward reactions and the B metabolites</span>
+0240     <span class="comment">%for the reverse reactions</span>
+0241     I=speye(numel(irrevModel.rxns))*-1;
+0242     temp=[I(forwardIndexes,:);I(backwardIndexes,:)];
+0243     
+0244     <span class="comment">%Padding</span>
+0245     temp=[temp sparse(size(temp,1),size(S,2)-numel(irrevModel.rxns))];
+0246     
+0247     <span class="comment">%Add the int1 &amp; int2 reactions that produce A and B</span>
+0248     temp=[temp speye(nRevBounds*2)*1000];
+0249     
+0250     <span class="comment">%And add that they also consume C</span>
+0251     temp=[temp;[sparse(nRevBounds,size(S,2)) speye(nRevBounds)*-1 speye(nRevBounds)*-1]];
+0252     
+0253     <span class="comment">%Add the new reactions and metabolites</span>
+0254     S=[S sparse(size(S,1),nRevBounds*2)];
+0255     S=[S;temp];
+0256 <span class="keyword">else</span>
+0257     nRevBounds=0;
+0258 <span class="keyword">end</span>
+0259 
+0260 <span class="comment">%Add so that the essential reactions must have a small flux and that the</span>
+0261 <span class="comment">%binary ones (and net-production reactions) may have zero flux. The integer</span>
+0262 <span class="comment">%reactions for reversible reactions have [0 1]</span>
+0263 prob.blx=[irrevModel.lb;zeros(nNonEssential+nNetProd+nRevBounds*2,1)];
+0264 prob.blx(essentialIndex)=min(max(initEps,prob.blx(essentialIndex)),irrevModel.ub(essentialIndex));
+0265 
+0266 <span class="comment">%Add so that the binary ones and net-production reactions can have at the</span>
+0267 <span class="comment">%most flux 1.0</span>
+0268 prob.bux=[irrevModel.ub;ones(nNonEssential+nNetProd+nRevBounds*2,1)];
+0269 
+0270 <span class="comment">%Add that the fake metabolites must be produced in a small amount and that</span>
+0271 <span class="comment">%the A and B metabolites for reversible reactions can be [0 999.9] and C</span>
+0272 <span class="comment">%metabolites [-1 0]</span>
+0273 prob.blc=[irrevModel.b(:,1);ones(nNonEssential,1)*initEps;zeros(nRevBounds*2,1);ones(nRevBounds,1)*-1];
+0274 
+0275 <span class="comment">%Add that normal metabolites can be freely excreted if</span>
+0276 <span class="comment">%allowExcretion==true, and that the fake ones can be excreted 1000 units at</span>
+0277 <span class="comment">%most. C metabolites for essential reversible reactions should have an</span>
+0278 <span class="comment">%upper bound of -1. If noRevLoops is false, then add this constraint for</span>
+0279 <span class="comment">%all the reactions instead.</span>
+0280 <span class="keyword">if</span> noRevLoops==true
+0281     revUB=zeros(nRevBounds,1);
+0282     revUB(essentialReversible)=-1;
+0283 <span class="keyword">else</span>
+0284     revUB=ones(nRevBounds,1)*-1;
+0285 <span class="keyword">end</span>
+0286 <span class="keyword">if</span> allowExcretion==true
+0287     metUB=inf(nMets,1);
+0288 <span class="keyword">else</span>
+0289     metUB=irrevModel.b(:,min(size(irrevModel.b,2),2));
+0290 <span class="keyword">end</span>
+0291 prob.buc=[metUB;nonEssUBs;ones(nRevBounds*2,1)*999.9;revUB];
+0292 
+0293 <span class="comment">%Add objective coefficients for the binary reactions. The negative is used</span>
+0294 <span class="comment">%since we are minimizing. The negative is taken for the prodWeight as well,</span>
+0295 <span class="comment">%to be consistent with the syntax that positive scores are good</span>
+0296 prob.c=[zeros(nRxns,1);rxnScores;ones(nNetProd,1)*prodWeight*-1;zeros(nRevBounds*2,1)];
+0297 prob.a=S;
+0298 
+0299 <span class="comment">% adapt problem structure for cobra-style solver</span>
+0300 prob.c=[prob.c;zeros(size(prob.a,1),1)];
+0301 prob.A=[prob.a -speye(size(prob.a,1))];
+0302 prob.b=zeros(size(prob.a,1), 1);
+0303 prob.ub=[prob.bux; prob.buc];
+0304 prob.osense=1;
+0305 prob.csense=char(zeros(1,size(prob.a,1)));
+0306 prob.csense(:)=<span class="string">'E'</span>;
+0307 
+0308 <span class="comment">%Add that the binary reactions may only take integer values. This has to be</span>
+0309 <span class="comment">%declared before the presentMets loop below: optimizeProb reads vartype on</span>
+0310 <span class="comment">%every call, and the producibility test is only meaningful against the same</span>
+0311 <span class="comment">%integer problem that is solved at the end.</span>
+0312 prob.vartype = repmat(<span class="string">'C'</span>, 1, size(prob.A, 2));
+0313 allInt=[(nRxns+1):(nRxns+nNonEssential) size(S,2)-nRevBounds*2+1:size(S,2)];
+0314 prob.vartype(allInt) = <span class="string">'B'</span>;
+0315 
+0316 <span class="comment">%We still do not know which of the presentMets that can be produced. Go</span>
+0317 <span class="comment">%through them, force production, and see if the problem can be solved</span>
+0318 <span class="keyword">for</span> i=1:numel(pmIndexes)
+0319     prob.blc(numel(irrevModel.mets)-numel(pmIndexes)+i)=1;
+0320     prob.lb=[prob.blx; prob.blc];
+0321     res=optimizeProb(prob,params);
+0322     isFeasible=checkSolution(res);
+0323     <span class="keyword">if</span> ~isFeasible
+0324         <span class="comment">%Reset the constraint again</span>
+0325         prob.blc(numel(irrevModel.mets)-numel(pmIndexes)+i)=0;
+0326     <span class="keyword">else</span>
+0327         <span class="comment">%Metabolite produced</span>
+0328         metProduction(pmIndexes(i))=1;
+0329     <span class="keyword">end</span>
+0330 <span class="keyword">end</span>
+0331 prob.lb=[prob.blx; prob.blc];
+0332 
+0333 <span class="comment">% solve problem</span>
+0334 res=optimizeProb(prob,params);
+0335 
+0336 <span class="comment">%Problem should not be infeasible, but it is possible that the time limit</span>
+0337 <span class="comment">%was reached before finding any solutions.</span>
+0338 <span class="keyword">if</span> ~checkSolution(res)
+0339     <span class="keyword">if</span> strcmp(res.origStat, <span class="string">'TIME_LIMIT'</span>)
+0340         EM=<span class="string">'Time limit reached without finding a solution. Try increasing the TimeLimit parameter.'</span>;
+0341     <span class="keyword">else</span>
+0342         EM=<span class="string">'The problem is infeasible'</span>;
+0343     <span class="keyword">end</span>
+0344     error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0345 <span class="keyword">end</span>
+0346 
+0347 fValue=res.obj;
+0348 
+0349 <span class="comment">%Get all reactions used in the irreversible model</span>
+0350 usedRxns=(nonEssentialIndex(res.full(nRxns+1:nRxns+nNonEssential)&lt;0.1))';
+0351 
+0352 <span class="comment">%Map to reversible model IDs</span>
+0353 usedRxns=[usedRxns(usedRxns&lt;=numel(model.rxns));revRxns(usedRxns(usedRxns&gt;numel(model.rxns))-numel(model.rxns))];
+0354 
+0355 <span class="comment">%Then get the ones that are not used in either direction or is essential</span>
+0356 I=true(numel(model.rxns),1);
+0357 I(usedRxns)=false;
+0358 I(essentialIndex)=false;
+0359 deletedRxns=model.rxns(I);
+0360 outModel=removeReactions(model,I,true,true);
+0361 <span class="keyword">end</span></pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

@@ -45,11 +45,7 @@ else
     genesToAdd.genes=convertCharArray(genesToAdd.genes);
 end
 
-%Number of genes
-nGenes=numel(genesToAdd.genes);
 nOldGenes=numel(model.genes);
-filler=cell(nGenes,1);
-filler(:)={''};
 largeFiller=cell(nOldGenes,1);
 largeFiller(:)={''};
 
@@ -71,9 +67,18 @@ elseif any(I)
     if isfield(genesToAdd,'geneMiriams')
         genesToAdd.geneMiriams(I)=[];
     end
-else
-    newModel.genes=[newModel.genes;genesToAdd.genes(:)];
+    if isfield(genesToAdd,'geneComps')
+        genesToAdd.geneComps(I)=[];
+    end
 end
+newModel.genes=[newModel.genes;genesToAdd.genes(:)];
+
+%Number of genes actually being added, now that any already-present genes
+%have been trimmed out; the per-field length checks below compare against
+%this
+nGenes=numel(genesToAdd.genes);
+filler=cell(nGenes,1);
+filler(:)={''};
 
 %Some more checks and if they pass then add each field to the structure
 if isfield(genesToAdd,'geneShortNames')

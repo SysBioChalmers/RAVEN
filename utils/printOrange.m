@@ -29,7 +29,14 @@ if nargout < 1
     % Wrap text to command window size
     sz = get(0, 'CommandWindowSize');
     orangeString = textwrap({orangeString},sz(1));
-    orangeString = strjoin(orangeString,'\n');
-    fprintf(orangeString);
+    orangeString = strjoin(orangeString,newline);
+    %stringToPrint is arbitrary text (e.g. a model id) and may contain a
+    %literal "%", which fprintf would otherwise reinterpret as a format
+    %directive; the desktop "[\b ... ]\b" highlight markers still need
+    %interpreting, so expand those explicitly instead of using orangeString
+    %itself as the format string.
+    orangeString = strrep(orangeString,'[\b',sprintf('[\b'));
+    orangeString = strrep(orangeString,']\b',sprintf(']\b'));
+    fprintf('%s',orangeString);
 end
 end

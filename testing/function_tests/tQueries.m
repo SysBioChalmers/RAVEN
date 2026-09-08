@@ -25,6 +25,41 @@ classdef tQueries < RavenTestCase
             checkModelStruct(testCase.model, true);
         end
 
+        function checkModelStructNoFalsePositiveOnWordStartingName(testCase)
+            % A metabolite name beginning with a non-numeric word must not be
+            % flagged as "begins with a number": str2double of that word is
+            % NaN, and any(NaN) is true in MATLAB.
+            m = testCase.model;
+            m.metNames{1} = 'alpha keto acid';
+            issues = checkModelStruct(m);
+            hit = arrayfun(@(x) contains(x.message,'begin with a number'), issues);
+            testCase.verifyFalse(any(hit));
+        end
+
+        function checkModelStructFlagsDuplicateNonSboMiriam(testCase)
+            % Two metabolites with different names sharing the same
+            % non-SBO MIRIAM (e.g. the same KEGG id) must be flagged:
+            % regexp's [] "no match" result must not be mistaken for a
+            % match via bitwise negation (~[] is also [], so the check
+            % never fired at all before the fix).
+            m = testCase.model;
+            idx = find(~strcmp(m.metNames, m.metNames{1}), 1);
+            m.metMiriams = cell(numel(m.mets),1);
+            m.metMiriams{1}.name = {'kegg.compound'}; m.metMiriams{1}.value = {'C00031'};
+            m.metMiriams{idx}.name = {'kegg.compound'}; m.metMiriams{idx}.value = {'C00031'};
+            issues = checkModelStruct(m);
+            hit = arrayfun(@(x) contains(x.message,'more than one unique metabolite name'), issues);
+            testCase.verifyTrue(any(hit));
+        end
+
+        function checkModelStructThrowErrorsFalseSkipsAfterMissingField(testCase)
+            % throwErrors=false must warn about a missing required field
+            % without then crashing trying to read that very field in a
+            % later check.
+            m = rmfield(testCase.model, 'id');
+            evalc('checkModelStruct(m, ''throwErrors'', false);');
+        end
+
         function constructEquationsAllRxns(testCase)
             eqns = constructEquations(testCase.model);
             testCase.verifyClass(eqns, 'cell');
@@ -61,6 +96,49 @@ classdef tQueries < RavenTestCase
             [S, outMets] = constructS({'2 oxoglutarate => succinate'}, 'mets', mets);
             testCase.verifyEqual(outMets, mets);
             testCase.verifyEqual(full(S), [-2;1]);
+        end
+
+        function constructSSumsRepeatedMetabolite(testCase)
+            % A metabolite written more than once on the same side is one
+            % coefficient, not the last occurrence.
+            [S, mets] = constructS({'2 a + a => b'}, 'mets', {'a';'b'});
+            testCase.verifyEqual(mets, {'a';'b'});
+            testCase.verifyEqual(full(S), [-3;1]);
+        end
+
+        function constructSCancelsMetaboliteOnBothSides(testCase)
+            % A metabolite on both sides cancels, which is exactly what
+            % badRxns reports: the reaction is empty in the S matrix.
+            [S, ~, badRxns] = constructS({'atp + adp <=> adp + atp'}, ...
+                'mets', {'atp';'adp'});
+            testCase.verifyEqual(full(S), [0;0]);
+            testCase.verifyTrue(badRxns(1));
+        end
+
+        function constructSMissingMetKeepsPercentInErrorNoRxns(testCase)
+            % A missing metabolite name containing "%" must survive intact
+            % in the error message, not be truncated by sprintf misreading
+            % it as a format directive.
+            testCase.verifyError(@() constructS({'a + met_with_%_sign => b'}, ...
+                'mets', {'a';'b'}), 'RAVEN:badInput');
+            try
+                constructS({'a + met_with_%_sign => b'}, 'mets', {'a';'b'});
+            catch e
+                testCase.verifySubstring(e.message, 'met_with_%_sign');
+            end
+        end
+
+        function constructSMissingMetKeepsPercentInErrorWithRxns(testCase)
+            % Same, but via the reaction-annotated branch (rxns supplied),
+            % which also splices in the reaction id.
+            try
+                constructS({'a + met_with_%_sign => b'}, 'mets', {'a';'b'}, ...
+                    'rxns', {'rxn_%_id'});
+                testCase.verifyFail('Expected an error to be thrown.');
+            catch e
+                testCase.verifySubstring(e.message, 'met_with_%_sign');
+                testCase.verifySubstring(e.message, 'rxn_%_id');
+            end
         end
 
         function getAllRxnsFromGenesType(testCase)
@@ -165,6 +243,33 @@ classdef tQueries < RavenTestCase
             testCase.verifyEqual(testCase.model.rxns(idx), exch);
         end
 
+        function getExchangeRxnsWithBoundaryMets(testCase)
+            % A model that still carries boundary metabolites (an
+            % "unconstrained" field, as every model from importModel does)
+            % takes a different branch than one where they have been
+            % removed. Both have to return reaction indexes.
+            m = testCase.taskTestModel();  % closeModel'd, so it has boundary mets
+            testCase.assertTrue(isfield(m, 'unconstrained'));
+            testCase.assertTrue(any(m.unconstrained ~= 0));
+
+            [exch, idx] = getExchangeRxns(m);
+            testCase.verifyEqual(sort(exch), {'R1'; 'R8'});
+            testCase.verifyEqual(m.rxns(idx), exch);
+
+            % R1 supplies a[s] ("=> a[s]"), R8 removes e[s] ("e[s] =>")
+            testCase.verifyEqual(getExchangeRxns(m, 'in'), {'R1'});
+            testCase.verifyEqual(getExchangeRxns(m, 'out'), {'R8'});
+        end
+
+        function getExchangeRxnsAgreeAcrossBoundaryRemoval(testCase)
+            % Removing the boundary metabolites must not change which
+            % reactions are exchange reactions.
+            m = testCase.taskTestModel();
+            withBoundary = getExchangeRxns(m);
+            withoutBoundary = getExchangeRxns(simplifyModel(m));
+            testCase.verifyEqual(sort(withoutBoundary), sort(withBoundary));
+        end
+
         function getExchangeRxnsThirdOutputIsMetIndex(testCase)
             [~, idx, mets] = getExchangeRxns(testCase.model);
             testCase.verifyNumElements(mets, numel(idx));
@@ -221,6 +326,36 @@ classdef tQueries < RavenTestCase
             testCase.verifyTrue(isfield(elements, 'abbrevs'));
         end
 
+        function parseFormulasRejectsPartialParse(testCase)
+            % A formula that stops at an unrecognised element is not parsed,
+            % even though the part before it was readable. Reporting it as
+            % parsed would hand back a silently truncated composition.
+            [elements, useMat, exitFlag] = parseFormulas({'C6H12O6';'C6Zz3'});
+            testCase.verifyEqual(exitFlag, [1;-1]);
+            testCase.verifyEqual(sum(useMat(2,:)), 0);
+            % The good formula is unaffected
+            cIdx = strcmp(elements.abbrevs, 'C');
+            testCase.verifyEqual(useMat(1, cIdx), 6);
+        end
+
+        function parseFormulasSingleFormulaKeepsElements(testCase)
+            % With one formula useMat is a row vector; the unused-element
+            % pruning must still test each element separately.
+            [elements, useMat] = parseFormulas({'C6H12O6'});
+            testCase.verifySize(useMat, [1 numel(elements.abbrevs)]);
+            testCase.verifyEqual(sort(elements.abbrevs(:)), {'C';'H';'O'});
+        end
+
+        function parseFormulasUnknownMassBlanksOnlyItsOwnFormula(testCase)
+            % R and X have no mass. A formula that uses one gets MW = NaN;
+            % formulas that do not must keep their weight.
+            [~, ~, ~, MW] = parseFormulas({'C6H12O6';'C2R';'H2O';'CX'});
+            testCase.verifyFalse(isnan(MW(1)));
+            testCase.verifyTrue(isnan(MW(2)));
+            testCase.verifyFalse(isnan(MW(3)));
+            testCase.verifyTrue(isnan(MW(4)));
+        end
+
         function parseRxnEquMetNames(testCase)
             mets = parseRxnEqu({'a + b => c'});
             testCase.verifyTrue(all(ismember({'a','b','c'}, mets)));
@@ -240,6 +375,31 @@ classdef tQueries < RavenTestCase
             testCase.verifySubstring(out, 'Objective value');
         end
 
+        function printFluxesRecognizesBoundaryMetExchanges(testCase)
+            % A model closed via closeModel represents an exchange as
+            % realMet <=> realMet[b] -- one reactant and one product --
+            % which "no reactants or no products" alone does not recognise,
+            % printing nothing for any of them.
+            m = testCase.taskTestModel();
+            [~,exchIdx] = getExchangeRxns(m,'all');
+            testCase.assumeNotEmpty(exchIdx, 'Fixture has no exchange reactions after closeModel.');
+            flux = ones(numel(m.rxns),1);
+            out = evalc('printFluxes(m, flux, ''onlyExchange'', true);');
+            testCase.verifySubstring(out, m.rxns{exchIdx(1)});
+        end
+
+        function getTransportRxnsExcludesBoundaryMetExchanges(testCase)
+            % closeModel copies the real metabolite's own name onto its
+            % boundary counterpart, so an exchange reaction has the same
+            % "same name, different compartment" shape as a genuine
+            % transport reaction.
+            m = testCase.taskTestModel();
+            [~,exchIdx] = getExchangeRxns(m,'all');
+            testCase.assumeNotEmpty(exchIdx, 'Fixture has no exchange reactions after closeModel.');
+            tr = getTransportRxns(m);
+            testCase.verifyFalse(any(tr(exchIdx)));
+        end
+
         function printFluxesRuns(testCase)
             testCase.assumeSolver('solveLP');
             sol = solveLP(testCase.model);
@@ -247,14 +407,35 @@ classdef tQueries < RavenTestCase
             testCase.verifyClass(out, 'char');
         end
 
-        function printModelRuns(testCase)
-            out = evalc('printModel(testCase.model, testCase.model.rxns(1))');
-            testCase.verifyNotEmpty(out);
+        function printFluxesKeepsPercentInRxnName(testCase)
+            % A rxnName containing a literal "%" must not be reinterpreted
+            % as a format directive, which would truncate everything after
+            % it instead of printing the flux line in full.
+            m = testCase.model;
+            m.rxnNames{1} = 'reaction with 50% yield';
+            flux = zeros(numel(m.rxns),1);
+            flux(1) = 1;
+            out = evalc('printFluxes(m, flux, false)');
+            testCase.verifySubstring(out, 'reaction with 50% yield');
         end
 
         function printModelStatsRuns(testCase)
             out = evalc('printModelStats(testCase.model)');
             testCase.verifyClass(out, 'char');
+        end
+
+        function printModelStatsKeepsPercentInModelName(testCase)
+            % model.name/model.id/compNames/mets/rxns are spliced into
+            % fprintf templates; a literal "%" in any of them must not be
+            % reinterpreted as a format directive.
+            m = testCase.model;
+            m.name = 'test model with 50% coverage';
+            m.S(1,:) = 0; % make mets{1} unused so it hits the errorText path
+            m.metNames{1} = 'unused met 30% pure';
+            out = evalc(['printModelStats(m, ''printModelIssues'', true, ' ...
+                '''printDetails'', true);']);
+            testCase.verifySubstring(out, 'test model with 50% coverage');
+            testCase.verifySubstring(out, 'unused met 30% pure');
         end
 
     end

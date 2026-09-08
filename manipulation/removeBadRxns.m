@@ -47,6 +47,10 @@ function [newModel, removedRxns]=removeBadRxns(model,varargin)
 %     constraints (default false).
 % printReport : logical
 %     true if a report should be printed (default false).
+% seed : double
+%     seed for the random number generator, so that which reaction is
+%     removed among several equally-valid candidates is reproducible
+%     across runs (default: current rng state is left untouched).
 %
 % Returns
 % -------
@@ -74,17 +78,20 @@ function [newModel, removedRxns]=removeBadRxns(model,varargin)
 % all unbalanced reactions from your model. This function tries to remove as
 % few problematic reactions as possible so that the model cannot
 % produce/consume anything from nothing. This is done by repeatedly calling
-% makeSomething/consumeSomething, checking if any of the involved reactions
-% are elementally unbalanced, removing one of them, and then iterating until
-% no metabolites can be produced/consumed. makeSomething is called before
-% consumeSomething.
+% findLeakMetabolite, checking if any of the involved reactions are
+% elementally unbalanced, removing one of them, and then iterating until no
+% metabolites can be produced/consumed. The 'produce' direction is run
+% before the 'consume' one.
 %
 % Examples
 % --------
 %     [newModel, removedRxns] = removeBadRxns(model, rxnRules, ignoreMets, ...
 %         isNames, balanceElements, refModel, ignoreIntBounds, printReport);
 
-p=parseRAVENargs(varargin, {'rxnRules',1; 'ignoreMets',[]; 'isNames',false; 'balanceElements',{'C';'P';'S';'N';'O'}; 'refModel',[]; 'ignoreIntBounds',false; 'printReport',false});
+p=parseRAVENargs(varargin, {'rxnRules',1; 'ignoreMets',[]; 'isNames',false; 'balanceElements',{'C';'P';'S';'N';'O'}; 'refModel',[]; 'ignoreIntBounds',false; 'printReport',false; 'seed',[]});
+if ~isempty(p.seed)
+    rng(p.seed);
+end
 rxnRules=p.rxnRules;
 ignoreMets=p.ignoreMets;
 if ~isempty(ignoreMets) && ~islogical(ignoreMets) && ~isnumeric(ignoreMets)
@@ -139,13 +146,15 @@ if ~isempty(setdiff(balanceElements,balanceStructure.elements.abbrevs))
 end
 bal=ismember(balanceStructure.elements.abbrevs,balanceElements);
 
-%Main loop. First run for makeSomething, second for consumeSomething
+%Main loop. First run for production, second for consumption
 warned=false(2,1); %This is to prevent the same warning being printed multiple times if rxnRules==3
 for i=1:2
     while 1
         %Make some metabolite using as few reactions as possible
         if i==1
-            [solution, metabolite]=makeSomething(model,ignoreMets,isNames,false,true,[],ignoreIntBounds);
+            [solution, metabolite]=findLeakMetabolite(model,'produce', ...
+                'ignoreMets',ignoreMets,'isNames',isNames,'minNrFluxes',false, ...
+                'allowExcretion',true,'ignoreIntBounds',ignoreIntBounds);
             if ~isempty(solution)
                 if printReport
                     fprintf(['Can make: ' model.metNames{metabolite(1)} '\n']);
@@ -155,7 +164,9 @@ for i=1:2
                 break;
             end
         else
-            [solution, metabolite]=consumeSomething(model,ignoreMets,isNames,false,[],ignoreIntBounds);
+            [solution, metabolite]=findLeakMetabolite(model,'consume', ...
+                'ignoreMets',ignoreMets,'isNames',isNames,'minNrFluxes',false, ...
+                'ignoreIntBounds',ignoreIntBounds);
             if ~isempty(solution)
                 if printReport
                     fprintf(['Can consume: ' model.metNames{metabolite(1)} '\n']);

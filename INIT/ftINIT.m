@@ -1,4 +1,4 @@
-function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, fullMipRes] = ftINIT(prepData, tissue, celltype, hpaData, varargin)
+﻿function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, fullMipRes] = ftINIT(prepData, tissue, celltype, hpaData, varargin)
 % ftINIT  Generate a model using the ftINIT algorithm.
 %
 % Main function for generating a model using the ftINIT algorithm, based on
@@ -67,6 +67,24 @@ function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, fullMipRes
 %     *obsolete option*.
 % verbose : logical
 %     if true, the MILP progression will be shown (default false).
+% resolveTies : logical
+%     if true, pin each step's degenerate MILP to a canonical answer instead
+%     of relying on the solver Seed alone: hold the score objective at its
+%     optimum, then minimise the count of removable ("on") reactions, then,
+%     among the sparsest, minimise their summed reaction-id rank. Applies to
+%     every main-extraction step (ftINITInternalAlg) and to the final
+%     gap-filling step (fitTasks' resolveTies) -- see raven-gecko-parity#104
+%     and raven-toolbox's resolve_ties (default false).
+% proveAbsGap : double
+%     if set, prove each step to this fixed *absolute* MILP gap in a single
+%     solve, instead of the relative-gap escalation below (stp.MILPParams).
+%     The escalation's final near-zero-objective run otherwise accepts an
+%     arbitrary within-gap incumbent -- measured on genome-scale Human-GEM to
+%     return a solution 2.0-4.0 objective units below the true optimum (see
+%     raven-toolbox's prove_abs_gap and the ftINIT reproducibility study on
+%     raven-docs). 1.0 is the recommended value: tighter (down to 0.05)
+%     proves nothing further and costs substantially more runtime. Pairs
+%     naturally with resolveTies (default [], i.e. use the escalation).
 %
 % Returns
 % -------
@@ -76,7 +94,7 @@ function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, fullMipRes
 %     array that indicates which of the metabolites in metabolomicsData that
 %     could be produced. Note that this is before the gap-filling process to
 %     enable defined tasks. To see which metabolites that can be produced in
-%     the final model, use canProduce:
+%     the final model, use canExchange:
 %
 %     - -2 : metabolite name not found in model.
 %     - -1 : metabolite found, but it could not be produced.
@@ -99,7 +117,7 @@ function [model, metProduction, addedRxnsForTasks, deletedRxnsInINIT, fullMipRes
 % metabolites remaining.
 %
 
-p=parseRAVENargs(varargin, {'transcrData',[]; 'metabolomicsData',[]; 'INITSteps',[]; 'removeGenes',[]; 'useScoresForTasks',[]; 'paramsFT',[]; 'verbose',false});
+p=parseRAVENargs(varargin, {'transcrData',[]; 'metabolomicsData',[]; 'INITSteps',[]; 'removeGenes',[]; 'useScoresForTasks',[]; 'paramsFT',[]; 'verbose',false; 'resolveTies',false; 'proveAbsGap',[]});
 transcrData=p.transcrData;
 metabolomicsData=p.metabolomicsData;
 INITSteps=p.INITSteps;
@@ -107,6 +125,8 @@ removeGenes=p.removeGenes;
 useScoresForTasks=p.useScoresForTasks;
 paramsFT=p.paramsFT;
 verbose=p.verbose;
+resolveTies=p.resolveTies;
+proveAbsGap=p.proveAbsGap;
 if isempty(INITSteps)
     INITSteps = getINITSteps([],'1+1');
 end
@@ -156,7 +176,7 @@ else
 end
 
 % Get rxn scores and adapt them to the minimized model
-origRxnScores = scoreComplexModel(prepData.refModel,hpaData,transcrData,tissue,celltype);
+origRxnScores = scoreModel(prepData.refModel,hpaData,transcrData,tissue,celltype);
 origRxnScores(origRxnScores > -0.1 & origRxnScores <= 0) = -0.1;%we don't want reaction scores that are exactly 0 (or close), this causes problems in the milp
 origRxnScores(origRxnScores < 0.1 & origRxnScores > 0) = 0.1;
 
@@ -220,62 +240,92 @@ for initStep = 1:length(INITSteps)
     end
 
     
-    mipGap = 1;
-    first = true;
-    success = false;
     fullMipRes = [];
     lastError = [];
-    for rn = 1:length(stp.MILPParams)
-        params = stp.MILPParams{rn};
-        if ~isfield(params, 'MIPGap')
-            params.MIPGap = 0.0004;
+    if ~isempty(proveAbsGap)
+        %One solve proven to this fixed absolute gap, replacing the relative-gap
+        %escalation below. The escalation's final near-zero-objective run otherwise
+        %accepts an arbitrary within-gap incumbent -- measured on genome-scale
+        %Human-GEM to cost 2.0-4.0 objective units (raven-toolbox's prove_abs_gap,
+        %raven-gecko-parity#104). Pairs naturally with resolveTies.
+        if ~isempty(stp.MILPParams) && isfield(stp.MILPParams{1}, 'TimeLimit')
+            params = struct('TimeLimit', stp.MILPParams{1}.TimeLimit);
+        else
+            params = struct('TimeLimit', 5000);
         end
-        
-        if ~isfield(params, 'TimeLimit')
-            params.TimeLimit = 5000;
-        end
-        
-        if ~first 
-            %There is sometimes a problem with that the objective function becomes close to zero,
-            %which leads to that a small percentage of that (which is the MIPGap sent in) is very small
-            %and the MILP hence takes a lot of time to finish. We also therefore use an absolute MIP gap, 
-            %converted to a percentage using the last value of the objective function.
-            params.MIPGap = min(max(params.MIPGap, stp.AbsMIPGaps{rn}/abs(lastObjVal)),1);
-            params.seed = 1234;%use another seed, may work better
-
-            if mipGap <= params.MIPGap
-                success = true;
-                break; %we're done - this will not happen the first time
-            else
-                disp(['MipGap too high, trying with a different run. MipGap = ' num2str(mipGap) ' New MipGap Limit = ' num2str(params.MIPGap)])
-            end
-        end
-        
-        first = false;
-        
-        %now run the MILP
+        params.MIPGap = 0;
+        params.MIPGapAbs = proveAbsGap;
         try
-            %The prodweight for metabolomics is set to 5. This value has not
-            %been evaluated, but is assumed in the test cases - if changed, update the test case
-            startVals = [];
-            if ~isempty(fullMipRes)
-                startVals = fullMipRes.full;
-            end
-            [deletedRxnsInINIT1, metProduction,fullMipRes,rxnsTurnedOn1,fluxes1] = ftINITInternalAlg(mm,rxnScores,metData,essentialRxns,5,stp.AllowMetSecr,stp.PosRevOff,params, startVals, fluxes, verbose);
-            %This is a bit tricky - since we reversed some reactions, those fluxes also need to be reversed
+            [deletedRxnsInINIT1, metProduction,fullMipRes,rxnsTurnedOn1,fluxes1] = ftINITInternalAlg(mm,rxnScores,metData,essentialRxns,5,stp.AllowMetSecr,stp.PosRevOff,params, [], fluxes, verbose, 0.1, resolveTies);
             fluxes1(toRev) = -fluxes1(toRev);
-            
-            mipGap = fullMipRes.mipgap;
-            lastObjVal = fullMipRes.obj;
+            success = true;
+            if fullMipRes.stat ~= 1
+                %stat==2 (checkSolution.m): feasible but not proven within the time
+                %limit -- an unproven incumbent, same caveat as the escalation path
+                %below, but disclosed since proveAbsGap explicitly asks for a proof.
+                EM=['ftINIT step ' num2str(initStep) ' hit the time limit before proving proveAbsGap; its kept reactions are an unproven incumbent. Raise TimeLimit, or loosen proveAbsGap.'];
+                warning('RAVEN:warning', '%s', EM);
+            end
         catch e
-            mipGap = Inf;
-            lastObjVal = Inf; %we need to set something here, Inf leads to that this doesn't come into play
-            lastError = e; %kept so a throw is not reported as a time-limit miss
+            success = false;
+            lastError = e;
         end
-        
-        success = mipGap <= params.MIPGap;
+    else
+        mipGap = 1;
+        first = true;
+        success = false;
+        for rn = 1:length(stp.MILPParams)
+            params = stp.MILPParams{rn};
+            if ~isfield(params, 'MIPGap')
+                params.MIPGap = 0.0004;
+            end
+
+            if ~isfield(params, 'TimeLimit')
+                params.TimeLimit = 5000;
+            end
+
+            if ~first
+                %There is sometimes a problem with that the objective function becomes close to zero,
+                %which leads to that a small percentage of that (which is the MIPGap sent in) is very small
+                %and the MILP hence takes a lot of time to finish. We also therefore use an absolute MIP gap,
+                %converted to a percentage using the last value of the objective function.
+                params.MIPGap = min(max(params.MIPGap, stp.AbsMIPGaps{rn}/abs(lastObjVal)),1);
+                params.seed = 1234;%use another seed, may work better
+
+                if mipGap <= params.MIPGap
+                    success = true;
+                    break; %we're done - this will not happen the first time
+                else
+                    disp(['MipGap too high, trying with a different run. MipGap = ' num2str(mipGap) ' New MipGap Limit = ' num2str(params.MIPGap)])
+                end
+            end
+
+            first = false;
+
+            %now run the MILP
+            try
+                %The prodweight for metabolomics is set to 5. This value has not
+                %been evaluated, but is assumed in the test cases - if changed, update the test case
+                startVals = [];
+                if ~isempty(fullMipRes)
+                    startVals = fullMipRes.full;
+                end
+                [deletedRxnsInINIT1, metProduction,fullMipRes,rxnsTurnedOn1,fluxes1] = ftINITInternalAlg(mm,rxnScores,metData,essentialRxns,5,stp.AllowMetSecr,stp.PosRevOff,params, startVals, fluxes, verbose, 0.1, resolveTies);
+                %This is a bit tricky - since we reversed some reactions, those fluxes also need to be reversed
+                fluxes1(toRev) = -fluxes1(toRev);
+
+                mipGap = fullMipRes.mipgap;
+                lastObjVal = fullMipRes.obj;
+            catch e
+                mipGap = Inf;
+                lastObjVal = Inf; %we need to set something here, Inf leads to that this doesn't come into play
+                lastError = e; %kept so a throw is not reported as a time-limit miss
+            end
+
+            success = mipGap <= params.MIPGap;
+        end
     end
-    
+
     if ~success
         if ~isempty(lastError)
             %The MILP threw rather than returning a poor gap; reporting this
@@ -326,8 +376,9 @@ initModel = removeMets(initModel, setdiff(unusedMets, prepData.essentialMetsForT
 %    printScores(removeReactions(cModel,setdiff(cModel.rxns,rxnsToRem),true,true),"Reactions deleted by INIT",hpaData,transcrData,tissue,celltype);
 %end
 
-%The full model has exchange reactions in it. ftINITFillGapsForAllTasks calls 
-%ftINITFillGaps, which automatically removes exchange metabolites (because it 
+%The full model has exchange reactions in it. fitTasks with gapFillMode
+%'preMerged' calls ftINITFillGaps, which automatically removes exchange
+%metabolites (because it
 %assumes that the reactions are constrained when appropriate). In this case the
 %uptakes/outputs are retrieved from the task sheet instead. To prevent
 %exchange reactions being used to fill gaps, they are deleted from the
@@ -357,9 +408,15 @@ if ~isempty(prepData.taskStruct)
         rxnScores2nd = NaN(length(refModelNoExc.rxns),1);
         rxnScores2nd(ia) = origRxnScores(ib);
         %all(rxnScores2nd == refRxnScores);%should be the same, ok!
-        [outModel,addedRxnMat] = ftINITFillGapsForAllTasks(initModelNoExc,refModelNoExc,[],true,min(rxnScores2nd,-0.1),prepData.taskStruct,paramsFT,verbose);
+        [outModel,addedRxnMat] = fitTasks(initModelNoExc,refModelNoExc,[], ...
+            'printOutput',true,'rxnScores',min(rxnScores2nd,-0.1), ...
+            'taskStructure',prepData.taskStruct,'gapFillMode','preMerged', ...
+            'params',paramsFT,'verbose',verbose,'resolveTies',resolveTies);
     else
-        [outModel,addedRxnMat] = ftINITFillGapsForAllTasks(initModelNoExc,refModelNoExc,[],true,[],prepData.taskStruct,paramsFT,verbose);
+        [outModel,addedRxnMat] = fitTasks(initModelNoExc,refModelNoExc,[], ...
+            'printOutput',true,'rxnScores',[], ...
+            'taskStructure',prepData.taskStruct,'gapFillMode','preMerged', ...
+            'params',paramsFT,'verbose',verbose,'resolveTies',resolveTies);
     end
     %if printReport == true
     %    printScores(outModel,"Functional model statistics",hpaData,transcrData,tissue,celltype);
@@ -398,7 +455,7 @@ outModel = removeReactions(prepData.refModel, deletedRxnsInINIT, true); %we skip
 % See the "removeLowScoreGenes" function more more details, and to adjust
 % any default parameters therein.
 if ( removeGenes )
-    [~, geneScores] = scoreComplexModel(outModel,hpaData,transcrData,tissue,celltype);
+    [~, geneScores] = scoreModel(outModel,hpaData,transcrData,tissue,celltype);
     outModel = removeLowScoreGenes(outModel,geneScores);
 end
 
@@ -409,7 +466,7 @@ end
 
 %This is for printing a summary of a model
 function [rxnS, geneS] = printScores(model,name,hpaData,transcrData,tissue,celltype)
-    [a, b] = scoreComplexModel(model,hpaData,transcrData,tissue,celltype);
+    [a, b] = scoreModel(model,hpaData,transcrData,tissue,celltype);
     rxnS = mean(a);
     geneS = mean(b,'omitnan');
     fprintf([name ':\n']);

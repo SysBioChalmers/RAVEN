@@ -3,8 +3,7 @@ classdef tBiomass < RavenTestCase
 %
 %   The textbook E. coli model has a single lumped biomass reaction rather
 %   than per-component pseudoreactions, so component-scaling functions are
-%   tested on their missing-pseudoreaction error path, and fitParameters
-%   (which needs quadprog) is guarded on the Optimization Toolbox.
+%   tested on their missing-pseudoreaction error path.
 
     methods (Test)
 
@@ -53,12 +52,39 @@ classdef tBiomass < RavenTestCase
                 'scaleBiomassPseudoreaction:unknownCharge');
         end
 
-        function fitParametersRunsWhenQuadprogAvailable(testCase)
-            testCase.assumeDependency(exist('quadprog','file')==2, ...
-                'Optimization Toolbox (quadprog)');
-            % Minimal single-parameter fit of an exchange flux.
-            biomassRxn = testCase.model.rxns{find(testCase.model.c == 1, 1)};
-            pos.position = 1; pos.value = 0;
+        function fitParametersSetsUpperBoundPerXRxn(testCase)
+            % model.ub for a second xRxn must come from its own column of
+            % xValues, not the first column broadcast to every xRxn (which
+            % also inverts that reaction's bounds whenever its value is
+            % smaller than the first column's).
+            m = struct();
+            m.id='t'; m.rxns={'R1';'R2';'R3';'R4'}; m.rxnNames=m.rxns;
+            m.mets={'m1';'m2'}; m.metNames=m.mets; m.metComps=[1;1];
+            m.comps={'c'}; m.compNames={'c'};
+            m.S=sparse([1 0 -1 0; 0 1 0 -1]); % R1:=>m1  R2:=>m2  R3:m1=>  R4:m2=>
+            m.lb=[0;0;0;0]; m.ub=[1000;1000;1000;1000]; m.rev=[0;0;0;0];
+            m.c=[0;0;0;0]; m.b=zeros(2,1);
+            m.genes={}; m.grRules={'';'';'';''}; m.rxnGeneMat=sparse(4,0);
+            pos.position={[]}; pos.isNegative={[]};
+            evalc(['[~,fitnessScore] = fitParameters(m, {''R1'';''R2''}, [5 7], ' ...
+                '{''R3'';''R4''}, [5 7], pos, ''fitToRatio'', false);']);
+            % R3/R4 are only reachable via mass balance from R1/R2's fixed
+            % (lb=ub) values, so a correct fit has exactly zero residual.
+            testCase.verifyEqual(fitnessScore, 0, 'AbsTol', 1e-9);
+        end
+
+        function fitParametersRuns(testCase)
+            % Minimal single-parameter fit of an exchange flux. fitParameters
+            % uses fminsearch (base MATLAB), not quadprog, so no toolbox guard.
+            biomassRxnIdx = find(testCase.model.c == 1, 1);
+            biomassRxn = testCase.model.rxns{biomassRxnIdx};
+            % parameterPositions.position/isNegative are cell arrays, one cell
+            % per fitted parameter, of linear S-matrix indices (see
+            % fitParameters' docstring) -- fit the coefficient of the first
+            % reactant in the biomass reaction.
+            metIdx = find(testCase.model.S(:,biomassRxnIdx) < 0, 1);
+            pos.position = {sub2ind(size(testCase.model.S), metIdx, biomassRxnIdx)};
+            pos.isNegative = {true};
             evalc(['p = fitParameters(testCase.model, {biomassRxn}, 0.5, ' ...
                 '{biomassRxn}, 0.5, pos);']);
             testCase.verifyNotEmpty(p);

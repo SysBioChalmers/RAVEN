@@ -194,152 +194,165 @@ This function is called by:
 0105 <span class="comment">%Loop through each formula</span>
 0106 <span class="keyword">for</span> i=1:numel(formulas)
 0107     <span class="keyword">if</span> ~isempty(formulas{i})
-0108         sucess=false; <span class="comment">%To see if it works</span>
-0109         formula=formulas{i};
-0110         
-0111         <span class="comment">%If it's an InChI code. The composition is found between the first</span>
-0112         <span class="comment">%and the second &quot;/&quot; For some simple molecules such as salts only</span>
-0113         <span class="comment">%the first &quot;/&quot; is present</span>
-0114         <span class="keyword">if</span> isInchi==true
-0115             S=regexp(formula,<span class="string">'/'</span>,<span class="string">'split'</span>);
-0116             <span class="keyword">if</span> numel(S)&gt;=2
-0117                 formula=S{2};
-0118             <span class="keyword">else</span>
-0119                 formula=<span class="string">''</span>;
-0120             <span class="keyword">end</span>
-0121         <span class="keyword">end</span>
-0122         <span class="comment">%Only look at what's between the parantheses (polymers are not</span>
-0123         <span class="comment">%supported in InChI)</span>
-0124         <span class="keyword">if</span> isInchi==false
-0125             LP=strfind(formula,<span class="string">'('</span>);
-0126             RP=strfind(formula,<span class="string">')n'</span>);
-0127             <span class="comment">%            if numel(LP)&gt;1 || numel(RP)&gt;1</span>
-0128             <span class="comment">%               exitFlag(i)=-1; continue;</span>
-0129             <span class="comment">%            end if numel(LP)&gt;1 || numel(RP)&gt;1</span>
-0130             <span class="comment">%               exitFlag(i)=-1; continue;</span>
-0131             <span class="comment">%            end</span>
-0132             <span class="keyword">if</span> numel(LP)==1 &amp;&amp; numel(RP)==1
-0133                 <span class="comment">%This means that the polymer should be regarded as a</span>
-0134                 <span class="comment">%monomer</span>
-0135                 <span class="keyword">if</span> noPolymers==true
-0136                     <span class="comment">%This means that there are one set of parantheses</span>
-0137                     formula=strrep(formula,<span class="string">'('</span>,<span class="string">''</span>);
-0138                     formula=strrep(formula,<span class="string">')n'</span>,<span class="string">''</span>);
-0139                 <span class="keyword">else</span>
-0140                     <span class="comment">%This means that polymers should be ignored</span>
-0141                     exitFlag(i)=-1;
-0142                     <span class="keyword">continue</span>;
-0143                 <span class="keyword">end</span>
-0144             <span class="keyword">else</span>
-0145                 <span class="keyword">if</span> ~isempty(LP) || ~isempty(RP)
-0146                     exitFlag(i)=-1;
-0147                     <span class="keyword">continue</span>;
-0148                 <span class="keyword">end</span>
-0149             <span class="keyword">end</span>
-0150         <span class="keyword">end</span>
-0151         
-0152         <span class="comment">%Get the indexes of the numeric (or &quot;.&quot;) characters</span>
-0153         nonNumeric=false(numel(formula),1);
-0154         nonNumeric(regexp(formula,<span class="string">'[^0-9.]'</span>))=true;
-0155         
-0156         <span class="comment">%Get the indexes of the upper characters (since each element starts</span>
-0157         <span class="comment">%with an upper character)</span>
-0158         upperI=isstrprop(formula,<span class="string">'upper'</span>);
-0159         upperX=find(upperI);
-0160         
-0161         <span class="keyword">for</span> j=1:numel(upperX)
-0162             <span class="comment">%The first case is when it's the last character. Then the</span>
-0163             <span class="comment">%coefficient must be 1</span>
-0164             isLast=false;
-0165             <span class="keyword">if</span> upperX(j)==numel(formula)
-0166                 coeff=1;
-0167                 element=formula(upperX(j));
-0168                 isLast=true;
-0169             <span class="keyword">end</span>
-0170             
-0171             <span class="keyword">if</span> isLast==false
-0172                 <span class="comment">%The second case is when the following character is a</span>
-0173                 <span class="comment">%character</span>
-0174                 <span class="keyword">if</span> nonNumeric(upperX(j)+1)
-0175                     <span class="comment">%Is it a new element?</span>
-0176                     <span class="keyword">if</span> upperI(upperX(j)+1)
-0177                         <span class="comment">%New element, that means that the coefficient was 1</span>
-0178                         <span class="comment">%and that the element was only one character</span>
-0179                         coeff=1;
-0180                         element=formula(upperX(j));
-0181                     <span class="keyword">else</span>
-0182                         <span class="comment">%This means that it's an element with two</span>
-0183                         <span class="comment">%characters</span>
-0184                         <span class="keyword">if</span> j==numel(upperX)
-0185                             <span class="keyword">if</span> upperX(j)&lt;numel(formula)-1
-0186                                 coeff=str2double(formula(upperX(j)+2:end));
-0187                             <span class="keyword">else</span>
-0188                                 coeff=1;
-0189                             <span class="keyword">end</span>
-0190                         <span class="keyword">else</span>
-0191                             <span class="comment">%Check if there is a number or a new element</span>
-0192                             <span class="comment">%after it</span>
-0193                             <span class="keyword">if</span> nonNumeric(upperX(j)+2)==true
-0194                                 coeff=1;
-0195                             <span class="keyword">else</span>
-0196                                 coeff=str2double(formula(upperX(j)+2:upperX(j+1)-1));
-0197                             <span class="keyword">end</span>
-0198                         <span class="keyword">end</span>
-0199                         element=formula(upperX(j):upperX(j)+1);
-0200                     <span class="keyword">end</span>
-0201                 <span class="keyword">else</span>
-0202                     <span class="comment">%Then it is a numeral</span>
-0203                     <span class="keyword">if</span> j==numel(upperX)
-0204                         coeff=str2double(formula(upperX(j)+1:end));
-0205                     <span class="keyword">else</span>
-0206                         coeff=str2double(formula(upperX(j)+1:upperX(j+1)-1));
-0207                     <span class="keyword">end</span>
-0208                     element=formula(upperX(j));
-0209                 <span class="keyword">end</span>
-0210             <span class="keyword">end</span>
-0211             
-0212             <span class="comment">%Find the element</span>
-0213             I=strcmp(element,elements.abbrevs);
-0214             <span class="keyword">if</span> any(I)
-0215                 <span class="keyword">if</span> ~isnan(coeff)
-0216                     useMat(i,I)=useMat(i,I)+coeff;
-0217                     sucess=true;
-0218                 <span class="keyword">else</span>
-0219                     <span class="keyword">break</span>;
-0220                 <span class="keyword">end</span>
-0221             <span class="keyword">else</span>
-0222                 <span class="keyword">break</span>;
-0223             <span class="keyword">end</span>
-0224         <span class="keyword">end</span>
-0225         <span class="keyword">if</span> sucess==false
-0226             useMat(i,:)=0; <span class="comment">%Reset for this formula</span>
-0227             exitFlag(i)=-1;
-0228         <span class="keyword">else</span>
-0229             exitFlag(i)=1;
-0230         <span class="keyword">end</span>
-0231     <span class="keyword">end</span>
-0232 <span class="keyword">end</span>
-0233 
-0234 <span class="comment">%Remove the elements which are never used</span>
-0235 I=~any(useMat);
-0236 useMat(:,I)=[];
-0237 elements.abbrevs(I)=[];
-0238 elements.names(I)=[];
-0239 EWs(I)=[];
+0108         sucess=false; <span class="comment">%True once at least one element has been read</span>
+0109         failed=false; <span class="comment">%True if any part of the formula could not be read</span>
+0110         formula=formulas{i};
+0111         
+0112         <span class="comment">%If it's an InChI code. The composition is found between the first</span>
+0113         <span class="comment">%and the second &quot;/&quot; For some simple molecules such as salts only</span>
+0114         <span class="comment">%the first &quot;/&quot; is present</span>
+0115         <span class="keyword">if</span> isInchi==true
+0116             S=regexp(formula,<span class="string">'/'</span>,<span class="string">'split'</span>);
+0117             <span class="keyword">if</span> numel(S)&gt;=2
+0118                 formula=S{2};
+0119             <span class="keyword">else</span>
+0120                 formula=<span class="string">''</span>;
+0121             <span class="keyword">end</span>
+0122         <span class="keyword">end</span>
+0123         <span class="comment">%Only look at what's between the parantheses (polymers are not</span>
+0124         <span class="comment">%supported in InChI)</span>
+0125         <span class="keyword">if</span> isInchi==false
+0126             LP=strfind(formula,<span class="string">'('</span>);
+0127             RP=strfind(formula,<span class="string">')n'</span>);
+0128             <span class="comment">%            if numel(LP)&gt;1 || numel(RP)&gt;1</span>
+0129             <span class="comment">%               exitFlag(i)=-1; continue;</span>
+0130             <span class="comment">%            end if numel(LP)&gt;1 || numel(RP)&gt;1</span>
+0131             <span class="comment">%               exitFlag(i)=-1; continue;</span>
+0132             <span class="comment">%            end</span>
+0133             <span class="keyword">if</span> numel(LP)==1 &amp;&amp; numel(RP)==1
+0134                 <span class="comment">%This means that the polymer should be regarded as a</span>
+0135                 <span class="comment">%monomer</span>
+0136                 <span class="keyword">if</span> noPolymers==true
+0137                     <span class="comment">%This means that there are one set of parantheses</span>
+0138                     formula=strrep(formula,<span class="string">'('</span>,<span class="string">''</span>);
+0139                     formula=strrep(formula,<span class="string">')n'</span>,<span class="string">''</span>);
+0140                 <span class="keyword">else</span>
+0141                     <span class="comment">%This means that polymers should be ignored</span>
+0142                     exitFlag(i)=-1;
+0143                     <span class="keyword">continue</span>;
+0144                 <span class="keyword">end</span>
+0145             <span class="keyword">else</span>
+0146                 <span class="keyword">if</span> ~isempty(LP) || ~isempty(RP)
+0147                     exitFlag(i)=-1;
+0148                     <span class="keyword">continue</span>;
+0149                 <span class="keyword">end</span>
+0150             <span class="keyword">end</span>
+0151         <span class="keyword">end</span>
+0152         
+0153         <span class="comment">%Get the indexes of the numeric (or &quot;.&quot;) characters</span>
+0154         nonNumeric=false(numel(formula),1);
+0155         nonNumeric(regexp(formula,<span class="string">'[^0-9.]'</span>))=true;
+0156         
+0157         <span class="comment">%Get the indexes of the upper characters (since each element starts</span>
+0158         <span class="comment">%with an upper character)</span>
+0159         upperI=isstrprop(formula,<span class="string">'upper'</span>);
+0160         upperX=find(upperI);
+0161         
+0162         <span class="keyword">for</span> j=1:numel(upperX)
+0163             <span class="comment">%The first case is when it's the last character. Then the</span>
+0164             <span class="comment">%coefficient must be 1</span>
+0165             isLast=false;
+0166             <span class="keyword">if</span> upperX(j)==numel(formula)
+0167                 coeff=1;
+0168                 element=formula(upperX(j));
+0169                 isLast=true;
+0170             <span class="keyword">end</span>
+0171             
+0172             <span class="keyword">if</span> isLast==false
+0173                 <span class="comment">%The second case is when the following character is a</span>
+0174                 <span class="comment">%character</span>
+0175                 <span class="keyword">if</span> nonNumeric(upperX(j)+1)
+0176                     <span class="comment">%Is it a new element?</span>
+0177                     <span class="keyword">if</span> upperI(upperX(j)+1)
+0178                         <span class="comment">%New element, that means that the coefficient was 1</span>
+0179                         <span class="comment">%and that the element was only one character</span>
+0180                         coeff=1;
+0181                         element=formula(upperX(j));
+0182                     <span class="keyword">else</span>
+0183                         <span class="comment">%This means that it's an element with two</span>
+0184                         <span class="comment">%characters</span>
+0185                         <span class="keyword">if</span> j==numel(upperX)
+0186                             <span class="keyword">if</span> upperX(j)&lt;numel(formula)-1
+0187                                 coeff=str2double(formula(upperX(j)+2:end));
+0188                             <span class="keyword">else</span>
+0189                                 coeff=1;
+0190                             <span class="keyword">end</span>
+0191                         <span class="keyword">else</span>
+0192                             <span class="comment">%Check if there is a number or a new element</span>
+0193                             <span class="comment">%after it</span>
+0194                             <span class="keyword">if</span> nonNumeric(upperX(j)+2)==true
+0195                                 coeff=1;
+0196                             <span class="keyword">else</span>
+0197                                 coeff=str2double(formula(upperX(j)+2:upperX(j+1)-1));
+0198                             <span class="keyword">end</span>
+0199                         <span class="keyword">end</span>
+0200                         element=formula(upperX(j):upperX(j)+1);
+0201                     <span class="keyword">end</span>
+0202                 <span class="keyword">else</span>
+0203                     <span class="comment">%Then it is a numeral</span>
+0204                     <span class="keyword">if</span> j==numel(upperX)
+0205                         coeff=str2double(formula(upperX(j)+1:end));
+0206                     <span class="keyword">else</span>
+0207                         coeff=str2double(formula(upperX(j)+1:upperX(j+1)-1));
+0208                     <span class="keyword">end</span>
+0209                     element=formula(upperX(j));
+0210                 <span class="keyword">end</span>
+0211             <span class="keyword">end</span>
+0212             
+0213             <span class="comment">%Find the element</span>
+0214             I=strcmp(element,elements.abbrevs);
+0215             <span class="keyword">if</span> any(I)
+0216                 <span class="keyword">if</span> ~isnan(coeff)
+0217                     useMat(i,I)=useMat(i,I)+coeff;
+0218                     sucess=true;
+0219                 <span class="keyword">else</span>
+0220                     failed=true;
+0221                     <span class="keyword">break</span>;
+0222                 <span class="keyword">end</span>
+0223             <span class="keyword">else</span>
+0224                 failed=true;
+0225                 <span class="keyword">break</span>;
+0226             <span class="keyword">end</span>
+0227         <span class="keyword">end</span>
+0228         <span class="comment">%A formula that stopped part way through is not parsed, even if the</span>
+0229         <span class="comment">%elements read before that point were recognised: reporting it as</span>
+0230         <span class="comment">%parsed would hand callers a composition that is missing everything</span>
+0231         <span class="comment">%after the first unreadable element</span>
+0232         <span class="keyword">if</span> sucess==false || failed==true
+0233             useMat(i,:)=0; <span class="comment">%Reset for this formula</span>
+0234             exitFlag(i)=-1;
+0235         <span class="keyword">else</span>
+0236             exitFlag(i)=1;
+0237         <span class="keyword">end</span>
+0238     <span class="keyword">end</span>
+0239 <span class="keyword">end</span>
 0240 
-0241 <span class="comment">%Calcluate the weight contribution of each element in each formula. Note</span>
-0242 <span class="comment">%that this will give NaNs for all formulas if R or X groups are in EWs,</span>
-0243 <span class="comment">%since 0*NaN is still NaN. Therefore only use elements with known mass</span>
-0244 <span class="keyword">if</span> nargout&gt;3
-0245     P=bsxfun(@times,useMat(:,~isnan(EWs)),EWs(~isnan(EWs)).');
-0246     MW=sum(P,2);
-0247     
-0248     <span class="comment">%Then remove the calculations for elements with unknown mass</span>
-0249     I=find(useMat(:,isnan(EWs)));
-0250     MW(I)=nan;
-0251     MW(exitFlag~=1)=nan;
-0252 <span class="keyword">end</span>
-0253 <span class="keyword">end</span></pre></div>
+0241 <span class="comment">%Remove the elements which are never used. any(...,1) is needed because a</span>
+0242 <span class="comment">%single formula makes useMat a row vector, for which any() would collapse</span>
+0243 <span class="comment">%the whole row to one value instead of testing each element</span>
+0244 I=~any(useMat,1);
+0245 useMat(:,I)=[];
+0246 elements.abbrevs(I)=[];
+0247 elements.names(I)=[];
+0248 EWs(I)=[];
+0249 
+0250 <span class="comment">%Calcluate the weight contribution of each element in each formula. Note</span>
+0251 <span class="comment">%that this will give NaNs for all formulas if R or X groups are in EWs,</span>
+0252 <span class="comment">%since 0*NaN is still NaN. Therefore only use elements with known mass</span>
+0253 <span class="keyword">if</span> nargout&gt;3
+0254     P=bsxfun(@times,useMat(:,~isnan(EWs)),EWs(~isnan(EWs)).');
+0255     MW=sum(P,2);
+0256     
+0257     <span class="comment">%Then remove the calculations for the formulas that use an element of</span>
+0258     <span class="comment">%unknown mass. This has to be a per-formula test: find() on the</span>
+0259     <span class="comment">%submatrix returns linear indices into it, which are not row indices of</span>
+0260     <span class="comment">%MW once more than one unknown-mass element is in play (R and X together</span>
+0261     <span class="comment">%is the common case), so it blanked the wrong formulas and could grow MW</span>
+0262     <span class="comment">%past the number of formulas</span>
+0263     MW(any(useMat(:,isnan(EWs))~=0,2))=nan;
+0264     MW(exitFlag~=1)=nan;
+0265 <span class="keyword">end</span>
+0266 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

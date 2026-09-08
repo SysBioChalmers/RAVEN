@@ -281,579 +281,615 @@ This function is called by:
 0135 allowNewGenes=p.allowNewGenes;
 0136 
 0137 <span class="keyword">if</span> allowNewGenes &amp; isfield(rxnsToAdd,<span class="string">'grRules'</span>)
-0138     genesToAdd.genes = strjoin(convertCharArray(rxnsToAdd.grRules));
-0139     genesToAdd.genes = regexp(genesToAdd.genes,<span class="string">' |)|(|and|or'</span>,<span class="string">'split'</span>); <span class="comment">% Remove all grRule punctuation</span>
-0140     genesToAdd.genes = genesToAdd.genes(~cellfun(@isempty,genesToAdd.genes));  <span class="comment">% Remove spaces and empty genes</span>
-0141     genesToAdd.genes = setdiff(unique(genesToAdd.genes),model.genes); <span class="comment">% Only keep new genes</span>
-0142     <span class="keyword">if</span> isfield(model,<span class="string">'geneComps'</span>)
-0143         genesToAdd.geneComps(1:numel(genesToAdd.genes)) = repmat(11,numel(genesToAdd.genes),1);
-0144     <span class="keyword">end</span>
-0145     <span class="keyword">if</span> ~isempty(genesToAdd.genes)
-0146         fprintf(<span class="string">'\nNew genes added to the model:\n'</span>)
-0147         fprintf([strjoin(genesToAdd.genes,<span class="string">'\n'</span>) <span class="string">'\n'</span>])
-0148         newModel=<a href="addGenesRaven.html" class="code" title="function newModel=addGenesRaven(model,genesToAdd)">addGenesRaven</a>(model,genesToAdd);
-0149     <span class="keyword">else</span>
-0150         newModel=model;
-0151     <span class="keyword">end</span>
-0152 <span class="keyword">else</span>
-0153     newModel=model;
-0154 <span class="keyword">end</span>
-0155 
-0156 <span class="comment">%If no reactions should be added</span>
-0157 <span class="keyword">if</span> isempty(rxnsToAdd)
-0158     <span class="keyword">return</span>;
-0159 <span class="keyword">end</span>
-0160 
-0161 <span class="keyword">if</span> eqnType==2 || (eqnType==1 &amp;&amp; allowNewMets==true)
-0162     compartment=char(compartment);
-0163     <span class="keyword">if</span> ~ismember(compartment,model.comps)
-0164         EM=<span class="string">'compartment must match one of the compartments in model.comps'</span>;
-0165         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0166     <span class="keyword">end</span>
-0167 <span class="keyword">end</span>
-0168 
-0169 <span class="keyword">if</span> ~isfield(rxnsToAdd,<span class="string">'rxns'</span>)
-0170     EM=<span class="string">'rxns is a required field in rxnsToAdd'</span>;
-0171     error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0172 <span class="keyword">else</span>
-0173     rxnsToAdd.rxns=convertCharArray(rxnsToAdd.rxns);
-0174     <span class="comment">%To fit with some later printing</span>
-0175     rxnsToAdd.rxns=rxnsToAdd.rxns(:);
-0176 <span class="keyword">end</span>
-0177 <span class="keyword">if</span> ~(isfield(rxnsToAdd,<span class="string">'equations'</span>) || (isfield(rxnsToAdd,<span class="string">'mets'</span>) &amp;&amp; isfield(rxnsToAdd,<span class="string">'stoichCoeffs'</span>)))
-0178     EM=<span class="string">'Either &quot;equations&quot; or &quot;mets&quot;+&quot;stoichCoeffs&quot; are required fields in rxnsToAdd'</span>;
-0179     error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0180 <span class="keyword">end</span>
-0181 
-0182 <span class="keyword">if</span> any(ismember(rxnsToAdd.rxns,model.rxns))
-0183     EM=<span class="string">'One or more reaction id was already present in the model. Use changeRxns or remove the existing reactions before adding new ones'</span>;
-0184     error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0185 <span class="keyword">end</span>
-0186 
-0187 <span class="comment">%Normal case: equations provided</span>
-0188 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'equations'</span>)
-0189     rxnsToAdd.equations=convertCharArray(rxnsToAdd.equations);
-0190 
-0191     <span class="comment">%Alternative case: mets+stoichiometry provided</span>
-0192 <span class="keyword">else</span>
-0193     <span class="comment">%In the case of 1 rxn added (array of strings + vector), transform to</span>
-0194     <span class="comment">%cells of length=1:</span>
-0195     <span class="keyword">if</span> iscellstr(rxnsToAdd.mets)
-0196         rxnsToAdd.mets={rxnsToAdd.mets};
-0197     <span class="keyword">end</span>
-0198     <span class="keyword">if</span> isnumeric(rxnsToAdd.stoichCoeffs)
-0199         rxnsToAdd.stoichCoeffs = {rxnsToAdd.stoichCoeffs};
-0200     <span class="keyword">end</span>
-0201     <span class="comment">%Now both rxnsToAdd.mets and rxnsToAdd.stoichCoeffs should be cell</span>
-0202     <span class="comment">%arrays &amp; of the same size:</span>
-0203     <span class="keyword">if</span> ~iscell(rxnsToAdd.mets) || ~iscell(rxnsToAdd.stoichCoeffs)
-0204         EM=<span class="string">'rxnsToAdd.mets &amp; rxnsToAdd.stoichCoeffs must be cell arrays'</span>;
-0205         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0206     <span class="keyword">elseif</span> length(rxnsToAdd.stoichCoeffs) ~= length(rxnsToAdd.mets)
-0207         EM = <span class="string">'rxnsToAdd.stoichCoeffs must have the same number of elements as rxnsToAdd.mets'</span>;
-0208         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0209     <span class="keyword">end</span>
-0210     <span class="comment">%In this case we need lb to decide if the reaction is reversible or not:</span>
-0211     <span class="keyword">if</span> ~isfield(rxnsToAdd,<span class="string">'lb'</span>)
-0212         <span class="comment">%Fill with standard if it does not exist</span>
-0213         rxnsToAdd.lb=-inf(size(rxnsToAdd.mets));
-0214     <span class="keyword">elseif</span> ~isnumeric(rxnsToAdd.lb)
-0215         EM = <span class="string">'rxnsToAdd.lb must be a vector'</span>;
-0216         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0217     <span class="keyword">elseif</span> length(rxnsToAdd.lb) ~= length(rxnsToAdd.mets)
-0218         EM = <span class="string">'rxnsToAdd.lb must have the same number of elements as rxnsToAdd.mets'</span>;
-0219         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0220     <span class="keyword">end</span>
-0221     <span class="comment">%Now we construct equations, to comply with the rest of the script:</span>
-0222     rxnsToAdd.equations = cell(size(rxnsToAdd.mets));
-0223     <span class="keyword">for</span> i = 1:length(rxnsToAdd.mets)
-0224         mets         = rxnsToAdd.mets{i};
-0225         stoichCoeffs = rxnsToAdd.stoichCoeffs{i};
-0226         <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'ub'</span>)
-0227             isrev        = rxnsToAdd.lb(i) &lt; 0 &amp;&amp; rxnsToAdd.ub(i) &gt; 0;
-0228         <span class="keyword">else</span>
-0229             isrev        = rxnsToAdd.lb(i) &lt; 0;
-0230         <span class="keyword">end</span>
-0231         rxnsToAdd.equations{i} = buildEquation(mets,stoichCoeffs,isrev);
-0232     <span class="keyword">end</span>
-0233 <span class="keyword">end</span>
-0234 
-0235 nRxns=numel(rxnsToAdd.rxns);
-0236 nOldRxns=numel(model.rxns);
-0237 filler=cell(nRxns,1);
-0238 filler(:)={<span class="string">''</span>};
-0239 cellfiller=cell(nRxns,1);
-0240 cellfiller(:)={{<span class="string">''</span>}};
-0241 largeFiller=cell(nOldRxns,1);
-0242 largeFiller(:)={<span class="string">''</span>};
-0243 largeCellFiller=cell(nOldRxns,1);
-0244 largeCellFiller(:)={{<span class="string">''</span>}};
-0245 
-0246 <span class="comment">%***Add everything to the model except for the equations.</span>
-0247 <span class="keyword">if</span> numel(rxnsToAdd.equations)~=nRxns
-0248     EM=<span class="string">'rxnsToAdd.equations must have the same number of elements as rxnsToAdd.rxns'</span>;
-0249     error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0250 <span class="keyword">end</span>
-0251 
-0252 <span class="comment">%Parse the equations. This is done at this early stage since I need the</span>
-0253 <span class="comment">%reversibility info</span>
-0254 [S, mets, badRxns, reversible]=constructS(rxnsToAdd.equations);
-0255 <span class="keyword">if</span> any(badRxns)
-0256     EM=<span class="string">'The following equations have one or more metabolites both as substrate and product. Only the net equations will be added:'</span>;
-0257     warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'%s'</span>, ravenList(EM, rxnsToAdd.rxns(badRxns)));
-0258 <span class="keyword">end</span>
-0259 
-0260 newModel.rev=[newModel.rev;reversible];
-0261 newModel.rxns=[newModel.rxns;rxnsToAdd.rxns(:)];
-0262 
-0263 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'rxnNames'</span>)
-0264     rxnsToAdd.rxnNames=convertCharArray(rxnsToAdd.rxnNames);
-0265     <span class="keyword">if</span> numel(rxnsToAdd.rxnNames)~=nRxns
-0266         EM=<span class="string">'rxnsToAdd.rxnNames must have the same number of elements as rxnsToAdd.rxns'</span>;
-0267         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0268     <span class="keyword">end</span>
-0269     <span class="comment">%Fill with standard if it does not exist</span>
-0270     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'rxnNames'</span>)
-0271         newModel.rxnNames=largeFiller;
-0272     <span class="keyword">end</span>
-0273     newModel.rxnNames=[newModel.rxnNames;rxnsToAdd.rxnNames(:)];
-0274 <span class="keyword">else</span>
-0275     <span class="comment">%Fill with standard if it does not exist</span>
-0276     <span class="keyword">if</span> isfield(newModel,<span class="string">'rxnNames'</span>)
-0277         newModel.rxnNames=[newModel.rxnNames;filler];
-0278     <span class="keyword">end</span>
-0279 <span class="keyword">end</span>
-0280 
-0281 <span class="keyword">if</span> isfield(newModel,<span class="string">'annotation'</span>) &amp; isfield(newModel.annotation,<span class="string">'defaultLB'</span>)
-0282     newLb=newModel.annotation.defaultLB;
-0283 <span class="keyword">else</span>
-0284     newLb=-inf;
-0285 <span class="keyword">end</span>
-0286 
-0287 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'lb'</span>)
-0288     <span class="keyword">if</span> numel(rxnsToAdd.lb)~=nRxns
-0289         EM=<span class="string">'rxnsToAdd.lb must have the same number of elements as rxnsToAdd.rxns'</span>;
-0290         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0291     <span class="keyword">end</span>
-0292     <span class="comment">%Fill with standard if it does not exist</span>
-0293     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'lb'</span>)
-0294         newModel.lb=zeros(nOldRxns,1);
-0295         newModel.lb(newModel.rev~=0)=newLb;
-0296     <span class="keyword">end</span>
-0297     newModel.lb=[newModel.lb;rxnsToAdd.lb(:)];
-0298 <span class="keyword">else</span>
+0138     <span class="comment">% getGenesFromGrRules splits only on space-bounded &quot;and&quot;/&quot;or&quot; (or their</span>
+0139     <span class="comment">% &quot;&amp;&quot;/&quot;|&quot; equivalents), so a gene id that merely contains &quot;and&quot;/&quot;or&quot; as</span>
+0140     <span class="comment">% a substring (e.g. &quot;band1&quot;, &quot;orfeo2&quot;) is not mistaken for an operator</span>
+0141     <span class="comment">% the way a plain regexp split on the bare words would.</span>
+0142     genesToAdd.genes = getGenesFromGrRules(convertCharArray(rxnsToAdd.grRules));
+0143     genesToAdd.genes = setdiff(genesToAdd.genes,model.genes); <span class="comment">% Only keep new genes</span>
+0144     <span class="keyword">if</span> isfield(model,<span class="string">'geneComps'</span>)
+0145         <span class="comment">% No compartment information is available for a gene parsed out of</span>
+0146         <span class="comment">% a grRule, so it is assigned to the first compartment, matching</span>
+0147         <span class="comment">% addGenesRaven's own default for a gene added with none specified.</span>
+0148         genesToAdd.geneComps(1:numel(genesToAdd.genes)) = repmat(1,numel(genesToAdd.genes),1);
+0149     <span class="keyword">end</span>
+0150     <span class="keyword">if</span> ~isempty(genesToAdd.genes)
+0151         fprintf(<span class="string">'\nNew genes added to the model:\n'</span>)
+0152         <span class="comment">%A new gene id is arbitrary text and may contain &quot;%&quot;; print as</span>
+0153         <span class="comment">%literal data rather than as an fprintf format string.</span>
+0154         fprintf(<span class="string">'%s\n'</span>, strjoin(genesToAdd.genes,newline))
+0155         newModel=<a href="addGenesRaven.html" class="code" title="function newModel=addGenesRaven(model,genesToAdd)">addGenesRaven</a>(model,genesToAdd);
+0156     <span class="keyword">else</span>
+0157         newModel=model;
+0158     <span class="keyword">end</span>
+0159 <span class="keyword">else</span>
+0160     newModel=model;
+0161 <span class="keyword">end</span>
+0162 
+0163 <span class="comment">%If no reactions should be added</span>
+0164 <span class="keyword">if</span> isempty(rxnsToAdd)
+0165     <span class="keyword">return</span>;
+0166 <span class="keyword">end</span>
+0167 
+0168 <span class="keyword">if</span> eqnType==2 || (eqnType==1 &amp;&amp; allowNewMets==true)
+0169     compartment=char(compartment);
+0170     <span class="keyword">if</span> ~ismember(compartment,model.comps)
+0171         EM=<span class="string">'compartment must match one of the compartments in model.comps'</span>;
+0172         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0173     <span class="keyword">end</span>
+0174 <span class="keyword">end</span>
+0175 
+0176 <span class="keyword">if</span> ~isfield(rxnsToAdd,<span class="string">'rxns'</span>)
+0177     EM=<span class="string">'rxns is a required field in rxnsToAdd'</span>;
+0178     error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0179 <span class="keyword">else</span>
+0180     rxnsToAdd.rxns=convertCharArray(rxnsToAdd.rxns);
+0181     <span class="comment">%To fit with some later printing</span>
+0182     rxnsToAdd.rxns=rxnsToAdd.rxns(:);
+0183 <span class="keyword">end</span>
+0184 <span class="keyword">if</span> ~(isfield(rxnsToAdd,<span class="string">'equations'</span>) || (isfield(rxnsToAdd,<span class="string">'mets'</span>) &amp;&amp; isfield(rxnsToAdd,<span class="string">'stoichCoeffs'</span>)))
+0185     EM=<span class="string">'Either &quot;equations&quot; or &quot;mets&quot;+&quot;stoichCoeffs&quot; are required fields in rxnsToAdd'</span>;
+0186     error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0187 <span class="keyword">end</span>
+0188 
+0189 <span class="keyword">if</span> any(ismember(rxnsToAdd.rxns,model.rxns))
+0190     EM=<span class="string">'One or more reaction id was already present in the model. Use changeRxns or remove the existing reactions before adding new ones'</span>;
+0191     error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0192 <span class="keyword">end</span>
+0193 
+0194 <span class="comment">%Normal case: equations provided</span>
+0195 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'equations'</span>)
+0196     rxnsToAdd.equations=convertCharArray(rxnsToAdd.equations);
+0197 
+0198     <span class="comment">%Alternative case: mets+stoichiometry provided</span>
+0199 <span class="keyword">else</span>
+0200     <span class="comment">%In the case of 1 rxn added (array of strings + vector), transform to</span>
+0201     <span class="comment">%cells of length=1:</span>
+0202     <span class="keyword">if</span> iscellstr(rxnsToAdd.mets)
+0203         rxnsToAdd.mets={rxnsToAdd.mets};
+0204     <span class="keyword">end</span>
+0205     <span class="keyword">if</span> isnumeric(rxnsToAdd.stoichCoeffs)
+0206         rxnsToAdd.stoichCoeffs = {rxnsToAdd.stoichCoeffs};
+0207     <span class="keyword">end</span>
+0208     <span class="comment">%Now both rxnsToAdd.mets and rxnsToAdd.stoichCoeffs should be cell</span>
+0209     <span class="comment">%arrays &amp; of the same size:</span>
+0210     <span class="keyword">if</span> ~iscell(rxnsToAdd.mets) || ~iscell(rxnsToAdd.stoichCoeffs)
+0211         EM=<span class="string">'rxnsToAdd.mets &amp; rxnsToAdd.stoichCoeffs must be cell arrays'</span>;
+0212         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0213     <span class="keyword">elseif</span> length(rxnsToAdd.stoichCoeffs) ~= length(rxnsToAdd.mets)
+0214         EM = <span class="string">'rxnsToAdd.stoichCoeffs must have the same number of elements as rxnsToAdd.mets'</span>;
+0215         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0216     <span class="keyword">end</span>
+0217     <span class="comment">%In this case we need lb to decide if the reaction is reversible or not:</span>
+0218     <span class="keyword">if</span> ~isfield(rxnsToAdd,<span class="string">'lb'</span>)
+0219         <span class="comment">%Fill with standard if it does not exist</span>
+0220         rxnsToAdd.lb=-inf(size(rxnsToAdd.mets));
+0221     <span class="keyword">elseif</span> ~isnumeric(rxnsToAdd.lb)
+0222         EM = <span class="string">'rxnsToAdd.lb must be a vector'</span>;
+0223         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0224     <span class="keyword">elseif</span> length(rxnsToAdd.lb) ~= length(rxnsToAdd.mets)
+0225         EM = <span class="string">'rxnsToAdd.lb must have the same number of elements as rxnsToAdd.mets'</span>;
+0226         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0227     <span class="keyword">end</span>
+0228     <span class="comment">%Now we construct equations, to comply with the rest of the script:</span>
+0229     rxnsToAdd.equations = cell(size(rxnsToAdd.mets));
+0230     <span class="keyword">for</span> i = 1:length(rxnsToAdd.mets)
+0231         mets         = rxnsToAdd.mets{i};
+0232         stoichCoeffs = rxnsToAdd.stoichCoeffs{i};
+0233         <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'ub'</span>)
+0234             isrev        = rxnsToAdd.lb(i) &lt; 0 &amp;&amp; rxnsToAdd.ub(i) &gt; 0;
+0235         <span class="keyword">else</span>
+0236             isrev        = rxnsToAdd.lb(i) &lt; 0;
+0237         <span class="keyword">end</span>
+0238         rxnsToAdd.equations{i} = buildEquation(mets,stoichCoeffs,isrev);
+0239     <span class="keyword">end</span>
+0240 <span class="keyword">end</span>
+0241 
+0242 nRxns=numel(rxnsToAdd.rxns);
+0243 nOldRxns=numel(model.rxns);
+0244 filler=cell(nRxns,1);
+0245 filler(:)={<span class="string">''</span>};
+0246 cellfiller=cell(nRxns,1);
+0247 cellfiller(:)={{<span class="string">''</span>}};
+0248 largeFiller=cell(nOldRxns,1);
+0249 largeFiller(:)={<span class="string">''</span>};
+0250 largeCellFiller=cell(nOldRxns,1);
+0251 largeCellFiller(:)={{<span class="string">''</span>}};
+0252 
+0253 <span class="comment">%***Add everything to the model except for the equations.</span>
+0254 <span class="keyword">if</span> numel(rxnsToAdd.equations)~=nRxns
+0255     EM=<span class="string">'rxnsToAdd.equations must have the same number of elements as rxnsToAdd.rxns'</span>;
+0256     error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0257 <span class="keyword">end</span>
+0258 
+0259 <span class="comment">%Parse the equations. This is done at this early stage since I need the</span>
+0260 <span class="comment">%reversibility info</span>
+0261 [S, mets, badRxns, reversible]=constructS(rxnsToAdd.equations);
+0262 <span class="keyword">if</span> any(badRxns)
+0263     EM=<span class="string">'The following equations have one or more metabolites both as substrate and product. Only the net equations will be added:'</span>;
+0264     warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'%s'</span>, ravenList(EM, rxnsToAdd.rxns(badRxns)));
+0265 <span class="keyword">end</span>
+0266 
+0267 newModel.rev=[newModel.rev;reversible];
+0268 newModel.rxns=[newModel.rxns;rxnsToAdd.rxns(:)];
+0269 
+0270 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'rxnNames'</span>)
+0271     rxnsToAdd.rxnNames=convertCharArray(rxnsToAdd.rxnNames);
+0272     <span class="keyword">if</span> numel(rxnsToAdd.rxnNames)~=nRxns
+0273         EM=<span class="string">'rxnsToAdd.rxnNames must have the same number of elements as rxnsToAdd.rxns'</span>;
+0274         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0275     <span class="keyword">end</span>
+0276     <span class="comment">%Fill with standard if it does not exist</span>
+0277     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'rxnNames'</span>)
+0278         newModel.rxnNames=largeFiller;
+0279     <span class="keyword">end</span>
+0280     newModel.rxnNames=[newModel.rxnNames;rxnsToAdd.rxnNames(:)];
+0281 <span class="keyword">else</span>
+0282     <span class="comment">%Fill with standard if it does not exist</span>
+0283     <span class="keyword">if</span> isfield(newModel,<span class="string">'rxnNames'</span>)
+0284         newModel.rxnNames=[newModel.rxnNames;filler];
+0285     <span class="keyword">end</span>
+0286 <span class="keyword">end</span>
+0287 
+0288 <span class="keyword">if</span> isfield(newModel,<span class="string">'annotation'</span>) &amp; isfield(newModel.annotation,<span class="string">'defaultLB'</span>)
+0289     newLb=newModel.annotation.defaultLB;
+0290 <span class="keyword">else</span>
+0291     newLb=-inf;
+0292 <span class="keyword">end</span>
+0293 
+0294 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'lb'</span>)
+0295     <span class="keyword">if</span> numel(rxnsToAdd.lb)~=nRxns
+0296         EM=<span class="string">'rxnsToAdd.lb must have the same number of elements as rxnsToAdd.rxns'</span>;
+0297         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0298     <span class="keyword">end</span>
 0299     <span class="comment">%Fill with standard if it does not exist</span>
-0300     <span class="keyword">if</span> isfield(newModel,<span class="string">'lb'</span>)
-0301         I=zeros(nRxns,1);
-0302         I(reversible~=0)=newLb;
-0303         newModel.lb=[newModel.lb;I];
-0304     <span class="keyword">end</span>
-0305 <span class="keyword">end</span>
-0306 
-0307 <span class="keyword">if</span> isfield(newModel,<span class="string">'annotation'</span>) &amp; isfield(newModel.annotation,<span class="string">'defaultUB'</span>)
-0308     newUb=newModel.annotation.defaultUB;
-0309 <span class="keyword">else</span>
-0310     newUb=inf;
-0311 <span class="keyword">end</span>
-0312 
-0313 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'ub'</span>)
-0314     <span class="keyword">if</span> numel(rxnsToAdd.ub)~=nRxns
-0315         EM=<span class="string">'rxnsToAdd.ub must have the same number of elements as rxnsToAdd.rxns'</span>;
-0316         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0317     <span class="keyword">end</span>
-0318     <span class="comment">%Fill with standard if it does not exist</span>
-0319     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'ub'</span>)
-0320         newModel.ub=repmat(newUb,nOldRxns,1);
-0321     <span class="keyword">end</span>
-0322     newModel.ub=[newModel.ub;rxnsToAdd.ub(:)];
-0323 <span class="keyword">else</span>
-0324     <span class="comment">%Fill with standard if it does not exist</span>
-0325     <span class="keyword">if</span> isfield(newModel,<span class="string">'ub'</span>)
-0326         newModel.ub=[newModel.ub;repmat(newUb,nRxns,1)];
-0327     <span class="keyword">end</span>
-0328 <span class="keyword">end</span>
-0329 
-0330 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'c'</span>)
-0331     <span class="keyword">if</span> numel(rxnsToAdd.c)~=nRxns
-0332         EM=<span class="string">'rxnsToAdd.c must have the same number of elements as rxnsToAdd.rxns'</span>;
-0333         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0300     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'lb'</span>)
+0301         newModel.lb=zeros(nOldRxns,1);
+0302         newModel.lb(newModel.rev~=0)=newLb;
+0303     <span class="keyword">end</span>
+0304     newModel.lb=[newModel.lb;rxnsToAdd.lb(:)];
+0305 <span class="keyword">else</span>
+0306     <span class="comment">%Fill with standard if it does not exist</span>
+0307     <span class="keyword">if</span> isfield(newModel,<span class="string">'lb'</span>)
+0308         I=zeros(nRxns,1);
+0309         I(reversible~=0)=newLb;
+0310         newModel.lb=[newModel.lb;I];
+0311     <span class="keyword">end</span>
+0312 <span class="keyword">end</span>
+0313 
+0314 <span class="keyword">if</span> isfield(newModel,<span class="string">'annotation'</span>) &amp; isfield(newModel.annotation,<span class="string">'defaultUB'</span>)
+0315     newUb=newModel.annotation.defaultUB;
+0316 <span class="keyword">else</span>
+0317     newUb=inf;
+0318 <span class="keyword">end</span>
+0319 
+0320 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'ub'</span>)
+0321     <span class="keyword">if</span> numel(rxnsToAdd.ub)~=nRxns
+0322         EM=<span class="string">'rxnsToAdd.ub must have the same number of elements as rxnsToAdd.rxns'</span>;
+0323         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0324     <span class="keyword">end</span>
+0325     <span class="comment">%Fill with standard if it does not exist</span>
+0326     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'ub'</span>)
+0327         newModel.ub=repmat(newUb,nOldRxns,1);
+0328     <span class="keyword">end</span>
+0329     newModel.ub=[newModel.ub;rxnsToAdd.ub(:)];
+0330 <span class="keyword">else</span>
+0331     <span class="comment">%Fill with standard if it does not exist</span>
+0332     <span class="keyword">if</span> isfield(newModel,<span class="string">'ub'</span>)
+0333         newModel.ub=[newModel.ub;repmat(newUb,nRxns,1)];
 0334     <span class="keyword">end</span>
-0335     <span class="comment">%Fill with standard if it does not exist</span>
-0336     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'c'</span>)
-0337         newModel.c=zeros(nOldRxns,1);
-0338     <span class="keyword">end</span>
-0339     newModel.c=[newModel.c;rxnsToAdd.c(:)];
-0340 <span class="keyword">else</span>
-0341     <span class="comment">%Fill with standard if it does not exist</span>
-0342     <span class="keyword">if</span> isfield(newModel,<span class="string">'c'</span>)
-0343         newModel.c=[newModel.c;zeros(nRxns,1)];
-0344     <span class="keyword">end</span>
-0345 <span class="keyword">end</span>
-0346 
-0347 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'eccodes'</span>)
-0348     rxnsToAdd.eccodes=convertCharArray(rxnsToAdd.eccodes);
-0349     <span class="keyword">if</span> numel(rxnsToAdd.eccodes)~=nRxns
-0350         EM=<span class="string">'rxnsToAdd.eccodes must have the same number of elements as rxnsToAdd.rxns'</span>;
-0351         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0352     <span class="keyword">end</span>
-0353     <span class="comment">%Fill with standard if it does not exist</span>
-0354     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'eccodes'</span>)
-0355         newModel.eccodes=largeFiller;
-0356     <span class="keyword">end</span>
-0357     newModel.eccodes=[newModel.eccodes;rxnsToAdd.eccodes(:)];
-0358 <span class="keyword">else</span>
-0359     <span class="comment">%Fill with standard if it does not exist</span>
-0360     <span class="keyword">if</span> isfield(newModel,<span class="string">'eccodes'</span>)
-0361         newModel.eccodes=[newModel.eccodes;filler];
-0362     <span class="keyword">end</span>
-0363 <span class="keyword">end</span>
-0364 
-0365 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'subSystems'</span>)
-0366     <span class="comment">% Has to be cell array</span>
-0367     <span class="keyword">if</span> ischar(rxnsToAdd.subSystems)
-0368         rxnsToAdd.subSystems = {rxnsToAdd.subSystems};
+0335 <span class="keyword">end</span>
+0336 
+0337 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'c'</span>)
+0338     <span class="keyword">if</span> numel(rxnsToAdd.c)~=nRxns
+0339         EM=<span class="string">'rxnsToAdd.c must have the same number of elements as rxnsToAdd.rxns'</span>;
+0340         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0341     <span class="keyword">end</span>
+0342     <span class="comment">%Fill with standard if it does not exist</span>
+0343     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'c'</span>)
+0344         newModel.c=zeros(nOldRxns,1);
+0345     <span class="keyword">end</span>
+0346     newModel.c=[newModel.c;rxnsToAdd.c(:)];
+0347 <span class="keyword">else</span>
+0348     <span class="comment">%Fill with standard if it does not exist</span>
+0349     <span class="keyword">if</span> isfield(newModel,<span class="string">'c'</span>)
+0350         newModel.c=[newModel.c;zeros(nRxns,1)];
+0351     <span class="keyword">end</span>
+0352 <span class="keyword">end</span>
+0353 
+0354 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'eccodes'</span>)
+0355     rxnsToAdd.eccodes=convertCharArray(rxnsToAdd.eccodes);
+0356     <span class="keyword">if</span> numel(rxnsToAdd.eccodes)~=nRxns
+0357         EM=<span class="string">'rxnsToAdd.eccodes must have the same number of elements as rxnsToAdd.rxns'</span>;
+0358         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0359     <span class="keyword">end</span>
+0360     <span class="comment">%Fill with standard if it does not exist</span>
+0361     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'eccodes'</span>)
+0362         newModel.eccodes=largeFiller;
+0363     <span class="keyword">end</span>
+0364     newModel.eccodes=[newModel.eccodes;rxnsToAdd.eccodes(:)];
+0365 <span class="keyword">else</span>
+0366     <span class="comment">%Fill with standard if it does not exist</span>
+0367     <span class="keyword">if</span> isfield(newModel,<span class="string">'eccodes'</span>)
+0368         newModel.eccodes=[newModel.eccodes;filler];
 0369     <span class="keyword">end</span>
-0370     <span class="comment">% If all nested cells are 1x1, then unnest</span>
-0371     <span class="keyword">if</span> all(cellfun(@(x) iscell(x) &amp;&amp; isscalar(x), rxnsToAdd.subSystems))
-0372         rxnsToAdd.subSystems = transpose([rxnsToAdd.subSystems{:}]);
-0373     <span class="keyword">end</span>
-0374     <span class="comment">% Cell array should now be as simple as possible. Check if it is nested</span>
-0375     subSysRxnsNested = any(cellfun(@(x) iscell(x), rxnsToAdd.subSystems));
-0376     <span class="keyword">if</span> isfield(newModel,<span class="string">'subSystems'</span>)
-0377         subSysModelNested = any(cellfun(@(x) iscell(x), newModel.subSystems));
-0378     <span class="keyword">else</span>
-0379         subSysModelNested = subSysRxnsNested;
-0380         <span class="keyword">if</span> subSysRxnsNested
-0381             newModel.subSystems=largeCellFiller;
-0382         <span class="keyword">else</span>
-0383             newModel.subSystems=largeFiller;
-0384         <span class="keyword">end</span>
-0385     <span class="keyword">end</span>
-0386     <span class="keyword">if</span> subSysRxnsNested &amp;&amp; ~subSysModelNested
-0387         <span class="comment">% Make all existing subSystems nested</span>
-0388         newModel.subSystems = cellfun(@(x) {x}, newModel.subSystems, <span class="string">'uni'</span>, 0);
-0389     <span class="keyword">elseif</span> ~subSysRxnsNested &amp;&amp; subSysModelNested
-0390         rxnsToAdd.subSystems = cellfun(@(x) {x}, rxnsToAdd.subSystems, <span class="string">'uni'</span>, 0);
-0391     <span class="keyword">end</span>
-0392     <span class="keyword">if</span> numel(rxnsToAdd.subSystems)~=nRxns
-0393         EM=<span class="string">'rxnsToAdd.subSystems must have the same number of elements as rxnsToAdd.rxns'</span>;
-0394         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0395     <span class="keyword">end</span>
-0396     newModel.subSystems=[newModel.subSystems;rxnsToAdd.subSystems(:)];
-0397 <span class="keyword">else</span>
-0398     <span class="comment">%Fill with standard if it does not exist</span>
-0399     <span class="keyword">if</span> isfield(newModel,<span class="string">'subSystems'</span>)
-0400         <span class="keyword">if</span> any(cellfun(@(x) iscell(x), newModel.subSystems))
-0401             newModel.subSystems=[newModel.subSystems;cellfiller];
-0402         <span class="keyword">else</span>
-0403             newModel.subSystems=[newModel.subSystems;filler];
-0404         <span class="keyword">end</span>
-0405     <span class="keyword">end</span>
-0406 <span class="keyword">end</span>
-0407 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'rxnMiriams'</span>)
-0408     <span class="keyword">if</span> numel(rxnsToAdd.rxnMiriams)~=nRxns
-0409         EM=<span class="string">'rxnsToAdd.rxnMiriams must have the same number of elements as rxnsToAdd.rxns'</span>;
-0410         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0411     <span class="keyword">end</span>
-0412     <span class="comment">%Fill with standard if it does not exist</span>
-0413     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'rxnMiriams'</span>)
-0414         newModel.rxnMiriams=cell(nOldRxns,1);
-0415     <span class="keyword">end</span>
-0416     newModel.rxnMiriams=[newModel.rxnMiriams;rxnsToAdd.rxnMiriams(:)];
-0417 <span class="keyword">else</span>
-0418     <span class="comment">%Fill with standard if it does not exist</span>
-0419     <span class="keyword">if</span> isfield(newModel,<span class="string">'rxnMiriams'</span>)
-0420         newModel.rxnMiriams=[newModel.rxnMiriams;cell(nRxns,1)];
-0421     <span class="keyword">end</span>
-0422 <span class="keyword">end</span>
-0423 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'rxnComps'</span>)
-0424     <span class="keyword">if</span> numel(rxnsToAdd.rxnComps)~=nRxns
-0425         EM=<span class="string">'rxnsToAdd.rxnComps must have the same number of elements as rxnsToAdd.rxns'</span>;
-0426         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0427     <span class="keyword">end</span>
-0428     <span class="comment">%Fill with standard if it does not exist</span>
-0429     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'rxnComps'</span>)
-0430         newModel.rxnComps=ones(nOldRxns,1);
-0431         EM=<span class="string">'Adding reactions with compartment information to a model without such information. All existing reactions will be assigned to the first compartment'</span>;
-0432         warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'%s'</span>, EM);
-0433     <span class="keyword">end</span>
-0434     newModel.rxnComps=[newModel.rxnComps;rxnsToAdd.rxnComps(:)];
-0435 <span class="keyword">else</span>
-0436     <span class="comment">%Fill with standard if it does not exist</span>
-0437     <span class="keyword">if</span> isfield(newModel,<span class="string">'rxnComps'</span>)
-0438         newModel.rxnComps=[newModel.rxnComps;ones(nRxns,1)];
-0439         <span class="comment">%fprintf(&quot;NOTE: The added reactions will be assigned to the first</span>
-0440         <span class="comment">%compartment\n&quot;);</span>
-0441     <span class="keyword">end</span>
-0442 <span class="keyword">end</span>
-0443 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'grRules'</span>)
-0444     rxnsToAdd.grRules=convertCharArray(rxnsToAdd.grRules);
-0445     <span class="keyword">if</span> numel(rxnsToAdd.grRules)~=nRxns
-0446         EM=<span class="string">'rxnsToAdd.grRules must have the same number of elements as rxnsToAdd.rxns'</span>;
-0447         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0370 <span class="keyword">end</span>
+0371 
+0372 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'subSystems'</span>)
+0373     <span class="comment">% Has to be cell array</span>
+0374     <span class="keyword">if</span> ischar(rxnsToAdd.subSystems)
+0375         rxnsToAdd.subSystems = {rxnsToAdd.subSystems};
+0376     <span class="keyword">end</span>
+0377     <span class="comment">% If all nested cells are 1x1, then unnest</span>
+0378     <span class="keyword">if</span> all(cellfun(@(x) iscell(x) &amp;&amp; isscalar(x), rxnsToAdd.subSystems))
+0379         rxnsToAdd.subSystems = transpose([rxnsToAdd.subSystems{:}]);
+0380     <span class="keyword">end</span>
+0381     <span class="comment">% Cell array should now be as simple as possible. Check if it is nested</span>
+0382     subSysRxnsNested = any(cellfun(@(x) iscell(x), rxnsToAdd.subSystems));
+0383     <span class="keyword">if</span> isfield(newModel,<span class="string">'subSystems'</span>)
+0384         subSysModelNested = any(cellfun(@(x) iscell(x), newModel.subSystems));
+0385     <span class="keyword">else</span>
+0386         subSysModelNested = subSysRxnsNested;
+0387         <span class="keyword">if</span> subSysRxnsNested
+0388             newModel.subSystems=largeCellFiller;
+0389         <span class="keyword">else</span>
+0390             newModel.subSystems=largeFiller;
+0391         <span class="keyword">end</span>
+0392     <span class="keyword">end</span>
+0393     <span class="keyword">if</span> subSysRxnsNested &amp;&amp; ~subSysModelNested
+0394         <span class="comment">% Make all existing subSystems nested</span>
+0395         newModel.subSystems = cellfun(@(x) {x}, newModel.subSystems, <span class="string">'uni'</span>, 0);
+0396     <span class="keyword">elseif</span> ~subSysRxnsNested &amp;&amp; subSysModelNested
+0397         rxnsToAdd.subSystems = cellfun(@(x) {x}, rxnsToAdd.subSystems, <span class="string">'uni'</span>, 0);
+0398     <span class="keyword">end</span>
+0399     <span class="keyword">if</span> numel(rxnsToAdd.subSystems)~=nRxns
+0400         EM=<span class="string">'rxnsToAdd.subSystems must have the same number of elements as rxnsToAdd.rxns'</span>;
+0401         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0402     <span class="keyword">end</span>
+0403     newModel.subSystems=[newModel.subSystems;rxnsToAdd.subSystems(:)];
+0404 <span class="keyword">else</span>
+0405     <span class="comment">%Fill with standard if it does not exist</span>
+0406     <span class="keyword">if</span> isfield(newModel,<span class="string">'subSystems'</span>)
+0407         <span class="keyword">if</span> any(cellfun(@(x) iscell(x), newModel.subSystems))
+0408             newModel.subSystems=[newModel.subSystems;cellfiller];
+0409         <span class="keyword">else</span>
+0410             newModel.subSystems=[newModel.subSystems;filler];
+0411         <span class="keyword">end</span>
+0412     <span class="keyword">end</span>
+0413 <span class="keyword">end</span>
+0414 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'rxnMiriams'</span>)
+0415     <span class="keyword">if</span> numel(rxnsToAdd.rxnMiriams)~=nRxns
+0416         EM=<span class="string">'rxnsToAdd.rxnMiriams must have the same number of elements as rxnsToAdd.rxns'</span>;
+0417         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0418     <span class="keyword">end</span>
+0419     <span class="comment">%Fill with standard if it does not exist</span>
+0420     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'rxnMiriams'</span>)
+0421         newModel.rxnMiriams=cell(nOldRxns,1);
+0422     <span class="keyword">end</span>
+0423     newModel.rxnMiriams=[newModel.rxnMiriams;rxnsToAdd.rxnMiriams(:)];
+0424 <span class="keyword">else</span>
+0425     <span class="comment">%Fill with standard if it does not exist</span>
+0426     <span class="keyword">if</span> isfield(newModel,<span class="string">'rxnMiriams'</span>)
+0427         newModel.rxnMiriams=[newModel.rxnMiriams;cell(nRxns,1)];
+0428     <span class="keyword">end</span>
+0429 <span class="keyword">end</span>
+0430 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'rxnComps'</span>)
+0431     <span class="keyword">if</span> numel(rxnsToAdd.rxnComps)~=nRxns
+0432         EM=<span class="string">'rxnsToAdd.rxnComps must have the same number of elements as rxnsToAdd.rxns'</span>;
+0433         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0434     <span class="keyword">end</span>
+0435     <span class="comment">%Fill with standard if it does not exist</span>
+0436     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'rxnComps'</span>)
+0437         newModel.rxnComps=ones(nOldRxns,1);
+0438         EM=<span class="string">'Adding reactions with compartment information to a model without such information. All existing reactions will be assigned to the first compartment'</span>;
+0439         warning(<span class="string">'RAVEN:warning'</span>, <span class="string">'%s'</span>, EM);
+0440     <span class="keyword">end</span>
+0441     newModel.rxnComps=[newModel.rxnComps;rxnsToAdd.rxnComps(:)];
+0442 <span class="keyword">else</span>
+0443     <span class="comment">%Fill with standard if it does not exist</span>
+0444     <span class="keyword">if</span> isfield(newModel,<span class="string">'rxnComps'</span>)
+0445         newModel.rxnComps=[newModel.rxnComps;ones(nRxns,1)];
+0446         <span class="comment">%fprintf(&quot;NOTE: The added reactions will be assigned to the first</span>
+0447         <span class="comment">%compartment\n&quot;);</span>
 0448     <span class="keyword">end</span>
-0449     <span class="comment">%Fill with standard if it does not exist</span>
-0450     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'grRules'</span>)
-0451         newModel.grRules=largeFiller;
-0452     <span class="keyword">end</span>
-0453     newModel.grRules=[newModel.grRules;rxnsToAdd.grRules(:)];
-0454 <span class="keyword">else</span>
-0455     <span class="comment">%Fill with standard if it does not exist</span>
-0456     <span class="keyword">if</span> isfield(newModel,<span class="string">'grRules'</span>)
-0457         newModel.grRules=[newModel.grRules;filler];
-0458     <span class="keyword">end</span>
-0459 <span class="keyword">end</span>
-0460 
-0461 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'rxnFrom'</span>)
-0462     rxnsToAdd.rxnFrom=convertCharArray(rxnsToAdd.rxnFrom);
-0463     <span class="keyword">if</span> numel(rxnsToAdd.rxnFrom)~=nRxns
-0464         EM=<span class="string">'rxnsToAdd.rxnFrom must have the same number of elements as rxnsToAdd.rxns'</span>;
-0465         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0466     <span class="keyword">end</span>
-0467     <span class="comment">%Fill with standard if it does not exist</span>
-0468     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'rxnFrom'</span>)
-0469         newModel.rxnFrom=largeFiller;
-0470     <span class="keyword">end</span>
-0471     newModel.rxnFrom=[newModel.rxnFrom;rxnsToAdd.rxnFrom(:)];
-0472 <span class="keyword">else</span>
-0473     <span class="comment">%Fill with standard if it does not exist</span>
-0474     <span class="keyword">if</span> isfield(newModel,<span class="string">'rxnFrom'</span>)
-0475         newModel.rxnFrom=[newModel.rxnFrom;filler];
-0476     <span class="keyword">end</span>
-0477 <span class="keyword">end</span>
-0478 
-0479 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'rxnNotes'</span>)
-0480     rxnsToAdd.rxnNotes=convertCharArray(rxnsToAdd.rxnNotes);
-0481     <span class="keyword">if</span> numel(rxnsToAdd.rxnNotes)~=nRxns
-0482         EM=<span class="string">'rxnsToAdd.rxnNotes must have the same number of elements as rxnsToAdd.rxns'</span>;
-0483         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0484     <span class="keyword">end</span>
-0485     <span class="comment">%Fill with standard if it does not exist</span>
-0486     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'rxnNotes'</span>)
-0487         newModel.rxnNotes=largeFiller;
-0488     <span class="keyword">end</span>
-0489     newModel.rxnNotes=[newModel.rxnNotes;rxnsToAdd.rxnNotes(:)];
-0490 <span class="keyword">else</span>
-0491     <span class="comment">%Fill with standard if it does not exist</span>
-0492     <span class="keyword">if</span> isfield(newModel,<span class="string">'rxnNotes'</span>)
-0493         newModel.rxnNotes=[newModel.rxnNotes;filler];
-0494     <span class="keyword">end</span>
-0495 <span class="keyword">end</span>
-0496 
-0497 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'rxnReferences'</span>)
-0498     rxnsToAdd.rxnReferences=convertCharArray(rxnsToAdd.rxnReferences);
-0499     <span class="keyword">if</span> numel(rxnsToAdd.rxnReferences)~=nRxns
-0500         EM=<span class="string">'rxnsToAdd.rxnReferences must have the same number of elements as rxnsToAdd.rxns'</span>;
-0501         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0502     <span class="keyword">end</span>
-0503     <span class="comment">%Fill with standard if it does not exist</span>
-0504     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'rxnReferences'</span>)
-0505         newModel.rxnReferences=largeFiller;
-0506     <span class="keyword">end</span>
-0507     newModel.rxnReferences=[newModel.rxnReferences;rxnsToAdd.rxnReferences(:)];
-0508 <span class="keyword">else</span>
-0509     <span class="comment">%Fill with standard if it does not exist</span>
-0510     <span class="keyword">if</span> isfield(newModel,<span class="string">'rxnReferences'</span>)
-0511         newModel.rxnReferences=[newModel.rxnReferences;filler];
-0512     <span class="keyword">end</span>
-0513 <span class="keyword">end</span>
-0514 
-0515 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'pwys'</span>)
-0516     rxnsToAdd.pwys=convertCharArray(rxnsToAdd.pwys);
-0517     <span class="keyword">if</span> numel(rxnsToAdd.pwys)~=nRxns
-0518         EM=<span class="string">'rxnsToAdd.pwys must have the same number of elements as rxnsToAdd.rxns'</span>;
-0519         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0520     <span class="keyword">end</span>
-0521     <span class="comment">%Fill with standard if it does not exist</span>
-0522     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'pwys'</span>)
-0523         newModel.pwys=largeFiller;
-0524     <span class="keyword">end</span>
-0525     newModel.pwys=[newModel.pwys;rxnsToAdd.pwys(:)];
-0526 <span class="keyword">else</span>
-0527     <span class="comment">%Fill with standard if it does not exist</span>
-0528     <span class="keyword">if</span> isfield(newModel,<span class="string">'pwys'</span>)
-0529         newModel.pwys=[newModel.pwys;filler];
-0530     <span class="keyword">end</span>
-0531 <span class="keyword">end</span>
-0532 
-0533 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'rxnConfidenceScores'</span>)
-0534     <span class="keyword">if</span> numel(rxnsToAdd.rxnConfidenceScores)~=nRxns
-0535         EM=<span class="string">'rxnsToAdd.rxnConfidenceScores must have the same number of elements as rxnsToAdd.rxns'</span>;
-0536         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0449 <span class="keyword">end</span>
+0450 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'grRules'</span>)
+0451     rxnsToAdd.grRules=convertCharArray(rxnsToAdd.grRules);
+0452     <span class="keyword">if</span> numel(rxnsToAdd.grRules)~=nRxns
+0453         EM=<span class="string">'rxnsToAdd.grRules must have the same number of elements as rxnsToAdd.rxns'</span>;
+0454         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0455     <span class="keyword">end</span>
+0456     <span class="comment">%Fill with standard if it does not exist</span>
+0457     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'grRules'</span>)
+0458         newModel.grRules=largeFiller;
+0459     <span class="keyword">end</span>
+0460     newModel.grRules=[newModel.grRules;rxnsToAdd.grRules(:)];
+0461 <span class="keyword">else</span>
+0462     <span class="comment">%Fill with standard if it does not exist</span>
+0463     <span class="keyword">if</span> isfield(newModel,<span class="string">'grRules'</span>)
+0464         newModel.grRules=[newModel.grRules;filler];
+0465     <span class="keyword">end</span>
+0466 <span class="keyword">end</span>
+0467 
+0468 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'rxnFrom'</span>)
+0469     rxnsToAdd.rxnFrom=convertCharArray(rxnsToAdd.rxnFrom);
+0470     <span class="keyword">if</span> numel(rxnsToAdd.rxnFrom)~=nRxns
+0471         EM=<span class="string">'rxnsToAdd.rxnFrom must have the same number of elements as rxnsToAdd.rxns'</span>;
+0472         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0473     <span class="keyword">end</span>
+0474     <span class="comment">%Fill with standard if it does not exist</span>
+0475     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'rxnFrom'</span>)
+0476         newModel.rxnFrom=largeFiller;
+0477     <span class="keyword">end</span>
+0478     newModel.rxnFrom=[newModel.rxnFrom;rxnsToAdd.rxnFrom(:)];
+0479 <span class="keyword">else</span>
+0480     <span class="comment">%Fill with standard if it does not exist</span>
+0481     <span class="keyword">if</span> isfield(newModel,<span class="string">'rxnFrom'</span>)
+0482         newModel.rxnFrom=[newModel.rxnFrom;filler];
+0483     <span class="keyword">end</span>
+0484 <span class="keyword">end</span>
+0485 
+0486 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'rxnNotes'</span>)
+0487     rxnsToAdd.rxnNotes=convertCharArray(rxnsToAdd.rxnNotes);
+0488     <span class="keyword">if</span> numel(rxnsToAdd.rxnNotes)~=nRxns
+0489         EM=<span class="string">'rxnsToAdd.rxnNotes must have the same number of elements as rxnsToAdd.rxns'</span>;
+0490         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0491     <span class="keyword">end</span>
+0492     <span class="comment">%Fill with standard if it does not exist</span>
+0493     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'rxnNotes'</span>)
+0494         newModel.rxnNotes=largeFiller;
+0495     <span class="keyword">end</span>
+0496     newModel.rxnNotes=[newModel.rxnNotes;rxnsToAdd.rxnNotes(:)];
+0497 <span class="keyword">else</span>
+0498     <span class="comment">%Fill with standard if it does not exist</span>
+0499     <span class="keyword">if</span> isfield(newModel,<span class="string">'rxnNotes'</span>)
+0500         newModel.rxnNotes=[newModel.rxnNotes;filler];
+0501     <span class="keyword">end</span>
+0502 <span class="keyword">end</span>
+0503 
+0504 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'rxnReferences'</span>)
+0505     rxnsToAdd.rxnReferences=convertCharArray(rxnsToAdd.rxnReferences);
+0506     <span class="keyword">if</span> numel(rxnsToAdd.rxnReferences)~=nRxns
+0507         EM=<span class="string">'rxnsToAdd.rxnReferences must have the same number of elements as rxnsToAdd.rxns'</span>;
+0508         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0509     <span class="keyword">end</span>
+0510     <span class="comment">%Fill with standard if it does not exist</span>
+0511     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'rxnReferences'</span>)
+0512         newModel.rxnReferences=largeFiller;
+0513     <span class="keyword">end</span>
+0514     newModel.rxnReferences=[newModel.rxnReferences;rxnsToAdd.rxnReferences(:)];
+0515 <span class="keyword">else</span>
+0516     <span class="comment">%Fill with standard if it does not exist</span>
+0517     <span class="keyword">if</span> isfield(newModel,<span class="string">'rxnReferences'</span>)
+0518         newModel.rxnReferences=[newModel.rxnReferences;filler];
+0519     <span class="keyword">end</span>
+0520 <span class="keyword">end</span>
+0521 
+0522 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'pwys'</span>)
+0523     rxnsToAdd.pwys=convertCharArray(rxnsToAdd.pwys);
+0524     <span class="keyword">if</span> numel(rxnsToAdd.pwys)~=nRxns
+0525         EM=<span class="string">'rxnsToAdd.pwys must have the same number of elements as rxnsToAdd.rxns'</span>;
+0526         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0527     <span class="keyword">end</span>
+0528     <span class="comment">%Fill with standard if it does not exist</span>
+0529     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'pwys'</span>)
+0530         newModel.pwys=largeFiller;
+0531     <span class="keyword">end</span>
+0532     newModel.pwys=[newModel.pwys;rxnsToAdd.pwys(:)];
+0533 <span class="keyword">else</span>
+0534     <span class="comment">%Fill with standard if it does not exist</span>
+0535     <span class="keyword">if</span> isfield(newModel,<span class="string">'pwys'</span>)
+0536         newModel.pwys=[newModel.pwys;filler];
 0537     <span class="keyword">end</span>
-0538     <span class="comment">%Fill with standard if it does not exist</span>
-0539     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'rxnConfidenceScores'</span>)
-0540         newModel.rxnConfidenceScores=NaN(nOldRxns,1);
-0541     <span class="keyword">end</span>
-0542     newModel.rxnConfidenceScores=[newModel.rxnConfidenceScores;rxnsToAdd.rxnConfidenceScores(:)];
-0543 <span class="keyword">else</span>
-0544     <span class="comment">%Fill with standard if it does not exist</span>
-0545     <span class="keyword">if</span> isfield(newModel,<span class="string">'rxnConfidenceScores'</span>)
-0546         newModel.rxnConfidenceScores=[newModel.rxnConfidenceScores;NaN(nRxns,1)];
-0547     <span class="keyword">end</span>
-0548 <span class="keyword">end</span>
-0549 
-0550 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'rxnDeltaG'</span>)
-0551     <span class="keyword">if</span> numel(rxnsToAdd.rxnDeltaG)~=nRxns
-0552         EM=<span class="string">'rxnsToAdd.rxnDeltaG must have the same number of elements as rxnsToAdd.rxns'</span>;
-0553         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0538 <span class="keyword">end</span>
+0539 
+0540 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'spontaneous'</span>)
+0541     <span class="keyword">if</span> numel(rxnsToAdd.spontaneous)~=nRxns
+0542         EM=<span class="string">'rxnsToAdd.spontaneous must have the same number of elements as rxnsToAdd.rxns'</span>;
+0543         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0544     <span class="keyword">end</span>
+0545     <span class="comment">%Fill with standard if it does not exist</span>
+0546     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'spontaneous'</span>)
+0547         newModel.spontaneous=false(nOldRxns,1);
+0548     <span class="keyword">end</span>
+0549     newModel.spontaneous=[newModel.spontaneous;logical(rxnsToAdd.spontaneous(:))];
+0550 <span class="keyword">else</span>
+0551     <span class="comment">%Fill with standard if it does not exist</span>
+0552     <span class="keyword">if</span> isfield(newModel,<span class="string">'spontaneous'</span>)
+0553         newModel.spontaneous=[newModel.spontaneous;false(nRxns,1)];
 0554     <span class="keyword">end</span>
-0555     <span class="comment">%Fill with standard if it does not exist</span>
-0556     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'rxnDeltaG'</span>)
-0557         newModel.rxnDeltaG=NaN(nOldRxns,1);
-0558     <span class="keyword">end</span>
-0559     newModel.rxnDeltaG=[newModel.rxnDeltaG;rxnsToAdd.rxnDeltaG(:)];
-0560 <span class="keyword">else</span>
-0561     <span class="comment">%Fill with standard if it does not exist</span>
-0562     <span class="keyword">if</span> isfield(newModel,<span class="string">'rxnDeltaG'</span>)
-0563         newModel.rxnDeltaG=[newModel.rxnDeltaG;NaN(nRxns,1)];
-0564     <span class="keyword">end</span>
-0565 <span class="keyword">end</span>
-0566 
-0567 
-0568 <span class="comment">%***Start parsing the equations and adding the info to the S matrix The</span>
-0569 <span class="comment">%mets are matched to model.mets</span>
-0570 <span class="keyword">if</span> eqnType==1
-0571     [I, J]=ismember(mets,model.mets);
-0572     <span class="keyword">if</span> ~all(I)
-0573         <span class="keyword">if</span> allowNewMets==true || ischar(allowNewMets)
-0574             <span class="comment">%Add the new mets</span>
-0575             metsToAdd.mets=mets(~I);
-0576             metsToAdd.metNames=metsToAdd.mets;
-0577             metsToAdd.compartments=compartment;
-0578             <span class="keyword">if</span> ischar(allowNewMets)
-0579                 newModel=<a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,varargin)">addMets</a>(newModel,metsToAdd,true,allowNewMets);
-0580             <span class="keyword">else</span>
-0581                 newModel=<a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,varargin)">addMets</a>(newModel,metsToAdd,true);
-0582             <span class="keyword">end</span>
-0583         <span class="keyword">else</span>
-0584             EM=<span class="string">'One or more equations contain metabolites that are not in model.mets. Set allowNewMets to true to allow this function to add metabolites or use addMets to add them before calling this function. Are you sure that eqnType=1?'</span>;
-0585             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0586         <span class="keyword">end</span>
-0587     <span class="keyword">end</span>
-0588     <span class="comment">%Calculate the indexes of the metabolites and add the info</span>
-0589     metIndexes=J;
-0590     metIndexes(~I)=numel(newModel.mets)-sum(~I)+1:numel(newModel.mets);
-0591 <span class="keyword">end</span>
-0592 
-0593 <span class="comment">%Do some stuff that is the same for eqnType=2 and eqnType=3</span>
-0594 <span class="keyword">if</span> eqnType==2 || eqnType==3
-0595     <span class="comment">%For later..</span>
-0596     t2=strcat(model.metNames,<span class="string">'***'</span>,model.comps(model.metComps));
-0597 <span class="keyword">end</span>
-0598 
-0599 <span class="comment">%The mets are matched to model.metNames and assigned to &quot;compartment&quot;</span>
-0600 <span class="keyword">if</span> eqnType==2
-0601     <span class="comment">%%Check that the metabolite names are not present in the same</span>
-0602     <span class="comment">%%compartment.</span>
-0603     <span class="comment">%Not the neatest way maybe..</span>
-0604     t1=strcat(mets,<span class="string">'***'</span>,compartment);
-0605     [I, J]=ismember(t1,t2);
-0606     
-0607     <span class="keyword">if</span> ~all(I)
-0608         <span class="keyword">if</span> allowNewMets==true || ischar(allowNewMets)
-0609             <span class="comment">%Add the new mets</span>
-0610             metsToAdd.metNames=mets(~I);
-0611             metsToAdd.compartments=compartment;
-0612             <span class="keyword">if</span> ischar(allowNewMets)
-0613                 newModel=<a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,varargin)">addMets</a>(newModel,metsToAdd,true,allowNewMets);
-0614             <span class="keyword">else</span>
-0615                 newModel=<a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,varargin)">addMets</a>(newModel,metsToAdd,true);
-0616             <span class="keyword">end</span>
-0617         <span class="keyword">else</span>
-0618             EM=<span class="string">'One or more equations contain metabolites that are not in model.mets. Set allowNewMets to true to allow this function to add metabolites or use addMets to add them before calling this function'</span>;
-0619             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0620         <span class="keyword">end</span>
-0621     <span class="keyword">end</span>
-0622     
-0623     <span class="comment">%Calculate the indexes of the metabolites</span>
-0624     metIndexes=J;
-0625     metIndexes(~I)=numel(newModel.mets)-sum(~I)+1:numel(newModel.mets);
-0626 <span class="keyword">end</span>
-0627 
-0628 <span class="comment">%The equations are on the form metNames[compName]</span>
-0629 <span class="keyword">if</span> eqnType==3
-0630     <span class="comment">%Parse the metabolite names</span>
-0631     metNames=cell(numel(mets),1);
-0632     compartments=metNames;
-0633     <span class="keyword">for</span> i=1:numel(mets)
-0634         starts=max(strfind(mets{i},<span class="string">'['</span>));
-0635         ends=max(strfind(mets{i},<span class="string">']'</span>));
-0636         
-0637         <span class="comment">%Check that the formatting is correct</span>
-0638         <span class="keyword">if</span> isempty(starts) || isempty(ends) || ends&lt;numel(mets{i})
-0639             EM=[<span class="string">'The metabolite '</span> mets{i} <span class="string">' is not correctly formatted for eqnType=3'</span>];
-0640             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0641         <span class="keyword">end</span>
-0642         
-0643         <span class="comment">%Check that the compartment is correct</span>
-0644         compartments{i}=mets{i}(starts+1:ends-1);
-0645         I=ismember(compartments(i),newModel.comps);
-0646         <span class="keyword">if</span> ~I
-0647             EM=[<span class="string">'The metabolite '</span> mets{i} <span class="string">' has a compartment that is not in model.comps'</span>];
-0648             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0649         <span class="keyword">end</span>
-0650         metNames{i}=mets{i}(1:starts-1);
-0651     <span class="keyword">end</span>
-0652     
-0653     <span class="comment">%Check if the metabolite exists already</span>
-0654     t1=strcat(metNames,<span class="string">'***'</span>,compartments);
-0655     [I, J]=ismember(t1,t2);
-0656     
-0657     <span class="keyword">if</span> ~all(I)
-0658         <span class="keyword">if</span> allowNewMets==true | ischar(allowNewMets)
-0659             <span class="comment">%Add the new mets</span>
-0660             metsToAdd.metNames=metNames(~I);
-0661             metsToAdd.compartments=compartments(~I);
-0662             <span class="keyword">if</span> ischar(allowNewMets)
-0663                 newModel=<a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,varargin)">addMets</a>(newModel,metsToAdd,true,allowNewMets);
-0664             <span class="keyword">else</span>
-0665                 newModel=<a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,varargin)">addMets</a>(newModel,metsToAdd,true);
-0666             <span class="keyword">end</span>
-0667         <span class="keyword">else</span>
-0668             EM=<span class="string">'One or more equations contain metabolites that are not in model.metNames. Set allowNewMets to true to allow this function to add metabolites or use addMets to add them before calling this function'</span>;
-0669             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0670         <span class="keyword">end</span>
-0671     <span class="keyword">end</span>
-0672     
-0673     <span class="comment">%Calculate the indexes of the metabolites</span>
-0674     metIndexes=J;
-0675     metIndexes(~I)=numel(newModel.mets)-sum(~I)+1:numel(newModel.mets);
-0676 <span class="keyword">end</span>
-0677 
-0678 <span class="comment">%Add the info to the stoichiometric matrix</span>
-0679 newModel.S=[newModel.S sparse(size(newModel.S,1),nRxns)];
-0680 
-0681 <span class="keyword">for</span> i=1:nRxns
-0682     newModel.S(metIndexes,nOldRxns+i)=S(:,i);
-0683     <span class="comment">%Parse the grRules and check whether all genes in grRules appear in</span>
-0684     <span class="comment">%genes</span>
-0685     <span class="keyword">if</span> isfield(newModel,<span class="string">'grRules'</span>)
-0686         rule=newModel.grRules{nOldRxns+i};
-0687         rule=strrep(rule,<span class="string">'('</span>,<span class="string">''</span>);
-0688         rule=strrep(rule,<span class="string">')'</span>,<span class="string">''</span>);
-0689         rule=strrep(rule,<span class="string">' or '</span>,<span class="string">' '</span>);
-0690         rule=strrep(rule,<span class="string">' and '</span>,<span class="string">' '</span>);
-0691         genes=regexp(rule,<span class="string">' '</span>,<span class="string">'split'</span>);
-0692         [I, J]=ismember(genes,newModel.genes);
-0693         <span class="keyword">if</span> ~all(I) &amp;&amp; any(rule)
-0694             EM=[<span class="string">'Not all genes for reaction '</span> rxnsToAdd.rxns{i} <span class="string">' were found in model.genes. If needed, add genes with addGenesRaven before calling this function, or set the ''allowNewGenes'' flag to true'</span>];
-0695             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
-0696         <span class="keyword">end</span>
-0697     <span class="keyword">end</span>
-0698 <span class="keyword">end</span>
-0699 
-0700 <span class="comment">%Make temporary minimal model structure with only new rxns, to parse to</span>
-0701 <span class="comment">%standardizeGrRules</span>
-0702 newRxnsModel.genes=newModel.genes;
-0703 newRxnsModel.grRules=newModel.grRules(length(model.rxns)+1:end);
-0704 newRxnsModel.rxns=newModel.rxns(length(model.rxns)+1:end);
-0705 
-0706 <span class="comment">%Fix grRules and reconstruct rxnGeneMat</span>
-0707 [grRules,rxnGeneMat] = <a href="standardizeGrRules.html" class="code" title="function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,varargin)">standardizeGrRules</a>(newRxnsModel,true);
-0708 newModel.rxnGeneMat = [newModel.rxnGeneMat; rxnGeneMat];
-0709 newModel.grRules = [newModel.grRules(1:nOldRxns); grRules];
-0710 <span class="keyword">end</span></pre></div>
+0555 <span class="keyword">end</span>
+0556 
+0557 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'rxnConfidenceScores'</span>)
+0558     <span class="keyword">if</span> numel(rxnsToAdd.rxnConfidenceScores)~=nRxns
+0559         EM=<span class="string">'rxnsToAdd.rxnConfidenceScores must have the same number of elements as rxnsToAdd.rxns'</span>;
+0560         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0561     <span class="keyword">end</span>
+0562     <span class="comment">%Fill with standard if it does not exist</span>
+0563     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'rxnConfidenceScores'</span>)
+0564         newModel.rxnConfidenceScores=NaN(nOldRxns,1);
+0565     <span class="keyword">end</span>
+0566     newModel.rxnConfidenceScores=[newModel.rxnConfidenceScores;rxnsToAdd.rxnConfidenceScores(:)];
+0567 <span class="keyword">else</span>
+0568     <span class="comment">%Fill with standard if it does not exist</span>
+0569     <span class="keyword">if</span> isfield(newModel,<span class="string">'rxnConfidenceScores'</span>)
+0570         newModel.rxnConfidenceScores=[newModel.rxnConfidenceScores;NaN(nRxns,1)];
+0571     <span class="keyword">end</span>
+0572 <span class="keyword">end</span>
+0573 
+0574 <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'rxnDeltaG'</span>)
+0575     <span class="keyword">if</span> numel(rxnsToAdd.rxnDeltaG)~=nRxns
+0576         EM=<span class="string">'rxnsToAdd.rxnDeltaG must have the same number of elements as rxnsToAdd.rxns'</span>;
+0577         error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0578     <span class="keyword">end</span>
+0579     <span class="comment">%Fill with standard if it does not exist</span>
+0580     <span class="keyword">if</span> ~isfield(newModel,<span class="string">'rxnDeltaG'</span>)
+0581         newModel.rxnDeltaG=NaN(nOldRxns,1);
+0582     <span class="keyword">end</span>
+0583     newModel.rxnDeltaG=[newModel.rxnDeltaG;rxnsToAdd.rxnDeltaG(:)];
+0584 <span class="keyword">else</span>
+0585     <span class="comment">%Fill with standard if it does not exist</span>
+0586     <span class="keyword">if</span> isfield(newModel,<span class="string">'rxnDeltaG'</span>)
+0587         newModel.rxnDeltaG=[newModel.rxnDeltaG;NaN(nRxns,1)];
+0588     <span class="keyword">end</span>
+0589 <span class="keyword">end</span>
+0590 
+0591 
+0592 <span class="comment">%***Start parsing the equations and adding the info to the S matrix The</span>
+0593 <span class="comment">%mets are matched to model.mets</span>
+0594 <span class="keyword">if</span> eqnType==1
+0595     [I, J]=ismember(mets,model.mets);
+0596     <span class="keyword">if</span> ~all(I)
+0597         <span class="keyword">if</span> allowNewMets==true || ischar(allowNewMets)
+0598             <span class="comment">%Add the new mets</span>
+0599             metsToAdd.mets=mets(~I);
+0600             metsToAdd.metNames=metsToAdd.mets;
+0601             metsToAdd.compartments=compartment;
+0602             <span class="keyword">if</span> ischar(allowNewMets)
+0603                 newModel=<a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,varargin)">addMets</a>(newModel,metsToAdd,true,allowNewMets);
+0604             <span class="keyword">else</span>
+0605                 newModel=<a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,varargin)">addMets</a>(newModel,metsToAdd,true);
+0606             <span class="keyword">end</span>
+0607         <span class="keyword">else</span>
+0608             EM=<span class="string">'One or more equations contain metabolites that are not in model.mets. Set allowNewMets to true to allow this function to add metabolites or use addMets to add them before calling this function. Are you sure that eqnType=1?'</span>;
+0609             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0610         <span class="keyword">end</span>
+0611     <span class="keyword">end</span>
+0612     <span class="comment">%Calculate the indexes of the metabolites and add the info</span>
+0613     metIndexes=J;
+0614     metIndexes(~I)=numel(newModel.mets)-sum(~I)+1:numel(newModel.mets);
+0615 <span class="keyword">end</span>
+0616 
+0617 <span class="comment">%Do some stuff that is the same for eqnType=2 and eqnType=3</span>
+0618 <span class="keyword">if</span> eqnType==2 || eqnType==3
+0619     <span class="comment">%For later..</span>
+0620     t2=strcat(model.metNames,<span class="string">'***'</span>,model.comps(model.metComps));
+0621 <span class="keyword">end</span>
+0622 
+0623 <span class="comment">%The mets are matched to model.metNames and assigned to &quot;compartment&quot;</span>
+0624 <span class="keyword">if</span> eqnType==2
+0625     <span class="comment">%%Check that the metabolite names are not present in the same</span>
+0626     <span class="comment">%%compartment.</span>
+0627     <span class="comment">%Not the neatest way maybe..</span>
+0628     t1=strcat(mets,<span class="string">'***'</span>,compartment);
+0629     [I, J]=ismember(t1,t2);
+0630     
+0631     <span class="keyword">if</span> ~all(I)
+0632         <span class="keyword">if</span> allowNewMets==true || ischar(allowNewMets)
+0633             <span class="comment">%Add the new mets</span>
+0634             metsToAdd.metNames=mets(~I);
+0635             metsToAdd.compartments=compartment;
+0636             <span class="keyword">if</span> ischar(allowNewMets)
+0637                 newModel=<a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,varargin)">addMets</a>(newModel,metsToAdd,true,allowNewMets);
+0638             <span class="keyword">else</span>
+0639                 newModel=<a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,varargin)">addMets</a>(newModel,metsToAdd,true);
+0640             <span class="keyword">end</span>
+0641         <span class="keyword">else</span>
+0642             EM=<span class="string">'One or more equations contain metabolites that are not in model.mets. Set allowNewMets to true to allow this function to add metabolites or use addMets to add them before calling this function'</span>;
+0643             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0644         <span class="keyword">end</span>
+0645     <span class="keyword">end</span>
+0646     
+0647     <span class="comment">%Calculate the indexes of the metabolites</span>
+0648     metIndexes=J;
+0649     metIndexes(~I)=numel(newModel.mets)-sum(~I)+1:numel(newModel.mets);
+0650 <span class="keyword">end</span>
+0651 
+0652 <span class="comment">%The equations are on the form metNames[compName]</span>
+0653 <span class="keyword">if</span> eqnType==3
+0654     <span class="comment">%Parse the metabolite names</span>
+0655     metNames=cell(numel(mets),1);
+0656     compartments=metNames;
+0657     <span class="keyword">for</span> i=1:numel(mets)
+0658         starts=max(strfind(mets{i},<span class="string">'['</span>));
+0659         ends=max(strfind(mets{i},<span class="string">']'</span>));
+0660         
+0661         <span class="comment">%Check that the formatting is correct</span>
+0662         <span class="keyword">if</span> isempty(starts) || isempty(ends) || ends&lt;numel(mets{i})
+0663             EM=[<span class="string">'The metabolite '</span> mets{i} <span class="string">' is not correctly formatted for eqnType=3'</span>];
+0664             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0665         <span class="keyword">end</span>
+0666         
+0667         <span class="comment">%Check that the compartment is correct</span>
+0668         compartments{i}=mets{i}(starts+1:ends-1);
+0669         I=ismember(compartments(i),newModel.comps);
+0670         <span class="keyword">if</span> ~I
+0671             EM=[<span class="string">'The metabolite '</span> mets{i} <span class="string">' has a compartment that is not in model.comps'</span>];
+0672             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0673         <span class="keyword">end</span>
+0674         metNames{i}=mets{i}(1:starts-1);
+0675     <span class="keyword">end</span>
+0676     
+0677     <span class="comment">%Check if the metabolite exists already</span>
+0678     t1=strcat(metNames,<span class="string">'***'</span>,compartments);
+0679     [I, J]=ismember(t1,t2);
+0680     
+0681     <span class="keyword">if</span> ~all(I)
+0682         <span class="keyword">if</span> allowNewMets==true | ischar(allowNewMets)
+0683             <span class="comment">%Add the new mets</span>
+0684             metsToAdd.metNames=metNames(~I);
+0685             metsToAdd.compartments=compartments(~I);
+0686             <span class="keyword">if</span> ischar(allowNewMets)
+0687                 newModel=<a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,varargin)">addMets</a>(newModel,metsToAdd,true,allowNewMets);
+0688             <span class="keyword">else</span>
+0689                 newModel=<a href="addMets.html" class="code" title="function newModel=addMets(model,metsToAdd,varargin)">addMets</a>(newModel,metsToAdd,true);
+0690             <span class="keyword">end</span>
+0691         <span class="keyword">else</span>
+0692             EM=<span class="string">'One or more equations contain metabolites that are not in model.metNames. Set allowNewMets to true to allow this function to add metabolites or use addMets to add them before calling this function'</span>;
+0693             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0694         <span class="keyword">end</span>
+0695     <span class="keyword">end</span>
+0696     
+0697     <span class="comment">%Calculate the indexes of the metabolites</span>
+0698     metIndexes=J;
+0699     metIndexes(~I)=numel(newModel.mets)-sum(~I)+1:numel(newModel.mets);
+0700 <span class="keyword">end</span>
+0701 
+0702 <span class="comment">%Add the info to the stoichiometric matrix</span>
+0703 newModel.S=[newModel.S sparse(size(newModel.S,1),nRxns)];
+0704 
+0705 <span class="keyword">for</span> i=1:nRxns
+0706     newModel.S(metIndexes,nOldRxns+i)=S(:,i);
+0707     <span class="comment">%Parse the grRules and check whether all genes in grRules appear in</span>
+0708     <span class="comment">%genes</span>
+0709     <span class="keyword">if</span> isfield(newModel,<span class="string">'grRules'</span>)
+0710         rule=newModel.grRules{nOldRxns+i};
+0711         rule=strrep(rule,<span class="string">'('</span>,<span class="string">''</span>);
+0712         rule=strrep(rule,<span class="string">')'</span>,<span class="string">''</span>);
+0713         rule=strrep(rule,<span class="string">' or '</span>,<span class="string">' '</span>);
+0714         rule=strrep(rule,<span class="string">' and '</span>,<span class="string">' '</span>);
+0715         genes=regexp(rule,<span class="string">' '</span>,<span class="string">'split'</span>);
+0716         [I, J]=ismember(genes,newModel.genes);
+0717         <span class="keyword">if</span> ~all(I) &amp;&amp; any(rule)
+0718             EM=[<span class="string">'Not all genes for reaction '</span> rxnsToAdd.rxns{i} <span class="string">' were found in model.genes. If needed, add genes with addGenesRaven before calling this function, or set the ''allowNewGenes'' flag to true'</span>];
+0719             error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'%s'</span>, EM);
+0720         <span class="keyword">end</span>
+0721     <span class="keyword">end</span>
+0722 <span class="keyword">end</span>
+0723 
+0724 <span class="comment">%Make temporary minimal model structure with only new rxns, to parse to</span>
+0725 <span class="comment">%standardizeGrRules</span>
+0726 newRxnsModel.genes=newModel.genes;
+0727 newRxnsModel.grRules=newModel.grRules(length(model.rxns)+1:end);
+0728 newRxnsModel.rxns=newModel.rxns(length(model.rxns)+1:end);
+0729 
+0730 <span class="comment">%Fix grRules and reconstruct rxnGeneMat</span>
+0731 [grRules,rxnGeneMat] = <a href="standardizeGrRules.html" class="code" title="function [grRules,rxnGeneMat,indexes2check] = standardizeGrRules(model,varargin)">standardizeGrRules</a>(newRxnsModel,true);
+0732 newModel.rxnGeneMat = [newModel.rxnGeneMat; rxnGeneMat];
+0733 newModel.grRules = [newModel.grRules(1:nOldRxns); grRules];
+0734 
+0735 <span class="keyword">if</span> isfield(newModel,<span class="string">'equations'</span>)
+0736     <span class="comment">%Reuse the equations as given where available (preserves the caller's</span>
+0737     <span class="comment">%own formatting); reconstruct them from the now-populated S otherwise,</span>
+0738     <span class="comment">%e.g. when rxnsToAdd used mets/stoichCoeffs instead of equations.</span>
+0739     <span class="keyword">if</span> isfield(rxnsToAdd,<span class="string">'equations'</span>)
+0740         newEquations=convertCharArray(rxnsToAdd.equations);
+0741     <span class="keyword">else</span>
+0742         newEquations=constructEquations(newModel,newModel.rxns(nOldRxns+1:end));
+0743     <span class="keyword">end</span>
+0744     newModel.equations=[newModel.equations;newEquations(:)];
+0745 <span class="keyword">end</span>
+0746 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

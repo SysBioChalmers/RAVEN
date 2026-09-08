@@ -4,9 +4,22 @@ function [ravenPath, prevDir] = findRAVENroot()
 %   RAVEN.png. Can also record the current directory, in case a function will
 %   use the ravenPath to navigate to a precise folder, and it should return to
 %   the previous directory afterwards. See e.g. optimizeProb calling glpk.
+%
+%   The resolved path is cached for the rest of the MATLAB session: this is
+%   called on every solver invocation, and re-reading the RAVEN.ravenPath
+%   preference from disk every time is both wasteful and, under the sustained
+%   call volume of a full test run, an intermittent source of failures from
+%   MATLAB's own preference-file I/O. Run `clear findRAVENroot` after
+%   changing that preference (checkRaven does this already) to pick
+%   up the change without restarting MATLAB.
 
-ST=dbstack('-completenames');
+persistent cachedPath
 prevDir = pwd();
+if ~isempty(cachedPath)
+    ravenPath = cachedPath;
+    return;
+end
+
 % A stored preference is only trusted if it still points at a real RAVEN
 % install; otherwise fall through to walking up from the currently
 % executing copy of this file. Without this check, a stale preference
@@ -20,6 +33,7 @@ if ispref('RAVEN','ravenPath')
     end
 end
 if isempty(ravenPath)
+    ST=dbstack('-completenames');
     ravenPath = ST(strcmp({ST.name},'findRAVENroot')).file;
     rootFound = 0;
     while rootFound == 0
@@ -34,4 +48,6 @@ if isempty(ravenPath)
             end
         end
     end
+end
+cachedPath = ravenPath;
 end

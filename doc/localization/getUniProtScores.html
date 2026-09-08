@@ -47,7 +47,16 @@
  reviewed : logical
      restrict to curated Swiss-Prot entries (default true).
  compartmentMap : containers.Map
-     label -&gt; compartment id and location vocabulary (default defaultCompartmentMap).
+     UniProt location term -&gt; your model's compartment id (default
+     defaultCompartmentMap). Here the map is not only a renaming: its keys are
+     also the vocabulary searched for in UniProt's &quot;Subcellular location [CC]&quot;
+     free text, matched whole-word and case insensitively, so they must be
+     UniProt's own noun forms ('endoplasmic reticulum', not 'ER') and a term
+     that is not a key is never looked for. Several keys may share one
+     compartment id, which merges them; since every hit scores 1.0, merging
+     here means &quot;annotated to any of these counts as this compartment&quot;. One
+     key cannot be split across two compartment ids - see parseScores for why,
+     and for the recipe to duplicate a column on the returned GSS instead.
  extraQuery : char
      an additional UniProt query clause, ANDed into the query (e.g. 'gene:CIT1').
 
@@ -60,6 +69,8 @@
  --------
      GSS = getUniProtScores(559292);                       % all reviewed S. cerevisiae proteins
      GSS = getUniProtScores(559292, 'idField', 'accession');
+     map = defaultCompartmentMap; map('cell wall') = 'ce';  % extend the vocabulary
+     GSS = getUniProtScores(559292, 'compartmentMap', map);
 
  See also
  --------
@@ -101,62 +112,73 @@ This function is called by:
 0019 <span class="comment">% reviewed : logical</span>
 0020 <span class="comment">%     restrict to curated Swiss-Prot entries (default true).</span>
 0021 <span class="comment">% compartmentMap : containers.Map</span>
-0022 <span class="comment">%     label -&gt; compartment id and location vocabulary (default defaultCompartmentMap).</span>
-0023 <span class="comment">% extraQuery : char</span>
-0024 <span class="comment">%     an additional UniProt query clause, ANDed into the query (e.g. 'gene:CIT1').</span>
-0025 <span class="comment">%</span>
-0026 <span class="comment">% Returns</span>
-0027 <span class="comment">% -------</span>
-0028 <span class="comment">% GSS : struct</span>
-0029 <span class="comment">%     a gene scoring structure for predictLocalization.</span>
-0030 <span class="comment">%</span>
-0031 <span class="comment">% Examples</span>
-0032 <span class="comment">% --------</span>
-0033 <span class="comment">%     GSS = getUniProtScores(559292);                       % all reviewed S. cerevisiae proteins</span>
-0034 <span class="comment">%     GSS = getUniProtScores(559292, 'idField', 'accession');</span>
-0035 <span class="comment">%</span>
-0036 <span class="comment">% See also</span>
-0037 <span class="comment">% --------</span>
-0038 <span class="comment">% parseScores, predictLocalization, defaultCompartmentMap</span>
-0039 
-0040 p = parseRAVENargs(varargin, {<span class="string">'idField'</span>,<span class="string">'gene_oln'</span>; <span class="string">'reviewed'</span>,true; <span class="keyword">...</span>
-0041                               <span class="string">'compartmentMap'</span>,[]; <span class="string">'extraQuery'</span>,[]});
-0042 idField = char(p.idField);
-0043 <span class="keyword">if</span> ~any(strcmp(idField, {<span class="string">'gene_oln'</span>,<span class="string">'accession'</span>,<span class="string">'gene_primary'</span>}))
-0044     error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'idField must be gene_oln, accession, or gene_primary'</span>);
-0045 <span class="keyword">end</span>
-0046 
-0047 query = [<span class="string">'organism_id:'</span> char(string(organism))];
-0048 <span class="keyword">if</span> p.reviewed; query = [query <span class="string">' AND reviewed:true'</span>]; <span class="keyword">end</span>
-0049 <span class="keyword">if</span> ~isempty(p.extraQuery); query = [query <span class="string">' AND ('</span> char(p.extraQuery) <span class="string">')'</span>]; <span class="keyword">end</span>
+0022 <span class="comment">%     UniProt location term -&gt; your model's compartment id (default</span>
+0023 <span class="comment">%     defaultCompartmentMap). Here the map is not only a renaming: its keys are</span>
+0024 <span class="comment">%     also the vocabulary searched for in UniProt's &quot;Subcellular location [CC]&quot;</span>
+0025 <span class="comment">%     free text, matched whole-word and case insensitively, so they must be</span>
+0026 <span class="comment">%     UniProt's own noun forms ('endoplasmic reticulum', not 'ER') and a term</span>
+0027 <span class="comment">%     that is not a key is never looked for. Several keys may share one</span>
+0028 <span class="comment">%     compartment id, which merges them; since every hit scores 1.0, merging</span>
+0029 <span class="comment">%     here means &quot;annotated to any of these counts as this compartment&quot;. One</span>
+0030 <span class="comment">%     key cannot be split across two compartment ids - see parseScores for why,</span>
+0031 <span class="comment">%     and for the recipe to duplicate a column on the returned GSS instead.</span>
+0032 <span class="comment">% extraQuery : char</span>
+0033 <span class="comment">%     an additional UniProt query clause, ANDed into the query (e.g. 'gene:CIT1').</span>
+0034 <span class="comment">%</span>
+0035 <span class="comment">% Returns</span>
+0036 <span class="comment">% -------</span>
+0037 <span class="comment">% GSS : struct</span>
+0038 <span class="comment">%     a gene scoring structure for predictLocalization.</span>
+0039 <span class="comment">%</span>
+0040 <span class="comment">% Examples</span>
+0041 <span class="comment">% --------</span>
+0042 <span class="comment">%     GSS = getUniProtScores(559292);                       % all reviewed S. cerevisiae proteins</span>
+0043 <span class="comment">%     GSS = getUniProtScores(559292, 'idField', 'accession');</span>
+0044 <span class="comment">%     map = defaultCompartmentMap; map('cell wall') = 'ce';  % extend the vocabulary</span>
+0045 <span class="comment">%     GSS = getUniProtScores(559292, 'compartmentMap', map);</span>
+0046 <span class="comment">%</span>
+0047 <span class="comment">% See also</span>
+0048 <span class="comment">% --------</span>
+0049 <span class="comment">% parseScores, predictLocalization, defaultCompartmentMap</span>
 0050 
-0051 <span class="comment">% Put the chosen id field first so parseScores reads it as the gene id column.</span>
-0052 fields = [idField <span class="string">',cc_subcellular_location'</span>];
-0053 outFile = [tempname <span class="string">'.tsv'</span>];
-0054 cleanup = onCleanup(@() <a href="#_sub1" class="code" title="subfunction i_deleteIfExists(f)">i_deleteIfExists</a>(outFile)); <span class="comment">%#ok&lt;NASGU&gt; — removes temp file on return/error</span>
-0055 websave(outFile, <span class="string">'https://rest.uniprot.org/uniprotkb/stream'</span>, <span class="keyword">...</span>
-0056         <span class="string">'query'</span>, query, <span class="string">'format'</span>, <span class="string">'tsv'</span>, <span class="string">'fields'</span>, fields, weboptions(<span class="string">'Timeout'</span>, 120));
+0051 p = parseRAVENargs(varargin, {<span class="string">'idField'</span>,<span class="string">'gene_oln'</span>; <span class="string">'reviewed'</span>,true; <span class="keyword">...</span>
+0052                               <span class="string">'compartmentMap'</span>,[]; <span class="string">'extraQuery'</span>,[]});
+0053 idField = char(p.idField);
+0054 <span class="keyword">if</span> ~any(strcmp(idField, {<span class="string">'gene_oln'</span>,<span class="string">'accession'</span>,<span class="string">'gene_primary'</span>}))
+0055     error(<span class="string">'RAVEN:badInput'</span>, <span class="string">'idField must be gene_oln, accession, or gene_primary'</span>);
+0056 <span class="keyword">end</span>
 0057 
-0058 <span class="comment">% The UniProt /stream endpoint gzip-compresses the body and MATLAB does not auto-decompress it,</span>
-0059 <span class="comment">% so detect the gzip magic bytes and inflate before parsing.</span>
-0060 fid = fopen(outFile, <span class="string">'r'</span>);
-0061 magic = fread(fid, 2, <span class="string">'uint8'</span>)';
-0062 fclose(fid);
-0063 <span class="keyword">if</span> isequal(magic, [31 139])
-0064     gz = [outFile <span class="string">'.gz'</span>];
-0065     movefile(outFile, gz);
-0066     gunzip(gz);                 <span class="comment">% writes outFile (drops the .gz extension)</span>
-0067     delete(gz);
-0068 <span class="keyword">end</span>
-0069 
-0070 map = p.compartmentMap;
-0071 <span class="keyword">if</span> isempty(map); map = <a href="defaultCompartmentMap.html" class="code" title="function map = defaultCompartmentMap()">defaultCompartmentMap</a>(); <span class="keyword">end</span>
-0072 GSS = <a href="parseScores.html" class="code" title="function GSS = parseScores(inputFile, varargin)">parseScores</a>(outFile, <span class="string">'predictor'</span>, <span class="string">'uniprot'</span>, <span class="string">'compartmentMap'</span>, map);
-0073 <span class="keyword">end</span>
-0074 
-0075 <a name="_sub1" href="#_subfunctions" class="code">function i_deleteIfExists(f)</a>
-0076 <span class="keyword">if</span> isfile(f); delete(f); <span class="keyword">end</span>
-0077 <span class="keyword">end</span></pre></div>
+0058 query = [<span class="string">'organism_id:'</span> char(string(organism))];
+0059 <span class="keyword">if</span> p.reviewed; query = [query <span class="string">' AND reviewed:true'</span>]; <span class="keyword">end</span>
+0060 <span class="keyword">if</span> ~isempty(p.extraQuery); query = [query <span class="string">' AND ('</span> char(p.extraQuery) <span class="string">')'</span>]; <span class="keyword">end</span>
+0061 
+0062 <span class="comment">% Put the chosen id field first so parseScores reads it as the gene id column.</span>
+0063 fields = [idField <span class="string">',cc_subcellular_location'</span>];
+0064 outFile = [tempname <span class="string">'.tsv'</span>];
+0065 cleanup = onCleanup(@() <a href="#_sub1" class="code" title="subfunction i_deleteIfExists(f)">i_deleteIfExists</a>(outFile)); <span class="comment">%#ok&lt;NASGU&gt; — removes temp file on return/error</span>
+0066 websave(outFile, <span class="string">'https://rest.uniprot.org/uniprotkb/stream'</span>, <span class="keyword">...</span>
+0067         <span class="string">'query'</span>, query, <span class="string">'format'</span>, <span class="string">'tsv'</span>, <span class="string">'fields'</span>, fields, weboptions(<span class="string">'Timeout'</span>, 120));
+0068 
+0069 <span class="comment">% The UniProt /stream endpoint gzip-compresses the body and MATLAB does not auto-decompress it,</span>
+0070 <span class="comment">% so detect the gzip magic bytes and inflate before parsing.</span>
+0071 fid = fopen(outFile, <span class="string">'r'</span>);
+0072 magic = fread(fid, 2, <span class="string">'uint8'</span>)';
+0073 fclose(fid);
+0074 <span class="keyword">if</span> isequal(magic, [31 139])
+0075     gz = [outFile <span class="string">'.gz'</span>];
+0076     movefile(outFile, gz);
+0077     gunzip(gz);                 <span class="comment">% writes outFile (drops the .gz extension)</span>
+0078     delete(gz);
+0079 <span class="keyword">end</span>
+0080 
+0081 map = p.compartmentMap;
+0082 <span class="keyword">if</span> isempty(map); map = <a href="defaultCompartmentMap.html" class="code" title="function map = defaultCompartmentMap()">defaultCompartmentMap</a>(); <span class="keyword">end</span>
+0083 GSS = <a href="parseScores.html" class="code" title="function GSS = parseScores(inputFile, varargin)">parseScores</a>(outFile, <span class="string">'predictor'</span>, <span class="string">'uniprot'</span>, <span class="string">'compartmentMap'</span>, map);
+0084 <span class="keyword">end</span>
+0085 
+0086 <a name="_sub1" href="#_subfunctions" class="code">function i_deleteIfExists(f)</a>
+0087 <span class="keyword">if</span> isfile(f); delete(f); <span class="keyword">end</span>
+0088 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
