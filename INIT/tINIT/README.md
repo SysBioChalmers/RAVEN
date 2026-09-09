@@ -13,7 +13,7 @@ appear to overlap they do not:
 | | tINIT | ftINIT |
 |---|---|---|
 | Entry point | `getINITModel` | `prepINITModel`, then `ftINIT` |
-| Reaction scoring | `scoreModel` (isozyme/complex scoring fixed to `'max'`, `dataPrecedence` `'reaction'`) | `scoreModel` (`omics/`), `groupRxnScores` |
+| Reaction scoring | `scoreModel` (isozyme/complex scoring fixed to `'max'`, `dataPrecedence` `'reaction'`) | `scoreModel` (`INIT/`), `groupRxnScores` |
 | Core MILP | `runINIT` | `ftINITInternalAlg`, scheduled by `getINITSteps` |
 | Task gap-filling | `fitTasks` | `fitTasks` (`gapFillMode` `'preMerged'`), `ftINITFillGaps` |
 | Gene pruning | inline in `getINITModel` | `removeLowScoreGenes` |
@@ -24,7 +24,7 @@ solver layer, and the model-manipulation and I/O functions.
 
 Reaction scoring and task gap-filling look forked in the table above only
 because the two entry points call their shared functions with different
-settings, not because two implementations exist. `scoreModel` (`omics/`) is
+settings, not because two implementations exist. `scoreModel` (`INIT/`) is
 one function for both: `getINITModel` calls it with the fixed argument
 combination the original tINIT algorithm needs — a single operator for both
 `and`/`or` in a grRule, `dataPrecedence` `'reaction'`, and geneScores rewritten
