@@ -109,7 +109,7 @@ reconstruction / strain-design audience.
 | 13 | **Regulatory integration** — PROM / CoRegFlux (new application domain) (§1.4) | (b) | M each | med |
 | 14 | **Community modeling** — SteadyCom (new application domain) (§1.5) | (b) | M | med |
 | 15 | **E-Flux** next to ftINIT (§1.6) | (b)(c) | S | low–med |
-| 14 | **HPA omics parser consolidation** — extract shared file-read + header-validation into `omics/private/` helper *(§6.2 column fix already done; this is the remaining extract step)* (§5.5) | (d) | S | low |
+| 14 | **HPA omics parser consolidation** — extract shared file-read + header-validation into `INIT/private/` helper *(§6.2 column fix already done; this is the remaining extract step)* (§5.5) | (d) | S | low |
 
 ---
 
@@ -326,8 +326,8 @@ See §3 — split the monolith into directional internals.
 - **`annotation/loadDeltaGfromCSV.m` + `saveDeltaGtoCSV.m`** *(done)* — collapsed into
   `deltaGCSV(model, direction, metCsv, rxnCsv)`. The four near-identical met/rxn blocks are
   handled by two shared local functions (`loadField`/`saveField`).
-- **`omics/parseHPA.m` vs `parseHPArna.m`** — column detection is now header-driven (§6.2 done).
-  Remaining: extract the shared file-read loop into `omics/private/`. **S.**
+- **`INIT/parseHPA.m` vs `parseHPArna.m`** — column detection is now header-driven (§6.2 done).
+  Remaining: extract the shared file-read loop into `INIT/private/`. **S.**
 - **`localization/getWoLFScores.m` vs `parseScores.m`** *(already done)* — `getWoLFScores`
   already delegates to `parseScores(file,'wolf')`; no normalization duplication exists.
   Remaining question: whether the Linux+Perl-only WoLF runner still earns its place.
@@ -352,7 +352,7 @@ MEMOTE-style, cheap given `extractMiriam` already unpacks the data. Pairs with t
 also auto-detect the delimiter (tab vs comma). Upstream format changes that add or reorder
 columns will no longer silently break the functions.
 
-The remaining consolidation item (extracting a shared `omics/private/` file-read helper) is
+The remaining consolidation item (extracting a shared `INIT/private/` file-read helper) is
 tracked as a low-priority item in the Tier-3 table.
 
 ### 6.3 Smaller expansions  *(done)*
