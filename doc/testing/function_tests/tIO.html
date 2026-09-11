@@ -41,7 +41,7 @@ This function is called by:
 
 <h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <ul style="list-style-image:url(../../matlabicon.gif)">
-<li><a href="#_sub1" class="code">function exportForGitWritesDependencies(testCase)</a></li><li><a href="#_sub2" class="code">function exportForGitMainBranchFlagRejectsNonMain(testCase)</a></li><li><a href="#_sub3" class="code">function importModelHandlesSpeciesAndReactionEdgeCases(testCase)</a></li><li><a href="#_sub4" class="code">function importModelStripsRegexSpecialCompartmentName(testCase)</a></li><li><a href="#_sub5" class="code">function importModelReadsSBML(testCase)</a></li><li><a href="#_sub6" class="code">function readYAMLmodelReadsYml(testCase)</a></li><li><a href="#_sub7" class="code">function parseYAMLReturnsNestedTree(testCase)</a></li><li><a href="#_sub8" class="code">function exportImportSBMLRoundTrip(testCase)</a></li><li><a href="#_sub9" class="code">function exportImportSBMLRoundTripPreservesDeltaG(testCase)</a></li><li><a href="#_sub10" class="code">function exportModelOmitsDeltaGFieldWhenAllNaN(testCase)</a></li><li><a href="#_sub11" class="code">function exportToExcelFormatWritesFile(testCase)</a></li><li><a href="#_sub12" class="code">function exportToExcelFormatWritesEcSheets(testCase)</a></li><li><a href="#_sub13" class="code">function writeReadYAMLRoundTrip(testCase)</a></li><li><a href="#_sub14" class="code">function writeReadYAMLPreservesCompartmentAnnotations(testCase)</a></li><li><a href="#_sub15" class="code">function writeReadYAMLPreservesUnknownAnnotationFields(testCase)</a></li><li><a href="#_sub16" class="code">function exportForGitWritesRepo(testCase)</a></li><li><a href="#_sub17" class="code">function checkFileExistenceFindsFile(testCase)</a></li><li><a href="#_sub18" class="code">function checkFileExistenceAcceptsForwardSlashes(testCase)</a></li><li><a href="#_sub19" class="code">function cleanSheetTrimsComments(testCase)</a></li><li><a href="#_sub20" class="code">function writeExcelRoundTrips(testCase)</a></li></ul>
+<li><a href="#_sub1" class="code">function exportForGitWritesDependencies(testCase)</a></li><li><a href="#_sub2" class="code">function exportForGitMainBranchFlagRejectsNonMain(testCase)</a></li><li><a href="#_sub3" class="code">function importModelHandlesSpeciesAndReactionEdgeCases(testCase)</a></li><li><a href="#_sub4" class="code">function importModelStripsRegexSpecialCompartmentName(testCase)</a></li><li><a href="#_sub5" class="code">function importModelReadsSBML(testCase)</a></li><li><a href="#_sub6" class="code">function readYAMLmodelReadsYml(testCase)</a></li><li><a href="#_sub7" class="code">function parseYAMLReturnsNestedTree(testCase)</a></li><li><a href="#_sub8" class="code">function exportImportSBMLRoundTrip(testCase)</a></li><li><a href="#_sub9" class="code">function exportImportSBMLRoundTripPreservesDeltaG(testCase)</a></li><li><a href="#_sub10" class="code">function exportModelOmitsDeltaGFieldWhenAllNaN(testCase)</a></li><li><a href="#_sub11" class="code">function exportToExcelFormatWritesFile(testCase)</a></li><li><a href="#_sub12" class="code">function exportToExcelFormatWritesEcSheets(testCase)</a></li><li><a href="#_sub13" class="code">function writeReadYAMLRoundTrip(testCase)</a></li><li><a href="#_sub14" class="code">function writeReadYAMLNestsEcRxnEnzymes(testCase)</a></li><li><a href="#_sub15" class="code">function writeReadYAMLPreservesCompartmentAnnotations(testCase)</a></li><li><a href="#_sub16" class="code">function writeReadYAMLPreservesUnknownAnnotationFields(testCase)</a></li><li><a href="#_sub17" class="code">function exportForGitWritesRepo(testCase)</a></li><li><a href="#_sub18" class="code">function checkFileExistenceFindsFile(testCase)</a></li><li><a href="#_sub19" class="code">function checkFileExistenceAcceptsForwardSlashes(testCase)</a></li><li><a href="#_sub20" class="code">function cleanSheetTrimsComments(testCase)</a></li><li><a href="#_sub21" class="code">function writeExcelRoundTrips(testCase)</a></li></ul>
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <div class="fragment"><pre>0001 classdef <a href="tIO.html" class="code" title="">tIO</a> &lt; <a href="RavenTestCase.html" class="code" title="">RavenTestCase</a>
@@ -253,91 +253,126 @@ This function is called by:
 0207             testCase.verifyEqual(numel(m2.rxns), numel(testCase.model.rxns));
 0208         <span class="keyword">end</span>
 0209 
-0210         <a name="_sub13" href="#_subfunctions" class="code">function writeReadYAMLPreservesCompartmentAnnotations(testCase)</a>
-0211             <span class="comment">% Compartment annotations must round-trip, and must not be read</span>
-0212             <span class="comment">% back as additional compartments.</span>
-0213             m = testCase.model;
-0214             m.compMiriams = cell(numel(m.comps),1);
-0215             m.compMiriams{1}.name  = {<span class="string">'go'</span>};
-0216             m.compMiriams{1}.value = {<span class="string">'GO:0005737'</span>};
-0217             f = [tempname <span class="string">'.yml'</span>];
-0218             testCase.addTeardown(@() delete(f));
-0219             evalc(<span class="string">'writeYAMLmodel(m, f);'</span>);
-0220             evalc(<span class="string">'m2 = readYAMLmodel(f);'</span>);
-0221             testCase.verifyEqual(m2.comps, m.comps);
-0222             testCase.verifyEqual(m2.compNames, m.compNames);
-0223             testCase.verifyEqual(m2.compMiriams{1}.name, {<span class="string">'go'</span>});
-0224             testCase.verifyEqual(m2.compMiriams{1}.value, {<span class="string">'GO:0005737'</span>});
-0225         <span class="keyword">end</span>
-0226 
-0227         <a name="_sub14" href="#_subfunctions" class="code">function writeReadYAMLPreservesUnknownAnnotationFields(testCase)</a>
-0228             <span class="comment">% A caller-specific metaData field with no RAVEN-defined slot</span>
-0229             <span class="comment">% (e.g. a `geckopy_version` field) must survive a write/read</span>
-0230             <span class="comment">% round trip instead of being silently dropped, same as the</span>
-0231             <span class="comment">% fixed annoFields set (taxonomy here).</span>
-0232             m = testCase.model;
-0233             m.annotation.taxonomy = <span class="string">'taxonomy/4932'</span>;
-0234             m.annotation.geckopyVersion = <span class="string">'0.2.1'</span>;
-0235             f = [tempname <span class="string">'.yml'</span>];
-0236             testCase.addTeardown(@() delete(f));
-0237             evalc(<span class="string">'writeYAMLmodel(m, f);'</span>);
-0238             evalc(<span class="string">'m2 = readYAMLmodel(f);'</span>);
-0239             testCase.verifyEqual(m2.annotation.taxonomy, <span class="string">'taxonomy/4932'</span>);
-0240             testCase.verifyEqual(m2.annotation.geckopyVersion, <span class="string">'0.2.1'</span>);
-0241         <span class="keyword">end</span>
-0242 
-0243         <a name="_sub15" href="#_subfunctions" class="code">function exportForGitWritesRepo(testCase)</a>
-0244             d = [tempname filesep];
-0245             mkdir(d);
-0246             testCase.addTeardown(@() rmdir(d, <span class="string">'s'</span>));
-0247             evalc(<span class="string">'exportForGit(testCase.model, ''ec'', d, {''yml''});'</span>);
-0248             testCase.verifyNotEmpty(dir(fullfile(d,<span class="string">'**'</span>,<span class="string">'*.yml'</span>)));
-0249         <span class="keyword">end</span>
-0250 
-0251         <a name="_sub16" href="#_subfunctions" class="code">function checkFileExistenceFindsFile(testCase)</a>
-0252             f = fullfile(testCase.ravenRoot,<span class="string">'testing'</span>,<span class="string">'function_tests'</span>, <span class="keyword">...</span>
-0253                 <span class="string">'test_data'</span>,<span class="string">'ecoli_textbook.mat'</span>);
-0254             out = checkFileExistence(f, 1, false, true);
-0255             testCase.verifyNotEmpty(out);
-0256         <span class="keyword">end</span>
-0257 
-0258         <a name="_sub17" href="#_subfunctions" class="code">function checkFileExistenceAcceptsForwardSlashes(testCase)</a>
-0259             <span class="comment">% An absolute Windows path may be written with forward slashes:</span>
-0260             <span class="comment">% MATLAB accepts them everywhere, and anything handing RAVEN a path</span>
-0261             <span class="comment">% built by another tool is likely to use them. Treating such a path</span>
-0262             <span class="comment">% as relative appends the working directory and turns</span>
-0263             <span class="comment">% &quot;C:/data/model.mat&quot; into &quot;C:\somewhere\C:\data\model.mat&quot;.</span>
-0264             f = fullfile(testCase.ravenRoot,<span class="string">'testing'</span>,<span class="string">'function_tests'</span>, <span class="keyword">...</span>
-0265                 <span class="string">'test_data'</span>,<span class="string">'ecoli_textbook.mat'</span>);
-0266             out = checkFileExistence(strrep(f,<span class="string">'\'</span>,<span class="string">'/'</span>), 1, false, true);
-0267             testCase.verifyNotEmpty(out);
-0268         <span class="keyword">end</span>
-0269 
-0270         <a name="_sub18" href="#_subfunctions" class="code">function cleanSheetTrimsComments(testCase)</a>
-0271             raw = {<span class="string">'#comment'</span>, <span class="string">'#comment'</span>; <span class="string">'a'</span>, <span class="string">'b'</span>; <span class="string">''</span>, <span class="string">''</span>};
-0272             out = cleanSheet(raw);
-0273             testCase.verifyClass(out, <span class="string">'cell'</span>);
-0274         <span class="keyword">end</span>
-0275 
-0276         <a name="_sub19" href="#_subfunctions" class="code">function writeExcelRoundTrips(testCase)</a>
-0277             <span class="comment">% writeExcel generates the .xlsx (Office Open XML) directly, with</span>
-0278             <span class="comment">% no external library; read it back with base MATLAB to confirm</span>
-0279             <span class="comment">% the sheets, values and types survive.</span>
-0280             f = [tempname <span class="string">'.xlsx'</span>];
-0281             testCase.addTeardown(@() delete(f));
-0282             s(1).name=<span class="string">'RXNS'</span>; s(1).header={<span class="string">'ID'</span>,<span class="string">'VALUE'</span>};
-0283             s(1).data={<span class="string">'r1'</span>,1.5; <span class="string">'r2'</span>,-3};
-0284             s(2).name=<span class="string">'METS'</span>; s(2).header={<span class="string">'ID'</span>}; s(2).data={<span class="string">'m1'</span>};
-0285             writeExcel(f, s);
-0286             testCase.verifyEqual(sort(string(sheetnames(f))),[&quot;METS&quot;;&quot;RXNS&quot;]);
-0287             raw = readcell(f,<span class="string">'Sheet'</span>,<span class="string">'RXNS'</span>);
-0288             testCase.verifyEqual(string(raw(1,:)),[&quot;ID&quot;,&quot;VALUE&quot;]);
-0289             testCase.verifyEqual(string(raw{2,1}),&quot;r1&quot;);
-0290             testCase.verifyEqual(raw{2,2},1.5,<span class="string">'AbsTol'</span>,1e-9);
+0210         <a name="_sub13" href="#_subfunctions" class="code">function writeReadYAMLNestsEcRxnEnzymes(testCase)</a>
+0211             <span class="comment">% Each ec-rxns entry lists its enzymes as a mapping under the</span>
+0212             <span class="comment">% &quot;enzymes&quot; key, so the enzyme lines are indented deeper than</span>
+0213             <span class="comment">% that key; at the same depth a YAML parser reads them as</span>
+0214             <span class="comment">% siblings of &quot;enzymes&quot; and the mapping as empty.</span>
+0215             model = testCase.model;
+0216             model.ec.geckoLight = false;
+0217             model.ec.rxns     = model.rxns(1:2);
+0218             model.ec.kcat     = [13.7; 2];
+0219             model.ec.source   = {<span class="string">'brenda'</span>; <span class="string">'dlkcat'</span>};
+0220             model.ec.notes    = {<span class="string">''</span>; <span class="string">''</span>};
+0221             model.ec.eccodes  = {<span class="string">'1.1.1.1'</span>; <span class="string">'2.7.1.1;2.7.1.2'</span>};
+0222             model.ec.genes    = model.genes(1:2);
+0223             model.ec.enzymes  = {<span class="string">'P0A1'</span>; <span class="string">'P0A2'</span>};
+0224             model.ec.mw       = [51000; 42000];
+0225             model.ec.sequence = {<span class="string">'MABC'</span>; <span class="string">'MDEF'</span>};
+0226             model.ec.concs    = [NaN; NaN];
+0227             model.ec.rxnEnzMat = [1 2; 0 1];
+0228 
+0229             f = [tempname <span class="string">'.yml'</span>];
+0230             testCase.addTeardown(@() delete(f));
+0231             evalc(<span class="string">'writeYAMLmodel(model, f);'</span>);
+0232 
+0233             lines = splitlines(fileread(f));
+0234             enzKey = find(strcmp(lines, <span class="string">'    - enzymes: !!omap'</span>));
+0235             testCase.verifyNumElements(enzKey, 2);
+0236             testCase.verifyEqual(lines(enzKey(1)+(1:2)), <span class="keyword">...</span>
+0237                 {<span class="string">'      - P0A1: 1.0'</span>; <span class="string">'      - P0A2: 2.0'</span>});
+0238             testCase.verifyEqual(lines(enzKey(2)+1), {<span class="string">'      - P0A2: 1.0'</span>});
+0239 
+0240             evalc(<span class="string">'m2 = readYAMLmodel(f);'</span>);
+0241             testCase.verifyEqual(m2.ec.enzymes, model.ec.enzymes);
+0242             testCase.verifyEqual(m2.ec.rxnEnzMat, model.ec.rxnEnzMat);
+0243         <span class="keyword">end</span>
+0244 
+0245         <a name="_sub14" href="#_subfunctions" class="code">function writeReadYAMLPreservesCompartmentAnnotations(testCase)</a>
+0246             <span class="comment">% Compartment annotations must round-trip, and must not be read</span>
+0247             <span class="comment">% back as additional compartments.</span>
+0248             m = testCase.model;
+0249             m.compMiriams = cell(numel(m.comps),1);
+0250             m.compMiriams{1}.name  = {<span class="string">'go'</span>};
+0251             m.compMiriams{1}.value = {<span class="string">'GO:0005737'</span>};
+0252             f = [tempname <span class="string">'.yml'</span>];
+0253             testCase.addTeardown(@() delete(f));
+0254             evalc(<span class="string">'writeYAMLmodel(m, f);'</span>);
+0255             evalc(<span class="string">'m2 = readYAMLmodel(f);'</span>);
+0256             testCase.verifyEqual(m2.comps, m.comps);
+0257             testCase.verifyEqual(m2.compNames, m.compNames);
+0258             testCase.verifyEqual(m2.compMiriams{1}.name, {<span class="string">'go'</span>});
+0259             testCase.verifyEqual(m2.compMiriams{1}.value, {<span class="string">'GO:0005737'</span>});
+0260         <span class="keyword">end</span>
+0261 
+0262         <a name="_sub15" href="#_subfunctions" class="code">function writeReadYAMLPreservesUnknownAnnotationFields(testCase)</a>
+0263             <span class="comment">% A caller-specific metaData field with no RAVEN-defined slot</span>
+0264             <span class="comment">% (e.g. a `geckopy_version` field) must survive a write/read</span>
+0265             <span class="comment">% round trip instead of being silently dropped, same as the</span>
+0266             <span class="comment">% fixed annoFields set (taxonomy here).</span>
+0267             m = testCase.model;
+0268             m.annotation.taxonomy = <span class="string">'taxonomy/4932'</span>;
+0269             m.annotation.geckopyVersion = <span class="string">'0.2.1'</span>;
+0270             f = [tempname <span class="string">'.yml'</span>];
+0271             testCase.addTeardown(@() delete(f));
+0272             evalc(<span class="string">'writeYAMLmodel(m, f);'</span>);
+0273             evalc(<span class="string">'m2 = readYAMLmodel(f);'</span>);
+0274             testCase.verifyEqual(m2.annotation.taxonomy, <span class="string">'taxonomy/4932'</span>);
+0275             testCase.verifyEqual(m2.annotation.geckopyVersion, <span class="string">'0.2.1'</span>);
+0276         <span class="keyword">end</span>
+0277 
+0278         <a name="_sub16" href="#_subfunctions" class="code">function exportForGitWritesRepo(testCase)</a>
+0279             d = [tempname filesep];
+0280             mkdir(d);
+0281             testCase.addTeardown(@() rmdir(d, <span class="string">'s'</span>));
+0282             evalc(<span class="string">'exportForGit(testCase.model, ''ec'', d, {''yml''});'</span>);
+0283             testCase.verifyNotEmpty(dir(fullfile(d,<span class="string">'**'</span>,<span class="string">'*.yml'</span>)));
+0284         <span class="keyword">end</span>
+0285 
+0286         <a name="_sub17" href="#_subfunctions" class="code">function checkFileExistenceFindsFile(testCase)</a>
+0287             f = fullfile(testCase.ravenRoot,<span class="string">'testing'</span>,<span class="string">'function_tests'</span>, <span class="keyword">...</span>
+0288                 <span class="string">'test_data'</span>,<span class="string">'ecoli_textbook.mat'</span>);
+0289             out = checkFileExistence(f, 1, false, true);
+0290             testCase.verifyNotEmpty(out);
 0291         <span class="keyword">end</span>
 0292 
-0293     <span class="keyword">end</span>
-0294 <span class="keyword">end</span></pre></div>
+0293         <a name="_sub18" href="#_subfunctions" class="code">function checkFileExistenceAcceptsForwardSlashes(testCase)</a>
+0294             <span class="comment">% An absolute Windows path may be written with forward slashes:</span>
+0295             <span class="comment">% MATLAB accepts them everywhere, and anything handing RAVEN a path</span>
+0296             <span class="comment">% built by another tool is likely to use them. Treating such a path</span>
+0297             <span class="comment">% as relative appends the working directory and turns</span>
+0298             <span class="comment">% &quot;C:/data/model.mat&quot; into &quot;C:\somewhere\C:\data\model.mat&quot;.</span>
+0299             f = fullfile(testCase.ravenRoot,<span class="string">'testing'</span>,<span class="string">'function_tests'</span>, <span class="keyword">...</span>
+0300                 <span class="string">'test_data'</span>,<span class="string">'ecoli_textbook.mat'</span>);
+0301             out = checkFileExistence(strrep(f,<span class="string">'\'</span>,<span class="string">'/'</span>), 1, false, true);
+0302             testCase.verifyNotEmpty(out);
+0303         <span class="keyword">end</span>
+0304 
+0305         <a name="_sub19" href="#_subfunctions" class="code">function cleanSheetTrimsComments(testCase)</a>
+0306             raw = {<span class="string">'#comment'</span>, <span class="string">'#comment'</span>; <span class="string">'a'</span>, <span class="string">'b'</span>; <span class="string">''</span>, <span class="string">''</span>};
+0307             out = cleanSheet(raw);
+0308             testCase.verifyClass(out, <span class="string">'cell'</span>);
+0309         <span class="keyword">end</span>
+0310 
+0311         <a name="_sub20" href="#_subfunctions" class="code">function writeExcelRoundTrips(testCase)</a>
+0312             <span class="comment">% writeExcel generates the .xlsx (Office Open XML) directly, with</span>
+0313             <span class="comment">% no external library; read it back with base MATLAB to confirm</span>
+0314             <span class="comment">% the sheets, values and types survive.</span>
+0315             f = [tempname <span class="string">'.xlsx'</span>];
+0316             testCase.addTeardown(@() delete(f));
+0317             s(1).name=<span class="string">'RXNS'</span>; s(1).header={<span class="string">'ID'</span>,<span class="string">'VALUE'</span>};
+0318             s(1).data={<span class="string">'r1'</span>,1.5; <span class="string">'r2'</span>,-3};
+0319             s(2).name=<span class="string">'METS'</span>; s(2).header={<span class="string">'ID'</span>}; s(2).data={<span class="string">'m1'</span>};
+0320             writeExcel(f, s);
+0321             testCase.verifyEqual(sort(string(sheetnames(f))),[&quot;METS&quot;;&quot;RXNS&quot;]);
+0322             raw = readcell(f,<span class="string">'Sheet'</span>,<span class="string">'RXNS'</span>);
+0323             testCase.verifyEqual(string(raw(1,:)),[&quot;ID&quot;,&quot;VALUE&quot;]);
+0324             testCase.verifyEqual(string(raw{2,1}),&quot;r1&quot;);
+0325             testCase.verifyEqual(raw{2,2},1.5,<span class="string">'AbsTol'</span>,1e-9);
+0326         <span class="keyword">end</span>
+0327 
+0328     <span class="keyword">end</span>
+0329 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
