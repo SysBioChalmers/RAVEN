@@ -98,6 +98,13 @@ classdef tUtils < RavenTestCase
             testCase.verifySubstring(out, '50% complete');
         end
 
+        function printOrangeExpandsNewlineWhenPrinting(testCase)
+            % "\n" in the input is a line break, as with fprintf.
+            out = evalc('printOrange(''first\nsecond\n'');');
+            testCase.verifySubstring(out, ['first' newline 'second' newline]);
+            testCase.verifyFalse(contains(out, '\n'));
+        end
+
         function parallelWorkersRAVENFalseReturnsZero(testCase)
             testCase.verifyEqual(parallelWorkersRAVEN(false), 0);
         end

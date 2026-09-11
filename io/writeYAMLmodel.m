@@ -234,7 +234,7 @@ if isfield(model,fieldName)
             [model.enzymes,order] = sort(model.enzymes);
             model.coeffs          = model.coeffs(order);
             for i = 1:length(model.enzymes)
-                writeField(model, fid, 'coeffs',  'flt', i, ['    - ' model.enzymes{i}], 4)
+                writeField(model, fid, 'coeffs',  'flt', i, ['      - ' model.enzymes{i}], 6)
             end
         end
 

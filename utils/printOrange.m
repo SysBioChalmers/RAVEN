@@ -8,7 +8,9 @@ function orangeString = printOrange(stringToPrint)
 % Parameters
 % ----------
 % stringToPrint : char
-%     string that should be printed in orange colour.
+%     string that should be printed in orange colour. "\n" marks a line
+%     break, as in fprintf; no other escape sequence or format directive
+%     is interpreted, so text containing "%" prints as-is.
 %
 % Returns
 % -------
@@ -32,9 +34,10 @@ if nargout < 1
     orangeString = strjoin(orangeString,newline);
     %stringToPrint is arbitrary text (e.g. a model id) and may contain a
     %literal "%", which fprintf would otherwise reinterpret as a format
-    %directive; the desktop "[\b ... ]\b" highlight markers still need
-    %interpreting, so expand those explicitly instead of using orangeString
-    %itself as the format string.
+    %directive; the "\n" line breaks and the desktop "[\b ... ]\b"
+    %highlight markers still need interpreting, so expand those explicitly
+    %instead of using orangeString itself as the format string.
+    orangeString = strrep(orangeString,'\n',newline);
     orangeString = strrep(orangeString,'[\b',sprintf('[\b'));
     orangeString = strrep(orangeString,']\b',sprintf(']\b'));
     fprintf('%s',orangeString);
