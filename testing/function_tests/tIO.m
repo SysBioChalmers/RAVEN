@@ -207,6 +207,41 @@ classdef tIO < RavenTestCase
             testCase.verifyEqual(numel(m2.rxns), numel(testCase.model.rxns));
         end
 
+        function writeReadYAMLNestsEcRxnEnzymes(testCase)
+            % Each ec-rxns entry lists its enzymes as a mapping under the
+            % "enzymes" key, so the enzyme lines are indented deeper than
+            % that key; at the same depth a YAML parser reads them as
+            % siblings of "enzymes" and the mapping as empty.
+            model = testCase.model;
+            model.ec.geckoLight = false;
+            model.ec.rxns     = model.rxns(1:2);
+            model.ec.kcat     = [13.7; 2];
+            model.ec.source   = {'brenda'; 'dlkcat'};
+            model.ec.notes    = {''; ''};
+            model.ec.eccodes  = {'1.1.1.1'; '2.7.1.1;2.7.1.2'};
+            model.ec.genes    = model.genes(1:2);
+            model.ec.enzymes  = {'P0A1'; 'P0A2'};
+            model.ec.mw       = [51000; 42000];
+            model.ec.sequence = {'MABC'; 'MDEF'};
+            model.ec.concs    = [NaN; NaN];
+            model.ec.rxnEnzMat = [1 2; 0 1];
+
+            f = [tempname '.yml'];
+            testCase.addTeardown(@() delete(f));
+            evalc('writeYAMLmodel(model, f);');
+
+            lines = splitlines(fileread(f));
+            enzKey = find(strcmp(lines, '    - enzymes: !!omap'));
+            testCase.verifyNumElements(enzKey, 2);
+            testCase.verifyEqual(lines(enzKey(1)+(1:2)), ...
+                {'      - P0A1: 1.0'; '      - P0A2: 2.0'});
+            testCase.verifyEqual(lines(enzKey(2)+1), {'      - P0A2: 1.0'});
+
+            evalc('m2 = readYAMLmodel(f);');
+            testCase.verifyEqual(m2.ec.enzymes, model.ec.enzymes);
+            testCase.verifyEqual(m2.ec.rxnEnzMat, model.ec.rxnEnzMat);
+        end
+
         function writeReadYAMLPreservesCompartmentAnnotations(testCase)
             % Compartment annotations must round-trip, and must not be read
             % back as additional compartments.
