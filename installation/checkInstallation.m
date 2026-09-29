@@ -311,6 +311,15 @@ else
     if res==false
         fprintf(['   This is essential to run getKEGGModelFromHomology()\n'...
             '   when using a FASTA file as input\n'])
+        % On Windows, HMMER runs through Windows Subsystem for Linux
+        if ispc
+            [status,~]=system('wsl -e true');
+            if status~=0
+                printOrange(['   WSL with a Linux distribution is not available, but HMMER\n'...
+                    '   requires it on Windows. Install it with "wsl --install" in\n'...
+                    '   a Command Prompt, restart, and rerun checkInstallation\n'])
+            end
+        end
     end
 
     if developMode
