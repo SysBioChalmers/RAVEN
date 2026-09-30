@@ -92,10 +92,12 @@ switch solver
         solverparams.Presolve       = 2;
         % If run in parallel, then one thread per gurobi. getCurrentTask
         % requires the Parallel Computing Toolbox.
-        try
-            inParallel = ~isempty(getCurrentTask);
-        catch
-            inParallel = false;
+        inParallel = false;
+        if license('test','Distrib_Computing_Toolbox')
+            try
+                inParallel = ~isempty(getCurrentTask);
+            catch
+            end
         end
         if inParallel
             solverparams.Threads=1;
