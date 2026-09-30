@@ -491,3 +491,26 @@ modelManual.b(end+1:end+3)=[0];
 
 verifyEqual(testCase,modelNew,modelManual)
 end
+
+function replaceMetsOutputsTest(testCase)
+sourceDir = fileparts(which(mfilename));
+load(fullfile(sourceDir,'test_data','ecoli_textbook.mat'), 'model');
+
+%Add a duplicate of atp_c and a copy of ATPM that uses it
+metsToAdd.mets={'atpDup_c'};
+metsToAdd.metNames={'atp duplicate'};
+metsToAdd.compartments={'c'};
+evalc('model=addMets(model,metsToAdd);');
+rxnsToAdd.rxns={'ATPM_dup'};
+rxnsToAdd.equations={'atpDup_c + h2o_c => adp_c + h_c + pi_c'};
+evalc('model=addRxns(model,rxnsToAdd,1);');
+
+[modelNew,removedRxns,idxDuplRxns]=replaceMets(model,'atpDup_c','atp_c',false,true);
+
+verifyEqual(testCase,numel(modelNew.rxns),numel(model.rxns)-1)
+verifyEmpty(testCase,find(strcmp(modelNew.mets,'atpDup_c')))
+verifyEqual(testCase,numel(removedRxns),1)
+verifyTrue(testCase,ismember(removedRxns{1},{'ATPM','ATPM_dup'}))
+verifyEqual(testCase,numel(idxDuplRxns),numel(modelNew.rxns))
+verifyEqual(testCase,idxDuplRxns(~cellfun(@isempty,idxDuplRxns)),removedRxns)
+end

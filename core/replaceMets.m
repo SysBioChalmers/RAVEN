@@ -148,5 +148,5 @@ if ~isempty(idxDelete)
 end
 
 % This could now have created duplicate reactions. Contract model.
-model=contractModel(model,[],repIdx);
+[model, removedRxns, idxDuplRxns]=contractModel(model,[],repIdx);
 end

@@ -42,7 +42,7 @@ This function is called by:
 
 <h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <ul style="list-style-image:url(../../matlabicon.gif)">
-<li><a href="#_sub1" class="code">function addExchangeRxnsTest(testCase)</a></li><li><a href="#_sub2" class="code">function addTransportTest(testCase)</a></li><li><a href="#_sub3" class="code">function addGenesRavenTest(testCase)</a></li><li><a href="#_sub4" class="code">function removeGenesTest(testCase)</a></li><li><a href="#_sub5" class="code">function addMetsTest(testCase)</a></li><li><a href="#_sub6" class="code">function addMets_oneCompTest(testCase)</a></li><li><a href="#_sub7" class="code">function removeMetsTest(testCase)</a></li><li><a href="#_sub8" class="code">function addRxnsTest(testCase)</a></li><li><a href="#_sub9" class="code">function removeReactionsTest(testCase)</a></li><li><a href="#_sub10" class="code">function getMetsInCompTest(testCase)</a></li><li><a href="#_sub11" class="code">function getRxnsInCompTest(testCase)</a></li><li><a href="#_sub12" class="code">function getAllRxnsFromGenesTest(testCase)</a></li><li><a href="#_sub13" class="code">function changeRxnsTest(testCase)</a></li><li><a href="#_sub14" class="code">function removeBadRxnsTest(testCase)</a></li><li><a href="#_sub15" class="code">function changeGrRulesTest(testCase)</a></li><li><a href="#_sub16" class="code">function copyToCompsTest(testCase)</a></li><li><a href="#_sub17" class="code">function setExchangeBoundsTest(testCase)</a></li><li><a href="#_sub18" class="code">function addRxnsGenesMetsTest(testCase)</a></li></ul>
+<li><a href="#_sub1" class="code">function addExchangeRxnsTest(testCase)</a></li><li><a href="#_sub2" class="code">function addTransportTest(testCase)</a></li><li><a href="#_sub3" class="code">function addGenesRavenTest(testCase)</a></li><li><a href="#_sub4" class="code">function removeGenesTest(testCase)</a></li><li><a href="#_sub5" class="code">function addMetsTest(testCase)</a></li><li><a href="#_sub6" class="code">function addMets_oneCompTest(testCase)</a></li><li><a href="#_sub7" class="code">function removeMetsTest(testCase)</a></li><li><a href="#_sub8" class="code">function addRxnsTest(testCase)</a></li><li><a href="#_sub9" class="code">function removeReactionsTest(testCase)</a></li><li><a href="#_sub10" class="code">function getMetsInCompTest(testCase)</a></li><li><a href="#_sub11" class="code">function getRxnsInCompTest(testCase)</a></li><li><a href="#_sub12" class="code">function getAllRxnsFromGenesTest(testCase)</a></li><li><a href="#_sub13" class="code">function changeRxnsTest(testCase)</a></li><li><a href="#_sub14" class="code">function removeBadRxnsTest(testCase)</a></li><li><a href="#_sub15" class="code">function changeGrRulesTest(testCase)</a></li><li><a href="#_sub16" class="code">function copyToCompsTest(testCase)</a></li><li><a href="#_sub17" class="code">function setExchangeBoundsTest(testCase)</a></li><li><a href="#_sub18" class="code">function addRxnsGenesMetsTest(testCase)</a></li><li><a href="#_sub19" class="code">function replaceMetsOutputsTest(testCase)</a></li></ul>
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <div class="fragment"><pre>0001 <span class="comment">%run this test case with the command</span>
@@ -537,7 +537,30 @@ This function is called by:
 0490 modelManual.b(end+1:end+3)=[0];
 0491 
 0492 verifyEqual(testCase,modelNew,modelManual)
-0493 <span class="keyword">end</span></pre></div>
+0493 <span class="keyword">end</span>
+0494 
+0495 <a name="_sub19" href="#_subfunctions" class="code">function replaceMetsOutputsTest(testCase)</a>
+0496 sourceDir = fileparts(which(mfilename));
+0497 load(fullfile(sourceDir,<span class="string">'test_data'</span>,<span class="string">'ecoli_textbook.mat'</span>), <span class="string">'model'</span>);
+0498 
+0499 <span class="comment">%Add a duplicate of atp_c and a copy of ATPM that uses it</span>
+0500 metsToAdd.mets={<span class="string">'atpDup_c'</span>};
+0501 metsToAdd.metNames={<span class="string">'atp duplicate'</span>};
+0502 metsToAdd.compartments={<span class="string">'c'</span>};
+0503 evalc(<span class="string">'model=addMets(model,metsToAdd);'</span>);
+0504 rxnsToAdd.rxns={<span class="string">'ATPM_dup'</span>};
+0505 rxnsToAdd.equations={<span class="string">'atpDup_c + h2o_c =&gt; adp_c + h_c + pi_c'</span>};
+0506 evalc(<span class="string">'model=addRxns(model,rxnsToAdd,1);'</span>);
+0507 
+0508 [modelNew,removedRxns,idxDuplRxns]=replaceMets(model,<span class="string">'atpDup_c'</span>,<span class="string">'atp_c'</span>,false,true);
+0509 
+0510 verifyEqual(testCase,numel(modelNew.rxns),numel(model.rxns)-1)
+0511 verifyEmpty(testCase,find(strcmp(modelNew.mets,<span class="string">'atpDup_c'</span>)))
+0512 verifyEqual(testCase,numel(removedRxns),1)
+0513 verifyTrue(testCase,ismember(removedRxns{1},{<span class="string">'ATPM'</span>,<span class="string">'ATPM_dup'</span>}))
+0514 verifyEqual(testCase,numel(idxDuplRxns),numel(modelNew.rxns))
+0515 verifyEqual(testCase,idxDuplRxns(~cellfun(@isempty,idxDuplRxns)),removedRxns)
+0516 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
