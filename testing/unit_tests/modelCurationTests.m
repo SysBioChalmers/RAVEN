@@ -491,3 +491,91 @@ modelManual.b(end+1:end+3)=[0];
 
 verifyEqual(testCase,modelNew,modelManual)
 end
+
+function replaceMetsOutputsTest(testCase)
+sourceDir = fileparts(which(mfilename));
+load(fullfile(sourceDir,'test_data','ecoli_textbook.mat'), 'model');
+
+%Add a duplicate of atp_c and a copy of ATPM that uses it
+metsToAdd.mets={'atpDup_c'};
+metsToAdd.metNames={'atp duplicate'};
+metsToAdd.compartments={'c'};
+evalc('model=addMets(model,metsToAdd);');
+rxnsToAdd.rxns={'ATPM_dup'};
+rxnsToAdd.equations={'atpDup_c + h2o_c => adp_c + h_c + pi_c'};
+evalc('model=addRxns(model,rxnsToAdd,1);');
+
+[modelNew,removedRxns,idxDuplRxns]=replaceMets(model,'atpDup_c','atp_c',false,true);
+
+verifyEqual(testCase,numel(modelNew.rxns),numel(model.rxns)-1)
+verifyEmpty(testCase,find(strcmp(modelNew.mets,'atpDup_c')))
+verifyEqual(testCase,removedRxns,{'ATPM_dup'})
+verifyEqual(testCase,idxDuplRxns,numel(model.rxns))
+end
+
+function replaceMetsSharedReactionTest(testCase)
+%The replaced metabolite occurs in a reaction that already contains the
+%replacement metabolite; the stoichiometries are summed.
+sourceDir = fileparts(which(mfilename));
+load(fullfile(sourceDir,'test_data','ecoli_textbook.mat'), 'model');
+
+metsToAdd.mets={'atpDup_c'};
+metsToAdd.metNames={'atp duplicate'};
+metsToAdd.compartments={'c'};
+evalc('model=addMets(model,metsToAdd);');
+rxnsToAdd.rxns={'ATPshared'};
+rxnsToAdd.equations={'atp_c + atpDup_c + h2o_c => adp_c + h_c + pi_c'};
+evalc('model=addRxns(model,rxnsToAdd,1);');
+
+modelNew=replaceMets(model,'atpDup_c','atp_c',false,true);
+
+rxnIdx=strcmp(modelNew.rxns,'ATPshared');
+verifyEqual(testCase,full(modelNew.S(strcmp(modelNew.mets,'atp_c'),rxnIdx)),-2)
+verifyEqual(testCase,numel(modelNew.mets),numel(model.mets)-1)
+verifyEmpty(testCase,find(strcmp(modelNew.mets,'atpDup_c')))
+end
+
+function replaceMetsNamesTest(testCase)
+%The replacement metabolite has a higher index than the to-be-replaced
+%metabolite, and the removed duplicate reaction is not the last reaction.
+sourceDir = fileparts(which(mfilename));
+load(fullfile(sourceDir,'test_data','ecoli_textbook.mat'), 'model');
+
+metsToAdd.mets={'atpNew_c'};
+metsToAdd.metNames={'ATPnew'};
+metsToAdd.compartments={'c'};
+evalc('model=addMets(model,metsToAdd);');
+rxnsToAdd.rxns={'ATPM_dup','ATPM_other'};
+rxnsToAdd.equations={'atpNew_c + h2o_c => adp_c + h_c + pi_c','h2o_c => h_c + pi_c'};
+evalc('model=addRxns(model,rxnsToAdd,1);');
+
+[modelNew,removedRxns,idxDuplRxns]=replaceMets(model,'ATP','ATPnew');
+
+verifyEqual(testCase,numel(modelNew.rxns),numel(model.rxns)-1)
+verifyEqual(testCase,removedRxns,{'ATPM_dup'})
+verifyEqual(testCase,idxDuplRxns,numel(model.rxns)-1)
+verifyEqual(testCase,model.rxns(idxDuplRxns),removedRxns)
+verifyEmpty(testCase,find(strcmp(modelNew.mets,'atp_c')))
+end
+
+function replaceMetsNamesRepeatedReplacementTest(testCase)
+%The replacement name occurs twice in the same compartment; the
+%stoichiometry is added once.
+sourceDir = fileparts(which(mfilename));
+load(fullfile(sourceDir,'test_data','ecoli_textbook.mat'), 'model');
+
+metsToAdd.mets={'atp2_c','atpNew_c'};
+metsToAdd.metNames={'ATP2','ATPnew'};
+metsToAdd.compartments={'c','c'};
+evalc('model=addMets(model,metsToAdd);');
+model.metNames{strcmp(model.mets,'atp2_c')}='ATP';
+rxnsToAdd.rxns={'rNew'};
+rxnsToAdd.equations={'atpNew_c => adp_c'};
+evalc('model=addRxns(model,rxnsToAdd,1);');
+
+modelNew=replaceMets(model,'ATPnew','ATP');
+
+verifyEqual(testCase,full(modelNew.S(strcmp(modelNew.mets,'atp_c'),strcmp(modelNew.rxns,'rNew'))),-1)
+verifyEmpty(testCase,find(strcmp(modelNew.mets,'atpNew_c')))
+verifyEmpty(testCase,find(strcmp(modelNew.mets,'atp2_c')))
+end
