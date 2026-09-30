@@ -1,0 +1,170 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of ManualINITTests</title>
+  <meta name="keywords" content="ManualINITTests">
+  <meta name="description" content="These tests are using the Human-GEM model.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../index.html">Home</a> &gt;  <a href="#">testing</a> &gt; <a href="index.html">manual_tests</a> &gt; ManualINITTests.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for testing\manual_tests&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+
+<h1>ManualINITTests
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>These tests are using the Human-GEM model.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>This is a script file. </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre class="comment">These tests are using the Human-GEM model.</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre>0001 <span class="comment">%These tests are using the Human-GEM model.</span>
+0002 
+0003 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0004 <span class="comment">% TC0901 - Test that all reactions in the minimal model to be</span>
+0005 <span class="comment">%          used by the MILP can carry flux &gt; 0.1</span>
+0006 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0007 
+0008 <span class="comment">%In the MILP, the flux of reactions with negative rxn scores cannot exceed 100</span>
+0009 <span class="comment">%At the same time, the flux of positive reactions need to be &gt;= 0.1 to be able</span>
+0010 <span class="comment">%to turn them on. Likewise, we force the flux on essential reactions to be &gt;= 0.1.</span>
+0011 <span class="comment">%Therefore, it is important that all reactions can get a flux &gt; 0.1, while all</span>
+0012 <span class="comment">%reactions are limited to a flux &lt;= 100. We can test this in a similar way to the</span>
+0013 <span class="comment">%haveFlux function in RAVEN, so that code is copied here and modified.</span>
+0014 
+0015 <span class="comment">%This code is partly copied from the function haveFlux</span>
+0016 <span class="comment">%The prepData takes a couple of hours to generate. If you have it somewhere,</span>
+0017 <span class="comment">%better to load it</span>
+0018 <span class="comment">%cd C:\Work\MatlabCode\components\human-GEM\Human-GEMftINIT\Human-GEM %replace this with the root of the Human-GEM repo.</span>
+0019 <span class="comment">%ihuman = importYaml('model/Human-GEM.yml');</span>
+0020 <span class="comment">%save('model/Human-GEM.mat', 'ihuman');</span>
+0021 <span class="comment">%load('model/Human-GEM.mat')</span>
+0022 <span class="comment">%prepData = prepHumanModelForftINIT(ihuman, false);</span>
+0023 prepData2 = load(<span class="string">'model/PrepData2.mat'</span>).prepData;
+0024 
+0025 upperLimit = 100;
+0026 lowerLimit = 0.1;
+0027 
+0028 model = prepData2.minModel;
+0029 model = prepData.minModel;
+0030 
+0031 
+0032 
+0033 
+0034 model.lb(model.lb==-inf)=-upperLimit;
+0035 model.ub(model.ub==inf)=upperLimit;
+0036 model.lb(model.lb==-1000)=-upperLimit;
+0037 model.ub(model.ub==1000)=upperLimit;
+0038 
+0039 <span class="comment">%check</span>
+0040 unique(model.lb) <span class="comment">%ok, only 0 and -100</span>
+0041 unique(model.ub) <span class="comment">%ok, only 100</span>
+0042 
+0043 <span class="comment">%First make a loop where we optimize for all</span>
+0044 onFwd = false(numel(model.rxns,1));
+0045 onRev = false(numel(model.rxns,1));
+0046 
+0047 iter = 1;
+0048 <span class="keyword">while</span> true
+0049     disp([num2str(iter) <span class="string">': '</span> num2str(sum(onFwd))])
+0050     model.c=ones(numel(model.c),1);
+0051     model.c(onFwd) = 0; <span class="comment">%don't include the ones already verified</span>
+0052     
+0053     sol=solveLP(model);
+0054     <span class="keyword">if</span> isempty(sol.x)
+0055         disp(<span class="string">'Failed'</span>);
+0056         <span class="keyword">break</span>;
+0057     <span class="keyword">end</span>
+0058     
+0059     currRes = sol.x &gt; lowerLimit;
+0060     <span class="keyword">if</span> sum(currRes &amp; ~onFwd) == 0
+0061         <span class="keyword">break</span>;<span class="comment">%we didn't turn any more rxns on</span>
+0062     <span class="keyword">end</span>
+0063     
+0064     onFwd = onFwd | currRes;
+0065     iter = iter + 1;
+0066 <span class="keyword">end</span>
+0067 
+0068 sum(~onFwd)<span class="comment">%zero, perfect</span>
+0069 
+0070 <span class="comment">%Now the other direction (reversible):</span>
+0071 onRev = false(numel(model.rxns,1));
+0072 
+0073 iter = 1;
+0074 <span class="keyword">while</span> true
+0075     disp([num2str(iter) <span class="string">': '</span> num2str(sum(onRev))])
+0076     model.c=-ones(numel(model.c),1);
+0077     model.c(~model.rev) = 0;
+0078     model.c(onRev) = 0; <span class="comment">%don't include the ones already verified</span>
+0079     
+0080     sol=solveLP(model);
+0081     <span class="keyword">if</span> isempty(sol.x)
+0082         disp(<span class="string">'Failed'</span>);
+0083         <span class="keyword">break</span>;
+0084     <span class="keyword">end</span>
+0085     
+0086     currRes = sol.x &lt; -lowerLimit;
+0087     <span class="keyword">if</span> sum(currRes &amp; ~onRev) == 0
+0088         <span class="keyword">break</span>;<span class="comment">%we didn't turn any more rxns on</span>
+0089     <span class="keyword">end</span>
+0090     
+0091     onRev = onRev | currRes;
+0092     iter = iter + 1;
+0093 <span class="keyword">end</span>
+0094 
+0095 sum(~onRev(model.rev == 1))<span class="comment">%</span>
+0096 
+0097 onRev = false(numel(model.rxns,1));
+0098 
+0099 indLeft = find(model.rev == 1 &amp; ~onRev);
+0100 
+0101 constructEquations(model, model.rxns(indLeft))<span class="comment">%no scaling here...</span>
+0102 
+0103 <span class="comment">%go trough the last one by one</span>
+0104 <span class="keyword">for</span> i = 1:numel(indLeft)
+0105     model.c=zeros(numel(model.c),1);
+0106     model.c(indLeft(i)) = -1;
+0107     
+0108     sol=solveLP(model);
+0109     <span class="keyword">if</span> isempty(sol.x)
+0110         disp(<span class="string">'Failed'</span>);
+0111         <span class="keyword">break</span>;
+0112     <span class="keyword">end</span>
+0113     
+0114     currRes = sol.x(indLeft(i)) &lt; -lowerLimit;
+0115     disp([num2str(indLeft(i)) <span class="string">': '</span> num2str(currRes)])
+0116     onRev(indLeft(i)) = currRes;
+0117     onRev = onRev | currRes;
+0118     iter = iter + 1;
+0119 <span class="keyword">end</span>
+0120 
+0121 sum(~onRev(model.rev == 1))<span class="comment">%0, perfect. This means that we can use the limits 0.1 and 100 in the MILP!</span>
+0122 
+0123</pre></div>
+<hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>
