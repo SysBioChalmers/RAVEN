@@ -309,8 +309,37 @@ else
     [~,res]=evalc("runtests('hmmerTests.m')");
     res=interpretResults(res);
     if res==false
-        fprintf(['   This is essential to run getKEGGModelFromHomology()\n'...
-            '   when using a FASTA file as input\n'])
+        fprintf(['   HMMER is only required by getKEGGModelForOrganism() when\n'...
+            '   using a FASTA file as input. If you do not use this function,\n'...
+            '   this failure can be ignored.\n'])
+        % On Windows, HMMER runs through Windows Subsystem for Linux
+        if ispc
+            [status,~]=system('where wsl');
+            if status~=0
+                printOrange(['   MATLAB cannot find wsl.exe. On Windows, HMMER runs through WSL.\n'...
+                    '   Install it with "wsl --install" in a Command Prompt, then restart\n'...
+                    '   MATLAB (it inherits the system PATH at startup) and rerun checkInstallation\n'])
+            else
+                [status,~]=system('wsl -e true');
+                if status~=0
+                    printOrange(['   MATLAB finds wsl.exe, but cannot start a Linux distribution\n'...
+                        '   through it. Run "wsl -l -v" in a Command Prompt to check that a\n'...
+                        '   distribution is installed and set up, then restart MATLAB and\n'...
+                        '   rerun checkInstallation\n'])
+                else
+                    try
+                        [status,~]=system(['wsl "' getWSLpath(fullfile(ravenDir,'software','hmmer','hmmsearch')) '" -h']);
+                    catch
+                        status=1;
+                    end
+                    if status~=0
+                        printOrange(['   WSL works, but the RAVEN HMMER binary cannot be run in it.\n'...
+                            '   Check that the files in software/hmmer are present and that\n'...
+                            '   the drive holding RAVEN is accessible from WSL\n'])
+                    end
+                end
+            end
+        end
     end
 
     if developMode

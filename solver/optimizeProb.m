@@ -90,7 +90,16 @@ switch solver
         solverparams.FeasibilityTol = defaultparams.feasTol;
         solverparams.OptimalityTol  = defaultparams.optTol;
         solverparams.Presolve       = 2;
-        if ~isempty(getCurrentTask) % If run in parallel, then one thread per gurobi
+        % If run in parallel, then one thread per gurobi. getCurrentTask
+        % requires the Parallel Computing Toolbox.
+        inParallel = false;
+        if license('test','Distrib_Computing_Toolbox')
+            try
+                inParallel = ~isempty(getCurrentTask);
+            catch
+            end
+        end
+        if inParallel
             solverparams.Threads=1;
         end
         solverparams = structUpdate(solverparams,params);
