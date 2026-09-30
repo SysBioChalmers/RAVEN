@@ -42,7 +42,7 @@ This function is called by:
 
 <h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <ul style="list-style-image:url(../../matlabicon.gif)">
-<li><a href="#_sub1" class="code">function addExchangeRxnsTest(testCase)</a></li><li><a href="#_sub2" class="code">function addTransportTest(testCase)</a></li><li><a href="#_sub3" class="code">function addGenesRavenTest(testCase)</a></li><li><a href="#_sub4" class="code">function removeGenesTest(testCase)</a></li><li><a href="#_sub5" class="code">function addMetsTest(testCase)</a></li><li><a href="#_sub6" class="code">function addMets_oneCompTest(testCase)</a></li><li><a href="#_sub7" class="code">function removeMetsTest(testCase)</a></li><li><a href="#_sub8" class="code">function addRxnsTest(testCase)</a></li><li><a href="#_sub9" class="code">function removeReactionsTest(testCase)</a></li><li><a href="#_sub10" class="code">function getMetsInCompTest(testCase)</a></li><li><a href="#_sub11" class="code">function getRxnsInCompTest(testCase)</a></li><li><a href="#_sub12" class="code">function getAllRxnsFromGenesTest(testCase)</a></li><li><a href="#_sub13" class="code">function changeRxnsTest(testCase)</a></li><li><a href="#_sub14" class="code">function removeBadRxnsTest(testCase)</a></li><li><a href="#_sub15" class="code">function changeGrRulesTest(testCase)</a></li><li><a href="#_sub16" class="code">function copyToCompsTest(testCase)</a></li><li><a href="#_sub17" class="code">function setExchangeBoundsTest(testCase)</a></li><li><a href="#_sub18" class="code">function addRxnsGenesMetsTest(testCase)</a></li><li><a href="#_sub19" class="code">function replaceMetsOutputsTest(testCase)</a></li></ul>
+<li><a href="#_sub1" class="code">function addExchangeRxnsTest(testCase)</a></li><li><a href="#_sub2" class="code">function addTransportTest(testCase)</a></li><li><a href="#_sub3" class="code">function addGenesRavenTest(testCase)</a></li><li><a href="#_sub4" class="code">function removeGenesTest(testCase)</a></li><li><a href="#_sub5" class="code">function addMetsTest(testCase)</a></li><li><a href="#_sub6" class="code">function addMets_oneCompTest(testCase)</a></li><li><a href="#_sub7" class="code">function removeMetsTest(testCase)</a></li><li><a href="#_sub8" class="code">function addRxnsTest(testCase)</a></li><li><a href="#_sub9" class="code">function removeReactionsTest(testCase)</a></li><li><a href="#_sub10" class="code">function getMetsInCompTest(testCase)</a></li><li><a href="#_sub11" class="code">function getRxnsInCompTest(testCase)</a></li><li><a href="#_sub12" class="code">function getAllRxnsFromGenesTest(testCase)</a></li><li><a href="#_sub13" class="code">function changeRxnsTest(testCase)</a></li><li><a href="#_sub14" class="code">function removeBadRxnsTest(testCase)</a></li><li><a href="#_sub15" class="code">function changeGrRulesTest(testCase)</a></li><li><a href="#_sub16" class="code">function copyToCompsTest(testCase)</a></li><li><a href="#_sub17" class="code">function setExchangeBoundsTest(testCase)</a></li><li><a href="#_sub18" class="code">function addRxnsGenesMetsTest(testCase)</a></li><li><a href="#_sub19" class="code">function replaceMetsOutputsTest(testCase)</a></li><li><a href="#_sub20" class="code">function replaceMetsSharedReactionTest(testCase)</a></li><li><a href="#_sub21" class="code">function replaceMetsNamesTest(testCase)</a></li><li><a href="#_sub22" class="code">function replaceMetsNamesRepeatedReplacementTest(testCase)</a></li></ul>
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <div class="fragment"><pre>0001 <span class="comment">%run this test case with the command</span>
@@ -556,11 +556,76 @@ This function is called by:
 0509 
 0510 verifyEqual(testCase,numel(modelNew.rxns),numel(model.rxns)-1)
 0511 verifyEmpty(testCase,find(strcmp(modelNew.mets,<span class="string">'atpDup_c'</span>)))
-0512 verifyEqual(testCase,numel(removedRxns),1)
-0513 verifyTrue(testCase,ismember(removedRxns{1},{<span class="string">'ATPM'</span>,<span class="string">'ATPM_dup'</span>}))
-0514 verifyEqual(testCase,numel(idxDuplRxns),numel(modelNew.rxns))
-0515 verifyEqual(testCase,idxDuplRxns(~cellfun(@isempty,idxDuplRxns)),removedRxns)
-0516 <span class="keyword">end</span></pre></div>
+0512 verifyEqual(testCase,removedRxns,{<span class="string">'ATPM_dup'</span>})
+0513 verifyEqual(testCase,idxDuplRxns,numel(model.rxns))
+0514 <span class="keyword">end</span>
+0515 
+0516 <a name="_sub20" href="#_subfunctions" class="code">function replaceMetsSharedReactionTest(testCase)</a>
+0517 <span class="comment">%The replaced metabolite occurs in a reaction that already contains the</span>
+0518 <span class="comment">%replacement metabolite; the stoichiometries are summed.</span>
+0519 sourceDir = fileparts(which(mfilename));
+0520 load(fullfile(sourceDir,<span class="string">'test_data'</span>,<span class="string">'ecoli_textbook.mat'</span>), <span class="string">'model'</span>);
+0521 
+0522 metsToAdd.mets={<span class="string">'atpDup_c'</span>};
+0523 metsToAdd.metNames={<span class="string">'atp duplicate'</span>};
+0524 metsToAdd.compartments={<span class="string">'c'</span>};
+0525 evalc(<span class="string">'model=addMets(model,metsToAdd);'</span>);
+0526 rxnsToAdd.rxns={<span class="string">'ATPshared'</span>};
+0527 rxnsToAdd.equations={<span class="string">'atp_c + atpDup_c + h2o_c =&gt; adp_c + h_c + pi_c'</span>};
+0528 evalc(<span class="string">'model=addRxns(model,rxnsToAdd,1);'</span>);
+0529 
+0530 modelNew=replaceMets(model,<span class="string">'atpDup_c'</span>,<span class="string">'atp_c'</span>,false,true);
+0531 
+0532 rxnIdx=strcmp(modelNew.rxns,<span class="string">'ATPshared'</span>);
+0533 verifyEqual(testCase,full(modelNew.S(strcmp(modelNew.mets,<span class="string">'atp_c'</span>),rxnIdx)),-2)
+0534 verifyEqual(testCase,numel(modelNew.mets),numel(model.mets)-1)
+0535 verifyEmpty(testCase,find(strcmp(modelNew.mets,<span class="string">'atpDup_c'</span>)))
+0536 <span class="keyword">end</span>
+0537 
+0538 <a name="_sub21" href="#_subfunctions" class="code">function replaceMetsNamesTest(testCase)</a>
+0539 <span class="comment">%The replacement metabolite has a higher index than the to-be-replaced</span>
+0540 <span class="comment">%metabolite, and the removed duplicate reaction is not the last reaction.</span>
+0541 sourceDir = fileparts(which(mfilename));
+0542 load(fullfile(sourceDir,<span class="string">'test_data'</span>,<span class="string">'ecoli_textbook.mat'</span>), <span class="string">'model'</span>);
+0543 
+0544 metsToAdd.mets={<span class="string">'atpNew_c'</span>};
+0545 metsToAdd.metNames={<span class="string">'ATPnew'</span>};
+0546 metsToAdd.compartments={<span class="string">'c'</span>};
+0547 evalc(<span class="string">'model=addMets(model,metsToAdd);'</span>);
+0548 rxnsToAdd.rxns={<span class="string">'ATPM_dup'</span>,<span class="string">'ATPM_other'</span>};
+0549 rxnsToAdd.equations={<span class="string">'atpNew_c + h2o_c =&gt; adp_c + h_c + pi_c'</span>,<span class="string">'h2o_c =&gt; h_c + pi_c'</span>};
+0550 evalc(<span class="string">'model=addRxns(model,rxnsToAdd,1);'</span>);
+0551 
+0552 [modelNew,removedRxns,idxDuplRxns]=replaceMets(model,<span class="string">'ATP'</span>,<span class="string">'ATPnew'</span>);
+0553 
+0554 verifyEqual(testCase,numel(modelNew.rxns),numel(model.rxns)-1)
+0555 verifyEqual(testCase,removedRxns,{<span class="string">'ATPM_dup'</span>})
+0556 verifyEqual(testCase,idxDuplRxns,numel(model.rxns)-1)
+0557 verifyEqual(testCase,model.rxns(idxDuplRxns),removedRxns)
+0558 verifyEmpty(testCase,find(strcmp(modelNew.mets,<span class="string">'atp_c'</span>)))
+0559 <span class="keyword">end</span>
+0560 
+0561 <a name="_sub22" href="#_subfunctions" class="code">function replaceMetsNamesRepeatedReplacementTest(testCase)</a>
+0562 <span class="comment">%The replacement name occurs twice in the same compartment; the</span>
+0563 <span class="comment">%stoichiometry is added once.</span>
+0564 sourceDir = fileparts(which(mfilename));
+0565 load(fullfile(sourceDir,<span class="string">'test_data'</span>,<span class="string">'ecoli_textbook.mat'</span>), <span class="string">'model'</span>);
+0566 
+0567 metsToAdd.mets={<span class="string">'atp2_c'</span>,<span class="string">'atpNew_c'</span>};
+0568 metsToAdd.metNames={<span class="string">'ATP2'</span>,<span class="string">'ATPnew'</span>};
+0569 metsToAdd.compartments={<span class="string">'c'</span>,<span class="string">'c'</span>};
+0570 evalc(<span class="string">'model=addMets(model,metsToAdd);'</span>);
+0571 model.metNames{strcmp(model.mets,<span class="string">'atp2_c'</span>)}=<span class="string">'ATP'</span>;
+0572 rxnsToAdd.rxns={<span class="string">'rNew'</span>};
+0573 rxnsToAdd.equations={<span class="string">'atpNew_c =&gt; adp_c'</span>};
+0574 evalc(<span class="string">'model=addRxns(model,rxnsToAdd,1);'</span>);
+0575 
+0576 modelNew=replaceMets(model,<span class="string">'ATPnew'</span>,<span class="string">'ATP'</span>);
+0577 
+0578 verifyEqual(testCase,full(modelNew.S(strcmp(modelNew.mets,<span class="string">'atp_c'</span>),strcmp(modelNew.rxns,<span class="string">'rNew'</span>))),-1)
+0579 verifyEmpty(testCase,find(strcmp(modelNew.mets,<span class="string">'atpNew_c'</span>)))
+0580 verifyEmpty(testCase,find(strcmp(modelNew.mets,<span class="string">'atp2_c'</span>)))
+0581 <span class="keyword">end</span></pre></div>
 <hr><address>Generated by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
