@@ -39,12 +39,6 @@ if isfield(reducedModel,'geneComps')
     reducedModel.geneComps=[];
 end
 
-%rev is combined with a sparse logical below ('S(...).' > 0 | rev'), which
-%MATLAB refuses for an integer class: "Sparse integer array arithmetic
-%operations are not supported". A model built outside RAVEN can carry an
-%integer rev, so coerce it once here rather than failing several steps in.
-reducedModel.rev = double(reducedModel.rev);
-
 nextGroupId = 1;
 origRxnIds = reducedModel.rxns;
 groupIds = zeros(numel(reducedModel.rxns),1);
@@ -68,8 +62,12 @@ while 1
     for i=1:numel(twoNonZero)
         involvedRxns=find(reducedModel.S(twoNonZero(i),:));
         %Check that we can have one positive and one negative
-        pos = sum(reducedModel.S(twoNonZero(i),involvedRxns).' > 0 | reducedModel.rev(involvedRxns));
-        neg = sum(reducedModel.S(twoNonZero(i),involvedRxns).' < 0 | reducedModel.rev(involvedRxns));
+        %rev is compared rather than used as-is: the other operand is a
+        %sparse logical, and MATLAB refuses to combine one with an integer
+        %array ("Sparse integer array arithmetic operations are not
+        %supported"). A model built outside RAVEN can carry an integer rev.
+        pos = sum(reducedModel.S(twoNonZero(i),involvedRxns).' > 0 | reducedModel.rev(involvedRxns) ~= 0);
+        neg = sum(reducedModel.S(twoNonZero(i),involvedRxns).' < 0 | reducedModel.rev(involvedRxns) ~= 0);
         
                 
         %Check so that one or both of the reactions haven't been merged
