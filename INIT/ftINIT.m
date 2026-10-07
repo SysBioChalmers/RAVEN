@@ -135,7 +135,7 @@ if (~isempty(metabolomicsData))
         %Get the matching mets
         metSel = ismember(upper(prepData.refModel.metNames),upper(metabolomicsData{i}));
         prodRxnsSel = any(prepData.refModel.S(metSel,:) > 0,1) | ... %direct producers
-                     (any(prepData.refModel.S(metSel,:) < 0,1) & prepData.refModel.rev.'); %reversible reactions that are consumers
+                     (any(prepData.refModel.S(metSel,:) < 0,1) & prepData.refModel.rev.' ~= 0); %reversible reactions that are consumers
         %convert the production rxns from refModel to minModel
         prepData.groupIds;
         [~,ia,ib] = intersect(prepData.minModel.rxns,prepData.refModel.rxns);

@@ -20,7 +20,7 @@ function [model, removedRxns, idxDuplRxns]=replaceMets(model,metabolite,replacem
 % Output:
 %   model           model structure with selected metabolites replaced
 %   removedRxns     identifiers of duplicate reactions that were removed
-%   idxDuplRxns     index of removedRxns in original model
+%   idxDuplRxns     indices of removedRxns in the input model
 %
 % Note: This function is useful when the model contains both 'oxygen' and
 % 'o2' as metabolite names. If 'oxygen' and 'o2' are identifiers instead,
@@ -59,10 +59,11 @@ if isempty(metIdx)
     error('The to-be-replaced metabolite cannot be found in the model.');
 end
 
-rxnsWithMet = find(model.S(metIdx,:));
+[~, rxnsWithMet] = find(model.S(metIdx,:));
+rxnsWithMet = unique(rxnsWithMet);
 if verbose==true
-    fprintf('\n\nThe following reactions contain the to-be-replaced metabolite as reactant:\n')
-    fprintf(strjoin(model.rxns(rxnsWithMet),'\n'))
+    fprintf('\n\nThe following reactions involve the to-be-replaced metabolite:\n')
+    fprintf('%s\n',model.rxns{rxnsWithMet})
     fprintf('\n')
 end
 
@@ -88,8 +89,11 @@ end
 
 idxDelete=[];
 if identifiers
+    if any(ismember(metIdx,repIdx))
+        error('The to-be-replaced metabolite and the replacement metabolite are the same.');
+    end
     originalStoch = model.S(metIdx,rxnsWithMet);
-    model.S(repIdx,rxnsWithMet) = originalStoch;
+    model.S(repIdx,rxnsWithMet) = model.S(repIdx,rxnsWithMet) + originalStoch;
     model.S(metIdx,rxnsWithMet) = 0;
     idxDelete = metIdx;
 else
@@ -99,54 +103,38 @@ else
     % the to-be-replace metabolite ID deleted.
     
     % Build list of metaboliteName[compartment]
-    metCompsN =cellstr(num2str(model.metComps));
-    map = containers.Map(cellstr(num2str(transpose(1:length(model.comps)))),model.comps);
-    metCompsN = map.values(metCompsN);
-    metCompsN = strcat(lower(model.metNames),'[',metCompsN,']');
+    comps = model.comps(:);
+    metCompsN = strcat(lower(model.metNames(:)),'[',comps(model.metComps(:)),']');
     
-    for i = 1:length(repIdx)
-        metCompsNidx=find(strcmp(metCompsN(repIdx(i)), metCompsN));
-        if length(metCompsNidx)>1
-            for j = 2:length(metCompsNidx)
-                model.S(metCompsNidx(1),:) = model.S(metCompsNidx(1),:) + model.S(metCompsNidx(j),:);
-                idxDelete=[idxDelete; metCompsNidx(j)]; % Make list of metabolite IDs to delete
-            end
+    % Within each metaboliteName[compartment] group, the first replacement
+    % metabolite is kept and the other members are merged into it.
+    groups = unique(metCompsN(repIdx),'stable');
+    for i = 1:numel(groups)
+        metCompsNidx = find(strcmp(groups{i}, metCompsN));
+        keepIdx = metCompsNidx(find(ismember(metCompsNidx,repIdx),1));
+        others = metCompsNidx(metCompsNidx ~= keepIdx);
+        if ~isempty(others)
+            model.S(keepIdx,:) = model.S(keepIdx,:) + sum(model.S(others,:),1);
+            idxDelete = [idxDelete; others]; % Make list of metabolite IDs to delete
         end
     end
 end
-
 if ~isempty(idxDelete)
-    model.S(idxDelete,:) =[];
-    model.mets(idxDelete) = [];
-    model.metNames(idxDelete) = [];
-    model.metComps(idxDelete) = [];
-    model.b(idxDelete) = [];
-    if isfield(model,'metFormulas')
-        model.metFormulas(idxDelete) = [];
-    end
-    if isfield(model,'unconstrained')
-        model.unconstrained(idxDelete) = [];
-    end
-    if isfield(model,'metMiriams')
-        model.metMiriams(idxDelete) = [];
-    end
-    if isfield(model,'metCharges')
-        model.metCharges(idxDelete) = [];
-    end
-    if isfield(model,'metDeltaG')
-        model.metDeltaG(idxDelete) = [];
-    end
-    if isfield(model,'inchis')
-        model.inchis(idxDelete) = [];
-    end
-    if isfield(model,'metSmiles')
-        model.metSmiles(idxDelete) = [];
-    end
-    if isfield(model,'metFrom')
-        model.metFrom(idxDelete) = [];
-    end
+    repMets = model.mets(repIdx);
+    model = removeMets(model,idxDelete);
+    % Indices of the replacement metabolites shift when metabolites with a
+    % lower index are deleted.
+    [~, repIdx] = ismember(repMets,model.mets);
+    repIdx(repIdx==0) = [];
 end
 
 % This could now have created duplicate reactions. Contract model.
-model=contractModel(model,[],repIdx);
+if isempty(idxDelete)
+    removedRxns = cell(0,1);
+    idxDuplRxns = zeros(0,1);
+else
+    originalRxns = model.rxns;
+    [model, removedRxns] = contractModel(model,[],repIdx);
+    [~, idxDuplRxns] = ismember(removedRxns,originalRxns);
+end
 end
