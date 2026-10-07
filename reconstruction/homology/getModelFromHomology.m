@@ -56,6 +56,23 @@ function [draftModel, hitGenes]=getModelFromHomology(models,blastStructure,...
 %     determines how to match genes if not looking at only 1-1 orthologs.
 %     Either map the new genes to the old or old genes to new. The default
 %     is to map the new genes (default true).
+% complexPolicy : char
+%     what happens to an "and"-linked subunit without an ortholog:
+%     "flag" keeps the reaction with the subunit renamed
+%     OLD_MODELID_geneName, for a curator to review; "keep" drops just that
+%     subunit; "drop" drops the whole reaction (default "flag").
+% keepGeneFree : logical
+%     also transfer the template reactions that have no grRule (spontaneous,
+%     transport, exchange, artificial). By default they are dropped, because
+%     nothing supports them in the new organism. Set it when the template is
+%     a curated reference whose gene-free reactions belong in every derived
+%     model. With several templates, a gene-free reaction comes in once per
+%     template (default false).
+% preserveNotes : logical
+%     keep each transferred reaction's rxnNotes, rxnReferences and
+%     rxnConfidenceScores from the template. By default the notes say the
+%     reaction was included by getModelFromHomology and the confidence score
+%     is 2 (default false).
 %
 % Returns
 % -------
@@ -77,9 +94,12 @@ function [draftModel, hitGenes]=getModelFromHomology(models,blastStructure,...
 % grRules (use expandModel).
 %
 % The resulting draft model contains only reactions associated with
-% orthologous genes. The old (original) genes involved in "and" relations
+% orthologous genes, plus the gene-free ones with keepGeneFree. With
+% complexPolicy "flag", the old (original) genes involved in "and" relations
 % in grRules without any orthologs are still included in the draft model as
-% OLD_MODELID_geneName.
+% OLD_MODELID_geneName. A gene that several template genes map to appears
+% once in a grRule. The draft does not keep the version, date or
+% descriptive annotation of the templates.
 %
 % "to" and "from" means relative to the new organism.
 
@@ -90,7 +110,14 @@ getModelFor=char(getModelFor);
 
 p=parseRAVENargs(varargin, {'preferredOrder',[]; 'strictness',1; ...
     'onlyGenesInModels',false; 'maxE',10^-30; 'minLen',100; 'minIde',40; ...
-    'mapNewGenesToOld',true});
+    'mapNewGenesToOld',true; 'complexPolicy','flag'; 'keepGeneFree',false; ...
+    'preserveNotes',false});
+complexPolicy=lower(char(p.complexPolicy));
+if ~ismember(complexPolicy,{'flag','keep','drop'})
+    error('complexPolicy must be "flag", "keep" or "drop", not "%s"',complexPolicy);
+end
+keepGeneFree=p.keepGeneFree;
+preserveNotes=p.preserveNotes;
 preferredOrder=p.preferredOrder;
 if isempty(preferredOrder)
     preferredOrder=[];
@@ -194,14 +221,20 @@ for i=1:numel(blastStructure)
     blastStructure(i).ppos(~indexes)=[];
 end
 
-%Remove all reactions from the models that have no genes encoding for them.
-%Also remove all genes that encode for no reactions. There should not be any
-%but there might be mistakes
+%Remove all reactions from the models that have no genes encoding for them,
+%unless keepGeneFree. Also remove all genes that encode for no reactions.
+%There should not be any but there might be mistakes
+geneFreeRxns=cell(numel(models),1);
+geneFreeRxns(:)={{}};
 for i=1:numel(models)
     [hasGenes, ~]=find(models{i}.rxnGeneMat);
     hasNoGenes=1:numel(models{i}.rxns);
     hasNoGenes(hasGenes)=[];
-    models{i}=removeReactions(models{i},hasNoGenes,true,true);
+    if keepGeneFree
+        geneFreeRxns{i}=models{i}.rxns(hasNoGenes);
+    else
+        models{i}=removeReactions(models{i},hasNoGenes,true,true);
+    end
 end
 
 %Create a structure that contains all genes used in the blasts in any
@@ -409,6 +442,7 @@ for i=1:numel(models)
     [rxnsToKeep,~] = find(models{useOrderIndexes(i)}.rxnGeneMat(:,a));
     rxnsToRemove = repmat(1,numel(models{useOrderIndexes(i)}.rxns),1);
     rxnsToRemove(rxnsToKeep) = 0;
+    rxnsToRemove(ismember(models{useOrderIndexes(i)}.rxns,geneFreeRxns{useOrderIndexes(i)})) = 0;
     rxnsToRemove = find(rxnsToRemove);
     models{useOrderIndexes(i)}=removeReactions(models{useOrderIndexes(i)},rxnsToRemove,true,true,true);
 end
@@ -571,6 +605,27 @@ for oldI=1:numel(draftModel.grRules)
     draftModel.grRules{oldI}=gprBuildRule(tkns);
 end
 
+%Apply the complex policy to the OLD_ genes left in "and" relations, and
+%write each grRule without repeated genes or redundant brackets
+toRemove=false(numel(draftModel.rxns),1);
+for j=1:numel(draftModel.grRules)
+    rule=draftModel.grRules{j};
+    if isempty(rule)
+        continue
+    end
+    if contains(rule,'OLD_') && strcmp(complexPolicy,'drop')
+        toRemove(j)=true;
+    elseif contains(rule,'OLD_') && strcmp(complexPolicy,'keep')
+        draftModel.grRules{j}=gprSimplify(rule,'OLD_');
+        toRemove(j)=isempty(draftModel.grRules{j});
+    else
+        draftModel.grRules{j}=gprSimplify(rule,'');
+    end
+end
+if any(toRemove)
+    draftModel=removeReactions(draftModel,draftModel.rxns(toRemove),true,true,true);
+end
+
 %Change name of the resulting model
 draftModel.id=getModelFor;
 name='Generated by getModelFromHomology using ';
@@ -582,10 +637,21 @@ for i=1:numel(models)
     end
 end
 draftModel.name=name;
-draftModel.rxnNotes=cell(length(draftModel.rxns),1);
-draftModel.rxnNotes(:)={'Included by getModelFromHomology'};
-draftModel.rxnConfidenceScores=NaN(length(draftModel.rxns),1);
-draftModel.rxnConfidenceScores(:)=2;
+%The draft is a new model: the templates' version, date and description are
+%not its own
+draftModel=rmfield(draftModel,intersect({'version','date','description'},fieldnames(draftModel)));
+if isfield(draftModel,'annotation')
+    descriptive={'taxonomy','sourceUrl','note','givenName','familyName','authors','email','organization'};
+    draftModel.annotation=rmfield(draftModel.annotation,intersect(descriptive,fieldnames(draftModel.annotation)));
+end
+if ~preserveNotes || ~isfield(draftModel,'rxnNotes')
+    draftModel.rxnNotes=cell(length(draftModel.rxns),1);
+    draftModel.rxnNotes(:)={'Included by getModelFromHomology'};
+end
+if ~preserveNotes || ~isfield(draftModel,'rxnConfidenceScores')
+    draftModel.rxnConfidenceScores=NaN(length(draftModel.rxns),1);
+    draftModel.rxnConfidenceScores(:)=2;
+end
 draftModel=deleteUnusedGenes(draftModel,0);
 %Standardize grRules and notify if problematic grRules are found
 [draftModel.grRules,draftModel.rxnGeneMat]=standardizeGrRules(draftModel,false);
@@ -644,5 +710,118 @@ while k<=numel(tokens)
     else
         k=k+1;
     end
+end
+end
+
+
+function rule=gprSimplify(rule,removePrefix)
+% Rewrite a grRule as a tree: genes starting with removePrefix (if any) are
+% dropped from their group, groups of the same operator are flattened,
+% repeated genes or groups are removed, and brackets appear only around a
+% group of the other operator. A rule with no gene left becomes ''.
+tokens=gprTokenize(rule);
+if isempty(tokens)
+    rule='';
+    return
+end
+[node,~]=gprParseOr(tokens,1);
+node=gprPrune(node,removePrefix);
+if isempty(node)
+    rule='';
+else
+    rule=gprRender(node,'');
+end
+end
+
+
+function [node,pos]=gprParseOr(tokens,pos)
+[node,pos]=gprParseAnd(tokens,pos);
+kids={node};
+while pos<=numel(tokens) && strcmpi(tokens{pos},'or')
+    [node,pos]=gprParseAnd(tokens,pos+1);
+    kids{end+1}=node; %#ok<AGROW>
+end
+if numel(kids)>1
+    node=struct('op','or','gene','','kids',{kids});
+end
+end
+
+
+function [node,pos]=gprParseAnd(tokens,pos)
+[node,pos]=gprParseAtom(tokens,pos);
+kids={node};
+while pos<=numel(tokens) && strcmpi(tokens{pos},'and')
+    [node,pos]=gprParseAtom(tokens,pos+1);
+    kids{end+1}=node; %#ok<AGROW>
+end
+if numel(kids)>1
+    node=struct('op','and','gene','','kids',{kids});
+end
+end
+
+
+function [node,pos]=gprParseAtom(tokens,pos)
+if pos>numel(tokens)
+    error('Malformed grRule: it ends with an operator');
+end
+if strcmp(tokens{pos},'(')
+    [node,pos]=gprParseOr(tokens,pos+1);
+    if pos>numel(tokens) || ~strcmp(tokens{pos},')')
+        error('Malformed grRule: unbalanced brackets');
+    end
+    pos=pos+1;
+else
+    node=struct('op','gene','gene',tokens{pos},'kids',{{}});
+    pos=pos+1;
+end
+end
+
+
+function node=gprPrune(node,removePrefix)
+if strcmp(node.op,'gene')
+    if ~isempty(removePrefix) && startsWith(node.gene,removePrefix)
+        node=[];
+    end
+    return
+end
+kids={};
+seen={};
+for k=1:numel(node.kids)
+    kid=gprPrune(node.kids{k},removePrefix);
+    if isempty(kid)
+        continue
+    end
+    if strcmp(kid.op,node.op)
+        parts=kid.kids;
+    else
+        parts={kid};
+    end
+    for m=1:numel(parts)
+        key=gprRender(parts{m},node.op);
+        if ~ismember(key,seen)
+            seen{end+1}=key; %#ok<AGROW>
+            kids{end+1}=parts{m}; %#ok<AGROW>
+        end
+    end
+end
+if isempty(kids)
+    node=[];
+elseif numel(kids)==1
+    node=kids{1};
+else
+    node.kids=kids;
+end
+end
+
+
+function rule=gprRender(node,parentOp)
+if strcmp(node.op,'gene')
+    rule=node.gene;
+    return
+end
+parts=cellfun(@(k) gprRender(k,node.op),node.kids,'UniformOutput',false);
+rule=strjoin(parts,[' ' node.op ' ']);
+if ~isempty(parentOp) && ~strcmp(parentOp,node.op)
+    rule=['(' rule ')'];
 end
 end

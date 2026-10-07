@@ -40,6 +40,57 @@ classdef tReconstruction < RavenTestCase
             testCase.verifyClass(draft, 'struct');
         end
 
+        function getModelFromHomologyComplexPolicyAndOptions(testCase)
+            % A small template: a complex, an isozyme pair, a gene-free
+            % reaction, and two template genes that map to one new gene.
+            t = struct();
+            t.id = 'tmpl'; t.name = 'tmpl';
+            t.mets = {'a_c';'b_c';'d_c'}; t.metNames = {'A';'B';'D'};
+            t.comps = {'c'}; t.compNames = {'cytosol'}; t.metComps = [1;1;1];
+            t.rxns = {'Rcplx';'Riso';'Rfree';'Rdup'};
+            t.rxnNames = t.rxns;
+            t.S = sparse([-1 0 0 -1; 0 -1 0 1; 1 1 -1 0]);
+            t.lb = [0;0;0;0]; t.ub = [1000;1000;1000;1000]; t.c = [0;0;0;0]; t.b = [0;0;0];
+            t.rev = [0;0;0;0];
+            t.grRules = {'tg1 and tg2'; 'tg3 or tg4'; ''; 'tg3 or tg4'};
+            t.genes = {'tg1';'tg2';'tg3';'tg4'};
+            t.rxnGeneMat = sparse([1 1 0 0; 0 0 1 1; 0 0 0 0; 0 0 1 1]);
+            t.rxnNotes = {'n1';'n2';'n3';'n4'};
+            t.rxnConfidenceScores = [4;4;4;4];
+            t.version = '9.9.9';
+            % makeFakeBlastStructure wants at least 10 pairs; the extra ones
+            % are genes the template does not have
+            pairs = [{'tg1','ng1'; 'tg3','ng3'; 'tg4','ng3'}; ...
+                     [strcat('x', string(1:7))', strcat('nx', string(1:7))']];
+            pairs = cellstr(pairs);
+            bs = makeFakeBlastStructure(pairs, 'tmpl', 'new');
+            evalc('flag = getModelFromHomology({t}, bs, ''new'', ''minLen'', 0, ''minIde'', 0);');
+            evalc('keep = getModelFromHomology({t}, bs, ''new'', ''minLen'', 0, ''minIde'', 0, ''complexPolicy'', ''keep'', ''keepGeneFree'', true, ''preserveNotes'', true);');
+            evalc('drop = getModelFromHomology({t}, bs, ''new'', ''minLen'', 0, ''minIde'', 0, ''complexPolicy'', ''drop'');');
+            % flag: unmapped subunit kept as OLD_; gene-free reaction dropped
+            testCase.verifyTrue(contains(flag.grRules{strcmp(flag.rxns,'Rcplx')}, 'OLD_tmpl_tg2'));
+            testCase.verifyFalse(ismember('Rfree', flag.rxns));
+            % two template genes mapping to one new gene appear once
+            testCase.verifyEqual(flag.grRules{strcmp(flag.rxns,'Riso')}, 'ng3');
+            % keep: subunit dropped, gene-free kept, template notes kept
+            testCase.verifyEqual(keep.grRules{strcmp(keep.rxns,'Rcplx')}, 'ng1');
+            testCase.verifyTrue(ismember('Rfree', keep.rxns));
+            testCase.verifyEqual(keep.rxnNotes{strcmp(keep.rxns,'Rcplx')}, 'n1');
+            testCase.verifyEqual(keep.rxnConfidenceScores(strcmp(keep.rxns,'Rcplx')), 4);
+            % drop: the incomplete complex is removed
+            testCase.verifyFalse(ismember('Rcplx', drop.rxns));
+            testCase.verifyTrue(ismember('Riso', drop.rxns));
+            % the template version is not inherited
+            testCase.verifyFalse(isfield(flag, 'version') && strcmp(flag.version, '9.9.9'));
+            testCase.verifyEqual(flag.rxnNotes{1}, 'Included by getModelFromHomology');
+        end
+
+        function getModelFromHomologyRejectsUnknownComplexPolicy(testCase)
+            src = testCase.model; src.id = 'srcModel';
+            bs = makeFakeBlastStructure([src.genes(1:10), strcat('t_', src.genes(1:10))], 'srcModel', 'tgtOrg');
+            testCase.verifyError(@() getModelFromHomology({src}, bs, 'tgtOrg', 'complexPolicy', 'maybe'), ?MException);
+        end
+
         function getBlastRunsWhenAvailable(testCase)
             fa1 = fullfile(testCase.ravenRoot,'testing','function_tests','test_data','human_galactosidases.fa');
             fa2 = fullfile(testCase.ravenRoot,'testing','function_tests','test_data','yeast_galactosidases.fa');
