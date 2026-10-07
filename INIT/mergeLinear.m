@@ -39,6 +39,12 @@ if isfield(reducedModel,'geneComps')
     reducedModel.geneComps=[];
 end
 
+%rev is combined with a sparse logical below ('S(...).' > 0 | rev'), which
+%MATLAB refuses for an integer class: "Sparse integer array arithmetic
+%operations are not supported". A model built outside RAVEN can carry an
+%integer rev, so coerce it once here rather than failing several steps in.
+reducedModel.rev = double(reducedModel.rev);
+
 nextGroupId = 1;
 origRxnIds = reducedModel.rxns;
 groupIds = zeros(numel(reducedModel.rxns),1);

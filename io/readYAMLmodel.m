@@ -148,7 +148,7 @@ for i=1:numel(line_key)
     tline_value = line_value{i};
     % import different sections
     switch tline_raw
-        case '- metaData:'
+        case {'- metaData:', '- metaData: !!omap'}
             section = 1;
             if verbose
                 fprintf('\t%d\n', section);
@@ -168,7 +168,7 @@ for i=1:numel(line_key)
             end
             pos=0;
             continue
-        case '- genes:'
+        case {'- genes:', '- genes: []'}
             section = 4;
             if verbose
                 fprintf('\t%d\n', section);
@@ -234,7 +234,7 @@ for i=1:numel(line_key)
                 model.annotation.email = tline_value;
             case 'organization'
                 model.annotation.organization = tline_value;
-            case 'geckoLight'
+            case {'geckoLight', 'gecko_light'}
                 if strcmp(tline_value,'true')
                     model.ec.geckoLight = true;
                 end
@@ -267,8 +267,12 @@ for i=1:numel(line_key)
                 model = readFieldValue(model, 'inchis', tline_value, pos);
                 readList=''; miriamKey='';
             case 'smiles'
-                model = readFieldValue(model, 'metSmiles', tline_value, pos);
-                readList=''; miriamKey='';    
+                if isempty(tline_value)
+                    readList = 'smilesInAnnotation';
+                else
+                    model = readFieldValue(model, 'metSmiles', tline_value, pos);
+                    readList=''; miriamKey='';
+                end    
             case 'deltaG'
                 model = readFieldValue(model, 'metDeltaG', tline_value, pos);
                 readList=''; miriamKey='';                                
@@ -279,6 +283,16 @@ for i=1:numel(line_key)
                 readList = 'annotation';
             otherwise
                 switch readList
+                    case 'smilesInAnnotation'
+                        %As for ec-code on a reaction: a bare list item
+                        %continues the list, anything else ends it.
+                        if isempty(tline_key)
+                            model = readFieldValue(model, 'metSmiles', ...
+                                regexprep(tline_value,'^ +- "?(.*)"?$','$1'), pos);
+                        else
+                            readList = 'annotation';
+                            [metMiriams, miriamKey, metMirNo] = gatherAnnotation(pos,metMiriams,tline_key,tline_value,miriamKey,metMirNo);
+                        end
                     case 'annotation'
                         [metMiriams, miriamKey, metMirNo] = gatherAnnotation(pos,metMiriams,tline_key,tline_value,miriamKey,metMirNo);
                     otherwise
@@ -309,7 +323,7 @@ for i=1:numel(line_key)
             case 'gene_reaction_rule'
                 model = readFieldValue(model, 'grRules', tline_value, pos);
                 readList=''; miriamKey='';
-            case 'rxnNotes'
+            case {'rxnNotes', 'notes'}
                 model = readFieldValue(model, 'rxnNotes', tline_value, pos);
                 readList=''; miriamKey='';
             case 'rxnFrom'
@@ -343,6 +357,19 @@ for i=1:numel(line_key)
                 end
             case 'metabolites'
                 readList = 'equation';
+            case 'ec-code'
+                %EC numbers emitted inside the annotation block rather than
+                %under the legacy top-level 'eccodes' key, which is still
+                %accepted above. A block list follows when the value is
+                %empty; it is read under its own state so that gathering can
+                %resume for the rest of the annotation block once the list
+                %ends, instead of swallowing every later entry as an EC code.
+                if isempty(tline_value)
+                    readList = 'eccodesInAnnotation';
+                else
+                    eccodes(ecCodeNo,1:2)={pos,tline_value};
+                    ecCodeNo=ecCodeNo+1;
+                end
             case 'annotation'
                 readList = 'annotation';
                 
@@ -351,6 +378,18 @@ for i=1:numel(line_key)
                     case 'eccodes'
                         eccodes(ecCodeNo,1:2)={pos,regexprep(tline_value,'^ +- "?(.*)"?$','$1')};
                         ecCodeNo=ecCodeNo+1;
+                    case 'eccodesInAnnotation'
+                        %A bare list item ("- 1.1.2.4") has no colon, so
+                        %tline_key is empty and the list continues. Anything
+                        %else is the annotation block's next entry, so the
+                        %list has ended.
+                        if isempty(tline_key)
+                            eccodes(ecCodeNo,1:2)={pos,regexprep(tline_value,'^ +- "?(.*)"?$','$1')};
+                            ecCodeNo=ecCodeNo+1;
+                        else
+                            readList = 'annotation';
+                            [rxnMiriams, miriamKey,rxnMirNo] = gatherAnnotation(pos,rxnMiriams,tline_key,tline_value,miriamKey,rxnMirNo);
+                        end
                     case 'subsystem'
                         subSystems(subSysNo,1:2)={pos,regexprep(tline_value,'^ +- "?(.*)"?$','$1')};
                         subSysNo=subSysNo+1;
