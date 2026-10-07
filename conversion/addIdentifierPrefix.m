@@ -60,10 +60,8 @@ for i=1:numel(toChangeIdx)
         currField = strcat(currPrefix, currField);
         hasChanged(toChangeIdx(i)) = true;
 
-        if strcmp(currName,'genes')
-                model.grRules = regexprep(model.grRules, '(\<[0-9_a-zA-Z])', 'G_$1');
-                model.grRules = regexprep(model.grRules, ' G_or ', ' or ');
-                model.grRules = regexprep(model.grRules, ' G_and ', ' and ');
+        if strcmp(currName,'genes') && isfield(model,'grRules')
+            model.grRules = cellfun(@(r) prefixGenes(r,currPrefix), model.grRules, 'UniformOutput', false);
         end
         model.(currName) = currField;
     end
@@ -71,4 +69,20 @@ end
 
 hasChanged = modelFields(hasChanged,:);
 hasChanged = append('model.', hasChanged(:,1), ' (', hasChanged(:,2), ' prefix)');
+end
+
+
+function rule = prefixGenes(rule, prefix)
+% Prefix every gene in a grRule, leaving "and", "or" and brackets alone. A
+% gene is everything between spaces and brackets, so ids that contain
+% "-", "." or ":" get one prefix, not one per word.
+[tokens, separators] = regexp(rule, '[^\s()]+', 'match', 'split');
+out = separators{1};
+for i = 1:numel(tokens)
+    if ~any(strcmpi(tokens{i}, {'and','or'}))
+        tokens{i} = [prefix tokens{i}];
+    end
+    out = [out tokens{i} separators{i+1}]; %#ok<AGROW>
+end
+rule = out;
 end

@@ -12,6 +12,17 @@ classdef tConversion < RavenTestCase
             testCase.verifyEqual(mr.genes, testCase.model.genes);
         end
 
+        function identifierPrefixKeepsGenesWithPunctuationWhole(testCase)
+            % A gene id with "-", "." or ":" gets one prefix in grRules, the
+            % same one it gets in model.genes, so the two still match.
+            m = testCase.model;
+            m.genes = [m.genes; {'5-HT1A'; 'b2:1'}];
+            m.grRules{1} = '5-HT1A and (b2:1 or 5-HT1A)';
+            [mp, ~] = addIdentifierPrefix(m, 'fields', {'genes'});
+            testCase.verifyEqual(mp.grRules{1}, 'G_5-HT1A and (G_b2:1 or G_5-HT1A)');
+            testCase.verifyTrue(all(ismember(getGenesFromGrRules(mp.grRules(1)), mp.genes)));
+        end
+
         function removeIdentifierPrefixSkipsMissingFields(testCase)
             % A model missing an optional field (genes, metNames, rxnNames,
             % id) must not make the default field list throw; it should
