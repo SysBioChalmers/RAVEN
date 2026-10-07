@@ -739,11 +739,22 @@ if isfield(modelSBML,'annotation')
     end
 end
 if isfield(modelSBML,'notes')
-    startString=strfind(modelSBML.notes,'xhtml">');
-    endString=strfind(modelSBML.notes,'</body>');
-    if any(startString) && any(endString)
-        model.annotation.note=modelSBML.notes(startString(1)+7:endString-1);
-        model.annotation.note=regexprep(model.annotation.note,'<p.*?>|</p.*?>','');
+    %Two shapes reach here. RAVEN's own exportModel writes the note as bare
+    %text inside a <body>; a writer that serialises a notes dictionary emits
+    %one '<p>key: value</p>' per entry and no <body> at all, carrying the note
+    %under its own key. Take the labelled entry when there is one, so the
+    %other entries (version, and whatever else the dictionary held) stay out
+    %of the note, and fall back to the <body> text otherwise.
+    note=parseNote(modelSBML.notes,'note');
+    if isempty(note)
+        startString=strfind(modelSBML.notes,'xhtml">');
+        endString=strfind(modelSBML.notes,'</body>');
+        if any(startString) && any(endString)
+            note=modelSBML.notes(startString(1)+7:endString-1);
+        end
+    end
+    if ~isempty(note)
+        model.annotation.note=regexprep(note,'<p.*?>|</p.*?>','');
         model.annotation.note=strtrim(model.annotation.note);
         if regexp(model.annotation.note,'This file was generated using the exportModel function in RAVEN Toolbox \d\.\d and OutputSBML in libSBML')
             model.annotation=rmfield(model.annotation,'note'); % Default note added when running exportModel
