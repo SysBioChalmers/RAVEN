@@ -300,7 +300,7 @@ elseif ismac
 else
     binEnd = '';
 end
-cmd = ['"' fullfile(ravenDir,'src','software',tool,[binName binEnd]) '" ' versionArg];
+cmd = ['"' fullfile(ravenDir,'src','external',tool,[binName binEnd]) '" ' versionArg];
 [status,~] = system(cmd);
 if status ~= 0
     error('%s did not execute (exit status %d)', binName, status);
@@ -339,7 +339,7 @@ if ispc
     status = 0; % No need to run on Windows
     return;
 end
-binDir = fullfile(ravenDir,'src','software');
+binDir = fullfile(ravenDir,'src','external');
 
 % blast+/diamond/hmmer may be present from an on-demand download
 % (downloadRavenBinaries already chmods those) or from the offline bundle;

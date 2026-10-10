@@ -16,7 +16,7 @@ classdef tSyntax < RavenTestCase
 
             % software/ is vendored third-party code (GLPKmex, libSBML). It is
             % not ours to fix, so a syntax complaint there is not a RAVEN bug.
-            paths = paths(~contains(paths, [filesep 'software' filesep]));
+            paths = paths(~contains(paths, [filesep 'external' filesep]));
 
             testCase.assertNotEmpty(paths, 'Found no .m files to check.');
 

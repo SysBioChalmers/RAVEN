@@ -368,12 +368,12 @@ else
     binEnd='';
 end
 %Fetch the HMMER binary on demand if it is not already present
-if ~exist(fullfile(ravenPath,'src','software','hmmer',['hmmsearch' binEnd]),'file')
+if ~exist(fullfile(ravenPath,'src','external','hmmer',['hmmsearch' binEnd]),'file')
     downloadRavenBinaries({'hmmer'});
 end
 tblFile=[tempname '.tblout'];
 fprintf('Querying the user-specified FASTA file against the KEGG Orthology specific HMMs... ');
-[status, output]=system(['"' fullfile(ravenPath,'src','software','hmmer',['hmmsearch' binEnd]) '" --cpu "' num2str(cores) '" --tblout "' tblFile '" "' libraryFile '" "' fastaFile '"']);
+[status, output]=system(['"' fullfile(ravenPath,'src','external','hmmer',['hmmsearch' binEnd]) '" --cpu "' num2str(cores) '" --tblout "' tblFile '" "' libraryFile '" "' fastaFile '"']);
 if status~=0
     EM=['Error when querying the concatenated HMM library:\n' output];
     error('RAVEN:badInput', '%s', EM);

@@ -109,7 +109,7 @@ else
 end
 
 %Fetch the BLAST+ binaries on demand if they are not already present
-if ~exist(fullfile(ravenPath,'src','software','blast+',['blastp' binEnd]),'file')
+if ~exist(fullfile(ravenPath,'src','external','blast+',['blastp' binEnd]),'file')
     downloadRavenBinaries({'blast+'});
 end
 
@@ -121,7 +121,7 @@ cores = cores{1};
 
 %Create a database for the new organism and blast each of the refFastaFiles
 %against it
-[status, message]=system(['"' fullfile(ravenPath,'src','software','blast+',['makeblastdb' binEnd]) '" -in "' fastaFile{1} '" -out "' fullfile(tmpDB, 'tmpDB') '" -dbtype prot']);
+[status, message]=system(['"' fullfile(ravenPath,'src','external','blast+',['makeblastdb' binEnd]) '" -in "' fastaFile{1} '" -out "' fullfile(tmpDB, 'tmpDB') '" -dbtype prot']);
 if developMode
     blastReport.dbHashes.phr{numel(blastReport.dbHashes.phr)+1}=filemd5(fullfile(tmpDB, 'tmpDB.phr'));
     blastReport.dbHashes.pot{numel(blastReport.dbHashes.pot)+1}=filemd5(fullfile(tmpDB, 'tmpDB.pot'));
@@ -136,7 +136,7 @@ for i=1:numel(refFastaFiles)
     if ~hideVerbose
         fprintf(['BLASTing "' modelIDs{i} '" against "' organismID{1} '"..\n']);
     end
-    [status, message]=system(['"' fullfile(ravenPath,'src','software','blast+',['blastp' binEnd]) '" -query "' refFastaFiles{i} '" -out "' outFile '_' num2str(i) '" -db "' fullfile(tmpDB, 'tmpDB') '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads "' cores '"']);
+    [status, message]=system(['"' fullfile(ravenPath,'src','external','blast+',['blastp' binEnd]) '" -query "' refFastaFiles{i} '" -out "' outFile '_' num2str(i) '" -db "' fullfile(tmpDB, 'tmpDB') '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads "' cores '"']);
     if developMode
         blastReport.blastTxtOutput{numel(blastReport.blastTxtOutput)+1}=importdata([outFile '_' num2str(i)]);
     end
@@ -152,11 +152,11 @@ for i=1:numel(refFastaFiles)
     if ~hideVerbose
         fprintf(['BLASTing "' organismID{1} '" against "' modelIDs{i} '"..\n']);
     end
-    [status, message]=system(['"' fullfile(ravenPath,'src','software','blast+',['makeblastdb' binEnd]) '" -in "' refFastaFiles{i} '" -out "' fullfile(tmpDB, 'tmpDB') '" -dbtype prot']);
+    [status, message]=system(['"' fullfile(ravenPath,'src','external','blast+',['makeblastdb' binEnd]) '" -in "' refFastaFiles{i} '" -out "' fullfile(tmpDB, 'tmpDB') '" -dbtype prot']);
     if status~=0
         error('makeblastdb did not run successfully, error:\n%s',strip(message))
     end
-    [status, message]=system(['"' fullfile(ravenPath,'src','software','blast+',['blastp' binEnd]) '" -query "' fastaFile{1} '" -out "' outFile '_r' num2str(i) '" -db "' fullfile(tmpDB, 'tmpDB') '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads "' cores '"']);
+    [status, message]=system(['"' fullfile(ravenPath,'src','external','blast+',['blastp' binEnd]) '" -query "' fastaFile{1} '" -out "' outFile '_r' num2str(i) '" -db "' fullfile(tmpDB, 'tmpDB') '" -evalue 10e-5 -outfmt "10 qseqid sseqid evalue pident length bitscore ppos" -num_threads "' cores '"']);
     if developMode
         blastReport.dbHashes.phr{numel(blastReport.dbHashes.phr)+1}=filemd5(fullfile(tmpDB, 'tmpDB.phr'));
         blastReport.dbHashes.pot{numel(blastReport.dbHashes.pot)+1}=filemd5(fullfile(tmpDB, 'tmpDB.pot'));

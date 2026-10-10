@@ -44,13 +44,13 @@ for i = 1:numel(tools)
         case 'blast+'
             tag = 'blast-2.17.0';
             asset = ['blast-2.17.0-' plat '.zip'];
-            destDir = fullfile(ravenDir,'src','software','blast+');
+            destDir = fullfile(ravenDir,'src','external','blast+');
             sentinel = fullfile(destDir,'blastp');           % bare name on every OS (.exe on Windows)
             execs = {'blastp','makeblastdb'};
         case 'diamond'
             tag = 'diamond-2.1.17';
             asset = ['diamond-2.1.17-' plat '.zip'];
-            destDir = fullfile(ravenDir,'src','software','diamond');
+            destDir = fullfile(ravenDir,'src','external','diamond');
             sentinel = fullfile(destDir,'diamond');
             execs = {'diamond'};
         case 'hmmer'
@@ -61,7 +61,7 @@ for i = 1:numel(tools)
                 tag = 'hmmer-3.4.0';
                 asset = ['hmmer-3.4.0-' plat '.zip'];
             end
-            destDir = fullfile(ravenDir,'src','software','hmmer');
+            destDir = fullfile(ravenDir,'src','external','hmmer');
             sentinel = fullfile(destDir,'hmmsearch');
             execs = {'hmmsearch'};
         otherwise
@@ -78,7 +78,7 @@ for i = 1:numel(tools)
         continue;   % already provisioned
     end
 
-    zipPath = fetchRavenDataAsset(fullfile(ravenDir,'src','software'),tag,asset);
+    zipPath = fetchRavenDataAsset(fullfile(ravenDir,'src','external'),tag,asset);
     unzip(zipPath,destDir);
     delete(zipPath);
 

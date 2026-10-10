@@ -224,7 +224,7 @@ switch solver
         % Ensure that RAVEN glpk binary is used, return to original
         % directory afterwards
         [ravenDir,currDir]=findRAVENroot();
-        cd(fullfile(ravenDir,'src','software','GLPKmex'))
+        cd(fullfile(ravenDir,'src','external','GLPKmex'))
         [xopt, fmin, errnum, extra] = glpk(prob.c, prob.A, prob.b, prob.lb, prob.ub, prob.csense, prob.vartype, prob.osense, solverparams);
         cd(currDir)
 

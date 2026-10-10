@@ -43,15 +43,15 @@ switch solver
             end
         else
             ravenDir = findRAVENroot();
-            if ~exist(fullfile(ravenDir,'src','software','scip','scip.mexw64'),'file')
+            if ~exist(fullfile(ravenDir,'src','external','scip','scip.mexw64'),'file')
                 try
                     disp('Downloading and installing RAVEN-provided SCIP MEX binary...')
-                    websave(fullfile(ravenDir,'src','software','scip_mex_win.zip'),'https://github.com/SysBioChalmers/RAVEN/releases/download/v2.8.6/scip_mex_win.zip'); % Should be updated to release with SCIP functionality
+                    websave(fullfile(ravenDir,'src','external','scip_mex_win.zip'),'https://github.com/SysBioChalmers/RAVEN/releases/download/v2.8.6/scip_mex_win.zip'); % Should be updated to release with SCIP functionality
                 catch
                     error('Unable to download SCIP MEX binary from the RAVEN GitHub page.')
                 end
-                unzip(fullfile(ravenDir,'src','software','scip_mex_win.zip'),fullfile(ravenDir,'src','software','scip'));
-                delete(fullfile(ravenDir,'src','software','scip_mex_win.zip'));
+                unzip(fullfile(ravenDir,'src','external','scip_mex_win.zip'),fullfile(ravenDir,'src','external','scip'));
+                delete(fullfile(ravenDir,'src','external','scip_mex_win.zip'));
             end
             try
                 scip; % The pre-compiled MEX file might fail

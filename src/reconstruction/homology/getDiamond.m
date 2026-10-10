@@ -98,7 +98,7 @@ else
 end
 
 %Fetch the DIAMOND binary on demand if it is not already present
-if ~exist(fullfile(ravenPath,'src','software','diamond',['diamond' binEnd]),'file')
+if ~exist(fullfile(ravenPath,'src','external','diamond',['diamond' binEnd]),'file')
     downloadRavenBinaries({'diamond'});
 end
 
@@ -110,7 +110,7 @@ cores = cores{1};
 
 %Create a database for the new organism and blast each of the refFastaFiles
 %against it
-[status, message]=system(['"' fullfile(ravenPath,'src','software','diamond',['diamond' binEnd]) '" makedb --in "' fastaFile{1} '" --db "' fullfile(tmpDB) '"']);
+[status, message]=system(['"' fullfile(ravenPath,'src','external','diamond',['diamond' binEnd]) '" makedb --in "' fastaFile{1} '" --db "' fullfile(tmpDB) '"']);
 if developMode
     diamondReport.dbHashes{numel(diamondReport.dbHashes)+1} = char(regexp(message,'[a-f0-9]{32}','match'));
 end
@@ -122,7 +122,7 @@ for i=1:numel(refFastaFiles)
     if ~hideVerbose
         fprintf(['Running DIAMOND blastp with "' modelIDs{i} '" against "' organismID{1} '"..\n']);
     end
-    [status, message]=system(['"' fullfile(ravenPath,'src','software','diamond',['diamond' binEnd]) '" blastp --query "' refFastaFiles{i} '" --out "' outFile '_' num2str(i) '" --db "' fullfile(tmpDB) '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores ]);
+    [status, message]=system(['"' fullfile(ravenPath,'src','external','diamond',['diamond' binEnd]) '" blastp --query "' refFastaFiles{i} '" --out "' outFile '_' num2str(i) '" --db "' fullfile(tmpDB) '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores ]);
     if developMode
         diamondReport.diamondTxtOutput{numel(diamondReport.diamondTxtOutput)+1}=importdata([outFile '_' num2str(i)]);
     end
@@ -138,11 +138,11 @@ for i=1:numel(refFastaFiles)
     if ~hideVerbose
         fprintf(['Running DIAMOND blastp with "' organismID{1} '" against "' modelIDs{i} '"..\n']);
     end
-    [status, message1]=system(['"' fullfile(ravenPath,'src','software','diamond',['diamond' binEnd]) '" makedb --in "' refFastaFiles{i} '" --db "' fullfile(tmpDB) '"']);
+    [status, message1]=system(['"' fullfile(ravenPath,'src','external','diamond',['diamond' binEnd]) '" makedb --in "' refFastaFiles{i} '" --db "' fullfile(tmpDB) '"']);
     if status~=0
         error('DIAMOND makedb did not run successfully, error:\n%s',strip(message1))
     end
-    [status, message]=system(['"' fullfile(ravenPath,'src','software','diamond',['diamond' binEnd]) '" blastp --query "' fastaFile{1} '" --out "' outFile '_r' num2str(i) '" --db "' fullfile(tmpDB) '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores]);
+    [status, message]=system(['"' fullfile(ravenPath,'src','external','diamond',['diamond' binEnd]) '" blastp --query "' fastaFile{1} '" --out "' outFile '_r' num2str(i) '" --db "' fullfile(tmpDB) '" --more-sensitive --outfmt 6 qseqid sseqid evalue pident length bitscore ppos --threads ' cores]);
     if developMode
         diamondReport.dbHashes{numel(diamondReport.dbHashes)+1} = char(regexp(message1,'[a-f0-9]{32}','match'));
         diamondReport.diamondTxtOutput{numel(diamondReport.diamondTxtOutput)+1}=importdata([outFile '_r' num2str(i)]);

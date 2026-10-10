@@ -14,7 +14,7 @@ function updateDocumentation()
 ravenDir=findRAVENroot();
 srcDir=fullfile(ravenDir,'src');
 %Make sure that RAVEN-provided m2html is used
-path(fullfile(ravenDir,'src','software','m2html'),path);
+path(fullfile(ravenDir,'src','external','m2html'),path);
 %Get a non-redundant list of RAVEN subdirectories containing MATLAB
 %functions. Absolute paths are not compatible with M2HTML, so convert them
 %to the relative paths instead.
@@ -22,8 +22,7 @@ ravenDirs=dir(fullfile(srcDir,'**/*.m'));
 ravenDirs=unique({ravenDirs.folder})';
 
 %Get rid of MATLAB functions from external software
-ravenDirs(startsWith(ravenDirs,strcat(srcDir,filesep,'software')))=[];
-ravenDirs(startsWith(ravenDirs,strcat(srcDir,filesep,'legacy',filesep,'software')))=[];
+ravenDirs(startsWith(ravenDirs,strcat(srcDir,filesep,'external')))=[];
 
 %Skip deprecated wrappers: they are on the path so existing scripts keep
 %working, but documenting them would advertise functions that are on their

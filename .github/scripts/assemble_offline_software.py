@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-"""Populate RAVEN's src/software/ with every platform's external binaries.
+"""Populate RAVEN's src/external/ with every platform's external binaries.
 
 Downloads the per-platform binary ZIPs from raven-data and lays them out under
-``<raven>/src/software/<tool>/`` using RAVEN's suffix scheme — bare name = Linux,
+``<raven>/src/external/<tool>/`` using RAVEN's suffix scheme — bare name = Linux,
 ``.mac`` = macOS, ``.exe`` = Windows. With all platforms present in one tree, the
 whole RAVEN checkout can be zipped into a single **OS-independent** offline
 distribution (see the release-bundle workflow).
@@ -50,7 +50,7 @@ def _extract(zip_bytes: bytes, dest: Path, rename: dict[str, str]) -> None:
 
 
 def assemble(raven: Path) -> None:
-    soft = raven / "src" / "software"
+    soft = raven / "src" / "external"
     for subdir, bundle, vmap, exes in CLI_TOOLS:
         dest = soft / subdir
         for plat, suffix in PLATFORMS.items():
