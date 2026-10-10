@@ -1,0 +1,45 @@
+function phylDistStruct=getPhylDist(varargin)
+% getPhylDist  Load the pre-built KEGG phylogenetic distance matrix.
+%
+% Loads the pre-built phylogenetic distance matrix from keggPhylDist.mat.
+% The artefact is distributed as a raven-data release asset.
+%
+% Name-Value Arguments
+% --------------------
+% onlyInKingdom : logical
+%     if true, returns a distance matrix with Inf for cross-domain pairs
+%     (Prokaryota vs Eukaryota) (default false).
+%
+% Returns
+% -------
+% phylDistStruct : struct
+%     structure with fields:
+%
+%     - ids : cell array of KEGG organism abbreviations.
+%     - distMat : pairwise distance matrix (number of tree-nodes apart).
+%
+% Notes
+% -----
+% Distance is based on the number of nodes two organisms are apart in the
+% KEGG taxonomy tree.
+
+p=parseRAVENargs(varargin, {'onlyInKingdom',false});
+onlyInKingdom=p.onlyInKingdom;
+
+ravenPath=findRAVENroot();
+distFile=fullfile(ravenPath,'src','reconstruction','kegg','keggPhylDist.mat');
+if ~exist(distFile,'file')
+    error('getPhylDist:noData', ...
+        ['keggPhylDist.mat not found at ' strrep(distFile,'\','/') '.\n' ...
+        'It ships with RAVEN, so a missing copy means an incomplete checkout. ' ...
+        'Restore it from the RAVEN repository, or generate it with the ' ...
+        'raven-toolbox Python package.']);
+end
+fprintf(['Importing the KEGG phylogenetic distance matrix from ' strrep(distFile,'\','/') '... ']);
+load(distFile);
+fprintf('COMPLETE\n');
+
+if onlyInKingdom==true
+    phylDistStruct=phylDistStructOnlyInKingdom;
+end
+end

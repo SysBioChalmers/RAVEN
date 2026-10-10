@@ -166,7 +166,7 @@ fprintf('\n=== Model import and export ===\n');
 fprintf(myStr(' > Checking libSBML version',40))
 model = [];
 try
-    evalc('model = importModel(fullfile(ravenDir,''tutorial'',''empty.xml''));');
+    evalc('model = importModel(fullfile(ravenDir,''tutorials'',''data'',''empty.xml''));');
     try
         libSBMLver=OutputSBML_RAVEN; % Only works in libSBML 5.17.0+
         fprintf([libSBMLver.libSBML_version_string '\n']);
@@ -193,7 +193,7 @@ else
 end
 
 reportCheck('   > Export SBML format', @() exportModel(model, fullfile(tmpDir,'model.xml')));
-reportCheck('   > Import YAML format', @() readYAMLmodel(fullfile(ravenDir,'tutorial','empty.yml')));
+reportCheck('   > Import YAML format', @() readYAMLmodel(fullfile(ravenDir,'tutorials','data','empty.yml')));
 reportCheck('   > Export YAML format', @() writeYAMLmodel(model, fullfile(tmpDir,'model.yml')));
 
 reportCheck('   > Export Excel format', @() exportToExcelFormat(model, fullfile(tmpDir,'model.xlsx')));
@@ -300,7 +300,7 @@ elseif ismac
 else
     binEnd = '';
 end
-cmd = ['"' fullfile(ravenDir,'software',tool,[binName binEnd]) '" ' versionArg];
+cmd = ['"' fullfile(ravenDir,'src','software',tool,[binName binEnd]) '" ' versionArg];
 [status,~] = system(cmd);
 if status ~= 0
     error('%s did not execute (exit status %d)', binName, status);
@@ -339,7 +339,7 @@ if ispc
     status = 0; % No need to run on Windows
     return;
 end
-binDir = fullfile(ravenDir,'software');
+binDir = fullfile(ravenDir,'src','software');
 
 % blast+/diamond/hmmer may be present from an on-demand download
 % (downloadRavenBinaries already chmods those) or from the offline bundle;
