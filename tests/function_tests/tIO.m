@@ -1,0 +1,329 @@
+classdef tIO < RavenTestCase
+% tIO  Tests for the import/export and file-utility functions in io/.
+%
+%   Format support is exercised mainly via export->import round-trips on the
+%   test model and via importing the tutorial 'empty' files.
+
+    methods (Test)
+
+        function exportForGitWritesDependencies(testCase)
+            % Exercises the toolbox-version lookup in exportForGit via the
+            % dependencies.txt it writes
+            f = fullfile(testCase.ravenRoot,'tutorials','data','empty.xml');
+            evalc('model = importModel(f);');
+            outDir = tempname; mkdir(outDir);
+            c = onCleanup(@() rmdir(outDir,'s'));
+            evalc("exportForGit(model,'path',outDir,'formats',{'xml'},'subDirs',false)");
+            dep = fileread(fullfile(outDir,'dependencies.txt'));
+            testCase.verifySubstring(dep, 'RAVEN_toolbox');
+        end
+
+        function exportForGitMainBranchFlagRejectsNonMain(testCase)
+            % mainBranchFlag should error when RAVEN is *not* on main/master,
+            % which this test, run from a feature branch, always satisfies.
+            outDir = tempname; mkdir(outDir);
+            c = onCleanup(@() rmdir(outDir,'s'));
+            testCase.verifyError(@() evalc(['exportForGit(testCase.model,''path'',outDir,' ...
+                '''formats'',{''xml''},''subDirs'',false,''mainBranchFlag'',true);']), ...
+                ?MException);
+        end
+
+        function importModelHandlesSpeciesAndReactionEdgeCases(testCase)
+            % A model where: some species have no SBO term while others do
+            % (and disagree with each other); a multi-reaction objective;
+            % a reaction with more than one SUBSYSTEM note; and species
+            % whose charge is genuinely (not just by default) zero.
+            f = fullfile(testCase.ravenRoot,'tests','function_tests','test_data', ...
+                'importModelEdgeCases.xml');
+            evalc('m = importModel(f);');
+
+            % SBO terms must land on the metabolite that actually has them,
+            % not be shifted onto the wrong one because one species (m2)
+            % has none.
+            testCase.verifyTrue(isfield(m,'metMiriams'));
+            testCase.verifyEmpty(m.metMiriams{strcmp(m.mets,'m2')});
+            testCase.verifyNotEmpty(m.metMiriams{strcmp(m.mets,'m3')});
+
+            % Both reactions in the combined objective must be captured.
+            testCase.verifyEqual(m.c(strcmp(m.rxns,'r1')), 1);
+            testCase.verifyEqual(m.c(strcmp(m.rxns,'r2')), 2);
+
+            % Two SUBSYSTEM notes on one reaction must stay two entries.
+            testCase.verifyEqual(numel(m.subSystems{strcmp(m.rxns,'r1')}), 2);
+
+            % All-genuinely-neutral charges must not be dropped.
+            testCase.verifyTrue(isfield(m,'metCharges'));
+            testCase.verifyEqual(m.metCharges, zeros(4,1));
+        end
+
+        function importModelStripsRegexSpecialCompartmentName(testCase)
+            % A compartment name containing regex metacharacters ("Golgi
+            % (cis)") must still be recognized and stripped from the
+            % metabolite name suffix, not corrupt the matching pattern.
+            f = fullfile(testCase.ravenRoot,'tests','function_tests','test_data', ...
+                'importModelSpecialCompName.xml');
+            evalc('m = importModel(f);');
+            testCase.verifyEqual(m.metNames{1}, 'metabolite one');
+        end
+
+        function importModelReadsSBML(testCase)
+            f = fullfile(testCase.ravenRoot,'tutorials','data','empty.xml');
+            evalc('m = importModel(f);');
+            testCase.verifyTrue(isfield(m, 'rxns'));
+        end
+
+        function readYAMLmodelReadsYml(testCase)
+            f = fullfile(testCase.ravenRoot,'tutorials','data','empty.yml');
+            evalc('m = readYAMLmodel(f);');
+            testCase.verifyTrue(isfield(m, 'rxns'));
+        end
+
+        function parseYAMLReturnsNestedTree(testCase)
+            f = [tempname '.yml'];
+            testCase.addTeardown(@() delete(f));
+            fid = fopen(f,'w');
+            fprintf(fid, [ ...
+                '# a full-line comment\n' ...
+                'prelude:\n' ...
+                '  reset_exchanges: out  # trailing comment\n' ...
+                'cofactor_pseudoreaction:\n' ...
+                '  rxn_id: r_4598\n' ...
+                '  remove_mets:\n' ...
+                '    - { met: s_3714 }\n' ...
+                'bounds:\n' ...
+                '  - { rxn: r_1654, lb: -1000 }\n' ...
+                '  - { rxn: r_1663, lb: 0, ub: 0 }\n' ...
+                'expected_uptake_count: 15\n']);
+            fclose(fid);
+
+            out = parseYAML(f);
+            testCase.verifyEqual(out.prelude.reset_exchanges, 'out')
+            testCase.verifyEqual(out.cofactor_pseudoreaction.rxn_id, 'r_4598')
+            testCase.verifyEqual(out.cofactor_pseudoreaction.remove_mets{1}.met, 's_3714')
+            testCase.verifyEqual(numel(out.bounds), 2)
+            testCase.verifyEqual(out.bounds{1}.rxn, 'r_1654')
+            testCase.verifyEqual(out.bounds{1}.lb, -1000)
+            testCase.verifyFalse(isfield(out.bounds{1}, 'ub'))
+            testCase.verifyEqual(out.bounds{2}.ub, 0)
+            testCase.verifyEqual(out.expected_uptake_count, 15)
+        end
+
+        function exportImportSBMLRoundTrip(testCase)
+            f = [tempname '.xml'];
+            testCase.addTeardown(@() delete(f));
+            evalc('exportModel(testCase.model, f);');
+            evalc('m2 = importModel(f);');
+            testCase.verifyEqual(numel(m2.rxns), numel(testCase.model.rxns));
+        end
+
+        function exportImportSBMLRoundTripPreservesDeltaG(testCase)
+            % rxnDeltaG/metDeltaG round-trip through a <p>deltaG: VALUE</p>
+            % notes entry -- the same key and format raven-toolbox reads
+            % and writes, so either toolbox's SBML file is a complete
+            % round trip for the other (RAVEN#724). An untouched reaction
+            % or metabolite stays NaN, and the field is omitted entirely
+            % if nothing in the model has a value. Values are the kind of
+            % magnitude a real thermodynamic estimate has, not contrived
+            % high-precision ones: num2str's default precision (no digits
+            % argument) is exact for these, same as Confidence Level.
+            m = testCase.model;
+            m.rxnDeltaG = NaN(numel(m.rxns), 1);
+            m.rxnDeltaG(1) = -8.7;
+            m.metDeltaG = NaN(numel(m.mets), 1);
+            m.metDeltaG(1) = 7.5;
+
+            f = [tempname '.xml'];
+            testCase.addTeardown(@() delete(f));
+            evalc('exportModel(m, f);');
+            evalc('m2 = importModel(f);');
+
+            testCase.verifyEqual(m2.rxnDeltaG(1), -8.7, 'AbsTol', 1e-9);
+            testCase.verifyTrue(isnan(m2.rxnDeltaG(2)));
+            testCase.verifyEqual(m2.metDeltaG(1), 7.5, 'AbsTol', 1e-9);
+            testCase.verifyTrue(isnan(m2.metDeltaG(2)));
+        end
+
+        function exportModelOmitsDeltaGFieldWhenAllNaN(testCase)
+            f = [tempname '.xml'];
+            testCase.addTeardown(@() delete(f));
+            evalc('exportModel(testCase.model, f);');
+            evalc('m2 = importModel(f);');
+            testCase.verifyFalse(isfield(m2, 'rxnDeltaG'));
+            testCase.verifyFalse(isfield(m2, 'metDeltaG'));
+        end
+
+        function exportToExcelFormatWritesFile(testCase)
+            f = [tempname '.xlsx'];
+            testCase.addTeardown(@() delete(f));
+            evalc('exportToExcelFormat(testCase.model, f);');
+            testCase.verifyTrue(exist(f,'file')==2);
+        end
+
+        function exportToExcelFormatWritesEcSheets(testCase)
+            % Enzyme-constrained (GECKO) models get two extra export-only
+            % sheets, ENZYMES and ENZRXNS, holding the model.ec contents.
+            model = testCase.model;
+            model.ec.geckoLight = false;
+            model.ec.rxns     = model.rxns(1:2);
+            model.ec.kcat     = [13.7; 0];
+            model.ec.source   = {'brenda'; ''};
+            model.ec.notes    = {'note1'; ''};
+            model.ec.eccodes  = {'1.1.1.1'; '2.7.1.1;2.7.1.2'};
+            model.ec.genes    = model.genes(1:2);
+            model.ec.enzymes  = {'P0A1'; 'P0A2'};
+            model.ec.mw       = [51000; NaN];
+            model.ec.sequence = {'MABC'; 'MDEF'};
+            model.ec.concs    = [NaN; 0.5];
+            model.ec.rxnEnzMat = [1 2; 0 1];   % R1: P0A1 x1, P0A2 x2; R2: P0A2 x1
+
+            f = [tempname '.xlsx'];
+            testCase.addTeardown(@() delete(f));
+            evalc('exportToExcelFormat(model, f);');
+
+            sheets = sheetnames(f);
+            testCase.verifyTrue(any(strcmp(sheets,'ENZYMES')));
+            testCase.verifyTrue(any(strcmp(sheets,'ENZRXNS')));
+
+            % NaN mw/conc are written as blanks; the kcat 0 sentinel is kept.
+            enz = readcell(f,'Sheet','ENZYMES');
+            testCase.verifyEqual(string(enz(1,2:6)),["ID","GENE","MW","SEQUENCE","CONC"]);
+            testCase.verifyEqual(string(enz{2,2}),"P0A1");
+            testCase.verifyEqual(enz{2,4},51000,'AbsTol',1e-9);
+
+            ecrxn = readcell(f,'Sheet','ENZRXNS');
+            testCase.verifyEqual(string(ecrxn(1,2:7)),["ID","KCAT","SOURCE","NOTE","EC-NUMBER","ENZYMES"]);
+            testCase.verifyEqual(ecrxn{2,3},13.7,'AbsTol',1e-9);
+            testCase.verifyEqual(string(ecrxn{3,6}),"2.7.1.1;2.7.1.2");
+            % ENZYMES column: 'enzyme:count' subunit stoichiometry from rxnEnzMat
+            testCase.verifyEqual(string(ecrxn{2,7}),"P0A1:1;P0A2:2");
+            testCase.verifyEqual(string(ecrxn{3,7}),"P0A2:1");
+        end
+
+        function writeReadYAMLRoundTrip(testCase)
+            f = [tempname '.yml'];
+            testCase.addTeardown(@() delete(f));
+            evalc('writeYAMLmodel(testCase.model, f);');
+            evalc('m2 = readYAMLmodel(f);');
+            testCase.verifyEqual(numel(m2.rxns), numel(testCase.model.rxns));
+        end
+
+        function writeReadYAMLNestsEcRxnEnzymes(testCase)
+            % Each ec-rxns entry lists its enzymes as a mapping under the
+            % "enzymes" key, so the enzyme lines are indented deeper than
+            % that key; at the same depth a YAML parser reads them as
+            % siblings of "enzymes" and the mapping as empty.
+            model = testCase.model;
+            model.ec.geckoLight = false;
+            model.ec.rxns     = model.rxns(1:2);
+            model.ec.kcat     = [13.7; 2];
+            model.ec.source   = {'brenda'; 'dlkcat'};
+            model.ec.notes    = {''; ''};
+            model.ec.eccodes  = {'1.1.1.1'; '2.7.1.1;2.7.1.2'};
+            model.ec.genes    = model.genes(1:2);
+            model.ec.enzymes  = {'P0A1'; 'P0A2'};
+            model.ec.mw       = [51000; 42000];
+            model.ec.sequence = {'MABC'; 'MDEF'};
+            model.ec.concs    = [NaN; NaN];
+            model.ec.rxnEnzMat = [1 2; 0 1];
+
+            f = [tempname '.yml'];
+            testCase.addTeardown(@() delete(f));
+            evalc('writeYAMLmodel(model, f);');
+
+            lines = splitlines(fileread(f));
+            enzKey = find(strcmp(lines, '    - enzymes: !!omap'));
+            testCase.verifyNumElements(enzKey, 2);
+            testCase.verifyEqual(lines(enzKey(1)+(1:2)), ...
+                {'      - P0A1: 1.0'; '      - P0A2: 2.0'});
+            testCase.verifyEqual(lines(enzKey(2)+1), {'      - P0A2: 1.0'});
+
+            evalc('m2 = readYAMLmodel(f);');
+            testCase.verifyEqual(m2.ec.enzymes, model.ec.enzymes);
+            testCase.verifyEqual(m2.ec.rxnEnzMat, model.ec.rxnEnzMat);
+        end
+
+        function writeReadYAMLPreservesCompartmentAnnotations(testCase)
+            % Compartment annotations must round-trip, and must not be read
+            % back as additional compartments.
+            m = testCase.model;
+            m.compMiriams = cell(numel(m.comps),1);
+            m.compMiriams{1}.name  = {'go'};
+            m.compMiriams{1}.value = {'GO:0005737'};
+            f = [tempname '.yml'];
+            testCase.addTeardown(@() delete(f));
+            evalc('writeYAMLmodel(m, f);');
+            evalc('m2 = readYAMLmodel(f);');
+            testCase.verifyEqual(m2.comps, m.comps);
+            testCase.verifyEqual(m2.compNames, m.compNames);
+            testCase.verifyEqual(m2.compMiriams{1}.name, {'go'});
+            testCase.verifyEqual(m2.compMiriams{1}.value, {'GO:0005737'});
+        end
+
+        function writeReadYAMLPreservesUnknownAnnotationFields(testCase)
+            % A caller-specific metaData field with no RAVEN-defined slot
+            % (e.g. a `geckopy_version` field) must survive a write/read
+            % round trip instead of being silently dropped, same as the
+            % fixed annoFields set (taxonomy here).
+            m = testCase.model;
+            m.annotation.taxonomy = 'taxonomy/4932';
+            m.annotation.geckopyVersion = '0.2.1';
+            f = [tempname '.yml'];
+            testCase.addTeardown(@() delete(f));
+            evalc('writeYAMLmodel(m, f);');
+            evalc('m2 = readYAMLmodel(f);');
+            testCase.verifyEqual(m2.annotation.taxonomy, 'taxonomy/4932');
+            testCase.verifyEqual(m2.annotation.geckopyVersion, '0.2.1');
+        end
+
+        function exportForGitWritesRepo(testCase)
+            d = [tempname filesep];
+            mkdir(d);
+            testCase.addTeardown(@() rmdir(d, 's'));
+            evalc('exportForGit(testCase.model, ''ec'', d, {''yml''});');
+            testCase.verifyNotEmpty(dir(fullfile(d,'**','*.yml')));
+        end
+
+        function checkFileExistenceFindsFile(testCase)
+            f = fullfile(testCase.ravenRoot,'tests','function_tests', ...
+                'test_data','ecoli_textbook.mat');
+            out = checkFileExistence(f, 1, false, true);
+            testCase.verifyNotEmpty(out);
+        end
+
+        function checkFileExistenceAcceptsForwardSlashes(testCase)
+            % An absolute Windows path may be written with forward slashes:
+            % MATLAB accepts them everywhere, and anything handing RAVEN a path
+            % built by another tool is likely to use them. Treating such a path
+            % as relative appends the working directory and turns
+            % "C:/data/model.mat" into "C:\somewhere\C:\data\model.mat".
+            f = fullfile(testCase.ravenRoot,'tests','function_tests', ...
+                'test_data','ecoli_textbook.mat');
+            out = checkFileExistence(strrep(f,'\','/'), 1, false, true);
+            testCase.verifyNotEmpty(out);
+        end
+
+        function cleanSheetTrimsComments(testCase)
+            raw = {'#comment', '#comment'; 'a', 'b'; '', ''};
+            out = cleanSheet(raw);
+            testCase.verifyClass(out, 'cell');
+        end
+
+        function writeExcelRoundTrips(testCase)
+            % writeExcel generates the .xlsx (Office Open XML) directly, with
+            % no external library; read it back with base MATLAB to confirm
+            % the sheets, values and types survive.
+            f = [tempname '.xlsx'];
+            testCase.addTeardown(@() delete(f));
+            s(1).name='RXNS'; s(1).header={'ID','VALUE'};
+            s(1).data={'r1',1.5; 'r2',-3};
+            s(2).name='METS'; s(2).header={'ID'}; s(2).data={'m1'};
+            writeExcel(f, s);
+            testCase.verifyEqual(sort(string(sheetnames(f))),["METS";"RXNS"]);
+            raw = readcell(f,'Sheet','RXNS');
+            testCase.verifyEqual(string(raw(1,:)),["ID","VALUE"]);
+            testCase.verifyEqual(string(raw{2,1}),"r1");
+            testCase.verifyEqual(raw{2,2},1.5,'AbsTol',1e-9);
+        end
+
+    end
+end

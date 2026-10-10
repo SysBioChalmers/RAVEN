@@ -1,4 +1,4 @@
-<img src="./RAVEN.png" width="200px">
+<img src="img/RAVEN.png" width="200px">
 
 [![Current release](https://img.shields.io/github/release/SysBioChalmers/RAVEN/all.svg)](https://GitHub.com/SysBioChalmers/RAVEN/releases/)
 [![GitHub Discussions](https://img.shields.io/github/discussions-search?query=repo%3Asysbiochalmers%2raven&label=GitHub%20Discussions)](https://github.com/SysBioChalmers/RAVEN/discussions)
@@ -17,7 +17,7 @@ For context-specific model extraction, use `ftINIT`; `getINITModel` and `runINIT
 
 
 ## Documentation
-The information about downloading, installing and developing RAVEN is included in the [Wiki](https://github.com/SysBioChalmers/RAVEN/wiki). The source code documentation is also available [online](http://sysbiochalmers.github.io/RAVEN/doc/).
+The information about downloading, installing and developing RAVEN is included in the [Wiki](https://github.com/SysBioChalmers/RAVEN/wiki). The source code documentation is also available [online](http://sysbiochalmers.github.io/RAVEN/docs/html/).
 
 Full user documentation, including a migration guide for users upgrading from RAVEN 2 to RAVEN 3, is published at [raven-docs](https://raven-docs.readthedocs.io/en/latest/).
 
