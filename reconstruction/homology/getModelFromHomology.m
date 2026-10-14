@@ -93,6 +93,11 @@ function [draftModel, hitGenes]=getModelFromHomology(models,blastStructure,...
 % unneccesary old genes, the models should not have "or"-relations in their
 % grRules (use expandModel).
 %
+% The gene ids of the new organism in blastStructure become its gene ids in
+% the draft model, so they cannot contain whitespace, parentheses, "|" or
+% "&". FASTA headers from UniProt, such as "sp|P33284|HXK_KLULA", should be
+% reduced to the accession first.
+%
 % The resulting draft model contains only reactions associated with
 % orthologous genes, plus the gene-free ones with keepGeneFree. With
 % complexPolicy "flag", the old (original) genes involved in "and" relations
@@ -421,6 +426,17 @@ end
 allGenes{1}=allGenes{1}(usedNewGenes);
 for i=1:numel(finalMappings)
     finalMappings{i}=finalMappings{i}(usedNewGenes,:);
+end
+
+%Gene ids end up in grRules, which are split at whitespace and parentheses,
+%and which COBRA also splits at "|" and "&"
+unusable=allGenes{1}(~cellfun(@isempty,regexp(allGenes{1},'[\s()|&]','once')));
+if ~isempty(unusable)
+    error('RAVEN:badInput',['%d gene ids of "%s" cannot be written into a grRule, '...
+        'because they contain whitespace, parentheses, "|" or "&": %s. Map them '...
+        'to gene ids first, or use the accession alone for UniProt headers such '...
+        'as "sp|P33284|HXK_KLULA".'],numel(unusable),getModelFor,...
+        strjoin(unusable(1:min(3,end))',', '));
 end
 
 %Now is it time to choose which reactions should be included from which

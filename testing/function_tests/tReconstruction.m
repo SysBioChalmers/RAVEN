@@ -85,6 +85,13 @@ classdef tReconstruction < RavenTestCase
             testCase.verifyEqual(flag.rxnNotes{1}, 'Included by getModelFromHomology');
         end
 
+        function getModelFromHomologyRejectsGeneIdsThatSplit(testCase)
+            src = testCase.model; src.id = 'srcModel';
+            newGenes = cellstr(strcat('sp|P', string(1:10)', '|X_BUG'));
+            bs = makeFakeBlastStructure([src.genes(1:10), newGenes], 'srcModel', 'tgtOrg');
+            testCase.verifyError(@() getModelFromHomology({src}, bs, 'tgtOrg'), 'RAVEN:badInput');
+        end
+
         function getModelFromHomologyRejectsUnknownComplexPolicy(testCase)
             src = testCase.model; src.id = 'srcModel';
             bs = makeFakeBlastStructure([src.genes(1:10), strcat('t_', src.genes(1:10))], 'srcModel', 'tgtOrg');
