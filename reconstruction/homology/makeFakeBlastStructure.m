@@ -34,7 +34,7 @@ function blastStructure=makeFakeBlastStructure(orthologList,sourceModelID,getMod
 %
 % See also
 % --------
-% getModelFromHomology, getBlast
+% getModelFromHomology, getBlast, hitsFromSuppOrth
 
 if nargin<3
     error('All three parameters should be set');

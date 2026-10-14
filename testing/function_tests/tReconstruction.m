@@ -91,6 +91,117 @@ classdef tReconstruction < RavenTestCase
             testCase.verifyError(@() getModelFromHomology({src}, bs, 'tgtOrg', 'complexPolicy', 'maybe'), ?MException);
         end
 
+        function hitsFromSuppOrthBothDirectionsAndPlaceholders(testCase)
+            file = tReconstruction.suppOrthTable();
+            bs = hitsFromSuppOrth(file, 'bug');
+            ids = strcat({bs.fromId}, '>', {bs.toId});
+            testCase.verifyEqual(sort(ids), sort({'other>bug','templateGEM>bug','bug>other','bug>templateGEM'}));
+            fwd = bs(strcmp(ids, 'bug>templateGEM')); rev = bs(strcmp(ids, 'templateGEM>bug'));
+            testCase.verifyEqual(sort(strcat(fwd.fromGenes, '-', fwd.toGenes)), ...
+                sort(strcat(rev.toGenes, '-', rev.fromGenes)));
+            testCase.verifyTrue(all(fwd.evalue == 0 & fwd.identity == 100 & fwd.aligLen == 1000 & fwd.ppos == 100));
+            % ids such as NA, 0123 and UniProt headers stay text
+            other = bs(strcmp(ids, 'bug>other'));
+            testCase.verifyEqual(sort(other.fromGenes), {'0123';'ng1'});
+            testCase.verifyTrue(all(ismember({'NA';'sp|P1|NG4_BUG'}, fwd.fromGenes)));
+            % no alignment hit: bitscore 0
+            testCase.verifyEqual(fwd.bitscore(strcmp(fwd.toGenes, 'tg3')), 0);
+            testCase.verifyEqual(fwd.bitscore(strcmp(fwd.toGenes, 'tg1')), 512);
+        end
+
+        function hitsFromSuppOrthFilters(testCase)
+            file = tReconstruction.suppOrthTable();
+            pairs = @(bs) sort(strcat(bs(strcmp({bs.fromId}, 'bug') & strcmp({bs.toId}, 'templateGEM')).fromGenes, '-', ...
+                bs(strcmp({bs.fromId}, 'bug') & strcmp({bs.toId}, 'templateGEM')).toGenes));
+            testCase.verifyEqual(pairs(hitsFromSuppOrth(file, 'bug', 'minSupport', 2)), {'ng1-tg1';'ng2-tg2'});
+            testCase.verifyEqual(pairs(hitsFromSuppOrth(file, 'bug', 'requireTools', {'broccoli'})), {'ng1-tg1';'ng2-tg3'});
+            testCase.verifyEqual(pairs(hitsFromSuppOrth(file, 'bug', 'maxEvalue', 1e-85)), {'NA-tg5';'ng1-tg1'});
+            p = pairs(hitsFromSuppOrth(file, 'bug', 'minIdentity', 50));
+            testCase.verifyFalse(any(ismember({'ng2-tg3';'sp|P1|NG4_BUG-tg4'}, p)));
+            testCase.verifyTrue(ismember('NA-tg5', p));
+            testCase.verifyError(@() hitsFromSuppOrth(file, 'bug', 'requireTools', {'oma'}), 'RAVEN:badInput');
+            testCase.verifyError(@() hitsFromSuppOrth(file, 'bug', 'minSupport', 4), 'RAVEN:badInput');
+            testCase.verifyError(@() hitsFromSuppOrth(file, 'yeast'), 'RAVEN:badInput');
+        end
+
+        function hitsFromSuppOrthSpeciesToModel(testCase)
+            file = tReconstruction.suppOrthTable();
+            bs = hitsFromSuppOrth(file, 'bug', 'speciesToModel', {'templateGEM','iTemplate';'bug','bugGEM';'other',''});
+            testCase.verifyEqual(unique({bs.fromId}), {'bugGEM','iTemplate'});
+            testCase.verifyError(@() hitsFromSuppOrth(file, 'bug', 'speciesToModel', {'templateGEM','t';'bug','b'}), 'RAVEN:badInput');
+        end
+
+        function hitsFromSuppOrthProteinToGene(testCase)
+            file = tReconstruction.suppOrthTable({ ...
+                'templateGEM	bug	tg1	ng1.1	1	F	1	0	0	60.0	1e-60	250.0'
+                'templateGEM	bug	tg1	ng1.2	3	F,S,B	1	1	1	75.0	1e-90	350.0'
+                'templateGEM	bug	tg2	ng2.1	2	S,B	0	1	1	50.0	1e-40	150.0'});
+            map = {'ng1.1','ng1';'ng1.2','ng1';'ng2.1','ng2'};
+            testCase.verifyWarning(@() hitsFromSuppOrth(file, 'bug', 'proteinToGene', map), ...
+                'RAVEN:hitsFromSuppOrth:unmappedProteins');
+            tsv = [tempname '.tsv'];
+            fid = fopen(tsv, 'w'); fprintf(fid, '# protein\tgene\n'); m2 = map'; fprintf(fid, '%s\t%s\n', m2{:}); fclose(fid);
+            json = [tempname '.json'];
+            fid = fopen(json, 'w'); fprintf(fid, '{"ng1.1": "ng1", "ng1.2": "ng1", "ng2.1": "ng2"}'); fclose(fid);
+            for m = {map, tsv, json}
+                w = warning('off', 'RAVEN:hitsFromSuppOrth:unmappedProteins');
+                [bs, info] = hitsFromSuppOrth(file, 'bug', 'proteinToGene', m{1});
+                warning(w);
+                fwd = bs(strcmp({bs.fromId}, 'bug'));
+                testCase.verifyEqual(sort(strcat(fwd.fromGenes, '-', fwd.toGenes)), {'ng1-tg1';'ng2-tg2'});
+                row = info(strcmp(info.newGene, 'ng1'), :);
+                testCase.verifyEqual([row.support row.identity row.evalue row.bitscore], [3 75 1e-90 350]);
+                testCase.verifyEqual(row.supportedBy{1}, 'F,S,B');
+            end
+            delete(tsv, json);
+        end
+
+        function hitsFromSuppOrthThroughGetModelFromHomology(testCase)
+            file = tReconstruction.suppOrthTable();
+            bs = hitsFromSuppOrth(file, 'bug', 'minSupport', 2, 'speciesToModel', ...
+                {'templateGEM','templateGEM';'bug','bug';'other',''});
+            t = tReconstruction.suppOrthTemplate();
+            for s = 1:3
+                evalc('draft = getModelFromHomology({t}, bs, ''bug'', ''strictness'', s);');
+                testCase.verifyEqual(sort(draft.rxns), {'R_iso';'R_single'});
+                testCase.verifyEqual(draft.grRules(strcmp(draft.rxns, 'R_iso')), {'ng2'});
+            end
+        end
+
+        function runSuppOrthWithStub(testCase)
+            testCase.assumeFalse(ispc, 'SuppOrth runs on Linux and macOS only');
+            dir = tempname; mkdir(dir);
+            table = tReconstruction.suppOrthTable();
+            % A stub that checks its arguments and writes the fixture table
+            stub = fullfile(dir, 'suppOrth');
+            fid = fopen(stub, 'w');
+            fprintf(fid, '#!/bin/sh\necho "$@" > "%s/args.txt"\nwhile [ "$1" != "-o" ]; do shift; done\ncp "%s" "$2/suppOrth.tsv"\necho done\n', dir, table);
+            fclose(fid); fileattrib(stub, '+x');
+            fa = fullfile(dir, 'bug.fa'); fid = fopen(fa, 'w'); fprintf(fid, '>ng1 x\nMA\n'); fclose(fid);
+            fb = fullfile(dir, 'tmpl.fa'); fid = fopen(fb, 'w'); fprintf(fid, '>tg1 y\nMA\n'); fclose(fid);
+            out = fullfile(dir, 'out');
+            bs = runSuppOrth('bug', fa, {'templateGEM'}, {fb}, out, 'suppOrth', stub, 'threads', 2, ...
+                'tools', 'orthofinder,broccoli', 'speciesToModel', {'templateGEM','templateGEM';'bug','bug';'other',''});
+            args = strtrim(fileread(fullfile(dir, 'args.txt')));
+            testCase.verifySubstring(args, '--labels bug,templateGEM');
+            testCase.verifySubstring(args, '--supportLv 2 --identity_filter 80 --alignment diamond -t 2');
+            testCase.verifyTrue(isfile(fullfile(out, 'run_supporth.log')));
+            testCase.verifyEqual(unique({bs.fromId}), {'bug','templateGEM'});
+            % shared ids get a label prefix that is removed again
+            fid = fopen(fb, 'w'); fprintf(fid, '>ng1 y\nMA\n'); fclose(fid);
+            fid = fopen(stub, 'w');
+            fprintf(fid, '#!/bin/sh\nprintf "Species1\\tSpecies2\\tProtein1\\tProtein2\\tLv_support\\tSupportedBy\\n" > "%s/suppOrth.tsv"\nprintf "templateGEM\\tbug\\ttemplateGEM__ng1\\tbug__ng1\\t2\\tF,B\\n" >> "%s/suppOrth.tsv"\n', out, out);
+            fclose(fid);
+            bs = runSuppOrth('bug', fa, {'templateGEM'}, {fb}, out, 'suppOrth', stub, 'tools', 'orthofinder,broccoli');
+            testCase.verifyEqual(bs(1).fromGenes, {'ng1'}); testCase.verifyEqual(bs(1).toGenes, {'ng1'});
+            testCase.verifyTrue(isfile(fullfile(out, 'prefixed_inputs', 'templateGEM.faa')));
+            % a failing run raises with the end of its output
+            fid = fopen(stub, 'w'); fprintf(fid, '#!/bin/sh\necho "orthofinder FAILED"\nexit 3\n'); fclose(fid);
+            testCase.verifyError(@() runSuppOrth('bug', fa, {'templateGEM'}, {fb}, out, 'suppOrth', stub, ...
+                'tools', 'orthofinder,broccoli'), 'RAVEN:runSuppOrth:failed');
+            rmdir(dir, 's');
+        end
+
         function getBlastRunsWhenAvailable(testCase)
             fa1 = fullfile(testCase.ravenRoot,'testing','function_tests','test_data','human_galactosidases.fa');
             fa2 = fullfile(testCase.ravenRoot,'testing','function_tests','test_data','yeast_galactosidases.fa');
@@ -147,6 +258,39 @@ classdef tReconstruction < RavenTestCase
     end
 
     methods (Static)
+        function file = suppOrthTable(rows)
+            % SuppOrth table with input order templateGEM, bug, other
+            if nargin < 1
+                rows = {
+                    'templateGEM	bug	tg1	ng1	3	F,S,B	1	1	1	85.2	1e-150	512.0'
+                    'templateGEM	bug	tg2	ng2	2	F,S	1	1	0	55.0	1e-80	300.0'
+                    'templateGEM	bug	tg3	ng2	1	B	0	0	1			'
+                    'templateGEM	bug	tg4	sp|P1|NG4_BUG	1	F	1	0	0	30.0	1e-20	120.0'
+                    'templateGEM	bug	tg5	NA	1	S	0	1	0	82.0	1e-90	280.0'
+                    'templateGEM	other	tg1	o1	3	F,S,B	1	1	1	90.0	0.0	600.0'
+                    'bug	other	ng1	o1	2	F,B	1	0	1	70.0	1e-100	400.0'
+                    'bug	other	0123	o2	1	F	1	0	0	81.0	1e-50	200.0'};
+            end
+            file = [tempname '.tsv'];
+            fid = fopen(file, 'w');
+            fprintf(fid, 'Species1\tSpecies2\tProtein1\tProtein2\tLv_support\tSupportedBy\torthofinder\tsonicparanoid\tbroccoli\tIdentity\te_val\tBitscore\n');
+            fprintf(fid, '%s\n', rows{:});
+            fclose(fid);
+        end
+
+        function t = suppOrthTemplate()
+            t = struct();
+            t.id = 'templateGEM'; t.name = 'templateGEM';
+            t.mets = {'a_c';'b_c';'d_c'}; t.metNames = {'A';'B';'D'};
+            t.comps = {'c'}; t.compNames = {'cytosol'}; t.metComps = [1;1;1];
+            t.rxns = {'R_single';'R_iso';'R_cplx'}; t.rxnNames = t.rxns;
+            t.S = sparse([-1 0 -1; 1 -1 0; 0 1 1]);
+            t.lb = [0;0;0]; t.ub = [1000;1000;1000]; t.c = [0;0;0]; t.b = [0;0;0]; t.rev = [0;0;0];
+            t.grRules = {'tg1'; 'tg2 or tg3'; 'tg4 and tg5'};
+            t.genes = {'tg1';'tg2';'tg3';'tg4';'tg5'};
+            t.rxnGeneMat = sparse([1 0 0 0 0; 0 1 1 0 0; 0 0 0 1 1]);
+        end
+
         function model = toyModel()
             % Single reaction: A -> 2 B, one compartment.
             model = struct();

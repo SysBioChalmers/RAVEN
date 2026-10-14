@@ -49,7 +49,7 @@ function [blastStructure,diamondReport]=getDiamond(organismID,fastaFile,...
 %
 % See also
 % --------
-% getModelFromHomology, getBlast
+% getModelFromHomology, getBlast, runSuppOrth
 
 p=parseRAVENargs(varargin, {'developMode',false; 'hideVerbose',false});
 developMode=p.developMode;

@@ -11,7 +11,8 @@ function [draftModel, hitGenes]=getModelFromHomology(models,blastStructure,...
 %     a cell array of model structures to build the model from. These
 %     models must be sorted by importance in decreasing order.
 % blastStructure : struct
-%     a blastStructure as produced by getBlast or makeFakeBlastStructure.
+%     a blastStructure as produced by getBlast, getDiamond,
+%     hitsFromSuppOrth, runSuppOrth or makeFakeBlastStructure.
 % getModelFor : char
 %     a three-four letter abbreviation of the organism to build a model
 %     for. Must have BLASTP hits in both directions to the organisms in
@@ -102,6 +103,15 @@ function [draftModel, hitGenes]=getModelFromHomology(models,blastStructure,...
 % descriptive annotation of the templates.
 %
 % "to" and "from" means relative to the new organism.
+%
+% The hits can also come from SuppOrth consensus orthologs (hitsFromSuppOrth,
+% runSuppOrth). Their e-value, identity and alignment length are
+% placeholders that pass the filters, so minSupport and the other filters of
+% hitsFromSuppOrth decide which pairs are used.
+%
+% See also
+% --------
+% getBlast, getDiamond, hitsFromSuppOrth, runSuppOrth, makeFakeBlastStructure
 
 hitGenes.oldGenes = [];  % collect the old genes from the template model (organism)
 hitGenes.newGenes = [];  % collect the new genes of the draft model (target organism)
