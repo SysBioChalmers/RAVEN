@@ -1,5 +1,5 @@
 classdef tBinaries < matlab.unittest.TestCase
-% tBinaries  On-demand download of RAVEN's external binaries from raven-data.
+% tBinaries  On-demand download of RAVEN's external binaries from toolbox-assets.
 %
 %   Validates downloadRavenBinaries on the current platform: each tool is
 %   fetched into software/<tool>/, the executable is present, and (for the CLI
@@ -7,7 +7,7 @@ classdef tBinaries < matlab.unittest.TestCase
 %   confirms the Gatekeeper quarantine attribute was cleared.
 %
 %   Exercised on Linux and macOS by the "binary-tests" CI job. Requires network
-%   access to https://github.com/SysBioChalmers/raven-data .
+%   access to https://github.com/CompMetEng/toolbox-assets .
 
     methods (Test)
         function blast(testCase)

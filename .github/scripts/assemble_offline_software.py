@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 """Populate RAVEN's software/ with every platform's external binaries.
 
-Downloads the per-platform binary ZIPs from raven-data and lays them out under
+Downloads the per-platform binary ZIPs from toolbox-assets and lays them out under
 ``<raven>/software/<tool>/`` using RAVEN's suffix scheme — bare name = Linux,
 ``.mac`` = macOS, ``.exe`` = Windows. With all platforms present in one tree, the
 whole RAVEN checkout can be zipped into a single **OS-independent** offline
 distribution (see the release-bundle workflow).
 
 Run from the RAVEN root, or pass ``--raven <dir>``. Requires network access to
-https://github.com/SysBioChalmers/raven-data .
+https://github.com/CompMetEng/toolbox-assets .
 """
 from __future__ import annotations
 
@@ -18,11 +18,11 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
-RAVEN_DATA = "https://github.com/SysBioChalmers/raven-data/releases/download"
-# raven-data platform key -> RAVEN binary suffix.
+TOOLBOX_ASSETS = "https://github.com/CompMetEng/toolbox-assets/releases/download"
+# toolbox-assets platform key -> RAVEN binary suffix.
 PLATFORMS = {"linux-x86_64": "", "macos-arm64": ".mac", "windows-x86_64": ".exe"}
 
-# (software subdir, raven-data bundle, {platform|"_": version}, {bare executable names})
+# (software subdir, toolbox-assets bundle, {platform|"_": version}, {bare executable names})
 CLI_TOOLS = [
     ("blast+",  "blast",   {"_": "2.17.0"},                          {"blastp", "makeblastdb"}),
     ("diamond", "diamond", {"_": "2.1.17"},                          {"diamond"}),
@@ -31,7 +31,7 @@ CLI_TOOLS = [
 
 
 def _fetch(url: str) -> bytes:
-    with urllib.request.urlopen(url, timeout=120) as resp:  # noqa: S310 (pinned raven-data URLs)
+    with urllib.request.urlopen(url, timeout=120) as resp:  # noqa: S310 (pinned toolbox-assets URLs)
         return resp.read()
 
 
@@ -60,7 +60,7 @@ def assemble(raven: Path) -> None:
             # macOS ships bare names; rename them to <name>.mac. Linux keeps bare names,
             # Windows already carries .exe — so only the macOS members need renaming.
             rename = {e: e + ".mac" for e in exes} if suffix == ".mac" else {}
-            _extract(_fetch(f"{RAVEN_DATA}/{bundle}-{version}/{asset}"), dest, rename)
+            _extract(_fetch(f"{TOOLBOX_ASSETS}/{bundle}-{version}/{asset}"), dest, rename)
 
 
 def main(argv: list[str] | None = None) -> None:

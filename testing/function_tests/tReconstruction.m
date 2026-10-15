@@ -112,14 +112,14 @@ classdef tReconstruction < RavenTestCase
         end
 
         function getKEGGModelForOrganismNeedsData(testCase)
-            testCase.assumeFail('Requires keggModel.mat and an HMM library from raven-data.');
+            testCase.assumeFail('Requires keggModel.mat and an HMM library from toolbox-assets.');
         end
 
         function getModelFromKEGGNeedsData(testCase)
             matFile = fullfile(testCase.ravenRoot, 'reconstruction', 'kegg', 'keggModel.mat');
             testCase.assumeFalse(exist(matFile, 'file') == 2, ...
                 'keggModel.mat is present; skipping the build-from-artefacts path.');
-            testCase.assumeFail('Downloads and assembles the full KEGG artefact set from raven-data; not run automatically.');
+            testCase.assumeFail('Downloads and assembles the full KEGG artefact set from toolbox-assets; not run automatically.');
         end
 
         function buildGlobalGPRJoinsGenesThroughSharedKO(testCase)

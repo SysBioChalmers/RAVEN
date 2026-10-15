@@ -1,7 +1,7 @@
 function [model,KOModel,isSpontaneous,isUndefinedStoich,isIncomplete,isGeneral]=buildGlobalKEGGModel(ravenPath)
 % buildGlobalKEGGModel  Download and assemble the global KEGG model.
 %
-% Fetches the raven-data <kegg version>_core.tar.gz bundle (the
+% Fetches the toolbox-assets <kegg version>_core.tar.gz bundle (the
 % gene-free reference model plus the ko_reaction / organism_gene_ko /
 % rxn_flags relational tables), then joins every organism's
 % genes onto the reference reactions through their shared KO ids. The
@@ -27,7 +27,7 @@ function [model,KOModel,isSpontaneous,isUndefinedStoich,isIncomplete,isGeneral]=
 
 kver=keggDataVersion();
 keggDir=fullfile(ravenPath,'reconstruction','kegg');
-archive=fetchRavenDataAsset(keggDir,kver,[kver '_core.tar.gz']);
+archive=fetchToolboxAsset(keggDir,kver,[kver '_core.tar.gz']);
 
 coreDir=fullfile(keggDir,[kver '_core']);
 if ~isfolder(coreDir)

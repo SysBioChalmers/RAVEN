@@ -2,7 +2,8 @@ function phylDistStruct=getPhylDist(varargin)
 % getPhylDist  Load the pre-built KEGG phylogenetic distance matrix.
 %
 % Loads the pre-built phylogenetic distance matrix from keggPhylDist.mat.
-% The artefact is distributed as a raven-data release asset.
+% The matrix ships with RAVEN; it is derived from the KEGG taxonomy, which
+% is a toolbox-assets release asset.
 %
 % Name-Value Arguments
 % --------------------

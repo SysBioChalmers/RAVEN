@@ -251,13 +251,13 @@ if ~checkBinaries
     printOrange('    Skipping check of binary executables\n')
 else
     % The BLAST+/DIAMOND/HMMER binaries are downloaded on demand from
-    % raven-data; fetch any that are missing for this platform before
+    % toolbox-assets; fetch any that are missing for this platform before
     % checking. This doubles as the up-front "prefetch" for users who want
     % everything ready after installation.
     try
         downloadRavenBinaries({'blast+','diamond','hmmer'});
     catch ME
-        printOrange(['    Could not download binaries from raven-data: ' ME.message '\n' ...
+        printOrange(['    Could not download binaries from toolbox-assets: ' ME.message '\n' ...
             '    (offline? fetch the "*-binaries" RAVEN release for an offline install)\n']);
     end
     % Run each bundled binary with a version/help flag to confirm it
@@ -294,7 +294,7 @@ end
 function testBinary(ravenDir, tool, binName, versionArg)
 % Run a bundled binary with versionArg to confirm it executes; error if not.
 if ispc
-    binEnd = '.exe'; % native Windows builds (raven-data windows-x86_64 ZIPs)
+    binEnd = '.exe'; % native Windows builds (toolbox-assets windows-x86_64 ZIPs)
 elseif ismac
     binEnd = '.mac';
 else

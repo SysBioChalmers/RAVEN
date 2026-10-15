@@ -30,7 +30,7 @@ function model=getKEGGModelForOrganism(organismID,varargin)
 %     and whether the HMMs were trained on pro- or eukaryotic sequences. The
 %     directory name matches the published HMM library it is paired with. The
 %     prebuilt concatenated KO HMM library (dataDir.hmm) is downloaded here
-%     from the corresponding raven-data release if not already present. This
+%     from the corresponding toolbox-assets release if not already present. This
 %     parameter should ALWAYS be provided.
 % outDir : char
 %     directory to save the results from the quering of the hidden Markov
@@ -197,8 +197,8 @@ libraryFile='';
 %pre-trained HMM set, compatible with the current RAVEN version. The
 %reconstruction uses the concatenated KO HMM library (a single
 %gzip-compressed flatfile, queried in one hmmsearch); if it is not already
-%present it is downloaded from the corresponding raven-data release
-%(https://github.com/SysBioChalmers/raven-data).
+%present it is downloaded from the corresponding toolbox-assets release
+%(https://github.com/CompMetEng/toolbox-assets).
 %Only needed for the protein-homology path (fastaFile supplied): the
 %annotation-only path never touches libraryFile, so skip the (100+ MB)
 %download/extraction entirely when there is no FASTA file to search.
@@ -219,7 +219,7 @@ if ~isempty(dataDir) && ~isempty(fastaFile)
         gunzip([libraryFile '.gz']);
         fprintf('COMPLETE\n');
     else
-        fetchRavenDataAsset(fileparts(libraryFile),kver,[hmmName '.hmm.gz']);
+        fetchToolboxAsset(fileparts(libraryFile),kver,[hmmName '.hmm.gz']);
         fprintf('Extracting the HMM library file... ');
         gunzip([libraryFile '.gz']);
         fprintf('COMPLETE\n');

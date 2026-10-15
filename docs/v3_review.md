@@ -30,7 +30,7 @@ So the review does not repeat completed work. v3 already:
   and `combnk`.
 - Dropped the Statistics, Bioinformatics and Text Analytics toolbox dependencies.
 - Moved KEGG HMM libraries and external binaries out of git to on-demand fetch from the
-  `raven-data` release.
+  `toolbox-assets` release.
 - Reorganized the repo into functional folders; reformatted docstrings to NumPy style.
 - Added `progressReport`, `parseRAVENargs` (positional-or-named arguments), and a
   `matlab.unittest` suite.
@@ -147,7 +147,7 @@ Plus a standalone `mapIDsViaMNXref(type, ids, fromDB, toDB)` ID translator.
 1. Relocate to the develop3 layout (e.g. `reconstruction/metanetx/` or `annotation/metanetx/`),
    drop the duplicated `struct_conversion/*`, rebase on develop3's `convertMiriams`.
 2. **Delete the committed data**; host MNXref 4.5 (gzipped TSVs, and ideally a prebuilt `.mat`)
-   as a `raven-data` release asset and add a `downloadMNXref.m` modeled exactly on the
+   as a `toolbox-assets` release asset and add a `downloadMNXref.m` modeled exactly on the
    develop3 KEGG-HMM / `downloadRavenBinaries` on-demand pattern (sentinel-file check, cache
    under a gitignored dir).
 3. Update parsing to the documented **4.5** columns (header-driven `readtable`, handle the
@@ -379,6 +379,6 @@ tracked as a low-priority item in the Tier-3 table.
 2. **Where should new strain-design / community code that needs metaheuristics live**, given
    the dependency question — lean on the Global Optimization Toolbox (`gamultiobj`), or keep
    v3's "minimize toolbox dependencies" stance and ship a self-contained EA?
-4. **MNXref data hosting** — confirm the `raven-data` release is the right home for the MNXref
+4. **MNXref data hosting** — confirm the `toolbox-assets` release is the right home for the MNXref
    4.5 assets (mirroring KEGG HMMs/binaries), and whether to ship a prebuilt `.mat` (7 MB,
    fast) or only the gzipped TSVs (slower first build, always current).

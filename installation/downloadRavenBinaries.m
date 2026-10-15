@@ -1,7 +1,7 @@
 function downloadRavenBinaries(tools)
 % downloadRavenBinaries
 %   Download RAVEN's external command-line binaries on demand from the
-%   raven-data repository into RAVEN's software/ directory. Only the binary
+%   toolbox-assets repository into RAVEN's software/ directory. Only the binary
 %   matching the current platform is fetched, and only when needed.
 %
 %   Input:
@@ -14,7 +14,7 @@ function downloadRavenBinaries(tools)
 %   unzip it into the RAVEN software/ directory instead.
 %
 %   The binaries are hosted as release assets in
-%   https://github.com/SysBioChalmers/raven-data.
+%   https://github.com/CompMetEng/toolbox-assets.
 %
 %   Usage: downloadRavenBinaries({'blast+','diamond'})
 %
@@ -29,7 +29,7 @@ end
 
 ravenDir = findRAVENroot();
 
-% raven-data platform key for the per-platform binary ZIPs.
+% toolbox-assets platform key for the per-platform binary ZIPs.
 if ispc
     plat = 'windows-x86_64';
 elseif ismac
@@ -78,11 +78,11 @@ for i = 1:numel(tools)
         continue;   % already provisioned
     end
 
-    zipPath = fetchRavenDataAsset(fullfile(ravenDir,'software'),tag,asset);
+    zipPath = fetchToolboxAsset(fullfile(ravenDir,'software'),tag,asset);
     unzip(zipPath,destDir);
     delete(zipPath);
 
-    % macOS uses the .mac suffix throughout RAVEN, but the raven-data macOS ZIP
+    % macOS uses the .mac suffix throughout RAVEN, but the toolbox-assets macOS ZIP
     % ships bare names, so rename the extracted executables to match.
     if ismac
         for k = 1:numel(execs)
